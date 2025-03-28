@@ -9,7 +9,6 @@ class SuperAdmin::InstallationConfigsController < SuperAdmin::ApplicationControl
     new_values = params.dig(:installation_config, :value) || []
     formatted_new_values = format_new_values(new_values)
     updated_values = update_existing_values(@resource.value || [], formatted_new_values)
-    updated_values = update_existing_values(@resource.value || [], formatted_new_values)
 
     if @resource.update(value: updated_values)
       redirect_to super_admin_installation_config_path(@resource), notice: 'Updated successfully'
