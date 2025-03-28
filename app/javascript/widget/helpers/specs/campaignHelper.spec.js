@@ -13,8 +13,8 @@ describe('#Campaigns Helper', () => {
     it('returns correct value if a valid URL is passed', () => {
       expect(
         isPatternMatchingWithURL(
-          'https://chatwoot.com/pricing*',
-          'https://chatwoot.com/pricing/'
+          'https://courier.getcruisecontrol.com/pricing*',
+          'https://courier.getcruisecontrol.com/pricing/'
         )
       ).toBe(true);
 
@@ -35,7 +35,7 @@ describe('#Campaigns Helper', () => {
       expect(
         isPatternMatchingWithURL(
           'https://{*.}?chatwoot.com/pricing*\\?*',
-          'https://chatwoot.com/pricing/?test=true'
+          'https://courier.getcruisecontrol.com/pricing/?test=true'
         )
       ).toBe(true);
     });

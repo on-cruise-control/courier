@@ -17,10 +17,11 @@ describe('#MessageFormatter', () => {
       );
     });
     it('should not convert template variables to links when linkify is disabled', () => {
-      const message = 'Hey {{customer.name}}, check https://chatwoot.com';
+      const message =
+        'Hey {{customer.name}}, check https://courier.getcruisecontrol.com';
       const formatter = new MessageFormatter(message, false, false, false);
       expect(formatter.formattedMessage).toMatch(
-        '<p>Hey {{customer.name}}, check https://chatwoot.com</p>'
+        '<p>Hey {{customer.name}}, check https://courier.getcruisecontrol.com</p>'
       );
     });
   });

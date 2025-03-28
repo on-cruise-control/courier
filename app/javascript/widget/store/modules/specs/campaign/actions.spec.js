@@ -21,7 +21,7 @@ describe('#actions', () => {
         { commit },
         {
           websiteToken: 'XDsafmADasd',
-          currentURL: 'https://chatwoot.com',
+          currentURL: 'https://courier.getcruisecontrol.com',
           isInBusinessHours: true,
         }
       );
@@ -35,7 +35,7 @@ describe('#actions', () => {
             {
               id: 11,
               timeOnPage: '20',
-              url: 'https://chatwoot.com',
+              url: 'https://courier.getcruisecontrol.com',
               triggerOnlyDuringBusinessHours: false,
             },
           ],
@@ -59,7 +59,7 @@ describe('#actions', () => {
   describe('#initCampaigns', () => {
     const actionParams = {
       websiteToken: 'XDsafmADasd',
-      currentURL: 'https://chatwoot.com',
+      currentURL: 'https://courier.getcruisecontrol.com',
     };
     it('sends correct actions if campaigns are empty', async () => {
       await actions.initCampaigns(
@@ -103,7 +103,7 @@ describe('#actions', () => {
             {
               id: 11,
               timeOnPage: '20',
-              url: 'https://chatwoot.com',
+              url: 'https://courier.getcruisecontrol.com',
               triggerOnlyDuringBusinessHours: false,
             },
           ],
