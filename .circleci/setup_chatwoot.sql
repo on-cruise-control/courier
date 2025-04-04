@@ -1,6 +1,6 @@
-CREATE USER chatwoot CREATEDB;
-ALTER USER chatwoot PASSWORD 'REPLACE_WITH_PASSWORD';
-ALTER ROLE chatwoot SUPERUSER;
+CREATE USER cruise_control CREATEDB;
+ALTER USER cruise_control PASSWORD 'REPLACE_WITH_PASSWORD';
+ALTER ROLE cruise_control SUPERUSER;
 
 UPDATE pg_database SET datistemplate = FALSE WHERE datname = 'template1';
 DROP DATABASE template1;

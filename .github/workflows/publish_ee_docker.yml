@@ -4,7 +4,7 @@
 # # and when tags are created.
 # #
 
-name: Publish Chatwoot EE docker images
+name: Publish Cruise Control EE docker images
 
 on:
   push:
@@ -40,7 +40,7 @@ jobs:
           platform=${{ matrix.platform }}
           echo "PLATFORM_PAIR=${platform//\//-}" >> $GITHUB_ENV
 
-      - name: Set Chatwoot edition
+      - name: Set Cruise Control edition
         run: |
           echo -en '\nENV CW_EDITION="ee"' >> docker/Dockerfile
 
