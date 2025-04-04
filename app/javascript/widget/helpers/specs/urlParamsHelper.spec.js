@@ -39,13 +39,13 @@ describe('#buildPopoutURL', () => {
   it('returns popout URL', () => {
     expect(
       buildPopoutURL({
-        origin: 'https://courier.getcruisecontrol.com',
+        origin: 'https://getcruisecontrol.com',
         conversationCookie: 'random-jwt-token',
         websiteToken: 'random-website-token',
         locale: 'ar',
       })
     ).toEqual(
-      'https://courier.getcruisecontrol.com/widget?cw_conversation=random-jwt-token&website_token=random-website-token&locale=ar'
+      'https://getcruisecontrol.com/widget?cw_conversation=random-jwt-token&website_token=random-website-token&locale=ar'
     );
   });
 });
