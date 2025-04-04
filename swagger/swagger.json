@@ -6720,7 +6720,7 @@
         "homepage_link": {
           "type": "string",
           "description": "link to main dashboard",
-          "example": "http://courier.getcruisecontrol.com/"
+          "example": "https://courier.getcruisecontrol.com/"
         },
         "name": {
           "type": "string",
