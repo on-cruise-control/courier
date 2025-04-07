@@ -39,25 +39,25 @@ describe('#MessageFormatter', () => {
   describe('content with image and has "cw_image_height" query at the end of URL', () => {
     it('should set image height correctly', () => {
       const message =
-        'Cruise Control is an opensource tool. ![](http://chatwoot.com/chatwoot.png?cw_image_height=24px)';
+        'Cruise Control is an opensource tool. ![](https://getcruisecontrol.com/chatwoot.png?cw_image_height=24px)';
       expect(new MessageFormatter(message).formattedMessage).toMatch(
-        '<p>Cruise Control is an opensource tool. <img src="http://chatwoot.com/chatwoot.png?cw_image_height=24px" alt="" style="height: 24px;" /></p>'
+        '<p>Cruise Control is an opensource tool. <img src="https://getcruisecontrol.com/chatwoot.png?cw_image_height=24px" alt="" style="height: 24px;" /></p>'
       );
     });
 
     it('should set image height correctly if its original size', () => {
       const message =
-        'Cruise Control is an opensource tool. ![](http://chatwoot.com/chatwoot.png?cw_image_height=auto)';
+        'Cruise Control is an opensource tool. ![](https://getcruisecontrol.com/chatwoot.png?cw_image_height=auto)';
       expect(new MessageFormatter(message).formattedMessage).toMatch(
-        '<p>Cruise Control is an opensource tool. <img src="http://chatwoot.com/chatwoot.png?cw_image_height=auto" alt="" style="height: auto;" /></p>'
+        '<p>Cruise Control is an opensource tool. <img src="https://getcruisecontrol.com/chatwoot.png?cw_image_height=auto" alt="" style="height: auto;" /></p>'
       );
     });
 
     it('should not set height', () => {
       const message =
-        'Cruise Control is an opensource tool. ![](http://chatwoot.com/chatwoot.png)';
+        'Cruise Control is an opensource tool. ![](https://getcruisecontrol.com/chatwoot.png)';
       expect(new MessageFormatter(message).formattedMessage).toMatch(
-        '<p>Cruise Control is an opensource tool. <img src="http://chatwoot.com/chatwoot.png" alt="" /></p>'
+        '<p>Cruise Control is an opensource tool. <img src="https://getcruisecontrol.com/chatwoot.png" alt="" /></p>'
       );
     });
   });
