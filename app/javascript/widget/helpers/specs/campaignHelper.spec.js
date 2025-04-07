@@ -20,21 +20,21 @@ describe('#Campaigns Helper', () => {
 
       expect(
         isPatternMatchingWithURL(
-          'https://*.chatwoot.com/pricing/',
+          'https://*.getcruisecontrol.com/pricing/',
           'https://courier.getcruisecontrol.com/pricing/'
         )
       ).toBe(true);
 
       expect(
         isPatternMatchingWithURL(
-          'https://{*.}?chatwoot.com/pricing?test=true',
+          'https://{*.}?getcruisecontrol.com/pricing?test=true',
           'https://courier.getcruisecontrol.com/pricing/?test=true'
         )
       ).toBe(true);
 
       expect(
         isPatternMatchingWithURL(
-          'https://{*.}?chatwoot.com/pricing*\\?*',
+          'https://{*.}?getcruisecontrol.com/pricing*\\?*',
           'https://getcruisecontrol.com/pricing/?test=true'
         )
       ).toBe(true);
