@@ -32,6 +32,11 @@ Rails.application.routes.draw do
   get '/api', to: 'api#index'
   namespace :api, defaults: { format: 'json' } do
     namespace :v1 do
+      # External API routes
+      namespace :external do
+        get 'conversation/messages', to: 'conversation#messages'
+      end
+
       # ----------------------------------
       # start of account scoped api routes
       resources :accounts, only: [:create, :show, :update] do
