@@ -56,7 +56,7 @@ class Integrations::Stark::ProcessorService < Integrations::BotProcessorService
   end
 
   def valid_event_name?
-    %w[message.created message.updated].include?(event_name)
+    %w[message.created].include?(event_name)
   end
 
   def get_stark_response(conversation, content)
