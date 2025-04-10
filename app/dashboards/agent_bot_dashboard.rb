@@ -20,6 +20,9 @@ class AgentBotDashboard < Administrate::BaseDashboard
     account: Field::BelongsTo.with_options(searchable: true, searchable_field: 'name', order: 'id DESC'),
     description: Field::String,
     outgoing_url: Field::String,
+    bot_type: Field::Select.with_options(
+      collection: AgentBot.bot_types.keys.map { |key| [key.titleize, key] }
+    ),
     created_at: Field::DateTime,
     updated_at: Field::DateTime
   }.freeze
@@ -34,6 +37,7 @@ class AgentBotDashboard < Administrate::BaseDashboard
     avatar_url
     account
     name
+    bot_type
     outgoing_url
   ].freeze
 
@@ -45,6 +49,7 @@ class AgentBotDashboard < Administrate::BaseDashboard
     account
     name
     description
+    bot_type
     outgoing_url
     access_token
   ].freeze
@@ -57,6 +62,7 @@ class AgentBotDashboard < Administrate::BaseDashboard
     avatar
     account
     description
+    bot_type
     outgoing_url
   ].freeze
 
