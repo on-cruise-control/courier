@@ -34,7 +34,9 @@ Rails.application.routes.draw do
     namespace :v1 do
       # External API routes
       namespace :external do
-        get 'conversation/messages', to: 'conversation#messages'
+        resources :conversations, only: [] do
+          get :messages, on: :member
+        end
       end
 
       # ----------------------------------
