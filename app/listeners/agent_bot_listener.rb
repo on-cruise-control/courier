@@ -53,17 +53,10 @@ class AgentBotListener < BaseListener
   private
 
   def connected_agent_bot_exist?(inbox)
-    return if inbox.account.agent_bots.blank?
+    return if inbox.agent_bot_inbox.blank?
+    return unless inbox.agent_bot_inbox.active?
 
-    if inbox.agent_bot_inbox.blank?
-      inbox.create_agent_bot_inbox!(
-        agent_bot: inbox.account.agent_bots.last,
-        status: 'active'
-      )
-      return true
-    end
-
-    inbox.agent_bot_inbox.active?
+    true
   end
 
   def process_message_event(method_name, agent_bot, message, event)

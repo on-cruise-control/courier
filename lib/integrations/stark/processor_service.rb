@@ -81,9 +81,8 @@ class Integrations::Stark::ProcessorService < Integrations::BotProcessorService
   def stark_payload(conversation, content)
     {
       question: content,
-      session_id: conversation.account_id,
-      dealership_id: '177b4e57-dacf-46c7-b582-08886aa81fd4', # integer_to_uuid(conversation.id)
-      conversation_id: conversation.id
+      session_id: conversation.id,
+      dealership_id: '177b4e57-dacf-46c7-b582-08886aa81fd4' # integer_to_uuid(conversation.id)
     }
   end
 
