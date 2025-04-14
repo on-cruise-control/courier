@@ -1,7 +1,7 @@
 class Api::V1::External::ConversationsController < Api::BaseController
   DEFAULT_PER_PAGE = 25
   MAX_PER_PAGE = 100
-  HARDCODED_TOKEN = '550e8400-e29b-41d4-a716-446655440000'.freeze
+  HARDCODED_TOKEN = ENV['EXTERNAL_MESSAGE_API_KEY']
   skip_before_action :authenticate_user!
   before_action :authenticate_token
 
