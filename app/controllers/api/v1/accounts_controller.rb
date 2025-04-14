@@ -28,6 +28,7 @@ class Api::V1::AccountsController < Api::BaseController
       email: account_params[:email],
       user_password: account_params[:password],
       locale: account_params[:locale],
+      dealership_id: account_params[:dealership_id],
       user: current_user
     ).perform
     if @user
@@ -44,7 +45,7 @@ class Api::V1::AccountsController < Api::BaseController
   end
 
   def update
-    @account.assign_attributes(account_params.slice(:name, :locale, :domain, :support_email, :auto_resolve_duration))
+    @account.assign_attributes(account_params.slice(:name, :locale, :domain, :support_email, :auto_resolve_duration, :dealership_id))
     @account.custom_attributes.merge!(custom_attributes_params)
     @account.custom_attributes['onboarding_step'] = 'invite_team' if @account.custom_attributes['onboarding_step'] == 'account_update'
     @account.save!
@@ -65,6 +66,7 @@ class Api::V1::AccountsController < Api::BaseController
     # since these values are not required directly there
     return if account_params[:account_name].present?
     return if account_params[:user_full_name].present?
+    return if account_params[:dealership_id].present?
 
     raise CustomExceptions::Account::InvalidParams.new({})
   end
@@ -83,7 +85,7 @@ class Api::V1::AccountsController < Api::BaseController
   end
 
   def account_params
-    params.permit(:account_name, :email, :name, :password, :locale, :domain, :support_email, :auto_resolve_duration, :user_full_name)
+    params.permit(:account_name, :email, :name, :password, :locale, :domain, :support_email, :auto_resolve_duration, :user_full_name, :dealership_id)
   end
 
   def custom_attributes_params
