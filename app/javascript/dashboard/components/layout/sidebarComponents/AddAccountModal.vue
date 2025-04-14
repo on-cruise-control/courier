@@ -22,6 +22,7 @@ export default {
   data() {
     return {
       accountName: '',
+      dealershipId: '',
     };
   },
   validations() {
@@ -29,6 +30,9 @@ export default {
       accountName: {
         required,
         minLength: minLength(1),
+      },
+      dealershipId: {
+        required,
       },
     };
   },
@@ -42,6 +46,7 @@ export default {
       try {
         const account_id = await this.$store.dispatch('accounts/create', {
           account_name: this.accountName,
+          dealership_id: this.dealershipId,
         });
         this.$emit('closeAccountCreateModal');
         useAlert(this.$t('CREATE_ACCOUNT.API.SUCCESS_MESSAGE'));
@@ -87,11 +92,22 @@ export default {
           </label>
         </div>
         <div class="w-full">
+          <div class="w-full mt-4">
+            <label :class="{ error: v$.dealershipId.$error }">
+              {{ $t('CREATE_ACCOUNT.FORM.DEALERSHIP.LABEL') }}
+              <input
+                v-model="dealershipId"
+                type="text"
+                :placeholder="$t('CREATE_ACCOUNT.FORM.DEALERSHIP.PLACEHOLDER')"
+                @input="v$.dealershipId.$touch"
+              />
+            </label>
+          </div>
           <div class="w-full">
             <woot-submit-button
               :disabled="
                 v$.accountName.$invalid ||
-                v$.accountName.$invalid ||
+                v$.dealershipId.$invalid ||
                 uiFlags.isCreating
               "
               :button-text="$t('CREATE_ACCOUNT.FORM.SUBMIT')"
