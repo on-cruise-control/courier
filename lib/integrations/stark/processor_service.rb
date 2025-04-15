@@ -1,6 +1,6 @@
 class Integrations::Stark::ProcessorService < Integrations::BotProcessorService
   include HTTParty
-  AUTH_TOKEN = 'i6NpaCOX7aDXVWfHsnxgJKYuDftBfhxb'.freeze
+  AUTH_TOKEN = ENV.fetch('STARK_API_KEY', nil)
   pattr_initialize [:event_name!, :hook!, :event_data!]
 
   def hook
