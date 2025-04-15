@@ -2,24 +2,25 @@
 #
 # Table name: accounts
 #
-#  id                         :integer          not null, primary key
-#  auto_resolve_duration      :integer
-#  contactable_contacts_count :integer          default(0)
-#  custom_attributes          :jsonb
-#  domain                     :string(100)
-#  feature_flags              :bigint           default(0), not null
-#  internal_attributes        :jsonb            not null
-#  limits                     :jsonb
-#  locale                     :integer          default("en")
-#  name                       :string           not null
-#  status                     :integer          default("active")
-#  support_email              :string(100)
-#  created_at                 :datetime         not null
-#  updated_at                 :datetime         not null
+#  id                    :integer          not null, primary key
+#  auto_resolve_duration :integer
+#  custom_attributes     :jsonb
+#  domain                :string(100)
+#  feature_flags         :bigint           default(0), not null
+#  internal_attributes   :jsonb            not null
+#  limits                :jsonb
+#  locale                :integer          default("en")
+#  name                  :string           not null
+#  status                :integer          default("active")
+#  support_email         :string(100)
+#  created_at            :datetime         not null
+#  updated_at            :datetime         not null
+#  dealership_id         :string
 #
 # Indexes
 #
-#  index_accounts_on_status  (status)
+#  index_accounts_on_dealership_id  (dealership_id)
+#  index_accounts_on_status         (status)
 #
 
 class Account < ApplicationRecord
@@ -36,6 +37,7 @@ class Account < ApplicationRecord
 
   validates :auto_resolve_duration, numericality: { greater_than_or_equal_to: 1, less_than_or_equal_to: 999, allow_nil: true }
   validates :domain, length: { maximum: 100 }
+  validates :dealership_id, presence: true
 
   has_many :account_users, dependent: :destroy_async
   has_many :agent_bot_inboxes, dependent: :destroy_async
