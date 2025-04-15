@@ -27,6 +27,15 @@ class AgentBotDashboard < Administrate::BaseDashboard
     updated_at: Field::DateTime
   }.freeze
 
+  # COLLECTION_ACTIONS
+  # a list of actions that will be available for the resource
+  # in the UI
+  COLLECTION_ACTIONS = %i[
+    edit
+    show
+    destroy
+  ].freeze
+
   # COLLECTION_ATTRIBUTES
   # an array of attributes that will be displayed on the model's index page.
   #

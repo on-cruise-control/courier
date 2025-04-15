@@ -1,37 +1,31 @@
 class Api::V1::External::ConversationsController < Api::BaseController
   DEFAULT_PER_PAGE = 25
   MAX_PER_PAGE = 100
-  HARDCODED_TOKEN = ENV['EXTERNAL_MESSAGE_API_KEY']
+  EXTERNAL_API_AUTH_TOKEN = ENV.fetch('EXTERNAL_API_AUTH_TOKEN', nil)
   skip_before_action :authenticate_user!
   before_action :authenticate_token
+  before_action :find_conversation
 
   def messages
-    conversation = find_conversation
-    @messages = fetch_paginated_messages(conversation)
+    @messages = fetch_paginated_messages(@conversation)
     render json: success_response, status: :ok
-  rescue ActiveRecord::RecordNotFound
-    render json: error_response, status: :not_found
-  end
-
-  def authenticate_by_access_token?
-    false
+  rescue StandardError => e
+    render_error(e.message, :unprocessable_entity)
   end
 
   def authenticate_token
     token = request.headers['Authorization']&.split(' ')&.last
-    return if token == HARDCODED_TOKEN
+    return if token == EXTERNAL_API_AUTH_TOKEN
 
-    render json: {
-      success: false,
-      status_code: 401,
-      error: 'Unauthorized'
-    }, status: :unauthorized
+    render_error('Unauthorized', :unauthorized)
   end
 
   private
 
   def find_conversation
-    Conversation.find(params[:id])
+    @conversation = Conversation.find(params[:id])
+  rescue ActiveRecord::RecordNotFound
+    render_error('Conversation not found', :not_found)
   end
 
   def fetch_paginated_messages(conversation)
@@ -67,12 +61,12 @@ class Api::V1::External::ConversationsController < Api::BaseController
     }
   end
 
-  def error_response
-    {
+  def render_error(message, status)
+    render json: {
       success: false,
-      status_code: 404,
-      error: 'Conversation not found'
-    }
+      status_code: Rack::Utils.status_code(status),
+      error: message
+    }, status: status
   end
 
   def per_page_param
