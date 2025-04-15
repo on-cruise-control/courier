@@ -18,6 +18,16 @@ class Api::V1::Accounts::Conversations::MessagesController < Api::V1::Accounts::
     end
   end
 
+  def unsend
+    ActiveRecord::Base.transaction do
+      message.update!(
+        content_attributes: message.content_attributes.merge(
+          hidden_from_sender: true
+        )
+      )
+    end
+  end
+
   def retry
     return if message.blank?
 

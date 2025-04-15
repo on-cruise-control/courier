@@ -108,6 +108,17 @@ class MessageApi extends ApiClient {
       }
     );
   }
+
+  unsend(conversationID, messageId) {
+    return axios({
+      method: 'post',
+      url: `${this.url}/${conversationID}/messages/${messageId}/unsend`,
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+    });
+  }
 }
 
 export default new MessageApi();

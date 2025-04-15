@@ -95,10 +95,13 @@ Rails.application.routes.draw do
               post :filter
             end
             scope module: :conversations do
-              resources :messages, only: [:index, :create, :destroy] do
-                member do
+              resources :messages do
+                collection do
                   post :translate
                   post :retry
+                end
+                member do
+                  post :unsend
                 end
               end
               resources :assignments, only: [:create]

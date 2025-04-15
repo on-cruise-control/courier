@@ -315,6 +315,35 @@ export const mutations = {
   [types.SET_INBOX_CAPTAIN_ASSISTANT](_state, data) {
     _state.copilotAssistant = data.assistant;
   },
+
+  [types.UPDATE_MESSAGE_STATUS](_state, { id, content_attributes }) {
+    const { allConversations } = _state;
+    const conversation = allConversations.find(c =>
+      c.messages.some(m => m.id === id)
+    );
+    if (conversation) {
+      const message = conversation.messages.find(m => m.id === id);
+      if (message) {
+        message.content_attributes = {
+          ...message.content_attributes,
+          ...content_attributes,
+        };
+        // Remove message from sender's view if they are the sender and message is hidden
+        if (
+          content_attributes.hidden_from_sender &&
+          message.sender_id === window.authUser.id
+        ) {
+          // Remove the message from the conversation's messages array
+          const messageIndex = conversation.messages.findIndex(
+            m => m.id === id
+          );
+          if (messageIndex !== -1) {
+            conversation.messages.splice(messageIndex, 1);
+          }
+        }
+      }
+    }
+  },
 };
 
 export default {
