@@ -30,10 +30,10 @@ export default {
   computed: {
     pathSource() {
       // To support icons with multiple paths
-      const path = this.icons[`${this.icon}-${this.type}`];
-      if (path.constructor === Array) {
-        return path;
-      }
+      const iconKey = `${this.icon}-${this.type}`;
+      const path = this.icons[iconKey];
+      if (!path) return [];
+      if (path.constructor === Array) return path;
       return [path];
     },
   },

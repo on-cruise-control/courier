@@ -5,9 +5,35 @@ class Instagram::SendOnInstagramService < Base::SendOnChannelService
 
   base_uri 'https://graph.facebook.com/v11.0/me'
 
-  private
-
   delegate :additional_attributes, to: :contact
+
+  def delete_message
+    return true unless message.content_attributes['mid'].present?
+
+    # Use Facebook Graph API to delete the message
+    # Instagram uses the message ID (mid) as the identifier for deletion
+    response = HTTParty.delete(
+      "https://graph.facebook.com/v18.0/#{message.content_attributes['mid']}",
+      headers: {
+        'Authorization' => "Bearer #{channel.page_access_token}"
+      }
+    )
+
+    parsed_response = JSON.parse(response.body)
+    unless response.success?
+      Rails.logger.error "INSTAGRAM_DELETE_ERROR: #{parsed_response}"
+      raise StandardError, parsed_response['error']['message']
+    end
+
+    true
+  rescue StandardError => e
+    ChatwootExceptionTracker.new(e, account: message.account, user: message.sender).capture_exception
+    # TODO : handle specific errors or else page will get disconnected
+    # channel.authorization_error!
+    false
+  end
+
+  private
 
   def channel_class
     Channel::FacebookPage
@@ -76,7 +102,10 @@ class Instagram::SendOnInstagramService < Base::SendOnChannelService
   def handle_response(response, message_content)
     parsed_response = response.parsed_response
     if response.success? && parsed_response['error'].blank?
-      message.update!(source_id: parsed_response['message_id'])
+      message.update!(
+        source_id: parsed_response['message_id'],
+        content_attributes: message.content_attributes.merge('mid' => parsed_response['message_id'])
+      )
 
       parsed_response
     else

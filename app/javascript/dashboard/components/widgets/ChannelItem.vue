@@ -31,7 +31,9 @@ export default {
       if (key === 'email') {
         return this.enabledFeatures.channel_email;
       }
-
+      if (key === 'twitter') {
+        return this.enabledFeatures.channel_twitter;
+      }
       return [
         'website',
         'twilio',
@@ -51,9 +53,7 @@ export default {
       return `/assets/images/dashboard/channels/${this.channel.key}.png`;
     },
     onItemClick() {
-      if (this.isActive) {
-        this.$emit('channelItemClick', this.channel.key);
-      }
+      this.$emit('channelItemClick', this.channel.key);
     },
   },
 };
@@ -61,7 +61,7 @@ export default {
 
 <template>
   <ChannelSelector
-    :class="{ inactive: !isActive }"
+    class="channel-item"
     :title="channel.name"
     :src="getChannelThumbnail()"
     @click="onItemClick"

@@ -108,6 +108,16 @@ class MessageApi extends ApiClient {
       }
     );
   }
+
+  unsend(accountId, conversationID, messageId) {
+    return axios.delete(
+      `${this.url}/${conversationID}/messages/${messageId}/unsend`,
+      {
+        headers: { Accept: 'application/json' },
+        params: { account_id: accountId },
+      }
+    );
+  }
 }
 
 export default new MessageApi();

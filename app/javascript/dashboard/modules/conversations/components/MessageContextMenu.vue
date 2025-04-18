@@ -12,6 +12,7 @@ import {
   CONVERSATION_EVENTS,
 } from '../../../helper/AnalyticsHelper/events';
 import MenuItem from '../../../components/widgets/conversation/contextMenu/menuItem.vue';
+import UnsendModal from '../../../components/ui/modal/UnsendModal.vue';
 import { useTrack } from 'dashboard/composables';
 
 export default {
@@ -19,6 +20,7 @@ export default {
     AddCannedModal,
     MenuItem,
     ContextMenu,
+    UnsendModal,
   },
   props: {
     message: {
@@ -53,6 +55,7 @@ export default {
     return {
       isCannedResponseModalOpen: false,
       showDeleteModal: false,
+      showUnsendModal: false,
     };
   },
   computed: {
@@ -108,7 +111,14 @@ export default {
       this.handleClose();
     },
     handleOpen(e) {
-      this.$emit('open', e);
+      // Get button position for context menu
+      const button = e.target.closest('button');
+      if (button) {
+        const rect = button.getBoundingClientRect();
+        this.$emit('open', { clientX: rect.right, clientY: rect.top });
+      } else {
+        this.$emit('open', e);
+      }
     },
     handleClose(e) {
       this.$emit('close', e);
@@ -146,6 +156,29 @@ export default {
     closeDeleteModal() {
       this.showDeleteModal = false;
     },
+    openUnsendModal() {
+      this.handleClose();
+      this.showUnsendModal = true;
+    },
+    closeUnsendModal() {
+      this.showUnsendModal = false;
+    },
+    async confirmUnsend() {
+      try {
+        await this.$store.dispatch('conversations/unsendMessage', {
+          conversationId: this.conversationId,
+          messageId: this.messageId,
+        });
+        this.closeUnsendModal();
+        this.$toast.success(
+          this.$t('CONVERSATION.CONTEXT_MENU.UNSEND_CONFIRMATION.SUCCESS')
+        );
+      } catch (error) {
+        this.$toast.error(
+          this.$t('CONVERSATION.CONTEXT_MENU.UNSEND_CONFIRMATION.ERROR')
+        );
+      }
+    },
   },
 };
 </script>
@@ -175,7 +208,18 @@ export default {
       :confirm-text="$t('CONVERSATION.CONTEXT_MENU.DELETE_CONFIRMATION.DELETE')"
       :reject-text="$t('CONVERSATION.CONTEXT_MENU.DELETE_CONFIRMATION.CANCEL')"
     />
-    <woot-button
+    <UnsendModal
+      v-if="showUnsendModal"
+      v-model:show="showUnsendModal"
+      class="context-menu--delete-modal"
+      :on-close="closeUnsendModal"
+      :on-confirm="confirmUnsend"
+      :title="$t('CONVERSATION.CONTEXT_MENU.UNSEND_CONFIRMATION.TITLE')"
+      :message="$t('CONVERSATION.CONTEXT_MENU.UNSEND_CONFIRMATION.MESSAGE')"
+      :confirm-text="$t('CONVERSATION.CONTEXT_MENU.UNSEND_CONFIRMATION.UNSEND')"
+      :reject-text="$t('CONVERSATION.CONTEXT_MENU.UNSEND_CONFIRMATION.CANCEL')"
+    />
+    <wootButton
       v-if="!hideButton"
       icon="more-vertical"
       color-scheme="secondary"
@@ -237,6 +281,15 @@ export default {
           @click.stop="showCannedResponseModal"
         />
         <hr v-if="enabledOptions['delete']" />
+        <MenuItem
+          v-if="enabledOptions['unsend']"
+          :option="{
+            icon: 'eye-off',
+            label: $t('CONVERSATION.CONTEXT_MENU.UNSEND'),
+          }"
+          variant="icon"
+          @click.stop="openUnsendModal"
+        />
         <MenuItem
           v-if="enabledOptions['delete']"
           :option="{

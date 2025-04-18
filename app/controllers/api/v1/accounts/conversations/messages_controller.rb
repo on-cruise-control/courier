@@ -18,6 +18,40 @@ class Api::V1::Accounts::Conversations::MessagesController < Api::V1::Accounts::
     end
   end
 
+  def unsend
+    ActiveRecord::Base.transaction do
+      if instagram_message?
+        instagram_success = unsend_on_instagram
+        
+        if instagram_success
+          message.destroy!
+        else
+          raise StandardError, 'Failed to delete message from Instagram'
+        end
+      else
+        message.destroy!
+      end
+    end
+
+    render json: { message: 'Message unsent successfully' }
+  rescue StandardError => e
+    render json: { error: e.message }, status: :unprocessable_entity
+  end
+
+  private
+
+  def instagram_message?
+    message.conversation.inbox.channel.is_a?(Channel::FacebookPage) &&
+      message.conversation.additional_attributes['type'] == 'instagram_direct_message'
+  end
+
+  def unsend_on_instagram
+    Instagram::SendOnInstagramService.new(message: message).delete_message
+  rescue StandardError => e
+    Rails.logger.error "INSTAGRAM_UNSEND_ERROR: #{e.message}"
+    raise e
+  end
+
   def retry
     return if message.blank?
 

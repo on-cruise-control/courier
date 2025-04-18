@@ -185,6 +185,7 @@ export default {
     contextMenuEnabledOptions() {
       return {
         copy: this.hasText,
+        unsend: this.isOutgoing,
         delete: this.hasText || this.hasAttachments,
         cannedResponse: this.isOutgoing && this.hasText,
         replyTo: !this.data.private && this.inboxSupportsReplyTo.outgoing,
@@ -399,21 +400,30 @@ export default {
       this.hasMediaLoadError = true;
     },
     openContextMenu(e) {
-      const shouldSkipContextMenu =
-        e.target?.classList.contains('skip-context-menu') ||
-        e.target?.tagName.toLowerCase() === 'a';
-      if (shouldSkipContextMenu || getSelection().toString()) {
-        return;
-      }
+      // If it's a DOM event
+      if (e instanceof Event) {
+        const shouldSkipContextMenu =
+          e.target?.classList.contains('skip-context-menu') ||
+          e.target?.tagName.toLowerCase() === 'a';
+        if (shouldSkipContextMenu || getSelection().toString()) {
+          return;
+        }
 
-      e.preventDefault();
-      if (e.type === 'contextmenu') {
-        useTrack(ACCOUNT_EVENTS.OPEN_MESSAGE_CONTEXT_MENU);
+        e.preventDefault();
+        if (e.type === 'contextmenu') {
+          useTrack(ACCOUNT_EVENTS.OPEN_MESSAGE_CONTEXT_MENU);
+        }
+        this.contextMenuPosition = {
+          x: e.pageX || e.clientX,
+          y: e.pageY || e.clientY,
+        };
+      } else {
+        // If it's a position object from the button click
+        this.contextMenuPosition = {
+          x: e.clientX,
+          y: e.clientY,
+        };
       }
-      this.contextMenuPosition = {
-        x: e.pageX || e.clientX,
-        y: e.pageY || e.clientY,
-      };
       this.showContextMenu = true;
     },
     closeContextMenu() {
@@ -547,6 +557,13 @@ export default {
           :source-id="data.source_id"
           :inbox-id="data.inbox_id"
           :created-at="createdAt"
+          :show-unsend="contextMenuEnabledOptions.unsend"
+          @unsend="
+            $store.dispatch('conversations/unsendMessage', {
+              conversationId: data.conversation_id,
+              messageId: data.id,
+            })
+          "
         />
       </div>
       <Spinner v-if="isPending" size="tiny" />

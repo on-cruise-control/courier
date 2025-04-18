@@ -11,6 +11,7 @@ import {
 } from './helpers/actionHelpers';
 import messageReadActions from './actions/messageReadActions';
 import messageTranslateActions from './actions/messageTranslateActions';
+import messageUnsendActions from './actions/messageUnsendActions';
 import * as Sentry from '@sentry/vue';
 
 export const hasMessageFailedWithExternalError = pendingMessage => {
@@ -500,6 +501,7 @@ const actions = {
 
   ...messageReadActions,
   ...messageTranslateActions,
+  ...messageUnsendActions,
 };
 
 export default actions;

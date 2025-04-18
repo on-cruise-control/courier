@@ -153,8 +153,31 @@ en:
       instagram_story_content: '%{story_sender} mentioned you in the story: '
       instagram_deleted_story_content: This story is no longer available.
       deleted: This message was deleted
+      DELETED: This message was unsent
       delivery_status:
         error_code: 'Error code: %{error_code}'
+    context_menu:
+      unsend: Hide Message
+      delete: Delete
+      reply_to: Reply
+      copy: Copy
+      translate: Translate
+      copy_permalink: Copy Link
+      create_a_canned_response: Create Canned Response
+      delete_confirmation:
+        title: Delete Message
+        message: Are you sure you want to delete this message?
+        delete: Delete
+        cancel: Cancel
+      unsend_confirmation:
+        title: Hide Message
+        message: Are you sure you want to hide this message? This will only hide it from your view.
+        unsend: Hide
+        cancel: Cancel
+    success_delete_message: Message deleted successfully
+    fail_delete_message: Could not delete message
+    success_unsend_message: Message hidden successfully
+    fail_unsend_message: Could not hide message
     activity:
       status:
         resolved: 'Conversation was marked resolved by %{user_name}'
