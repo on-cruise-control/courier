@@ -25,6 +25,7 @@ export default {
       return [
         { key: 'website', name: 'Website' },
         { key: 'facebook', name: 'Messenger' },
+        { key: 'twitter', name: 'Twitter' },
         { key: 'whatsapp', name: 'WhatsApp' },
         { key: 'sms', name: 'SMS' },
         { key: 'email', name: 'Email' },

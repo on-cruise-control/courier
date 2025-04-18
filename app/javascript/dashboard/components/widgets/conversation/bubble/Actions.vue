@@ -54,7 +54,12 @@ export default {
       type: [String, Number],
       default: 0,
     },
+    showUnsend: {
+      type: Boolean,
+      default: false,
+    },
   },
+  emits: ['unsend'],
   computed: {
     inbox() {
       return this.$store.getters['inboxes/getInbox'](this.inboxId);
@@ -186,6 +191,15 @@ export default {
       }"
     >
       {{ readableTime }}
+    </span>
+    <span v-if="showUnsend" class="read-indicator-wrap">
+      <fluent-icon
+        v-tooltip.top-start="$t('CONVERSATION.CONTEXT_MENU.UNSEND_MESSAGE')"
+        icon="delete"
+        class="action--icon cursor-pointer"
+        size="14"
+        @click="$emit('unsend')"
+      />
     </span>
     <span v-if="externalError" class="read-indicator-wrap">
       <fluent-icon

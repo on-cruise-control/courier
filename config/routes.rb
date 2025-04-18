@@ -101,7 +101,7 @@ Rails.application.routes.draw do
                   post :retry
                 end
                 member do
-                  post :unsend
+                  delete :unsend
                 end
               end
               resources :assignments, only: [:create]

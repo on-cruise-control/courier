@@ -57,6 +57,9 @@
     "FAIL_DELETE_MESSSAGE": "Couldn't delete message! Try again",
     "SUCCESS_UNSEND_MESSAGE": "Message unsent successfully",
     "FAIL_UNSEND_MESSAGE": "Couldn't unsend message! Try again",
+    "MESSAGE": {
+      "HIDDEN": "This message has been unsent"
+    },
     "NO_RESPONSE": "No response",
     "RESPONSE": "Response",
     "RATING_TITLE": "Rating",

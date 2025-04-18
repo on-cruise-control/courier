@@ -557,6 +557,13 @@ export default {
           :source-id="data.source_id"
           :inbox-id="data.inbox_id"
           :created-at="createdAt"
+          :show-unsend="contextMenuEnabledOptions.unsend"
+          @unsend="
+            $store.dispatch('conversations/unsendMessage', {
+              conversationId: data.conversation_id,
+              messageId: data.id,
+            })
+          "
         />
       </div>
       <Spinner v-if="isPending" size="tiny" />
