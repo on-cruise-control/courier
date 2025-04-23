@@ -68,8 +68,6 @@ class AgentBotListener < BaseListener
     when 'webhook'
       payload = message.webhook_data.merge(event: method_name)
       process_webhook_bot_event(agent_bot, payload)
-    when 'csml'
-      process_csml_bot_event(event.name, agent_bot, message)
     end
   end
 
