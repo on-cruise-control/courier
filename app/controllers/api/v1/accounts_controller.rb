@@ -6,6 +6,7 @@ class Api::V1::AccountsController < Api::BaseController
                      only: [:create], raise: false
   before_action :check_signup_enabled, only: [:create]
   before_action :ensure_account_name, only: [:create]
+  before_action :ensure_dealership, only: [:create]
   before_action :validate_captcha, only: [:create]
   before_action :fetch_account, except: [:create]
   before_action :check_authorization, except: [:create]
@@ -66,9 +67,18 @@ class Api::V1::AccountsController < Api::BaseController
     # since these values are not required directly there
     return if account_params[:account_name].present?
     return if account_params[:user_full_name].present?
+
+    raise CustomExceptions::Account::InvalidParams.new(
+      message: 'Account name or user full name must be present for account identification.'
+    )
+  end
+
+  def ensure_dealership
     return if account_params[:dealership_id].present?
 
-    raise CustomExceptions::Account::InvalidParams.new({})
+    raise CustomExceptions::Account::InvalidParams.new(
+      message: 'Dealership ID must be present for account identification.'
+    )
   end
 
   def cache_keys_for_account
