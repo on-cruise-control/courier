@@ -46,7 +46,8 @@ class Api::V1::External::ConversationsController < Api::BaseController
       total_count: @messages.total_count,
       current_page: @messages.current_page,
       per_page: @messages.limit_value,
-      total_pages: @messages.total_pages
+      total_pages: @messages.total_pages,
+      sort_order: params[:sort_order] || 'asc'
     }
   end
 
