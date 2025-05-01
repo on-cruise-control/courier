@@ -41,7 +41,6 @@ RSpec.describe 'Accounts API', type: :request do
 
           params = { account_name: 'test', email: email, user: nil, locale: nil, user_full_name: user_full_name, password: 'Password1!',
                      h_captcha_client_response: '123', dealership_id: '123' }
-
           post api_v1_accounts_url,
                params: params,
                as: :json
@@ -56,7 +55,7 @@ RSpec.describe 'Accounts API', type: :request do
         with_modified_env ENABLE_ACCOUNT_SIGNUP: 'true' do
           allow(account_builder).to receive(:perform).and_return(nil)
 
-          params = { account_name: nil, email: nil, user: nil, locale: 'en', user_full_name: nil }
+          params = { account_name: nil, email: nil, user: nil, locale: 'en', user_full_name: nil, dealership_id: nil }
 
           post api_v1_accounts_url,
                params: params,
@@ -71,7 +70,7 @@ RSpec.describe 'Accounts API', type: :request do
 
     context 'when ENABLE_ACCOUNT_SIGNUP env variable is set to false' do
       it 'responds 404 on requests' do
-        params = { account_name: 'test', email: email, user_full_name: user_full_name }
+        params = { account_name: 'test', email: email, user_full_name: user_full_name, dealership_id: 1 }
         with_modified_env ENABLE_ACCOUNT_SIGNUP: 'false' do
           post api_v1_accounts_url,
                params: params,
