@@ -2,7 +2,7 @@ module Stark
   module MessageSplittable
     extend ActiveSupport::Concern
 
-    MAX_MESSAGE_LENGTH = ENV.fetch('MAX_MESSAGE_LENGTH', 32).to_i
+    MAX_MESSAGE_LENGTH = ENV.fetch('MAX_MESSAGE_LENGTH', 1500).to_i
 
     def split_messages(content)
       return [content] if content.length <= MAX_MESSAGE_LENGTH
