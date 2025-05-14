@@ -124,13 +124,16 @@ module Enterprise::Account::PlanUsageAndLimits
         'Agent Limit' => self[:limits]['agents'].to_i,
         'Inbox Limit' => self[:limits]['inboxes'].to_i
       }
+    else
+      # Ensure all limit values are integers
+      self[:limits] = self[:limits].transform_values(&:to_i)
     end
 
     limit_schema = {
       'type' => 'object',
       'properties' => {
-        'Agent Limit' => { 'type': ['number', 'null'] },
-        'Inbox Limit' => { 'type': ['number', 'null'] }
+        'Agent Limit' => { 'type': 'integer' },
+        'Inbox Limit' => { 'type': 'integer' }
       },
       'required' => [],
       'additionalProperties' => false
