@@ -2,20 +2,21 @@
 #
 # Table name: accounts
 #
-#  id                    :integer          not null, primary key
-#  auto_resolve_duration :integer
-#  custom_attributes     :jsonb
-#  domain                :string(100)
-#  feature_flags         :bigint           default(0), not null
-#  internal_attributes   :jsonb            not null
-#  limits                :jsonb
-#  locale                :integer          default("en")
-#  name                  :string           not null
-#  status                :integer          default("active")
-#  support_email         :string(100)
-#  created_at            :datetime         not null
-#  updated_at            :datetime         not null
-#  dealership_id         :string
+#  id                          :integer          not null, primary key
+#  auto_resolve_duration       :integer
+#  custom_attributes           :jsonb
+#  domain                      :string(100)
+#  feature_flags               :bigint           default(0), not null
+#  internal_attributes         :jsonb            not null
+#  limits                      :jsonb
+#  locale                      :integer          default("en")
+#  name                        :string           not null
+#  sales_representative_emails :text             default("")
+#  status                      :integer          default("active")
+#  support_email               :string(100)
+#  created_at                  :datetime         not null
+#  updated_at                  :datetime         not null
+#  dealership_id               :string
 #
 # Indexes
 #
@@ -38,6 +39,7 @@ class Account < ApplicationRecord
   validates :auto_resolve_duration, numericality: { greater_than_or_equal_to: 1, less_than_or_equal_to: 999, allow_nil: true }
   validates :domain, length: { maximum: 100 }
   validates :dealership_id, presence: true
+  validate :validate_notification_emails
 
   has_many :account_users, dependent: :destroy_async
   has_many :agent_bot_inboxes, dependent: :destroy_async
@@ -139,7 +141,20 @@ class Account < ApplicationRecord
     ISO_639.find(account_locale)&.english_name&.downcase || 'english'
   end
 
+  def sales_representative_emails
+    super&.split(',')&.map(&:strip)
+  end
+
   private
+
+  def validate_notification_emails
+    return if sales_representative_emails.blank?
+
+    emails = sales_representative_emails
+    emails.each do |email|
+      errors.add(:base, "Invalid email format: #{email}") unless URI::MailTo::EMAIL_REGEXP.match?(email)
+    end
+  end
 
   def notify_creation
     Rails.configuration.dispatcher.dispatch(ACCOUNT_CREATED, Time.zone.now, account: self)
