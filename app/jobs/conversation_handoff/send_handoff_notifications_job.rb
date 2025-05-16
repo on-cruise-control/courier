@@ -6,9 +6,9 @@ class ConversationHandoff::SendHandoffNotificationsJob < ApplicationJob
     return if conversation.blank?
 
     # Send notification to administrators
-    AdministratorNotifications::ConversationHandoffMailer.notify_handoff(conversation).deliver_now
+    AdministratorNotifications::ConversationHandoffMailer.notify_handoff(conversation).deliver_later
 
     # Send notification to sales representatives
-    AgentNotifications::ConversationHandoffMailer.notify_handoff(conversation).deliver_now
+    AgentNotifications::ConversationHandoffMailer.notify_handoff(conversation).deliver_later
   end
 end
