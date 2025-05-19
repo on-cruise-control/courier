@@ -59,7 +59,6 @@ ActiveRecord::Schema[7.0].define(version: 2025_05_19_075544) do
     t.integer "status", default: 0
     t.jsonb "internal_attributes", default: {}, null: false
     t.string "dealership_id"
-    t.text "sales_representative_emails", default: ""
     t.index ["dealership_id"], name: "index_accounts_on_dealership_id"
     t.index ["status"], name: "index_accounts_on_status"
   end
