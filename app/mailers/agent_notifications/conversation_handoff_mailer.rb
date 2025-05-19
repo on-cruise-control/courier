@@ -11,7 +11,7 @@ class AgentNotifications::ConversationHandoffMailer < ApplicationMailer
     subject = "Sales Alert: New Conversation Handoff - #{@account.name} - #{conversation.display_id}"
 
     send_mail_with_liquid(
-      to: @account.agents.map(&:email),
+      to: agents_emails,
       subject: subject
     )
   end

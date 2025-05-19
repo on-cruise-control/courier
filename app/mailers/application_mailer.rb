@@ -87,4 +87,8 @@ class ApplicationMailer < ActionMailer::Base
     # https://guides.rubyonrails.org/i18n.html#managing-the-locale-across-requests
     I18n.with_locale(locale, &)
   end
+
+  def agents_emails
+    Current.account.agents.pluck(:email)
+  end
 end
