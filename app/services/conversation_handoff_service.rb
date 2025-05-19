@@ -1,5 +1,5 @@
 class ConversationHandoffService
-  HANDOFF_COOLDOWN_HOURS = 4
+  HANDOFF_COOLDOWN_MINUTES = 240 # 4 hours in minutes
   HANDOFF_LABELS = %w[handoff human].freeze
 
   def initialize(conversation)
@@ -20,8 +20,8 @@ class ConversationHandoffService
   def should_send_notification?
     return true if @conversation.last_handoff_at.nil?
 
-    hours_since_last_handoff = ((Time.current - @conversation.last_handoff_at) / 1.hour).round
-    hours_since_last_handoff >= HANDOFF_COOLDOWN_HOURS
+    minutes_since_last_handoff = ((Time.current - @conversation.last_handoff_at) / 1.minute).round
+    minutes_since_last_handoff >= HANDOFF_COOLDOWN_MINUTES
   end
 
   def update_handoff_state
@@ -38,8 +38,7 @@ class ConversationHandoffService
   end
 
   def schedule_label_change
-    # Schedule the job to run in exactly 4 hours
-    ScheduleHandoffLabelChangeJob.set(wait: HANDOFF_COOLDOWN_HOURS.hours)
+    ScheduleHandoffLabelChangeJob.set(wait: HANDOFF_COOLDOWN_MINUTES.minutes)
                                  .perform_later(@conversation)
   end
 end
