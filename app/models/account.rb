@@ -38,7 +38,6 @@ class Account < ApplicationRecord
   validates :auto_resolve_duration, numericality: { greater_than_or_equal_to: 1, less_than_or_equal_to: 999, allow_nil: true }
   validates :domain, length: { maximum: 100 }
   validates :dealership_id, presence: true
-  validate :validate_notification_emails
 
   has_many :account_users, dependent: :destroy_async
   has_many :agent_bot_inboxes, dependent: :destroy_async
