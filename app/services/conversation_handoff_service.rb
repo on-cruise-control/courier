@@ -32,7 +32,8 @@ class ConversationHandoffService
     available_label = current_label || HANDOFF_LABELS.first
 
     @conversation.label_list.add(available_label)
-    @conversation.update!(last_handoff_at: Time.current)
+    @conversation.last_handoff_at = Time.current
+    @conversation.save!
   end
 
   def schedule_label_change
