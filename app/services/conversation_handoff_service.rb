@@ -25,13 +25,14 @@ class ConversationHandoffService
   end
 
   def update_handoff_state
-    @conversation.label_list.remove('stark')
+    previous_labels = @conversation.label_list.to_a
 
-    # Find which handoff label to use (use existing or first available)
-    current_label = @conversation.labels.find { |label| HANDOFF_LABELS.include?(label.name) }&.name
-    available_label = current_label || HANDOFF_LABELS.first
+    @conversation.label_list.remove('stark') if @conversation.label_list.include?('stark')
+    current_handoff_label = previous_labels.find { |label| HANDOFF_LABELS.include?(label) }
+    available_label = current_handoff_label || HANDOFF_LABELS.first
 
-    @conversation.label_list.add(available_label)
+    @conversation.label_list.add(available_label) unless @conversation.label_list.include?(available_label)
+
     @conversation.last_handoff_at = Time.current
     @conversation.save!
   end
