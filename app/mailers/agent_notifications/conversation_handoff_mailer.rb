@@ -3,7 +3,7 @@ class AgentNotifications::ConversationHandoffMailer < ApplicationMailer
     return unless smtp_config_set_or_development?
 
     @account = conversation.account
-    return if @account.sales_representative_emails.blank?
+    return if @account.agents.blank?
 
     @conversation   = conversation
     @action_url     = conversation_url(@conversation)
@@ -11,7 +11,7 @@ class AgentNotifications::ConversationHandoffMailer < ApplicationMailer
     subject = "Sales Alert: New Conversation Handoff - #{@account.name} - #{conversation.display_id}"
 
     send_mail_with_liquid(
-      to: @account.sales_representative_emails,
+      to: @account.agents.map(&:email),
       subject: subject
     )
   end
