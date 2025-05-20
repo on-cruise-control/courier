@@ -1,6 +1,7 @@
 class ConversationHandoffService
   HANDOFF_COOLDOWN_MINUTES = 240 # 4 hours in minutes
   HANDOFF_LABELS = %w[handoff human].freeze
+  LABELS_LIST = %w[handoff stark].freeze
 
   def initialize(conversation)
     @conversation = conversation
@@ -9,6 +10,7 @@ class ConversationHandoffService
   def process_handoff
     return unless should_send_notification?
 
+    ensure_labels_exist
     update_handoff_state
     schedule_label_change
 
@@ -22,6 +24,15 @@ class ConversationHandoffService
 
     minutes_since_last_handoff = ((Time.current - @conversation.last_handoff_at) / 1.minute).round
     minutes_since_last_handoff >= HANDOFF_COOLDOWN_MINUTES
+  end
+
+  def ensure_labels_exist
+    LABELS_LIST.each do |label_title|
+      Label.find_or_create_by!(account: @conversation.account, title: label_title) do |label|
+        label.show_on_sidebar = true
+        label.color = '#1f93ff'
+      end
+    end
   end
 
   def update_handoff_state
