@@ -18,6 +18,10 @@ class AgentNotifications::ConversationHandoffMailer < ApplicationMailer
 
   private
 
+  def agents_emails
+    Current.account.agents.pluck(:email)
+  end
+
   def liquid_droppables
     super.merge!({
                    conversation: @conversation,

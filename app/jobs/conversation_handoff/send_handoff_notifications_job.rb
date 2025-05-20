@@ -4,7 +4,11 @@ class ConversationHandoff::SendHandoffNotificationsJob < ApplicationJob
   def perform(conversation)
     return if conversation.blank?
 
-    AdministratorNotifications::ConversationHandoffMailer.notify_handoff(conversation).deliver_later
-    AgentNotifications::ConversationHandoffMailer.notify_handoff(conversation).deliver_later
+    begin
+      AdministratorNotifications::ConversationHandoffMailer.notify_handoff(conversation).deliver_later
+      AgentNotifications::ConversationHandoffMailer.notify_handoff(conversation).deliver_later
+    rescue StandardError => e
+      Rails.logger.error("Failed to send handoff notifications: #{e.message}")
+    end
   end
 end
