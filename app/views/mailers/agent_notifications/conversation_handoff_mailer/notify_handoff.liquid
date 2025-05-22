@@ -23,7 +23,7 @@
     {% for message in conversation.recent_messages %}
       {% assign is_reply = false %}
       {% assign sender_display = message.sender %}
-      {% if message.sender == 'Stark' or message.sender == 'Bot' %}
+      {% if message.sender == 'AgentBot' or message.sender == 'Stark' or message.sender == 'Bot' %}
         {% assign is_reply = true %}
         {% assign sender_display = 'You Replied' %}
       {% endif %}
