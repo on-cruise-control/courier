@@ -38,7 +38,7 @@ class Api::V1::Accounts::InboxesController < Api::V1::Accounts::BaseController
         )
       )
       @inbox.save!
-      assign_bot_to_inbox(@inbox)
+      assign_stark_as_default_bot(@inbox)
     end
   end
 
@@ -160,10 +160,8 @@ class Api::V1::Accounts::InboxesController < Api::V1::Accounts::BaseController
 
   # Assigns a bot to the inbox based on availability and type
   # @param inbox [Inbox] The inbox to assign the bot to
-  def assign_bot_to_inbox(inbox)
+  def assign_stark_as_default_bot(inbox)
     return if inbox.nil?
-
-    inbox.agent_bot_inbox&.destroy! if inbox.agent_bot_inbox.present?
 
     begin
       agent_bot = AgentBot.find_by(bot_type: 'stark')
