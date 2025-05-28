@@ -161,16 +161,15 @@ class Api::V1::Accounts::InboxesController < Api::V1::Accounts::BaseController
   # Assigns a bot to the inbox based on availability and type
   # @param inbox [Inbox] The inbox to assign the bot to
   def assign_stark_as_default_bot(inbox)
-    return if inbox.nil?
+    return if inbox.blank?
 
     begin
       agent_bot = AgentBot.find_by(bot_type: 'stark')
       agent_bot ||= inbox.account.agent_bots.first if inbox.account.agent_bots.exists?
 
-      if agent_bot
-        agent_bot_inbox = AgentBotInbox.new(inbox: inbox, agent_bot: agent_bot)
-        agent_bot_inbox.save!
-      end
+      return unless agent_bot
+
+      AgentBotInbox.create!(inbox: inbox, agent_bot: agent_bot)
     rescue StandardError => e
       Rails.logger.error("Failed to assign bot to inbox: #{e.message}")
     end
