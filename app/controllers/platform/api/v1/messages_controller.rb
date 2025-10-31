@@ -38,38 +38,27 @@ class Platform::Api::V1::MessagesController < PlatformController
   end
 
   def send_booking_notifications(conversation, users)
-    email_sent = false
-    failed_count = 0
-    successful_recipients = []
+    begin
+      # Send one email to all agents/administrators
+      AgentNotifications::BookingMailer.booking_notification(
+        agents: users,
+        conversation: conversation,
+        booking_date: params[:booking_date],
+        phone: params[:phone],
+        email: params[:email]
+      ).deliver_now
 
-    users.each do |user|
-      begin
-        AgentNotifications::BookingMailer.booking_notification(
-          agent: user,
-          conversation: conversation,
-          booking_date: params[:booking_date],
-          phone: params[:phone],
-          email: params[:email]
-        ).deliver_now
+      recipient_emails = users.map(&:email)
+      Rails.logger.info("Booking email sent to #{users.size} recipients for conversation ##{conversation.id}")
 
-        Rails.logger.info("Booking email sent to user ##{user.id} (#{user.email}) for conversation ##{conversation.id}")
-        email_sent = true
-        successful_recipients << user.email
-      rescue => e
-        Rails.logger.error("Failed to send booking email to user ##{user.id} (#{user.email}): #{e.message}")
-        failed_count += 1
-      end
-    end
-
-    if email_sent
-      render json: { 
-        success: true, 
-        recipients: successful_recipients,
-        total_sent: successful_recipients.size,
-        total_failed: failed_count
+      render json: {
+        success: true,
+        recipients: recipient_emails,
+        total_sent: users.size
       }, status: :ok
-    else
-      render_error('Failed to send email to any user', :internal_server_error)
+    rescue StandardError => e
+      Rails.logger.error("Failed to send booking notifications: #{e.message}")
+      render_error('Failed to send booking notifications', :internal_server_error)
     end
   end
 
