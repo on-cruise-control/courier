@@ -1,80 +1,54 @@
-<script>
-import availabilityMixin from 'widget/mixins/availability';
-import nextAvailabilityTime from 'widget/mixins/nextAvailabilityTime';
-import FluentIcon from 'shared/components/FluentIcon/Index.vue';
+<script setup>
+import { toRef } from 'vue';
 import HeaderActions from './HeaderActions.vue';
-import routerMixin from 'widget/mixins/routerMixin';
+import AvailabilityContainer from 'widget/components/Availability/AvailabilityContainer.vue';
+import { useAvailability } from 'widget/composables/useAvailability';
 
-export default {
-  name: 'ChatHeader',
-  components: {
-    FluentIcon,
-    HeaderActions,
+const props = defineProps({
+  avatarUrl: {
+    type: String,
+    default: '',
   },
-  mixins: [nextAvailabilityTime, availabilityMixin, routerMixin],
-  props: {
-    avatarUrl: {
-      type: String,
-      default: '',
-    },
-    title: {
-      type: String,
-      default: '',
-    },
-    avatarName: {
-      type: String,
-      default: '',
-    },
-    showPopoutButton: {
-      type: Boolean,
-      default: false,
-    },
-    showBackButton: {
-      type: Boolean,
-      default: false,
-    },
-    availableAgents: {
-      type: Array,
-      default: () => {},
-    },
-    dealerName: {
-      type: String,
-      default: '',
-    },
-    dealerTagline: {
-      type: String,
-      default: '',
-    },
+  title: {
+    type: String,
+    default: '',
   },
-  computed: {
-    isOnline() {
-      const { workingHoursEnabled } = this.channelConfig;
-      const anyAgentOnline = this.availableAgents.length > 0;
+  avatarName: {
+    type: String,
+    default: '',
+  },
+  showPopoutButton: {
+    type: Boolean,
+    default: false,
+  },
+  availableAgents: {
+    type: Array,
+    default: () => [],
+  },
+  dealerName: {
+    type: String,
+    default: '',
+  },
+  dealerTagline: {
+    type: String,
+    default: '',
+  },
+});
 
-      if (workingHoursEnabled) {
-        return this.isInBetweenTheWorkingHours;
-      }
-      return anyAgentOnline;
-    },
-  },
-  methods: {
-    onBackButtonClick() {
-      this.replaceRoute('home');
-    },
-  },
-};
+const availableAgentsRef = toRef(props, 'availableAgents');
+const { isOnline } = useAvailability(availableAgentsRef);
 </script>
 
 <template>
   <header class="flex justify-between w-full p-5 bg-n-background gap-2">
     <div class="flex items-center">
-      <button
+      <!-- <button
         v-if="showBackButton"
         class="px-2 ltr:-ml-3 rtl:-mr-3"
         @click="onBackButtonClick"
       >
         <FluentIcon icon="chevron-left" size="24" class="text-n-slate-12" />
-      </button>
+      </button> -->
       <div class="flex flex-col items-center ltr:mr-3 rtl:ml-3">
         <img
           v-if="avatarUrl"
@@ -99,11 +73,7 @@ export default {
           >
             {{ dealerName }}
           </span>
-          <span
-            v-else
-            v-dompurify-html="title"
-            class="ltr:mr-1 rtl:ml-1"
-          ></span>
+          <span v-else v-dompurify-html="title" class="ltr:mr-1 rtl:ml-1" />
           <div
             :class="`h-2 w-2 rounded-full
               ${isOnline ? 'bg-n-teal-10' : 'hidden'}`"
@@ -116,8 +86,17 @@ export default {
         <div v-if="!dealerTagline" class="text-xs leading-3 text-n-slate-11">
           {{ replyWaitMessage }}
         </div>
+        <AvailabilityContainer
+          :agents="availableAgents"
+          :show-header="false"
+          :show-avatars="false"
+          text-classes="text-xs leading-3"
+        />
       </div>
     </div>
-    <HeaderActions :show-popout-button="showPopoutButton" />
+    <HeaderActions
+      :show-popout-button="showPopoutButton"
+      :show-end-conversation-button="showEndConversationButton"
+    />
   </header>
 </template>
