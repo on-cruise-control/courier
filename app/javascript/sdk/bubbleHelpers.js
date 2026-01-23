@@ -83,7 +83,7 @@ export const createBubbleIcon = ({ className, path, target, widgetColor }) => {
     }
     const textNode = document.createElement('div');
     textNode.id = 'woot-widget--expanded__text';
-    textNode.innerText = '';
+    textNode.innerText = window.$chatwoot.launcherTitle || '';
     target.style.background = widgetColor;
     target.style.backgroundColor = widgetColor;
     target.appendChild(textNode);
@@ -268,23 +268,20 @@ export const createGreetingInputBox = (config = {}) => {
   textUsButton.style.transition =
     'background-color 0.2s ease, opacity 0.2s ease';
 
-  // Add input and default button (Text Us) to wrapper
+  // Add input to wrapper
   inputWrapper.appendChild(input);
-  inputWrapper.appendChild(textUsButton);
+  // Add "Text Us" button to wrapper only if enabled
+  if (config.hasSmsInbox) {
+    inputWrapper.appendChild(textUsButton);
+  }
   inputBoxContainer.appendChild(inputWrapper);
 
   // Add footer text with privacy policy and branding
   const footerText = document.createElement('div');
   footerText.className = 'woot-greeting-input-footer';
   footerText.innerHTML = `
-    <p class="woot-greeting-footer-text">
-      Chats may be monitored, stored, and/or shared as described in our 
-      <a href="https://getcruisecontrol.com/privacy-policy/" target="_blank" rel="noopener noreferrer" class="woot-greeting-footer-link">Privacy Policy</a>.
-    </p>
-    <p class="woot-greeting-footer-text">
-      Powered by <a href="https://getcruisecontrol.com" target="_blank" rel="noopener noreferrer" class="woot-greeting-footer-link">Cruise Control</a>. 
-      Use is subject to <a href="https://getcruisecontrol.com/sms-terms-and-conditions" target="_blank" rel="noopener noreferrer" class="woot-greeting-footer-link">Terms</a>.
-    </p>
+    <p class="woot-greeting-footer-text">Chats may be monitored, stored, and/or shared as described in our <a href="https://getcruisecontrol.com/privacy-policy/" target="_blank" rel="noopener noreferrer" class="woot-greeting-footer-link">Privacy Policy</a>.
+    Powered by <a href="https://getcruisecontrol.com" target="_blank" rel="noopener noreferrer" class="woot-greeting-footer-link">Cruise Control</a>. Use is subject to <a href="https://getcruisecontrol.com/sms-terms-and-conditions" target="_blank" rel="noopener noreferrer" class="woot-greeting-footer-link">Terms</a>.</p>
   `;
 
   inputBoxContainer.appendChild(footerText);
@@ -334,7 +331,8 @@ export const createGreetingInputBox = (config = {}) => {
       if (sendButton.parentNode) {
         sendButton.remove();
       }
-      if (!textUsButton.parentNode) {
+      // Add Text Us button only if enabled
+      if (config.hasSmsInbox && !textUsButton.parentNode) {
         inputWrapper.appendChild(textUsButton);
       }
     }
