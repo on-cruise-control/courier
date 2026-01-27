@@ -26,6 +26,8 @@ import {
   createGreetingInputBox,
   showGreetingInputBox,
   hideGreetingInputBox,
+  updateWidgetPosition,
+  updateWidgetType,
 } from './bubbleHelpers';
 import { isWidgetColorLighter } from 'shared/helpers/colorHelper';
 import { dispatchWindowEvent } from 'shared/helpers/CustomEventHelper';
@@ -172,6 +174,36 @@ export const IFrameHelper = {
       updateAuthCookie(message.config.authToken, window.$chatwoot.baseDomain);
       window.$chatwoot.hasLoaded = true;
       const campaignsSnoozedTill = Cookies.get('cw_snooze_campaigns_till');
+
+      const {
+        channelConfig: {
+          position: configPosition,
+          widget_position: widgetPosition,
+          widgetPosition: widgetPositionCamel,
+          widget_type: widgetType,
+          widgetType: widgetTypeAlt,
+          avatarUrl,
+          avatarName,
+          welcomeTitle,
+          welcome_title: welcomeTitleAlt,
+          welcomeTagline,
+          welcome_tagline: welcomeTaglineAlt,
+          greetingMessage,
+          greeting_message: greetingMessageAlt,
+          launcherTitle,
+          launcher_title: launcherTitleAlt,
+        },
+      } = message.config;
+
+      // Update position BEFORE onLoad so bubble is created with correct position
+      const position =
+        configPosition ||
+        widgetPosition ||
+        widgetPositionCamel ||
+        window.$chatwoot.position;
+      // Normalize position to 'left' or 'right'
+      window.$chatwoot.position = position === 'left' ? 'left' : 'right';
+
       IFrameHelper.sendMessage('config-set', {
         locale: window.$chatwoot.locale,
         position: window.$chatwoot.position,
@@ -198,6 +230,35 @@ export const IFrameHelper = {
         channelConfig: message.config.channelConfig,
       });
       IFrameHelper.toggleCloseButton();
+
+      window.$chatwoot.avatarUrl = avatarUrl || window.$chatwoot.avatarUrl;
+      window.$chatwoot.avatarName = avatarName || window.$chatwoot.avatarName;
+      window.$chatwoot.welcomeTitle =
+        welcomeTitle || welcomeTitleAlt || window.$chatwoot.welcomeTitle;
+      window.$chatwoot.welcomeDescription =
+        welcomeTagline ||
+        welcomeTaglineAlt ||
+        window.$chatwoot.welcomeDescription;
+      window.$chatwoot.greetingMessage =
+        greetingMessage ||
+        greetingMessageAlt ||
+        window.$chatwoot.greetingMessage;
+
+      const newLauncherTitle =
+        launcherTitle || launcherTitleAlt || window.$chatwoot.launcherTitle;
+      if (newLauncherTitle !== window.$chatwoot.launcherTitle) {
+        window.$chatwoot.launcherTitle = newLauncherTitle;
+        setBubbleText(newLauncherTitle);
+      }
+
+      const newWidgetType = widgetType || widgetTypeAlt;
+      if (newWidgetType && newWidgetType !== window.$chatwoot.type) {
+        updateWidgetType(newWidgetType);
+      }
+
+      // Update position classes - always call to ensure position is applied
+      // This handles cases where bubble was created before position was updated
+      updateWidgetPosition(window.$chatwoot.position);
 
       if (window.$chatwoot.user) {
         IFrameHelper.sendMessage('set-user', window.$chatwoot.user);

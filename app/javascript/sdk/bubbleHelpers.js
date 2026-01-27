@@ -479,3 +479,53 @@ export const removeUnreadClass = () => {
   const holderEl = document.querySelector('.woot-widget-holder');
   removeClasses(holderEl, 'has-unread-view');
 };
+
+export const updateWidgetPosition = position => {
+  if (!position) return;
+
+  const elements = [
+    bubbleHolder,
+    chatBubble,
+    closeBubble,
+    widgetHolder,
+    greetingPreview,
+    greetingInputBox,
+  ];
+
+  elements.forEach(elm => {
+    if (elm) {
+      removeClasses(elm, 'woot-elements--left woot-elements--right');
+      addClasses(elm, `woot-elements--${position}`);
+    }
+  });
+};
+
+export const updateWidgetType = type => {
+  if (!chatBubble || !window.$chatwoot) return;
+
+  const isExpanded = isExpandedView(type);
+  const currentIsExpanded = isExpandedView(window.$chatwoot.type);
+
+  window.$chatwoot.type = type;
+
+  if (isExpanded !== currentIsExpanded) {
+    const existingTextNode = chatBubble.querySelector(
+      '#woot-widget--expanded__text'
+    );
+
+    if (isExpanded) {
+      if (!existingTextNode) {
+        const textNode = document.createElement('div');
+        textNode.id = 'woot-widget--expanded__text';
+        textNode.innerText = window.$chatwoot.launcherTitle || '';
+        chatBubble.appendChild(textNode);
+      }
+      chatBubble.classList.add('woot-widget--expanded');
+    } else {
+      if (existingTextNode) {
+        existingTextNode.remove();
+      }
+      chatBubble.classList.remove('woot-widget--expanded');
+    }
+  }
+};
