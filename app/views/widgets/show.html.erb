@@ -37,6 +37,7 @@
         widgetType: '<%= @web_widget.widget_type %>',
         launcherTitle: '<%= @web_widget.launcher_title %>',
         hasSmsInbox: <%= @web_widget.account.inboxes.where(channel_type: ['Channel::Sms', 'Channel::TwilioSms']).exists? %>,
+        googleAnalyticsToken: '<%= @web_widget.google_analytics_token %>',
       }
       window.chatwootPubsubToken = '<%= @contact_inbox.pubsub_token %>'
       window.authToken = '<%= @token %>'

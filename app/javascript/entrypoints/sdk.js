@@ -35,6 +35,26 @@ const runSDK = async ({ baseUrl, websiteToken }) => {
     console.error('Chatwoot SDK: Failed to fetch remote config', e);
   }
 
+  const injectGA = token => {
+    // Only inject GA if token is provided from database/settings
+    if (!token || window.gtag) return;
+    const gaToken = token;
+    // eslint-disable-next-line no-console
+    console.log('Chatwoot SDK: Injecting Google Analytics GA Token', gaToken);
+    const script = document.createElement('script');
+    script.async = true;
+    script.src = `https://www.googletagmanager.com/gtag/js?id=${gaToken}`;
+    document.head.after(script);
+
+    window.dataLayer = window.dataLayer || [];
+    window.gtag = function gtag() {
+      // eslint-disable-next-line no-undef, prefer-rest-params
+      window.dataLayer.push(arguments);
+    };
+    window.gtag('js', new Date());
+    window.gtag('config', gaToken);
+  };
+
   // if this is a Rails Turbo app
   document.addEventListener('turbo:before-render', event => {
     // when morphing the page, this typically happens on reload like events
@@ -63,6 +83,25 @@ const runSDK = async ({ baseUrl, websiteToken }) => {
     ...remoteConfig,
     ...(window.chatwootSettings || {}),
   };
+
+  const localSettings = window.chatwootSettings || {};
+  const localGaToken =
+    localSettings.google_analytics_token || localSettings.googleAnalyticsToken;
+
+  // Check for GA token from database (in chatwootSettings or localSettings)
+  const gaToken =
+    chatwootSettings.google_analytics_token ||
+    chatwootSettings.googleAnalyticsToken ||
+    localGaToken;
+
+  if (gaToken) {
+    // eslint-disable-next-line no-console
+    console.log('Chatwoot SDK: Found GA token in settings');
+    injectGA(gaToken);
+  } else {
+    // eslint-disable-next-line no-console
+    console.log('Chatwoot SDK: No GA token found in database/settings');
+  }
 
   let locale = chatwootSettings.locale;
   let baseDomain = chatwootSettings.baseDomain;
