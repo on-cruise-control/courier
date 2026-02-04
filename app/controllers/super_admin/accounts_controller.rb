@@ -35,7 +35,15 @@ class SuperAdmin::AccountsController < SuperAdmin::ApplicationController
   #
   def resource_params
     permitted_params = super
-    permitted_params[:limits] = permitted_params[:limits].to_h.compact
+    if params[:account].present?
+      # Ensure status is permitted if present
+      account_params = params.require(:account).permit(:status)
+      permitted_params = permitted_params.merge(account_params) if account_params[:status].present?
+      
+      if params[:account][:limits].present?
+        permitted_params[:limits] = params[:account][:limits].to_unsafe_h.compact
+      end
+    end
     permitted_params[:selected_feature_flags] = params[:enabled_features].keys.map(&:to_sym) if params[:enabled_features].present?
     permitted_params
   end
@@ -57,6 +65,19 @@ class SuperAdmin::AccountsController < SuperAdmin::ApplicationController
     # rubocop:enable Rails/I18nLocaleTexts
   end
 
+  # Override update to handle redirects for partial updates from index
+  def update
+    if requested_resource.update(resource_params)
+      # rubocop:disable Rails/I18nLocaleTexts
+      redirect_back(fallback_location: [namespace, requested_resource], notice: "#{requested_resource.class.name} was successfully updated.")
+      # rubocop:enable Rails/I18nLocaleTexts
+    else
+      render :edit, locals: {
+        page: Administrate::Page::Form.new(dashboard, requested_resource)
+      }, status: :unprocessable_entity
+    end
+  end
+
   def destroy
     account = Account.find(params[:id])
 
@@ -68,6 +89,8 @@ class SuperAdmin::AccountsController < SuperAdmin::ApplicationController
 
   def suspend
     requested_resource.suspended!
+    # Disconnect all bots from all inboxes when account is disabled
+    requested_resource.agent_bot_inboxes.destroy_all
     ActionCable.server.broadcast("account_#{requested_resource.id}", { event: 'page:reload', data: {} })
     # rubocop:disable Rails/I18nLocaleTexts
     redirect_back(fallback_location: [namespace, requested_resource], notice: 'Account disabled')
