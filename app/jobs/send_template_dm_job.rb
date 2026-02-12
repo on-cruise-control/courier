@@ -191,12 +191,13 @@ class SendTemplateDmJob < ApplicationJob
     # Create conversation and message atomically after successful API call
     ActiveRecord::Base.transaction do
       template_dm_conversation = find_or_create_template_facebook_dm_conversation(contact_inbox, contact, inbox, account)
+      stark_bot = AgentBot.find_by(bot_type: 'stark')
 
       template_dm_conversation.messages.create!(
         content: template_message,
         account: account,
         inbox: inbox,
-        sender: template_dm_conversation.assignee || account.users.first,
+        sender: stark_bot,
         message_type: :outgoing,
         source_id: response['message_id'] || nil,
         private: false,
@@ -251,12 +252,13 @@ class SendTemplateDmJob < ApplicationJob
     # Create conversation and message atomically after successful API call
     ActiveRecord::Base.transaction do
       template_dm_conversation = find_or_create_template_insta_dm_conversation(contact_inbox, contact, inbox, account)
+      stark_bot = AgentBot.find_by(bot_type: 'stark')
 
       template_dm_conversation.messages.create!(
         content: template_message,
         account: account,
         inbox: inbox,
-        sender: template_dm_conversation.assignee || account.users.first,
+        sender: stark_bot,
         message_type: :outgoing,
         source_id: response['message_id'] || nil,
         private: false,

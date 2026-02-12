@@ -3,7 +3,7 @@ class Conversations::FollowUpJob < ApplicationJob
 
   def perform(conversation_id, follow_up_number)
     conversation = Conversation.find_by(id: conversation_id)
-    return if conversation.nil? || conversation.stop_follow_up
+    return if conversation.nil? || conversation.stop_follow_up || conversation.assignee_id.present?
 
     last_message = conversation.messages
                                .not_activity
