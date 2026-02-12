@@ -95,12 +95,12 @@ class SendCommentReplyJob < ApplicationJob
       Rails.logger.error "❌ Facebook API error: #{response['error']}"
       return
     end
-
+    stark_bot = AgentBot.find_by(bot_type: 'stark')
     conversation.messages.create!(
       content: message_content,
       account: contact_inbox.inbox.account,
       inbox: contact_inbox.inbox,
-      sender: conversation.assignee || contact_inbox.inbox.account.users.first,
+      sender: stark_bot,
       message_type: :outgoing,
       source_id: response['id'] || response['message_id'],
       private: false
@@ -153,12 +153,12 @@ class SendCommentReplyJob < ApplicationJob
       Rails.logger.error "❌ Instagram API error: #{response['error'] || response.body}"
       return
     end
-
+    stark_bot = AgentBot.find_by(bot_type: 'stark')
     conversation.messages.create!(
       content: message_content,
       account: contact_inbox.inbox.account,
       inbox: contact_inbox.inbox,
-      sender: conversation.assignee || contact_inbox.inbox.account.users.first,
+      sender: stark_bot,
       message_type: :outgoing,
       source_id: response['id'] || response['message_id'],
       private: false
