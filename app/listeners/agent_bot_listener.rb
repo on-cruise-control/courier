@@ -56,7 +56,7 @@ class AgentBotListener < BaseListener
     conversation = message.conversation
     case agent_bot.bot_type
     when 'stark'
-      if message.outgoing? && !message.sender.is_a?(AgentBot)
+      if message.outgoing? && !message.sender.is_a?(AgentBot) && !message.instagram_story_mention?
         disable_stark_for(conversation)
         return
       end
