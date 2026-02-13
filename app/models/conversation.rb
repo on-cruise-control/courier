@@ -127,6 +127,7 @@ class Conversation < ApplicationRecord
   after_update_commit :execute_after_update_commit_callbacks
   after_create_commit :notify_conversation_creation
   after_create_commit :load_attributes_created_by_db_triggers
+  after_update :cancel_follow_up_on_assignment
 
   delegate :auto_resolve_after, to: :account
 
@@ -341,6 +342,12 @@ class Conversation < ApplicationRecord
 
     create_label_added(user_name, current_labels - previous_labels)
     create_label_removed(user_name, previous_labels - current_labels)
+  end
+
+  def cancel_follow_up_on_assignment
+    return unless saved_change_to_assignee_id? && assignee_id.present?
+
+    cancel_existing_follow_up_job
   end
 
   def validate_referer_url
