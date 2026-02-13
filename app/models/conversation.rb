@@ -226,7 +226,7 @@ class Conversation < ApplicationRecord
     return unless job
 
     job.delete
-    update!(follow_up_jid: nil)
+    update_column(:follow_up_jid, nil)
   end
 
   private
