@@ -474,7 +474,7 @@ class Message < ApplicationRecord
       conversation.reload
       conversation.cancel_existing_follow_up_job
 
-      return if conversation.stop_follow_up
+      return if conversation.stop_follow_up || conversation.assignee_id.present?
 
       message_type = conversation.additional_attributes['type']
       return if message_type == 'feed_comments' || message_type == 'instagram_comments'
