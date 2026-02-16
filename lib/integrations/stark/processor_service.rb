@@ -20,15 +20,43 @@ class Integrations::Stark::ProcessorService < Integrations::BotProcessorService
     # Primary check: if conversation is assigned, don't process regardless of status
     return false if current_conversation.assignee_id.present?
 
-    stark_disabled_until = current_conversation.additional_attributes['stark_disabled_until']
-    return false if stark_disabled_until.present? && Time.current.to_i < stark_disabled_until.to_i
+    # Only send Stark's response when Stark sent the last relevant message
+    return false unless last_message_allows_stark_reply?(message)
 
     # Secondary checks from parent class
     return false if message.private?
     return false unless processable_message?(message)
 
-    # Status check: only process if pending (maintains existing behavior for unassigned)
-    # return false unless current_conversation.pending?
+    true
+  end
+
+  def last_message_allows_stark_reply?(current_message)
+    last_relevant = last_relevant_message_before(current_message)
+
+    return true if last_relevant.blank?
+
+    return true if last_relevant.sender == agent_bot
+
+    return false if (last_relevant.sent? || last_relevant.read?) &&
+                    last_relevant.created_at >= 24.hours.ago
+
+    true
+  end
+
+  def last_relevant_message_before(current_message)
+    current_conversation.messages
+                        .outgoing
+                        .where.not(id: current_message.id)
+                        .where('created_at <= ?', current_message.created_at)
+                        .reorder(created_at: :desc)
+                        .find { |msg| relevant_message?(msg) }
+  end
+
+  def relevant_message?(message)
+    return false if message.failed?
+    return false unless message.sent? || message.delivered? || message.read?
+    return false if message.template? || message.activity?
+    return false if message.instagram_story_mention?
 
     true
   end
