@@ -65,7 +65,7 @@ module Stark
     end
 
     def build_request_payload(conversation, content, message = nil)
-      {
+      payload = {
         question: content,
         is_image_attached: message_has_image?(message),
         is_story_mentioned: is_story_mentioned?(message),
@@ -75,17 +75,20 @@ module Stark
         customer_id: conversation.contact&.id,
         customer_name: extract_customer_name(conversation.contact, conversation.inbox.platform_name),
         platform: conversation.inbox.platform_name,
-        recent_messages: format_recent_messages(conversation)
+        recent_messages: format_recent_messages(conversation, exclude_message: message)
       }
+      payload
     end
 
-    def format_recent_messages(conversation)
-      conversation.messages
-                  .not_activity
-                  .not_template
-                  .reorder(created_at: :desc)
-                  .limit(10)
-                  .map do |message|
+    def format_recent_messages(conversation, exclude_message: nil)
+      messages = conversation.messages
+                             .not_activity
+                             .not_template
+      messages = messages.where.not(id: exclude_message.id) if exclude_message&.id.present?
+
+      messages.reorder(created_at: :desc)
+              .limit(10)
+              .map do |message|
         message_data = {
           conversation_id: message.conversation_id,
           message_type: message.message_type,

@@ -68,6 +68,8 @@ class SuperAdmin::AccountsController < SuperAdmin::ApplicationController
   # Override update to handle redirects for partial updates from index
   def update
     if requested_resource.update(resource_params)
+      Dealership::ActivationService.new(requested_resource).perform(active: requested_resource.active?) if requested_resource.saved_change_to_status?
+
       # rubocop:disable Rails/I18nLocaleTexts
       redirect_back(fallback_location: [namespace, requested_resource], notice: "#{requested_resource.class.name} was successfully updated.")
       # rubocop:enable Rails/I18nLocaleTexts
@@ -89,6 +91,7 @@ class SuperAdmin::AccountsController < SuperAdmin::ApplicationController
 
   def suspend
     requested_resource.suspended!
+    Dealership::ActivationService.new(requested_resource).perform(active: false)
     # Disconnect all bots from all inboxes when account is disabled
     requested_resource.agent_bot_inboxes.destroy_all
     ActionCable.server.broadcast("account_#{requested_resource.id}", { event: 'page:reload', data: {} })

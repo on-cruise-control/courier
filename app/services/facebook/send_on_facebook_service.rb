@@ -26,7 +26,8 @@ class Facebook::SendOnFacebookService < Base::SendOnChannelService
   rescue Facebook::Messenger::FacebookError => e
     # TODO : handle specific errors or else page will get disconnected
     handle_facebook_error(e)
-    Messages::StatusUpdateService.new(message, 'failed', e.message).perform
+    display_message = friendly_message_for_facebook_error(e.message)
+    Messages::StatusUpdateService.new(message, 'failed', display_message).perform
   end
 
   def send_message_to_facebook(delivery_params)
@@ -84,8 +85,24 @@ class Facebook::SendOnFacebookService < Base::SendOnChannelService
     # https://developers.facebook.com/docs/graph-api/guides/error-handling/
     error_message = response['error']['message']
     error_code = response['error']['code']
+    raw = "#{error_code} - #{error_message}"
 
-    "#{error_code} - #{error_message}"
+    friendly_message_for_facebook_error(raw, error_code: error_code)
+  end
+
+  def friendly_message_for_facebook_error(raw_message, error_code: nil)
+    code = error_code || extract_facebook_error_code(raw_message)
+    return raw_message if code.blank?
+
+    I18n.t("inbox.facebook_errors.#{code}", default: raw_message)
+  end
+
+  def extract_facebook_error_code(message)
+    return nil if message.blank?
+
+    # Match "10 - " or "(#10) " at the start of the message
+    m = message.match(/\A(?:\(#)?(\d+)\)?\s*-?\s*/)
+    m[1] if m
   end
 
   def fb_attachment_message_params(attachment)
