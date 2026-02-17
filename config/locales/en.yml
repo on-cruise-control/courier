@@ -38,6 +38,39 @@ en:
       success: 'Channel reauthorized successfully'
       not_required: 'Reauthorization is not required for this inbox'
       invalid_channel: 'Invalid channel type for reauthorization'
+    facebook_errors:
+      '10': "This message couldn't be sent because the messaging window has closed. The customer needs to send a new message first. Learn more in the Messenger policy."
+      '2': "The message couldn't be delivered. The customer may have blocked the business or Messenger is temporarily unavailable. Try again later."
+      '100': "The message couldn't be sent due to invalid parameters or missing permissions. Check the recipient and message format."
+      '190': "The Facebook page connection has expired or is invalid. Please reconnect the page in channel settings."
+    instagram_errors:
+      '10': "This message couldn't be sent because the messaging window has closed. The customer needs to send a new message first. Learn more in the Messenger policy."
+      '2': "The message couldn't be delivered. The customer may have blocked the business is temporarily unavailable. Try again later."
+      '190': "The Instagram account connection has expired or is invalid. Please reconnect the account in channel settings."
+      '2207001': "Instagram server error. Please try again later."
+      '2207003': "It took too long to download the media. Please try again."
+      '2207004': "The image is too large. Images must be less than 8MiB."
+      '2207005': "Unsupported image format. Please use a supported image type."
+      '2207006': "The media could not be found. Please check the media ID and try again."
+      '2207008': "The media creation session has expired. Please try to upload the media again."
+      '2207009': "Invalid aspect ratio. Images must be between 4:5 and 1.91:1."
+      '2207010': "Caption too long. Max 2,200 characters, 30 hashtags, and 20 @ tags are allowed."
+      '2207020': "The media has expired. Please try to upload the file again."
+      '2207023': "Unknown media type. Please check the file and try again."
+      '2207026': "Unsupported video format. Please use MOV or MP4 (MPEG-4 Part 14)."
+      '2207027': "The media is not ready for publishing. Please wait a moment and try again."
+      '2207028': "Invalid carousel format. Carousels must contain between 2 and 10 items."
+      '2207032': "Failed to create media container. Please try again."
+      '2207035': "Video media does not support X/Y product tag coordinates."
+      '2207036': "Photo media requires X/Y coordinates for product tags."
+      '2207037': "Could not add product tags. The ID may be incorrect or you may lack necessary permissions."
+      '2207040': "Too many product tags. Please reduce the number of tags and try again."
+      '2207042': "Daily publishing limit reached. You can try again tomorrow."
+      '2207050': "This Instagram account is restricted, inactive, or checkpointed. Please sign in to the Instagram app to resolve the issue."
+      '2207051': "This activity is restricted to protect the community. It may be flagged as spam."
+      '2207052': "Media could not be fetched. Ensure the URL is valid and publicly available."
+      '2207053': "Unknown upload error. Please try again."
+      '2207057': "Invalid thumbnail offset. The offset must be within the video's duration."
   auth:
     saml:
       invalid_email: 'Please enter a valid email address'

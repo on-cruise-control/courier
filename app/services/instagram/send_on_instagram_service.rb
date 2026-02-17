@@ -84,9 +84,10 @@ class Instagram::SendOnInstagramService < Base::SendOnChannelService
 
   def handle_response(response)
     if response['error'].present?
+      friendly_message = external_error(response)
+      Messages::StatusUpdateService.new(message, 'failed', friendly_message).perform
       Rails.logger.error("Instagram response: #{response['error']} : #{message.content}")
-      message.status = :failed
-      message.mark_failed!(external_error(response))
+      message.mark_failed!(friendly_message)
     else
       message.source_id = response['id'] || response['message_id'] if response['id'].present? || response['message_id'].present?
 
@@ -108,9 +109,28 @@ class Instagram::SendOnInstagramService < Base::SendOnChannelService
   end
 
   def external_error(response)
+    # https://developers.facebook.com/docs/graph-api/guides/error-handling/
     error_message = response['error']['message']
     error_code = response['error']['code']
-    "#{error_code} - #{error_message}"
+    error_subcode = response['error']['error_subcode']
+    raw = "#{error_code} - #{error_message}"
+
+    friendly_message_for_instagram_error(raw, error_code: error_code, error_subcode: error_subcode)
+  end
+
+  def friendly_message_for_instagram_error(raw_message, error_code: nil, error_subcode: nil)
+    # Prioritize subcode if available as it is more specific
+    code = error_subcode || error_code || extract_instagram_error_code(raw_message)
+    return raw_message if code.blank?
+
+    I18n.t("inbox.instagram_errors.#{code}", default: raw_message)
+  end
+
+  def extract_instagram_error_code(message)
+    return nil if message.blank?
+
+    m = message.match(/\A(?:\(#)?(\d+)\)?\s*-?\s*/)
+    m[1] if m
   end
 
   def merge_human_agent_tag(params)
