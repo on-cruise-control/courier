@@ -40,9 +40,6 @@ Rails.application.routes.draw do
     namespace :v1 do
       # Summary API endpoint
       get 'summary', to: 'summaries#show'
-      scope 'dealership/:dealership_id', module: :dealerships, as: :dealership do
-        resource :twilio_usage, only: [:show]
-      end
 
       # External API routes
       namespace :external do
@@ -510,6 +507,11 @@ Rails.application.routes.draw do
         end
         # Add this block for messages
         post 'messages/send-message', to: 'messages#send_email_notification'
+
+        # Dealership scoped Twilio Usage
+        scope 'dealership/:dealership_id', as: :dealership do
+          resource :twilio_usage, only: [:show]
+        end
       end
     end
   end
