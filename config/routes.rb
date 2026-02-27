@@ -40,6 +40,9 @@ Rails.application.routes.draw do
     namespace :v1 do
       # Summary API endpoint
       get 'summary', to: 'summaries#show'
+      scope 'dealership/:dealership_id', module: :dealerships, as: :dealership do
+        resource :twilio_usage, only: [:show]
+      end
 
       # External API routes
       namespace :external do
@@ -448,6 +451,7 @@ Rails.application.routes.draw do
               get :bot_metrics
               get :booking_stats
               get :booking_summary
+              get :twilio_usage
             end
           end
           resource :year_in_review, only: [:show]

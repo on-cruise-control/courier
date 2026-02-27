@@ -11,6 +11,7 @@ class MonthlyReports::GenerateMetricsService
     incoming_messages = @account.messages.incoming.where(created_at: @start_date..@end_date).count
     outgoing_messages = @account.messages.outgoing.where(created_at: @start_date..@end_date).count
 
+    handoff_attended_count = conversations.where.not(handoff_attended_by_id: nil).count
     api_stats = fetch_booking_stats_from_api
     conversations_by_channel = fetch_conversations_by_channel(conversations)
 
@@ -21,6 +22,7 @@ class MonthlyReports::GenerateMetricsService
       booking_forms_completed: api_stats[:booking_forms_completed],
       handoff_links_sent: api_stats[:handoff_links_sent],
       handoff_forms_completed: api_stats[:handoff_forms_completed],
+      handoff_attended_count: handoff_attended_count,
       conversion_rate: api_stats[:conversion_rate],
       estimated_value: api_stats[:estimated_value],
       dealership_name: @account.name,

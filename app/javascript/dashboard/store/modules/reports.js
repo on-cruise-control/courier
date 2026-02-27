@@ -93,6 +93,10 @@ const state = {
     agentConversationMetric: [],
     teamConversationMetric: [],
   },
+  twilioUsage: {
+    data: null,
+    isFetching: false,
+  },
 };
 
 const getters = {
@@ -141,6 +145,12 @@ const getters = {
   getOverviewUIFlags($state) {
     return $state.overview.uiFlags;
   },
+  getTwilioUsage(_state) {
+    return _state.twilioUsage.data;
+  },
+  isFetchingTwilioUsage(_state) {
+    return _state.twilioUsage.isFetching;
+  },
 };
 
 export const actions = {
@@ -150,7 +160,7 @@ export const actions = {
       metric,
       value: true,
     });
-    
+
     // Map metric to its type and field
     const metricConfig = {
       booking_links_sent: { type: 'booking', field: 'links_sent', group: 'booking' },
@@ -158,20 +168,20 @@ export const actions = {
       handoff_links_sent: { type: 'handoff', field: 'links_sent', group: 'handoff' },
       handoff_forms_completed: { type: 'handoff', field: 'forms_completed', group: 'handoff' },
     };
-    
+
     const config = metricConfig[metric];
-    
+
     // Use booking stats endpoint for new metrics
     if (config) {
       // Check if data already exists (already fetched for any metric)
-      const cacheKey = JSON.stringify({ 
-        from: reportObj.from, 
-        to: reportObj.to, 
+      const cacheKey = JSON.stringify({
+        from: reportObj.from,
+        to: reportObj.to,
         groupBy: reportObj.groupBy
       });
       const cachedKey = currentState.bookingStatsCache.params;
       const isCached = cachedKey === cacheKey && currentState.bookingStatsCache.data !== null;
-      
+
       if (isCached) {
         // Extract the specific field for this metric from cached breakdown data
         const rawBreakdownData = currentState.bookingStatsCache.data;
@@ -180,23 +190,23 @@ export const actions = {
           value: item[metric] || 0,
           count: 0
         }));
-        
+
         commit(types.default.SET_ACCOUNT_REPORTS, { metric, data: metricData });
         commit(types.default.TOGGLE_ACCOUNT_REPORT_LOADING, { metric, value: false });
         return;
       }
-      
+
       // Make single API call that returns ALL fields in breakdown
       Report.getBookingStats(reportObj).then(response => {
         const rawBreakdownData = response.data; // Contains all 4 fields per data point
-        
+
         // Cache the full breakdown data
         commit(types.default.SET_BOOKING_STATS_CACHE, {
           data: rawBreakdownData,
           params: cacheKey,
           timestamp: Date.now(),
         });
-        
+
         // Populate ALL 4 metrics from the single response
         Object.keys(metricConfig).forEach(metricKey => {
           const metricData = rawBreakdownData.map(item => ({
@@ -204,7 +214,7 @@ export const actions = {
             value: item[metricKey] || 0,
             count: 0
           }));
-          
+
           commit(types.default.SET_ACCOUNT_REPORTS, { metric: metricKey, data: metricData });
           commit(types.default.TOGGLE_ACCOUNT_REPORT_LOADING, { metric: metricKey, value: false });
         });
@@ -419,6 +429,19 @@ export const actions = {
         console.error(error);
       });
   },
+  fetchTwilioUsage({ commit }, params) {
+    commit(types.default.SET_TWILIO_USAGE, { data: null, isFetching: true });
+    return Report.getTwilioUsage(params)
+      .then(response => {
+        commit(types.default.SET_TWILIO_USAGE, {
+          data: response.data,
+          isFetching: false,
+        });
+      })
+      .catch(() => {
+        commit(types.default.SET_TWILIO_USAGE, { data: null, isFetching: false });
+      });
+  },
 };
 
 const mutations = {
@@ -486,6 +509,10 @@ const mutations = {
     _state.bookingStatsCache.data = data;
     _state.bookingStatsCache.params = params;
     _state.bookingStatsCache.timestamp = timestamp;
+  },
+  [types.default.SET_TWILIO_USAGE](_state, { data, isFetching }) {
+    _state.twilioUsage.data = data;
+    _state.twilioUsage.isFetching = isFetching;
   },
 };
 
