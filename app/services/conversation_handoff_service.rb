@@ -43,7 +43,11 @@ class ConversationHandoffService
     available_label = current_handoff_label || HANDOFF_LABEL.first
 
     @conversation.add_labels(HANDOFF_LABEL) unless @conversation.label_list.include?(available_label)
-    @conversation.update_columns(last_handoff_at: Time.current) # rubocop:disable Rails/SkipsModelValidations
+    @conversation.update_columns(
+      last_handoff_at: Time.current,
+      handoff_attended_at: nil,
+      handoff_attended_by_id: nil
+    ) # rubocop:disable Rails/SkipsModelValidations
   end
 
   def schedule_label_change

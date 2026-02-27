@@ -600,5 +600,21 @@
     "AVG_REPLY_TIME": "Avg. Customer Waiting Time",
     "RESOLUTION_COUNT": "Resolution Count",
     "CONVERSATIONS": "No. of conversations"
+  },
+  "TWILIO_REPORTS": {
+    "HEADER": "Twilio Usage Report",
+    "LOADING": "Fetching Twilio usage data...",
+    "METRICS": {
+      "TOTAL_COST": "Total Cost",
+      "PERIOD": "Period"
+    },
+    "TABLE": {
+      "CATEGORY": "Category",
+      "USAGE": "Usage",
+      "COUNT": "Count",
+      "COST": "Cost",
+      "NO_USAGE": "No usage recorded for this period."
+    },
+    "PERIOD_DATE_RANGE": "{startDate} to {endDate}"
   }
 }

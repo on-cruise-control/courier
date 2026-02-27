@@ -123,6 +123,14 @@ class ReportsAPI extends ApiClient {
       },
     });
   }
+
+  getTwilioUsage({ period }) {
+    return axios.get(`${this.url}/twilio_usage`, {
+      params: {
+        period,
+      },
+    });
+  }
 }
 
 export default new ReportsAPI();

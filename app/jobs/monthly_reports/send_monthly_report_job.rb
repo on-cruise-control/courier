@@ -40,6 +40,7 @@ class MonthlyReports::SendMonthlyReportJob < ApplicationJob
               "• Total messages: #{metrics[:total_messages]}\n" \
               "• New CRM leads pushed: #{metrics[:booking_forms_completed]}\n" \
               "• New handoff requests: #{metrics[:handoff_forms_completed]}\n" \
+              "• Attended handoffs: #{metrics[:handoff_attended_count]}\n" \
               "• Bookings conversion rate: #{metrics[:conversion_rate]}%\n\n" \
               "• *Bookings Estimated value: $#{metrics[:estimated_value]}*\n\n" \
               "Check out our <#{report_guide_url}|Impact reports guide> to understand what each of our metrics mean.\n\n" \
