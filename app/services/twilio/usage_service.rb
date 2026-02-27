@@ -49,7 +49,6 @@ class Twilio::UsageService
     'totalprice' => { desc: 'Total Price', unit: 'usd' }
   }.freeze
 
-  # Define the tree structure based on the provided screenshot
   HIERARCHY = [
     {
       id: 'channels',
@@ -228,13 +227,11 @@ class Twilio::UsageService
   end
 
   def build_tree(item, category_map, level = 0)
-    # Item can be a string (category key) or a hash (nested structure)
     id = item.is_a?(String) ? item : item[:id]
     record = category_map[id]
     formatted = record ? format_record(record) : zero_record(id)
     formatted[:level] = level
 
-    # Override description if provided in hierarchy
     formatted[:description] = item[:desc] if item.is_a?(Hash) && item[:desc]
 
     if item.is_a?(Hash) && item[:children].present?
