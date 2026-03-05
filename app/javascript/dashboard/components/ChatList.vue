@@ -59,6 +59,7 @@ import { conversationListPageURL } from '../helper/URLHelper';
 import {
   isOnMentionsView,
   isOnUnattendedView,
+  isOnSpamView,
 } from '../store/modules/conversations/helpers/actionHelpers';
 import {
   getUserPermissions,
@@ -324,6 +325,9 @@ const pageTitle = computed(() => {
   }
   if (props.conversationType === 'unattended') {
     return t('CHAT_LIST.UNATTENDED_HEADING');
+  }
+  if (props.conversationType === 'spam') {
+    return t('CHAT_LIST.SPAM_HEADING');
   }
   if (hasActiveFolders.value) {
     return activeFolder.value.name;
@@ -680,6 +684,8 @@ function redirectToConversationList() {
     conversationType = 'mention';
   } else if (isOnUnattendedView({ route: { name } })) {
     conversationType = 'unattended';
+  } else if (isOnSpamView({ route: { name } })) {
+    conversationType = 'spam';
   }
   router.push(
     conversationListPageURL({

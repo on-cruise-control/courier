@@ -1,28 +1,5 @@
 class Twilio::UsageService
-  CATEGORIES = %w[
-    channels
-    channels-messaging-outbound
-    channels-messaging-inbound
-    sms
-    sms-outbound-longcode
-    sms-inbound-longcode
-    mms
-    mms-outbound-longcode
-    mms-inbound-longcode
-    a2p-10dlc-registrationfees-monthly
-    a2p-10dlc-registrationfees-campaigncharges
-    a2p-10dlc-registrationfees-onetime
-    a2p-10dlc-registrationfees-brandregistration
-    a2p-10dlc-registrationfees-campaignvetting
-    mms-messages-carrierfees
-    failed-message-processing-fee
-    sms-messages-carrierfees
-    phonenumbers
-    phonenumbers-local
-    phonenumbers-setups
-    channels-whatsapp-template-service
-    totalprice
-  ].freeze
+  SURCHARGE_PERCENT = 0.05
 
   CATEGORY_METADATA = {
     'channels' => { desc: 'Channels Platform', unit: 'messages' },
@@ -155,7 +132,6 @@ class Twilio::UsageService
     @account = account
   end
 
-  # Fetch usage for a given period.
   def usage(period: :this_month, api_version: 'v2')
     channel = twilio_channel
     return no_inbox_response unless channel
@@ -221,6 +197,24 @@ class Twilio::UsageService
     if api_version == 'v2'
       category_map = records.index_by(&:category)
       response[:categories] = HIERARCHY.map { |h| build_tree(h, category_map) }
+
+      # Calculate Stripe charges
+      twilio_total_price = response[:total_usage][:price].to_f
+      stripe_fee = (twilio_total_price * SURCHARGE_PERCENT).round(4)
+
+      response[:categories] << {
+        category: 'stripe',
+        description: 'Stripe fees',
+        count: 0,
+        usage: nil,
+        unit: '5% stripe fees',
+        price: stripe_fee,
+        currency: 'USD',
+        level: 0,
+        period: response[:total_usage][:period] || {}
+      }
+
+      response[:total_usage][:price] = (twilio_total_price + stripe_fee).round(4)
     end
 
     response
@@ -236,7 +230,6 @@ class Twilio::UsageService
 
     if item.is_a?(Hash) && item[:children].present?
       formatted[:children] = item[:children].map { |c| build_tree(c, category_map, level + 1) }
-      # Roll up totals if price/count are zero but children have values
       if formatted[:price].to_f == 0 && formatted[:count].to_i == 0
         formatted[:price] = formatted[:children].sum { |c| c[:price].to_f }.round(4)
         formatted[:count] = formatted[:children].sum { |c| c[:count].to_i }

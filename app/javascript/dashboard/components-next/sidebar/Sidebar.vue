@@ -199,6 +199,13 @@ const menuItems = computed(() => {
           to: accountScopedRoute('conversation_unattended'),
         },
         {
+          name: 'Spam',
+          label: t('SIDEBAR.SPAM'),
+          icon: 'i-lucide-octagon-alert',
+          activeOn: ['conversation_through_spam'],
+          to: accountScopedRoute('conversation_spam'),
+        },
+        {
           name: 'Folders',
           label: t('SIDEBAR.CUSTOM_VIEWS_FOLDER'),
           icon: 'i-lucide-folder',

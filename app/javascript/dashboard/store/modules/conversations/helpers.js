@@ -40,6 +40,13 @@ export const filterByUnattended = (
     : shouldFilter;
 };
 
+export const filterBySpam = (shouldFilter, conversationType, isSpam) => {
+  if (conversationType === 'spam') {
+    return !!isSpam && shouldFilter;
+  }
+  return !isSpam && shouldFilter;
+};
+
 export const applyPageFilters = (conversation, filters) => {
   const { inboxId, status, labels = [], teamId, conversationType } = filters;
   const {
@@ -49,6 +56,7 @@ export const applyPageFilters = (conversation, filters) => {
     meta = {},
     first_reply_created_at: firstReplyOn,
     waiting_since: waitingSince,
+    is_spam: isSpam,
   } = conversation;
   const team = meta.team || {};
   const { id: chatTeamId } = team;
@@ -66,6 +74,7 @@ export const applyPageFilters = (conversation, filters) => {
     firstReplyOn,
     waitingSince
   );
+  shouldFilter = filterBySpam(shouldFilter, conversationType, isSpam);
 
   return shouldFilter;
 };

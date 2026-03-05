@@ -199,5 +199,26 @@ export default {
         conversationType: 'participating',
       }),
     },
+    {
+      path: frontendURL('accounts/:accountId/spam/conversations'),
+      name: 'conversation_spam',
+      meta: {
+        permissions: CONVERSATION_PERMISSIONS,
+      },
+      component: ConversationView,
+      props: () => ({ conversationType: 'spam' }),
+    },
+    {
+      path: frontendURL('accounts/:accountId/spam/conversations/:conversationId'),
+      name: 'conversation_through_spam',
+      meta: {
+        permissions: CONVERSATION_PERMISSIONS,
+      },
+      component: ConversationView,
+      props: route => ({
+        conversationId: route.params.conversationId,
+        conversationType: 'spam',
+      }),
+    },
   ],
 };
