@@ -106,6 +106,7 @@ const showMetaSection = computed(() => {
   return (
     showInboxName.value ||
     isCommentConversation.value ||
+    isSpamConversation.value ||
     (props.showAssignee && assignee.value.name) ||
     props.chat.priority
   );
@@ -123,6 +124,10 @@ const isCommentConversation = computed(() => {
     conversationType === 'instagram_comments' ||
     conversationType === 'feed_comments'
   );
+});
+
+const isSpamConversation = computed(() => {
+  return props.chat.is_spam && props.conversationType !== 'spam';
 });
 
 const messagePreviewClass = computed(() => {
@@ -328,6 +333,12 @@ const deleteConversation = () => {
           class="ml-auto self-start inline-flex items-center px-3 py-0.5 text-[10px] font-semibold tracking-wide rounded-xl bg-n-blue-3 text-n-slate-11 dark:bg-n-blue-3"
         >
           {{ $t('CHAT_LIST.COMMENT_TAG') }}
+        </span>
+        <span
+          v-if="isSpamConversation"
+          class="ml-auto self-start inline-flex items-center px-3 py-0.5 text-[10px] font-semibold tracking-wide rounded-xl bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-200"
+        >
+          {{ $t('CHAT_LIST.SPAM_TAG') }}
         </span>
       </div>
       <h4

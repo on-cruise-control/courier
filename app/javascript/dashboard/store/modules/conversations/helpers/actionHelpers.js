@@ -30,6 +30,14 @@ export const isOnUnattendedView = ({ route: { name: routeName } }) => {
   return UNATTENDED_ROUTES.includes(routeName);
 };
 
+export const isOnSpamView = ({ route: { name: routeName } }) => {
+  const SPAM_ROUTES = [
+    'conversation_spam',
+    'conversation_through_spam',
+  ];
+  return SPAM_ROUTES.includes(routeName);
+};
+
 export const isOnFoldersView = ({ route: { name: routeName } }) => {
   const FOLDER_ROUTES = [
     'folder_conversations',

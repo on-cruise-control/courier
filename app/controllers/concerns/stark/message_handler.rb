@@ -7,6 +7,11 @@ module Stark
     def handle_response(response)
       return unless response_valid?(response)
 
+      if response['is_spam']
+        current_conversation.update!(is_spam: true)
+        return
+      end
+
       if response['content'].present? || (response['attachments'].is_a?(Array) && response['attachments'].any?)
         create_bot_response_message(current_conversation, response['content'], response['attachments'], response['metadata'])
       end

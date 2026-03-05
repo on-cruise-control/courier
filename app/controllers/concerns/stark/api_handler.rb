@@ -134,7 +134,8 @@ module Stark
         'action' => nil,
         'stop_follow_up' => data['stop_follow_up'],
         'attachments' => data['attachments'] || [],
-        'metadata' => data['metadata'] || {}
+        'metadata' => data['metadata'] || {},
+        'is_spam' => data['is_spam']
       }
     end
 

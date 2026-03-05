@@ -81,6 +81,9 @@ class Conversation < ApplicationRecord
   enum status: { open: 0, resolved: 1, pending: 2, snoozed: 3 }
   enum priority: { low: 0, medium: 1, high: 2, urgent: 3 }
 
+  scope :not_spam, -> { where(is_spam: [false, nil]) }
+  scope :spam, -> { where(is_spam: true) }
+
   scope :unassigned, -> { where(assignee_id: nil) }
   scope :assigned, -> { where.not(assignee_id: nil) }
   scope :assigned_to, ->(agent) { where(assignee_id: agent.id) }
@@ -291,7 +294,7 @@ class Conversation < ApplicationRecord
 
   def list_of_keys
     %w[team_id assignee_id assignee_agent_bot_id status snoozed_until custom_attributes label_list waiting_since
-       first_reply_created_at priority]
+       first_reply_created_at priority is_spam]
   end
 
   def allowed_keys?

@@ -85,7 +85,8 @@ export default {
       }).format(value);
     },
     formatNumber(value) {
-      return new Intl.NumberFormat('en-US').format(value || 0);
+      if (value === undefined || value === null) return '';
+      return new Intl.NumberFormat('en-US').format(value);
     },
   },
 };
@@ -168,8 +169,8 @@ export default {
                     </div>
                   </div>
                 </th>
-                <td class="px-6 py-4 text-n-slate-10 w-[25%]">
-                  {{ formatNumber(category.usage) }} {{ category.unit }}
+                <td class="px-6 py-4 text-n-slate-10 w-[25%] capitalize">
+                  {{ formatNumber(category.usage) }}{{ category.usage !== null ? ' ' : '' }}{{ category.unit }}
                 </td>
                 <td class="px-6 py-4 font-semibold text-n-slate-12 text-right w-[25%]">
                   {{ formatCurrency(category.price) }}

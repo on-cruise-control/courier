@@ -104,6 +104,8 @@ class ConversationFinder
       current_account
     ).perform
     filter_by_conversation_type if params[:conversation_type]
+    # Exclude spam from all views except the dedicated spam view
+    @conversations = @conversations.not_spam unless params[:conversation_type] == 'spam'
     @conversations
   end
 
@@ -130,6 +132,8 @@ class ConversationFinder
       @conversations = current_user.participating_conversations.where(account_id: current_account.id)
     when 'unattended'
       @conversations = @conversations.unattended
+    when 'spam'
+      @conversations = @conversations.spam
     end
     @conversations
   end
