@@ -462,6 +462,7 @@ export const attachGreetingPreviewHandlers = () => {
     closeBtnEl.addEventListener('click', e => {
       e.stopPropagation();
       hideGreetingPreview();
+      hideGreetingInputBox();
     });
   }
 };
