@@ -1,14 +1,15 @@
 class Conversations::FollowUpJob < ApplicationJob
   queue_as :default
 
-  def perform(conversation_id, follow_up_number)
+  def perform(conversation_id, follow_up_number, force: false)
     conversation = Conversation.find_by(id: conversation_id)
-    return if conversation.nil? || conversation.is_spam || conversation.stop_follow_up || conversation.assignee_id.present?
+    return if conversation.nil?
+    return if (conversation.is_spam || conversation.stop_follow_up || conversation.assignee_id.present?)
 
     last_message = conversation.messages
                                .not_activity
                                .not_template.last
-    return if last_message.incoming?
+    return if !force && last_message.incoming?
 
     # Get follow-up message content from Stark API
     stark_response = Stark::FollowUpService.new(conversation, follow_up_number).get_follow_up_content

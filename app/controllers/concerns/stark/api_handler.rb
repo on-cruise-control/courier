@@ -127,7 +127,23 @@ module Stark
 
     def parse_stark_response(response)
       data = response['body']['data']
-      ConversationHandoffService.new(conversation).process_handoff if data['human_redirect']
+      customer_data = data['customer'].is_a?(Hash) ? data['customer'] : {}
+
+      platform = conversation.inbox.platform_name
+      handoff_customer_name = (customer_data['name'].presence ||
+                               extract_customer_name(conversation.contact, platform))&.titleize
+      handoff_customer_phone = customer_data['phone'].presence || '(Not Shared)'
+      handoff_customer_email = customer_data['email'].presence || '(Not Shared)'
+
+      refined_customer_data = {
+        'name' => handoff_customer_name,
+        'phone' => handoff_customer_phone,
+        'email' => handoff_customer_email
+      }
+
+      if data['human_redirect']
+        ConversationHandoffService.new(conversation).process_handoff(refined_customer_data)
+      end
 
       {
         'content' => data['answer'],

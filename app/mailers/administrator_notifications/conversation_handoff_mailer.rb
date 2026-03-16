@@ -1,14 +1,15 @@
 class AdministratorNotifications::ConversationHandoffMailer < AdministratorNotifications::BaseMailer
-  def notify_handoff(conversation)
+  def notify_handoff(conversation, customer_data = nil)
     return unless smtp_config_set_or_development?
 
     @conversation   = conversation
     @account        = conversation.account
     @action_url     = conversation_url(@conversation)
     @instagram_profile_url = instagram_profile_url(@conversation)
+    @customer_data = customer_data || {}
     ensure_current_account(@account)
 
-    subject = "Conversation Handoff for account #{@account.name} on platform #{@conversation.inbox.name}"
+    subject = "[Action required] High-priority conversation requires attention"
 
     # If account is suspended, send to SuperAdmins only (handled in send_notification)
     send_notification(
@@ -31,5 +32,13 @@ class AdministratorNotifications::ConversationHandoffMailer < AdministratorNotif
                    account: @account,
                    instagram_profile_url: @instagram_profile_url
                  })
+  end
+
+  def liquid_locals
+    super.merge({
+                  stark_customer_name: @customer_data['name'],
+                  stark_customer_phone: @customer_data['phone'],
+                  stark_customer_email: @customer_data['email']
+                })
   end
 end

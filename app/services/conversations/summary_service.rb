@@ -70,10 +70,13 @@ module Conversations
 
     def fetch_and_update_summary(url)
       messages_payload = format_recent_messages(@conversation)
-
+      body_data = {
+        contact_id: @conversation.contact&.id,
+        messages: messages_payload
+      }
       response = HTTParty.post(
         url,
-        body: { messages: messages_payload }.to_json,
+        body: body_data.to_json,
         headers: build_request_headers,
         timeout: 10
       )

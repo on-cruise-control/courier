@@ -15,6 +15,8 @@ import UpdateActions from './UpdateActions.vue';
 import LabelActions from './LabelActions.vue';
 import TeamActions from './TeamActions.vue';
 import CustomSnoozeModal from 'dashboard/components/CustomSnoozeModal.vue';
+import { isOnSpamView } from 'dashboard/store/modules/conversations/helpers/actionHelpers';
+
 export default {
   components: {
     AgentSelector,
@@ -57,6 +59,7 @@ export default {
     'assignLabels',
     'assignTeam',
     'resolveConversations',
+    'markAsNotSpam',
   ],
   data() {
     return {
@@ -67,6 +70,11 @@ export default {
       popoverPositions: {},
       showCustomTimeSnoozeModal: false,
     };
+  },
+  computed: {
+    isOnSpamView() {
+      return isOnSpamView({ route: this.$route });
+    },
   },
   mounted() {
     emitter.on(
@@ -137,6 +145,9 @@ export default {
     resolveConversations() {
       this.$emit('resolveConversations');
     },
+    markAsNotSpam() {
+      this.$emit('markAsNotSpam');
+    },
     toggleUpdateActions() {
       this.showUpdateActions = !this.showUpdateActions;
     },
@@ -204,6 +215,15 @@ export default {
           xs
           faded
           @click="toggleTeamsList"
+        />
+        <NextButton
+          v-if="isOnSpamView"
+          v-tooltip="$t('BULK_ACTION.MARK_AS_NOT_SPAM')"
+          label="Not Spam"
+          slate
+          xs
+          faded
+          @click="markAsNotSpam"
         />
       </div>
       <transition name="popover-animation">

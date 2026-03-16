@@ -148,6 +148,7 @@ const {
   onAssignLabels,
   onAssignTeamsForBulk,
   onUpdateConversations,
+  onMarkAsNotSpam,
 } = useBulkActions();
 
 const {
@@ -938,6 +939,7 @@ watch(conversationFilters, (newVal, oldVal) => {
       @update-conversations="onUpdateConversations"
       @assign-labels="onAssignLabels"
       @assign-team="onAssignTeamsForBulk"
+      @mark-as-not-spam="onMarkAsNotSpam"
     />
     <div
       ref="conversationListRef"
