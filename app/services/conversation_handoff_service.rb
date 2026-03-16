@@ -7,14 +7,14 @@ class ConversationHandoffService
     @conversation = conversation
   end
 
-  def process_handoff
+  def process_handoff(customer_data = nil)
     return unless should_send_notification?
 
     ensure_labels_exist
     update_handoff_state
     schedule_label_change
 
-    ConversationHandoff::SendHandoffNotificationsJob.perform_later(@conversation)
+    ConversationHandoff::SendHandoffNotificationsJob.perform_later(@conversation, customer_data)
   end
 
   private

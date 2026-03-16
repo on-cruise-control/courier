@@ -36,6 +36,7 @@
     "API_HOURS_WINDOW": "You can only reply to this conversation within {hours} hours",
     "NOT_ASSIGNED_TO_YOU": "This conversation is not assigned to you. Would you like to assign this conversation to yourself?",
     "ASSIGN_TO_ME": "Assign to me",
+    "ASSIGN_TO_HUMAN": "Assign to human",
     "BOT_HANDOFF_MESSAGE": "You are responding to a conversation which is currently handled by an assistant or a bot.",
     "BOT_HANDOFF_ACTION": "Mark open and assign to you",
     "BOT_HANDOFF_REOPEN_ACTION": "Mark conversation open",
@@ -255,7 +256,8 @@
     "ASSIGNMENT": {
       "SELECT_AGENT": "Select Agent",
       "REMOVE": "Remove",
-      "ASSIGN": "Assign"
+      "ASSIGN": "Assign",
+      "UNASSIGN": "Unassign"
     },
     "CONTEXT_MENU": {
       "COPY": "Copy",

@@ -56,7 +56,13 @@ export default {
     };
   },
   computed: {
-    ...mapGetters({ uiFlags: 'contacts/getUIFlags' }),
+    ...mapGetters({
+      uiFlags: 'contacts/getUIFlags',
+      currentChat: 'getSelectedChat',
+    }),
+    isSpam() {
+      return !!this.currentChat?.is_spam;
+    },
     contactProfileLink() {
       return `/app/accounts/${this.$route.params.accountId}/contacts/${this.contact.id}`;
     },
@@ -172,6 +178,22 @@ export default {
     },
     openMergeModal() {
       this.showMergeModal = true;
+    },
+    async markAsNotSpam() {
+      try {
+        await this.$store.dispatch('bulkActions/process', {
+          type: 'Conversation',
+          ids: [this.currentChat.id],
+          fields: {
+            is_spam: false,
+            stop_follow_up: false,
+          },
+        });
+        this.$store.dispatch('bulkActions/clearSelectedConversationIds');
+        useAlert(this.$t('BULK_ACTION.MARK_AS_NOT_SPAM_SUCCESFUL'));
+      } catch (error) {
+        useAlert(this.$t('BULK_ACTION.MARK_AS_NOT_SPAM_FAILED'));
+      }
     },
   },
 };
@@ -305,6 +327,15 @@ export default {
           sm
           :disabled="uiFlags.isMerging"
           @click="openMergeModal"
+        />
+        <NextButton
+          v-if="isSpam"
+          v-tooltip.top-end="$t('BULK_ACTION.MARK_AS_NOT_SPAM')"
+          icon="i-lucide-shield-check"
+          slate
+          faded
+          sm
+          @click="markAsNotSpam"
         />
         <NextButton
           v-if="isAdmin"

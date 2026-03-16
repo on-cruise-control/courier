@@ -206,9 +206,12 @@ class Inbox < ApplicationRecord
     when 'Channel::Email' then 'Email'
     when 'Channel::Whatsapp' then 'Whatsapp'
     when 'Channel::Api' then 'Api'
+    when 'Channel::Telegram' then 'Telegram'
+    when 'Channel::Tiktok' then 'TikTok'
     else 'Website'
     end
   end
+
   def auto_assignment_v2_enabled?
     account.feature_enabled?('assignment_v2')
   end

@@ -132,6 +132,24 @@ export function useBulkActions() {
     }
   }
 
+  async function onMarkAsNotSpam() {
+    try {
+      await store.dispatch('bulkActions/process', {
+        type: 'Conversation',
+        ids: selectedConversations.value,
+        fields: {
+          is_spam: false,
+          stop_follow_up: false,
+        },
+        stop_follow_up: false,
+      });
+      store.dispatch('bulkActions/clearSelectedConversationIds');
+      useAlert(t('BULK_ACTION.MARK_AS_NOT_SPAM_SUCCESFUL'));
+    } catch (err) {
+      useAlert(t('BULK_ACTION.MARK_AS_NOT_SPAM_FAILED'));
+    }
+  }
+
   return {
     selectedConversations,
     selectedInboxes,
@@ -144,5 +162,6 @@ export function useBulkActions() {
     onAssignLabels,
     onAssignTeamsForBulk,
     onUpdateConversations,
+    onMarkAsNotSpam,
   };
 }

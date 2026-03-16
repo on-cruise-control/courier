@@ -1,7 +1,7 @@
 class ConversationHandoff::SendHandoffNotificationsJob < ApplicationJob
   queue_as :default
 
-  def perform(conversation)
+  def perform(conversation, customer_data = nil)
     return if conversation.blank?
 
     begin
@@ -9,8 +9,8 @@ class ConversationHandoff::SendHandoffNotificationsJob < ApplicationJob
       Conversations::SummaryService.new(conversation: conversation, force_refresh: true, skip_rate_limit: true).perform
 
       # Send email notifications
-      AdministratorNotifications::ConversationHandoffMailer.notify_handoff(conversation).deliver_later
-      AgentNotifications::ConversationHandoffMailer.notify_handoff(conversation).deliver_later
+      AdministratorNotifications::ConversationHandoffMailer.notify_handoff(conversation, customer_data).deliver_later
+      AgentNotifications::ConversationHandoffMailer.notify_handoff(conversation, customer_data).deliver_later
 
       # Send SMS notifications
       Sms::HandoffNotificationService.new(conversation).perform
