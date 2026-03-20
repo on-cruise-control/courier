@@ -32,28 +32,56 @@ const getConversationById = _state => conversationId => {
   return _state.allConversations.find(c => c.id === conversationId);
 };
 
+const isDeferredSpamReply = message => {
+  return (
+    message?.private === true &&
+    message?.additional_attributes?.deferred_spam_reply === true
+  );
+};
+
+const sanitizeSpamConversation = conversation => {
+  if (!conversation?.is_spam) return conversation;
+
+  const sanitizedMessages = Array.isArray(conversation.messages)
+    ? conversation.messages.filter(message => !isDeferredSpamReply(message))
+    : conversation.messages;
+
+  const lastNonActivityMessage = isDeferredSpamReply(
+    conversation.last_non_activity_message
+  )
+    ? null
+    : conversation.last_non_activity_message;
+
+  return {
+    ...conversation,
+    messages: sanitizedMessages,
+    last_non_activity_message: lastNonActivityMessage,
+  };
+};
+
 // mutations
 export const mutations = {
   [types.SET_ALL_CONVERSATION](_state, conversationList) {
     const newAllConversations = [..._state.allConversations];
     conversationList.forEach(conversation => {
+      const sanitizedConversation = sanitizeSpamConversation(conversation);
       const indexInCurrentList = newAllConversations.findIndex(
-        c => c.id === conversation.id
+        c => c.id === sanitizedConversation.id
       );
       if (indexInCurrentList < 0) {
-        newAllConversations.push(conversation);
-      } else if (conversation.id !== _state.selectedChatId) {
+        newAllConversations.push(sanitizedConversation);
+      } else if (sanitizedConversation.id !== _state.selectedChatId) {
         // If the conversation is already in the list, replace it
         // Added this to fix the issue of the conversation not being updated
         // When reconnecting to the websocket. If the selectedChatId is not the same as
         // the conversation.id in the store, replace the existing conversation with the new one
-        newAllConversations[indexInCurrentList] = conversation;
+        newAllConversations[indexInCurrentList] = sanitizedConversation;
       } else {
         // If the conversation is already in the list and selectedChatId is the same,
         // replace all data except the messages array, attachments, dataFetched, allMessagesLoaded
         const existingConversation = newAllConversations[indexInCurrentList];
         newAllConversations[indexInCurrentList] = {
-          ...conversation,
+          ...sanitizedConversation,
           allMessagesLoaded: existingConversation.allMessagesLoaded,
           messages: existingConversation.messages,
           dataFetched: existingConversation.dataFetched,
@@ -82,7 +110,11 @@ export const mutations = {
   [types.SET_PREVIOUS_CONVERSATIONS](_state, { id, data }) {
     if (data.length) {
       const [chat] = _state.allConversations.filter(c => c.id === id);
-      chat.messages.unshift(...data);
+      const messagesToAdd =
+        chat?.is_spam && Array.isArray(data)
+          ? data.filter(message => !isDeferredSpamReply(message))
+          : data;
+      chat.messages.unshift(...messagesToAdd);
     }
   },
   [types.SET_ALL_ATTACHMENTS](_state, { id, data }) {
@@ -91,7 +123,10 @@ export const mutations = {
   [types.SET_MISSING_MESSAGES](_state, { id, data }) {
     const [chat] = _state.allConversations.filter(c => c.id === id);
     if (!chat) return;
-    chat.messages = data;
+    chat.messages =
+      chat?.is_spam && Array.isArray(data)
+        ? data.filter(message => !isDeferredSpamReply(message))
+        : data;
   },
 
   [types.SET_CURRENT_CHAT_WINDOW](_state, activeChat) {
@@ -192,6 +227,7 @@ export const mutations = {
       selectedChatId: conversationId,
     });
     if (!chat) return;
+    if (chat.is_spam && isDeferredSpamReply(message)) return;
 
     const pendingMessageIndex = findPendingMessageIndex(chat, message);
     if (pendingMessageIndex !== -1) {
@@ -229,13 +265,13 @@ export const mutations = {
         return;
       }
 
-      const { messages, ...updates } = conversation;
+      const { messages, ...updates } = sanitizeSpamConversation(conversation);
       allConversations[index] = { ...selectedConversation, ...updates };
       if (_state.selectedChatId === conversation.id) {
         emitter.emit(BUS_EVENTS.SCROLL_TO_MESSAGE);
       }
     } else {
-      _state.allConversations.push(conversation);
+      _state.allConversations.push(sanitizeSpamConversation(conversation));
     }
   },
 

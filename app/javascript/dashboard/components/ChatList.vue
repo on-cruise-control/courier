@@ -149,6 +149,7 @@ const {
   onAssignTeamsForBulk,
   onUpdateConversations,
   onMarkAsNotSpam,
+  onMarkAsSpam,
 } = useBulkActions();
 
 const {
@@ -775,6 +776,21 @@ function allSelectedConversationsStatus(status) {
   });
 }
 
+const shouldShowMarkAsNotSpam = computed(() => {
+  if (!selectedConversations.value.length) return false;
+  return selectedConversations.value.every(id => {
+    return store.getters.getConversationById(id)?.is_spam;
+  });
+});
+
+const shouldShowMarkAsSpam = computed(() => {
+  if (!selectedConversations.value.length) return false;
+  return selectedConversations.value.every(id => {
+    const conversation = store.getters.getConversationById(id) || {};
+    return !conversation.is_spam && conversation.mark_as_not_spam;
+  });
+});
+
 function onContextMenuToggle(state) {
   isContextMenuOpen.value = state;
 }
@@ -934,12 +950,15 @@ watch(conversationFilters, (newVal, oldVal) => {
       :show-open-action="allSelectedConversationsStatus('open')"
       :show-resolved-action="allSelectedConversationsStatus('resolved')"
       :show-snoozed-action="allSelectedConversationsStatus('snoozed')"
+      :show-mark-as-not-spam="shouldShowMarkAsNotSpam"
+      :show-mark-as-spam="shouldShowMarkAsSpam"
       @select-all-conversations="toggleSelectAll"
       @assign-agent="onAssignAgent"
       @update-conversations="onUpdateConversations"
       @assign-labels="onAssignLabels"
       @assign-team="onAssignTeamsForBulk"
       @mark-as-not-spam="onMarkAsNotSpam"
+      @mark-as-spam="onMarkAsSpam"
     />
     <div
       ref="conversationListRef"
