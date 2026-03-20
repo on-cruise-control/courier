@@ -92,6 +92,10 @@ const sortedInboxes = computed(() =>
   inboxes.value.slice().sort((a, b) => a.name.localeCompare(b.name))
 );
 
+const hasTwilioInbox = computed(() =>
+  inboxes.value.some(inbox => inbox.channel_type === 'Channel::TwilioSms')
+);
+
 const closeMobileSidebar = () => {
   if (!props.isMobileSidebarOpen) return;
   emit('closeMobileSidebar');
@@ -193,6 +197,13 @@ const menuItems = computed(() => {
           activeOn: ['conversation_through_unattended'],
           label: t('SIDEBAR.UNATTENDED_CONVERSATIONS'),
           to: accountScopedRoute('conversation_unattended'),
+        },
+        {
+          name: 'Spam',
+          label: t('SIDEBAR.SPAM'),
+          icon: 'i-lucide-octagon-alert',
+          activeOn: ['conversation_through_spam'],
+          to: accountScopedRoute('conversation_spam'),
         },
         {
           name: 'Folders',
@@ -428,6 +439,15 @@ const menuItems = computed(() => {
           label: t('SIDEBAR.REPORTS_HANDOFF'),
           to: accountScopedRoute('handoff_reports'),
         },
+        ...(hasTwilioInbox.value
+          ? [
+              {
+                name: 'Twilio Usage',
+                label: t('SIDEBAR.TWILIO_USAGES'),
+                to: accountScopedRoute('twilio_reports'),
+              },
+            ]
+          : []),
         // Temporarily commented out - keeping for future use
         // ...reportRoutes.value,  // Contains: Agents, Labels, Inbox, Team
         // {

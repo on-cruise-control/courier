@@ -102,16 +102,25 @@ const getters = {
       return isUnAssigned && shouldFilter;
     });
   },
- getCommentsList: state => activeFilters => {
-  return state.allConversations.filter(conversation => {
-    const type = conversation.additional_attributes?.type;
-    const isComment =
-      type === 'feed_comments' || type === 'instagram_comments';
-    const shouldFilter = applyPageFilters(conversation, activeFilters);
+  getCommentsList: state => activeFilters => {
+    return state.allConversations.filter(conversation => {
+      const type = conversation.additional_attributes?.type;
+      const isComment =
+        type === 'feed_comments' || type === 'instagram_comments';
+      const shouldFilter = applyPageFilters(conversation, activeFilters);
 
-    return isComment && shouldFilter;
-  });
-},
+      return isComment && shouldFilter;
+    });
+  },
+
+  getSpamChats: state => activeFilters => {
+    return state.allConversations.filter(conversation => {
+      const isSpam = conversation.is_spam;
+      const shouldFilter = applyPageFilters(conversation, activeFilters);
+
+      return isSpam && shouldFilter;
+    });
+  },
 
   getAllStatusChats: (_state, _, __, rootGetters) => activeFilters => {
     const currentUser = rootGetters.getCurrentUser;

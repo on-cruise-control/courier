@@ -59,6 +59,7 @@ import { conversationListPageURL } from '../helper/URLHelper';
 import {
   isOnMentionsView,
   isOnUnattendedView,
+  isOnSpamView,
 } from '../store/modules/conversations/helpers/actionHelpers';
 import {
   getUserPermissions,
@@ -147,6 +148,8 @@ const {
   onAssignLabels,
   onAssignTeamsForBulk,
   onUpdateConversations,
+  onMarkAsNotSpam,
+  onMarkAsSpam,
 } = useBulkActions();
 
 const {
@@ -324,6 +327,9 @@ const pageTitle = computed(() => {
   }
   if (props.conversationType === 'unattended') {
     return t('CHAT_LIST.UNATTENDED_HEADING');
+  }
+  if (props.conversationType === 'spam') {
+    return t('CHAT_LIST.SPAM_HEADING');
   }
   if (hasActiveFolders.value) {
     return activeFolder.value.name;
@@ -680,6 +686,8 @@ function redirectToConversationList() {
     conversationType = 'mention';
   } else if (isOnUnattendedView({ route: { name } })) {
     conversationType = 'unattended';
+  } else if (isOnSpamView({ route: { name } })) {
+    conversationType = 'spam';
   }
   router.push(
     conversationListPageURL({
@@ -767,6 +775,21 @@ function allSelectedConversationsStatus(status) {
     return store.getters.getConversationById(item)?.status === status;
   });
 }
+
+const shouldShowMarkAsNotSpam = computed(() => {
+  if (!selectedConversations.value.length) return false;
+  return selectedConversations.value.every(id => {
+    return store.getters.getConversationById(id)?.is_spam;
+  });
+});
+
+const shouldShowMarkAsSpam = computed(() => {
+  if (!selectedConversations.value.length) return false;
+  return selectedConversations.value.every(id => {
+    const conversation = store.getters.getConversationById(id) || {};
+    return !conversation.is_spam && conversation.mark_as_not_spam;
+  });
+});
 
 function onContextMenuToggle(state) {
   isContextMenuOpen.value = state;
@@ -927,11 +950,15 @@ watch(conversationFilters, (newVal, oldVal) => {
       :show-open-action="allSelectedConversationsStatus('open')"
       :show-resolved-action="allSelectedConversationsStatus('resolved')"
       :show-snoozed-action="allSelectedConversationsStatus('snoozed')"
+      :show-mark-as-not-spam="shouldShowMarkAsNotSpam"
+      :show-mark-as-spam="shouldShowMarkAsSpam"
       @select-all-conversations="toggleSelectAll"
       @assign-agent="onAssignAgent"
       @update-conversations="onUpdateConversations"
       @assign-labels="onAssignLabels"
       @assign-team="onAssignTeamsForBulk"
+      @mark-as-not-spam="onMarkAsNotSpam"
+      @mark-as-spam="onMarkAsSpam"
     />
     <div
       ref="conversationListRef"

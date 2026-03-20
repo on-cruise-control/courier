@@ -81,6 +81,19 @@ class Api::V2::Accounts::ReportsController < Api::V1::Accounts::BaseController
     render json: build_booking_summary
   end
 
+  def twilio_usage
+    result = ::Twilio::UsageService.new(Current.account).usage(
+      period: params[:period].presence,
+      api_version: 'v2'
+    )
+
+    if result[:success]
+      render json: result, status: :ok
+    else
+      render json: { error: result[:error] || result[:message] }, status: :unprocessable_entity
+    end
+  end
+
   private
 
   def filter_by_date_range(booking_data, since_timestamp, until_timestamp)

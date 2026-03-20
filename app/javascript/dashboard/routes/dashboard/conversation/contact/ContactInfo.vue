@@ -53,10 +53,27 @@ export default {
       showEditModal: false,
       showMergeModal: false,
       showDeleteModal: false,
+      spamStateOverride: null,
     };
   },
   computed: {
-    ...mapGetters({ uiFlags: 'contacts/getUIFlags' }),
+    ...mapGetters({
+      uiFlags: 'contacts/getUIFlags',
+      currentChat: 'getSelectedChat',
+    }),
+    effectiveChat() {
+      return this.spamStateOverride
+        ? { ...this.currentChat, ...this.spamStateOverride }
+        : this.currentChat;
+    },
+    isSpam() {
+      return !!this.effectiveChat?.is_spam;
+    },
+    wasSpam() {
+      return (
+        !!this.effectiveChat?.mark_as_not_spam && !this.effectiveChat?.is_spam
+      );
+    },
     contactProfileLink() {
       return `/app/accounts/${this.$route.params.accountId}/contacts/${this.contact.id}`;
     },
@@ -172,6 +189,59 @@ export default {
     },
     openMergeModal() {
       this.showMergeModal = true;
+    },
+    async markAsNotSpam() {
+      try {
+        this.spamStateOverride = { is_spam: false, mark_as_not_spam: true };
+
+        await this.$store.dispatch('bulkActions/process', {
+          type: 'Conversation',
+          ids: [this.currentChat.id],
+          fields: {
+            is_spam: false,
+            stop_follow_up: false,
+            mark_as_not_spam: true,
+          },
+        });
+
+        const conversationId = this.currentChat.id;
+        await this.$store.dispatch('fetchLatestMessages', { conversationId });
+        await new Promise(resolve => setTimeout(resolve, 750));
+        await this.$store.dispatch('fetchLatestMessages', { conversationId });
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        await this.$store.dispatch('fetchLatestMessages', { conversationId });
+
+        await this.$store.dispatch('getConversation', conversationId);
+        await new Promise(resolve => setTimeout(resolve, 750));
+        await this.$store.dispatch('getConversation', conversationId);
+        this.spamStateOverride = null;
+        this.$store.dispatch('bulkActions/clearSelectedConversationIds');
+        useAlert(this.$t('BULK_ACTION.MARK_AS_NOT_SPAM_SUCCESFUL'));
+      } catch (error) {
+        this.spamStateOverride = null;
+        useAlert(this.$t('BULK_ACTION.MARK_AS_NOT_SPAM_FAILED'));
+      }
+    },
+    async markAsSpam() {
+      try {
+        this.spamStateOverride = { is_spam: true, mark_as_not_spam: false };
+
+        await this.$store.dispatch('bulkActions/process', {
+          type: 'Conversation',
+          ids: [this.currentChat.id],
+          fields: {
+            is_spam: true,
+            mark_as_not_spam: false,
+            stop_follow_up: true,
+          },
+        });
+        this.spamStateOverride = null;
+        this.$store.dispatch('bulkActions/clearSelectedConversationIds');
+        useAlert(this.$t('BULK_ACTION.MARK_AS_SPAM_SUCCESFUL'));
+      } catch (error) {
+        this.spamStateOverride = null;
+        useAlert(this.$t('BULK_ACTION.MARK_AS_SPAM_FAILED'));
+      }
     },
   },
 };
@@ -305,6 +375,24 @@ export default {
           sm
           :disabled="uiFlags.isMerging"
           @click="openMergeModal"
+        />
+        <NextButton
+          v-if="isSpam"
+          v-tooltip.top-end="$t('BULK_ACTION.MARK_AS_NOT_SPAM')"
+          icon="i-lucide-shield-check"
+          slate
+          faded
+          sm
+          @click="markAsNotSpam"
+        />
+        <NextButton
+          v-if="wasSpam"
+          v-tooltip.top-end="$t('BULK_ACTION.MARK_AS_SPAM')"
+          icon="i-lucide-shield-alert"
+          slate
+          faded
+          sm
+          @click="markAsSpam"
         />
         <NextButton
           v-if="isAdmin"

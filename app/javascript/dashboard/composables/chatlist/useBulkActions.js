@@ -132,6 +132,60 @@ export function useBulkActions() {
     }
   }
 
+  async function onMarkAsNotSpam() {
+    try {
+      await store.dispatch('bulkActions/process', {
+        type: 'Conversation',
+        ids: selectedConversations.value,
+        fields: {
+          is_spam: false,
+          stop_follow_up: false,
+          mark_as_not_spam: true,
+        },
+        stop_follow_up: false,
+      });
+      const activeConversationId = store.getters.getSelectedChat?.id;
+      if (activeConversationId) {
+        await store.dispatch('fetchLatestMessages', {
+          conversationId: activeConversationId,
+        });
+        await new Promise(resolve => setTimeout(resolve, 750));
+        await store.dispatch('fetchLatestMessages', {
+          conversationId: activeConversationId,
+        });
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        await store.dispatch('fetchLatestMessages', {
+          conversationId: activeConversationId,
+        });
+        await store.dispatch('getConversation', activeConversationId);
+        await new Promise(resolve => setTimeout(resolve, 750));
+        await store.dispatch('getConversation', activeConversationId);
+      }
+      store.dispatch('bulkActions/clearSelectedConversationIds');
+      useAlert(t('BULK_ACTION.MARK_AS_NOT_SPAM_SUCCESFUL'));
+    } catch (err) {
+      useAlert(t('BULK_ACTION.MARK_AS_NOT_SPAM_FAILED'));
+    }
+  }
+
+  async function onMarkAsSpam() {
+    try {
+      await store.dispatch('bulkActions/process', {
+        type: 'Conversation',
+        ids: selectedConversations.value,
+        fields: {
+          is_spam: true,
+          mark_as_not_spam: false,
+          stop_follow_up: true,
+        },
+      });
+      store.dispatch('bulkActions/clearSelectedConversationIds');
+      useAlert(t('BULK_ACTION.MARK_AS_SPAM_SUCCESFUL'));
+    } catch (err) {
+      useAlert(t('BULK_ACTION.MARK_AS_SPAM_FAILED'));
+    }
+  }
+
   return {
     selectedConversations,
     selectedInboxes,
@@ -144,5 +198,7 @@ export function useBulkActions() {
     onAssignLabels,
     onAssignTeamsForBulk,
     onUpdateConversations,
+    onMarkAsNotSpam,
+    onMarkAsSpam,
   };
 }

@@ -82,11 +82,13 @@ const actions = {
     commit(types.CLEAR_CURRENT_CHAT_WINDOW);
   },
 
-  fetchPreviousMessages: async ({ commit }, data) => {
+  fetchPreviousMessages: async ({ commit, state }, data) => {
     try {
       const {
         data: { meta, payload },
-      } = await MessageApi.getPreviousMessages(data);
+      } = await MessageApi.getPreviousMessages({
+        ...data,
+      });
       commit(`conversationMetadata/${types.SET_CONVERSATION_METADATA}`, {
         id: data.conversationId,
         data: meta,
@@ -98,6 +100,36 @@ const actions = {
       if (!payload.length) {
         commit(types.SET_ALL_MESSAGES_LOADED);
       }
+    } catch (error) {
+      // Handle error
+    }
+  },
+
+  fetchLatestMessages: async ({ commit, state }, { conversationId }) => {
+    const selectedChat = state.allConversations.find(
+      conversation => conversation.id === conversationId
+    );
+    if (!selectedChat) return;
+
+    try {
+      const {
+        data: { meta, payload },
+      } = await MessageApi.getLatestMessages({
+        conversationId,
+      });
+
+      commit(`conversationMetadata/${types.SET_CONVERSATION_METADATA}`, {
+        id: conversationId,
+        data: meta,
+      });
+
+      commit(types.SET_MISSING_MESSAGES, {
+        id: conversationId,
+        data: payload,
+      });
+
+      selectedChat.dataFetched = true;
+      commit(types.CLEAR_ALL_MESSAGES_LOADED);
     } catch (error) {
       // Handle error
     }
@@ -190,15 +222,24 @@ const actions = {
   },
 
   async setActiveChat({ commit, dispatch }, { data, after }) {
+    if (data?.is_spam && Array.isArray(data.messages)) {
+      data.messages = data.messages.filter(
+        message => !(message?.additional_attributes?.deferred_spam_reply && message?.private)
+      );
+    }
     commit(types.SET_CURRENT_CHAT_WINDOW, data);
     commit(types.CLEAR_ALL_MESSAGES_LOADED);
     if (data.dataFetched === undefined) {
       try {
-        await dispatch('fetchPreviousMessages', {
-          after,
-          before: data.messages[0].id,
-          conversationId: data.id,
-        });
+        if (data.messages?.length) {
+          await dispatch('fetchPreviousMessages', {
+            after,
+            before: data.messages[0].id,
+            conversationId: data.id,
+          });
+        } else {
+          await dispatch('fetchLatestMessages', { conversationId: data.id });
+        }
         data.dataFetched = true;
       } catch (error) {
         // Ignore error

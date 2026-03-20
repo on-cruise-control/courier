@@ -26,7 +26,11 @@ class BulkActionsJob < ApplicationJob
     records.each do |conversation|
       bulk_add_labels(conversation)
       bulk_snoozed_until(conversation)
+      was_spam = conversation.is_spam
       conversation.update(params) if params
+      if !was_spam && conversation.is_spam && conversation.follow_up_jid.present?
+        conversation.cancel_existing_follow_up_job
+      end
     end
   end
 

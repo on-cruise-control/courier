@@ -27,6 +27,7 @@ class AgentNotifications::MonthlyImpactReportMailer < ApplicationMailer
     @handoff_forms_completed  = metrics[:handoff_forms_completed]
     @conversion_rate          = metrics[:conversion_rate]
     @estimated_value          = metrics[:estimated_value]
+    @handoff_attended_count   = metrics[:handoff_attended_count]
 
     base_url = ENV.fetch('FRONTEND_URL')
     @report_url = "#{base_url}/app/accounts/#{account.id}/reports/overview"
@@ -78,6 +79,7 @@ class AgentNotifications::MonthlyImpactReportMailer < ApplicationMailer
       handoff_forms_completed: @handoff_forms_completed,
       conversion_rate: @conversion_rate,
       estimated_value: @estimated_value,
+      handoff_attended_count: @handoff_attended_count,
       dealership_name: @dealership_name,
       report_url: @report_url,
       weekly_impact_chart: @weekly_impact_chart,
@@ -97,6 +99,7 @@ class AgentNotifications::MonthlyImpactReportMailer < ApplicationMailer
       handoff_forms_completed: @handoff_forms_completed,
       conversion_rate: @conversion_rate,
       estimated_value: @estimated_value,
+      handoff_attended_count: @handoff_attended_count,
       dealership_name: @dealership_name,
       report_url: @report_url,
       weekly_impact_chart: @weekly_impact_chart,

@@ -448,6 +448,7 @@ Rails.application.routes.draw do
               get :bot_metrics
               get :booking_stats
               get :booking_summary
+              get :twilio_usage
             end
           end
           resource :year_in_review, only: [:show]
@@ -506,6 +507,11 @@ Rails.application.routes.draw do
         end
         # Add this block for messages
         post 'messages/send-message', to: 'messages#send_email_notification'
+
+        # Dealership scoped Twilio Usage
+        scope 'dealership/:dealership_id', as: :dealership do
+          resource :twilio_usage, only: [:show]
+        end
       end
     end
   end

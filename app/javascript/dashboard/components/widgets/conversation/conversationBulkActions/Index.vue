@@ -15,6 +15,8 @@ import UpdateActions from './UpdateActions.vue';
 import LabelActions from './LabelActions.vue';
 import TeamActions from './TeamActions.vue';
 import CustomSnoozeModal from 'dashboard/components/CustomSnoozeModal.vue';
+import { isOnSpamView } from 'dashboard/store/modules/conversations/helpers/actionHelpers';
+
 export default {
   components: {
     AgentSelector,
@@ -49,6 +51,14 @@ export default {
       type: Boolean,
       default: false,
     },
+    showMarkAsNotSpam: {
+      type: Boolean,
+      default: false,
+    },
+    showMarkAsSpam: {
+      type: Boolean,
+      default: false,
+    },
   },
   emits: [
     'selectAllConversations',
@@ -57,6 +67,8 @@ export default {
     'assignLabels',
     'assignTeam',
     'resolveConversations',
+    'markAsNotSpam',
+    'markAsSpam',
   ],
   data() {
     return {
@@ -67,6 +79,11 @@ export default {
       popoverPositions: {},
       showCustomTimeSnoozeModal: false,
     };
+  },
+  computed: {
+    isOnSpamView() {
+      return isOnSpamView({ route: this.$route });
+    },
   },
   mounted() {
     emitter.on(
@@ -137,6 +154,12 @@ export default {
     resolveConversations() {
       this.$emit('resolveConversations');
     },
+    markAsNotSpam() {
+      this.$emit('markAsNotSpam');
+    },
+    markAsSpam() {
+      this.$emit('markAsSpam');
+    },
     toggleUpdateActions() {
       this.showUpdateActions = !this.showUpdateActions;
     },
@@ -204,6 +227,24 @@ export default {
           xs
           faded
           @click="toggleTeamsList"
+        />
+        <NextButton
+          v-if="showMarkAsNotSpam"
+          v-tooltip="$t('BULK_ACTION.MARK_AS_NOT_SPAM')"
+          label="Not Spam"
+          slate
+          xs
+          faded
+          @click="markAsNotSpam"
+        />
+        <NextButton
+          v-if="showMarkAsSpam"
+          v-tooltip="$t('BULK_ACTION.MARK_AS_SPAM')"
+          label="Spam"
+          slate
+          xs
+          faded
+          @click="markAsSpam"
         />
       </div>
       <transition name="popover-animation">

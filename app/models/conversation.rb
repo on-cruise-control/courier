@@ -81,6 +81,9 @@ class Conversation < ApplicationRecord
   enum status: { open: 0, resolved: 1, pending: 2, snoozed: 3 }
   enum priority: { low: 0, medium: 1, high: 2, urgent: 3 }
 
+  scope :not_spam, -> { where(is_spam: [false, nil]) }
+  scope :spam, -> { where(is_spam: true) }
+
   scope :unassigned, -> { where(assignee_id: nil) }
   scope :assigned, -> { where.not(assignee_id: nil) }
   scope :assigned_to, ->(agent) { where(assignee_id: agent.id) }
@@ -236,6 +239,7 @@ class Conversation < ApplicationRecord
     notify_status_change
     create_activity
     notify_conversation_updation
+    send_deferred_spam_replies
   end
 
   def handle_resolved_status_change
@@ -291,7 +295,7 @@ class Conversation < ApplicationRecord
 
   def list_of_keys
     %w[team_id assignee_id assignee_agent_bot_id status snoozed_until custom_attributes label_list waiting_since
-       first_reply_created_at priority]
+       first_reply_created_at priority is_spam]
   end
 
   def allowed_keys?
@@ -354,6 +358,38 @@ class Conversation < ApplicationRecord
     return unless additional_attributes['referer']
 
     self['additional_attributes']['referer'] = nil unless url_valid?(additional_attributes['referer'])
+  end
+
+  def send_deferred_spam_replies
+    return unless saved_change_to_is_spam? && previous_changes[:is_spam] == [true, false]
+
+    # Find internal notes containing the 'deferred_spam_reply: true' flag
+    deferred_messages = messages.where(private: true).where("additional_attributes->>'deferred_spam_reply' = 'true'")
+
+    deferred_messages.each do |stark_message|
+      new_message = messages.create!(
+        content: stark_message.content,
+        message_type: stark_message.message_type,
+        account_id: stark_message.account_id,
+        inbox_id: stark_message.inbox_id,
+        sender: stark_message.sender,
+        private: false,
+        metadata: stark_message.metadata,
+        additional_attributes: stark_message.additional_attributes.except('deferred_spam_reply')
+      )
+
+      stark_message.attachments.each do |attachment|
+        new_message.attachments.create!(
+          account_id: attachment.account_id,
+          file_type: attachment.file_type,
+          external_url: attachment.external_url,
+          file: attachment.file.blob
+        )
+      end
+
+      # Remove the old internal note
+      stark_message.destroy
+    end
   end
 
   # creating db triggers

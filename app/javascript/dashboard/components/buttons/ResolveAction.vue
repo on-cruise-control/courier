@@ -6,9 +6,11 @@ import { useI18n } from 'vue-i18n';
 import { useStore, useStoreGetters } from 'dashboard/composables/store';
 import { useEmitter } from 'dashboard/composables/emitter';
 import { useKeyboardEvents } from 'dashboard/composables/useKeyboardEvents';
+import { useAgentsList } from 'dashboard/composables/useAgentsList';
 
 import WootDropdownItem from 'shared/components/ui/dropdown/DropdownItem.vue';
 import WootDropdownMenu from 'shared/components/ui/dropdown/DropdownMenu.vue';
+import MultiselectDropdownItems from 'shared/components/ui/MultiselectDropdownItems.vue';
 import wootConstants from 'dashboard/constants/globals';
 import {
   CMD_REOPEN_CONVERSATION,
@@ -28,6 +30,12 @@ const isLoading = ref(false);
 const [showActionsDropdown, toggleDropdown] = useToggle();
 const closeDropdown = () => toggleDropdown(false);
 const openDropdown = () => toggleDropdown(true);
+
+const [showAgentDropdown, toggleAgentDropdown] = useToggle();
+const closeAgentDropdown = () => toggleAgentDropdown(false);
+const openAgentDropdown = () => toggleAgentDropdown(true);
+
+const { agentsList } = useAgentsList();
 
 const currentChat = computed(() => getters.getSelectedChat.value);
 
@@ -126,6 +134,42 @@ const keyboardEvents = {
   },
 };
 
+const currentUserId = computed(() => getters.getCurrentUserID.value);
+const assignee = computed(() => currentChat.value?.meta?.assignee);
+
+const onSelectAgent = (agent) => {
+  closeAgentDropdown();
+  isLoading.value = true;
+  const agentId = agent ? agent.id : 0;
+  store
+    .dispatch('assignAgent', {
+      conversationId: currentChat.value.id,
+      agentId,
+    })
+    .then(() => {
+      store.dispatch('setCurrentChatAssignee', agent);
+      useAlert(t('CONVERSATION.CHANGE_AGENT'));
+    })
+    .finally(() => {
+      isLoading.value = false;
+    });
+};
+
+const onUnassign = () => {
+  isLoading.value = true;
+  store
+    .dispatch('assignAgent', {
+      conversationId: currentChat.value.id,
+      agentId: 0,
+    })
+    .then(() => {
+      useAlert(t('CONVERSATION.CHANGE_AGENT'));
+    })
+    .finally(() => {
+      isLoading.value = false;
+    });
+};
+
 useKeyboardEvents(keyboardEvents);
 
 useEmitter(CMD_REOPEN_CONVERSATION, onCmdOpenConversation);
@@ -134,7 +178,7 @@ useEmitter(CMD_RESOLVE_CONVERSATION, onCmdResolveConversation);
 
 <template>
   <div class="relative flex items-center justify-end resolve-actions">
-    <div
+    <!-- <div
       class="rounded-lg shadow outline-1 outline flex-shrink-0"
       :class="!showOpenButton ? 'outline-n-container' : 'outline-transparent'"
     >
@@ -179,7 +223,51 @@ useEmitter(CMD_RESOLVE_CONVERSATION, onCmdResolveConversation);
         trailing-icon
         @click="openDropdown"
       />
-  </div>
+  </div> -->
+    <div class="relative flex-shrink-0">
+      <div
+        class="rounded-xl shadow outline-1 outline flex-shrink-0 outline-n-container"
+      >
+        <Button
+          v-if="!assignee"
+          :label="t('CONVERSATION.ASSIGN_TO_HUMAN')"
+          size="sm"
+          color="slate"
+          no-animation
+          class="!outline-0 rounded-xl"
+          :is-loading="isLoading"
+          @click="openAgentDropdown"
+        />
+        <Button
+          v-else
+          :label="t('CONVERSATION.ASSIGNMENT.UNASSIGN')"
+          size="sm"
+          color="slate"
+          no-animation
+          class="!outline-0 rounded-xl"
+          :is-loading="isLoading"
+          @click="onUnassign"
+        />
+      </div>
+      <div
+        v-if="showAgentDropdown"
+        v-on-clickaway="closeAgentDropdown"
+        class="border rounded-lg shadow-lg border-n-strong dark:border-n-strong box-content p-2 w-[14rem] z-10 bg-n-alpha-3 backdrop-blur-[100px] absolute top-full mt-0.5 end-0"
+      >
+        <div class="flex items-center justify-between mb-1">
+          <h4 class="m-0 text-sm text-n-slate-11">{{ t('CONVERSATION.ASSIGNMENT.SELECT_AGENT') }}</h4>
+          <Button ghost slate xs icon="i-lucide-x" @click="closeAgentDropdown" />
+        </div>
+        <MultiselectDropdownItems
+          :options="agentsList"
+          :selected-items="assignee ? [assignee] : []"
+          :has-thumbnail="true"
+          :input-placeholder="t('CONVERSATION.ASSIGNMENT.SELECT_AGENT')"
+          :no-search-result="t('CONVERSATION.CARD_CONTEXT_MENU.AGENTS_LOADING')"
+          @select="onSelectAgent"
+        />
+      </div>
+    </div>
     <div
       v-if="showActionsDropdown"
       v-on-clickaway="closeDropdown"

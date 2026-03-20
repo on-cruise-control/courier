@@ -11,6 +11,7 @@
     "TAB_HEADING": "Conversations",
     "MENTION_HEADING": "Mentions",
     "UNATTENDED_HEADING": "Unattended",
+    "SPAM_HEADING": "Spam",
     "SEARCH": {
       "INPUT": "Search for People, Chats, Saved Replies .."
     },
@@ -140,6 +141,7 @@
     "SHOW_QUOTED_TEXT": "Show Quoted Text",
     "MESSAGE_READ": "Read",
     "SENDING": "Sending",
-    "COMMENT_TAG": "Comment"
+    "COMMENT_TAG": "Comment",
+    "SPAM_TAG": "Spam"
   }
 }

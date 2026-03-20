@@ -313,6 +313,10 @@ class Message < ApplicationRecord
     errors.add(:metadata, 'must be a JSON object or array of JSON objects') unless is_valid_object || is_valid_array
   end
 
+  def deferred_spam_reply?
+    additional_attributes&.dig('deferred_spam_reply') == true || additional_attributes&.dig('deferred_spam_reply') == 'true'
+  end
+
   def prevent_message_flooding
     # Added this to cover the validation specs in messages
     # We can revisit and see if we can remove this later
@@ -353,6 +357,7 @@ class Message < ApplicationRecord
     # rails issue with order of active record callbacks being executed https://github.com/rails/rails/issues/20911
     reopen_conversation
     set_conversation_activity
+    track_handoff_attendance
     dispatch_create_events
     send_reply
     execute_message_template_hooks
@@ -373,6 +378,17 @@ class Message < ApplicationRecord
     conversation.update(waiting_since: created_at) if incoming? && conversation.waiting_since.blank?
   end
 
+  def track_handoff_attendance
+    return unless human_response?
+    return unless conversation.last_handoff_at.present?
+    return if conversation.handoff_attended_at.present?
+
+    conversation.update_columns(
+      handoff_attended_at: created_at,
+      handoff_attended_by_id: sender_id
+    )
+  end
+
   def human_response?
     # if the sender is not a user, it's not a human response
     # if automation rule id is present, it's not a human response
@@ -384,6 +400,8 @@ class Message < ApplicationRecord
   end
 
   def dispatch_create_events
+    return if deferred_spam_reply?
+
     Rails.configuration.dispatcher.dispatch(MESSAGE_CREATED, Time.zone.now, message: self, performed_by: Current.executed_by)
 
     if valid_first_reply?

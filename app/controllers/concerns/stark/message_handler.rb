@@ -7,13 +7,22 @@ module Stark
     def handle_response(response)
       return unless response_valid?(response)
 
+      if response['is_spam']
+        current_conversation.update!(is_spam: true)
+        
+        if response['content'].present? || (response['attachments'].is_a?(Array) && response['attachments'].any?)
+          create_bot_response_message(current_conversation, response['content'], response['attachments'], response['metadata'], is_deferred_spam_reply: true)
+        end
+        return
+      end
+
       if response['content'].present? || (response['attachments'].is_a?(Array) && response['attachments'].any?)
         create_bot_response_message(current_conversation, response['content'], response['attachments'], response['metadata'])
       end
       process_action(event_data[:message], response['action']) if response['action'].present?
     end
 
-    def create_bot_response_message(conversation, contents, attachments = nil, metadata = {})
+    def create_bot_response_message(conversation, contents, attachments = nil, metadata = {}, is_deferred_spam_reply: false)
       contents = Array(contents)
       if instagram_channel?(conversation) && attachments.is_a?(Array) && attachments.any?
 
@@ -27,7 +36,9 @@ module Stark
             account_id: conversation.account_id,
             inbox_id: conversation.inbox_id,
             sender: agent_bot,
-            metadata: metadata
+            metadata: metadata,
+            private: is_deferred_spam_reply,
+            additional_attributes: is_deferred_spam_reply ? { deferred_spam_reply: true } : {}
           )
         end
 
@@ -52,7 +63,8 @@ module Stark
             account_id: conversation.account_id,
             inbox_id: conversation.inbox_id,
             sender: agent_bot,
-            additional_attributes: { 'sent_image': true }
+            private: is_deferred_spam_reply,
+            additional_attributes: bypass_attributes(is_deferred_spam_reply, { 'sent_image': true })
           )
           image_message.attachments.create!(
             account_id: image_message.account_id,
@@ -69,17 +81,23 @@ module Stark
             message_type: :outgoing,
             account_id: conversation.account_id,
             inbox_id: conversation.inbox_id,
-            sender: agent_bot
+            sender: agent_bot,
+            private: is_deferred_spam_reply,
+            additional_attributes: is_deferred_spam_reply ? { deferred_spam_reply: true } : {}
           )
         end
 
       else
         # Non-Instagram or no attachments: default behavior
         contents.each do |content|
-          create_text_message(conversation, content, metadata) if content.present?
+          create_text_message(conversation, content, metadata, is_deferred_spam_reply) if content.present?
         end
-        create_attachment_messages(conversation, attachments) if attachments.is_a?(Array)
+        create_attachment_messages(conversation, attachments, is_deferred_spam_reply) if attachments.is_a?(Array)
       end
+    end
+
+    def bypass_attributes(is_deferred_spam_reply, attrs)
+      is_deferred_spam_reply ? attrs.merge({ deferred_spam_reply: true }) : attrs
     end
 
     def response_valid?(response)
@@ -89,18 +107,20 @@ module Stark
 
     private
 
-    def create_text_message(conversation, content, metadata = {})
+    def create_text_message(conversation, content, metadata = {}, is_deferred_spam_reply = false)
       conversation.messages.create!(
         content: content,
         message_type: :outgoing,
         account_id: conversation.account_id,
         inbox_id: conversation.inbox_id,
         sender: agent_bot,
-        metadata: metadata
+        metadata: metadata,
+        private: is_deferred_spam_reply,
+        additional_attributes: is_deferred_spam_reply ? { deferred_spam_reply: true } : {}
       )
     end
 
-    def create_attachment_messages(conversation, attachments)
+    def create_attachment_messages(conversation, attachments, is_deferred_spam_reply = false)
       attachments.each do |attachment|
         url = attachment.is_a?(Hash) ? (attachment['url'] || attachment[:url]) : attachment
         content = attachment.is_a?(Hash) ? (attachment['content'] || attachment[:content]) : nil
@@ -120,7 +140,9 @@ module Stark
           message_type: :outgoing,
           account_id: conversation.account_id,
           inbox_id: conversation.inbox_id,
-          sender: agent_bot
+          sender: agent_bot,
+          private: is_deferred_spam_reply,
+          additional_attributes: is_deferred_spam_reply ? { deferred_spam_reply: true } : {}
         )
 
         message.attachments.new(
