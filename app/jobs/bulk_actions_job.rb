@@ -28,11 +28,8 @@ class BulkActionsJob < ApplicationJob
       bulk_snoozed_until(conversation)
       was_spam = conversation.is_spam
       conversation.update(params) if params
-      if was_spam && !conversation.is_spam
-        config_value = InstallationConfig.find_by(name: 'FOLLOW_UP_FIRST_DELAY_HOURS')&.value
-        delay = (config_value || 1).to_i.hours
-        jid = Conversations::FollowUpJob.set(wait: delay).perform_later(conversation.id, 1, force: true)
-        conversation.update!(follow_up_jid: jid.provider_job_id)
+      if !was_spam && conversation.is_spam && conversation.follow_up_jid.present?
+        conversation.cancel_existing_follow_up_job
       end
     end
   end

@@ -51,6 +51,14 @@ export default {
       type: Boolean,
       default: false,
     },
+    showMarkAsNotSpam: {
+      type: Boolean,
+      default: false,
+    },
+    showMarkAsSpam: {
+      type: Boolean,
+      default: false,
+    },
   },
   emits: [
     'selectAllConversations',
@@ -60,6 +68,7 @@ export default {
     'assignTeam',
     'resolveConversations',
     'markAsNotSpam',
+    'markAsSpam',
   ],
   data() {
     return {
@@ -148,6 +157,9 @@ export default {
     markAsNotSpam() {
       this.$emit('markAsNotSpam');
     },
+    markAsSpam() {
+      this.$emit('markAsSpam');
+    },
     toggleUpdateActions() {
       this.showUpdateActions = !this.showUpdateActions;
     },
@@ -217,13 +229,22 @@ export default {
           @click="toggleTeamsList"
         />
         <NextButton
-          v-if="isOnSpamView"
+          v-if="showMarkAsNotSpam"
           v-tooltip="$t('BULK_ACTION.MARK_AS_NOT_SPAM')"
           label="Not Spam"
           slate
           xs
           faded
           @click="markAsNotSpam"
+        />
+        <NextButton
+          v-if="showMarkAsSpam"
+          v-tooltip="$t('BULK_ACTION.MARK_AS_SPAM')"
+          label="Spam"
+          slate
+          xs
+          faded
+          @click="markAsSpam"
         />
       </div>
       <transition name="popover-animation">

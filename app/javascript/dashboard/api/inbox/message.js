@@ -53,6 +53,14 @@ class MessageApi extends ApiClient {
     super('conversations', { accountScoped: true });
   }
 
+  getLatestMessages({ conversationId, filterInternalMessages } = {}) {
+    return axios.get(`${this.url}/${conversationId}/messages`, {
+      params: {
+        filter_internal_messages: filterInternalMessages ? 1 : undefined,
+      },
+    });
+  }
+
   create({
     conversationId,
     message,
@@ -92,10 +100,13 @@ class MessageApi extends ApiClient {
     );
   }
 
-  getPreviousMessages({ conversationId, after, before }) {
+  getPreviousMessages({ conversationId, after, before, filterInternalMessages }) {
     const params = { before };
     if (after && Number(after) !== Number(before)) {
       params.after = after;
+    }
+    if (filterInternalMessages) {
+      params.filter_internal_messages = 1;
     }
     return axios.get(`${this.url}/${conversationId}/messages`, { params });
   }

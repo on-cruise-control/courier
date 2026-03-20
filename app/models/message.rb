@@ -313,6 +313,10 @@ class Message < ApplicationRecord
     errors.add(:metadata, 'must be a JSON object or array of JSON objects') unless is_valid_object || is_valid_array
   end
 
+  def deferred_spam_reply?
+    additional_attributes&.dig('deferred_spam_reply') == true || additional_attributes&.dig('deferred_spam_reply') == 'true'
+  end
+
   def prevent_message_flooding
     # Added this to cover the validation specs in messages
     # We can revisit and see if we can remove this later
@@ -396,6 +400,8 @@ class Message < ApplicationRecord
   end
 
   def dispatch_create_events
+    return if deferred_spam_reply?
+
     Rails.configuration.dispatcher.dispatch(MESSAGE_CREATED, Time.zone.now, message: self, performed_by: Current.executed_by)
 
     if valid_first_reply?

@@ -17,6 +17,9 @@
     "MARK_AS_NOT_SPAM": "Mark as not spam",
     "MARK_AS_NOT_SPAM_SUCCESFUL": "Conversations marked as not spam successfully.",
     "MARK_AS_NOT_SPAM_FAILED": "Failed to mark conversations as not spam. Please try again.",
+    "MARK_AS_SPAM": "Mark as spam",
+    "MARK_AS_SPAM_SUCCESFUL": "Conversations marked as spam successfully.",
+    "MARK_AS_SPAM_FAILED": "Failed to mark conversations as spam. Please try again.",
     "ALL_CONVERSATIONS_SELECTED_ALERT": "Conversations visible on this page are only selected.",
     "AGENT_LIST_LOADING": "Loading agents",
     "UPDATE": {
