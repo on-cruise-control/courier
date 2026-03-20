@@ -602,7 +602,7 @@
     "CONVERSATIONS": "No. of conversations"
   },
   "TWILIO_REPORTS": {
-    "HEADER": "Twilio Usage Report",
+    "HEADER": "SMS/Whatsapp Usage Report",
     "LOADING": "Fetching Twilio usage data...",
     "METRICS": {
       "TOTAL_COST": "Total Cost",
