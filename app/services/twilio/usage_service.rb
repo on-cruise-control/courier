@@ -204,10 +204,10 @@ class Twilio::UsageService
 
       response[:categories] << {
         category: 'stripe',
-        description: 'Stripe fees',
+        description: 'Gateway charges',
         count: 0,
         usage: nil,
-        unit: '5% stripe fees',
+        unit: '5% gateway charges',
         price: stripe_fee,
         currency: 'USD',
         level: 0,

@@ -363,7 +363,7 @@
     "REPORTS_BOT": "Bot",
     "REPORTS_BOOKINGS": "Bookings Requests",
     "REPORTS_HANDOFF": "Handoff Requests",
-    "TWILIO_USAGES": "Twilio Usage",
+    "TWILIO_USAGES": "SMS/Whatsapp Usage",
     "REPORTS_AGENT": "Agents",
     "REPORTS_LABEL": "Labels",
     "REPORTS_INBOX": "Inbox",
