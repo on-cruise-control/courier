@@ -1,5 +1,6 @@
 <script>
 import { mapGetters } from 'vuex';
+import format from 'date-fns/format';
 import ReportHeader from './components/ReportHeader.vue';
 import Icon from 'dashboard/components-next/icon/Icon.vue';
 
@@ -81,12 +82,16 @@ export default {
         style: 'currency',
         currency: 'USD',
         minimumFractionDigits: 2,
-        maximumFractionDigits: 4,
+        maximumFractionDigits: 2,
       }).format(value);
     },
     formatNumber(value) {
       if (value === undefined || value === null) return '';
       return new Intl.NumberFormat('en-US').format(value);
+    },
+    formatDate(date) {
+      if (!date || date === 'N/A') return 'N/A';
+      return format(new Date(date), 'MMM d, yyyy');
     },
   },
 };
@@ -133,7 +138,7 @@ export default {
         <div class="bg-n-solid-2 p-6 rounded-xl border border-n-weak shadow-sm">
           <p class="text-sm text-n-slate-11 font-medium mb-1">{{ $t('TWILIO_REPORTS.METRICS.PERIOD') }}</p>
           <p class="text-sm font-medium text-n-slate-12">
-            {{ $t('TWILIO_REPORTS.PERIOD_DATE_RANGE', { startDate: totalUsage.period?.start_date || 'N/A', endDate: totalUsage.period?.end_date || 'N/A' }) }}
+            {{ $t('TWILIO_REPORTS.PERIOD_DATE_RANGE', { startDate: formatDate(totalUsage.period?.start_date), endDate: formatDate(totalUsage.period?.end_date) }) }}
           </p>
         </div>
       </div>
@@ -165,7 +170,9 @@ export default {
                     <span v-else class="w-4" />
                     <div class="flex flex-col">
                       <p class="capitalize text-sm">{{ category.description || category.category }}</p>
-                      <p class="text-[10px] text-n-slate-9 font-normal opacity-0 group-hover:opacity-100 transition-opacity truncate max-w-full">{{ category.category }}</p>
+                      <p v-if="category.simple_desc" class="text-[10px] text-n-slate-9 font-normal opacity-0 group-hover:opacity-100 transition-opacity truncate max-w-full">
+                        {{ category.simple_desc }}
+                      </p>
                     </div>
                   </div>
                 </th>

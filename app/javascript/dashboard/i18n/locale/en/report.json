@@ -603,7 +603,7 @@
   },
   "TWILIO_REPORTS": {
     "HEADER": "SMS/Whatsapp Usage Report",
-    "LOADING": "Fetching Twilio usage data...",
+    "LOADING": "Fetching SMS/Whatsapp usage data...",
     "METRICS": {
       "TOTAL_COST": "Total Cost",
       "PERIOD": "Period"
@@ -615,6 +615,6 @@
       "COST": "Cost",
       "NO_USAGE": "No usage recorded for this period."
     },
-    "PERIOD_DATE_RANGE": "{startDate} to {endDate}"
+    "PERIOD_DATE_RANGE": " {startDate} to {endDate} "
   }
 }
