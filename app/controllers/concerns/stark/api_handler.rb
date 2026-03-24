@@ -132,8 +132,8 @@ module Stark
       platform = conversation.inbox.platform_name
       handoff_customer_name = (customer_data['name'].presence ||
                                extract_customer_name(conversation.contact, platform))&.titleize
-      handoff_customer_phone = customer_data['phone'].presence || '(Not Shared)'
-      handoff_customer_email = customer_data['email'].presence || '(Not Shared)'
+      handoff_customer_phone = customer_data['phone'].presence || '(N/A)'
+      handoff_customer_email = customer_data['email'].presence || '(N/A)'
 
       refined_customer_data = {
         'name' => handoff_customer_name,

@@ -31,7 +31,7 @@ class Twilio::UsageService
     'channels-root' => { desc: 'Channels', simple_desc: 'Overall messaging usage from connected channels.', unit: 'messages' },
     'channels-whatsapp' => { desc: 'WhatsApp', simple_desc: 'Messages sent or received on WhatsApp.', unit: 'messages' },
     'channels-whatsapp-template-service' => { desc: 'Channels - WhatsApp - Service', simple_desc: 'WhatsApp messages handled through the service.', unit: 'messages' },
-    'totalprice' => { desc: 'Total Price', simple_desc: 'Aggregate cost of all messaging services.', unit: 'usd' }
+    'totalprice' => { desc: 'Total Price', simple_desc: 'The bill for all messages, fees, phone numbers, and other charges.', unit: 'usd' }
   }.freeze
 
   HIERARCHY = [
@@ -193,26 +193,61 @@ class Twilio::UsageService
       category_map = records.index_by(&:category)
       response[:categories] = HIERARCHY.map { |h| build_tree(h, category_map) }.compact
 
-      # Calculate Stripe charges
       twilio_total_price = response[:total_usage][:price].to_f
       stripe_fee = (twilio_total_price * SURCHARGE_PERCENT).round(4)
+      
+      response[:summary_categories] = []
+      response[:summary_categories] << build_tree({ id: 'totalprice', desc: 'Total Price', is_summary: true }, category_map)
 
       if stripe_fee.positive?
-        response[:categories] << {
+        response[:summary_categories] << {
           category: 'stripe',
           description: 'Gateway charges',
-          simple_desc: '',
+          simple_desc: '5% platform charges.',
           count: 0,
           usage: nil,
           unit: '5%',
           price: stripe_fee,
           currency: 'USD',
           level: 0,
+          is_summary: true,
           period: response[:total_usage][:period] || {}
         }
       end
 
       response[:total_usage][:price] = (twilio_total_price + stripe_fee).round(4)
+
+      response[:summary_categories] << {
+        category: 'grand-total',
+        description: 'Grand Total',
+        simple_desc: 'The total amount.',
+        count: 0,
+        usage: nil,
+        unit: '',
+        price: (twilio_total_price + stripe_fee).round(4),
+        currency: 'USD',
+        level: 0,
+        is_summary: true,
+        is_grand_total: true,
+        period: response[:total_usage][:period] || {}
+      }
+    else
+      twilio_total_price = response[:total_usage][:price].to_f
+      stripe_fee = (twilio_total_price * SURCHARGE_PERCENT).round(4)
+
+      total = response[:total_usage]
+      response[:total_usage] = {
+        category:        total[:category],
+        description:     total[:description],
+        count:           total[:count],
+        usage:           total[:usage],
+        unit:            total[:unit],
+        price:           total[:price],
+        gateway_charges: stripe_fee.round(4),
+        total_cost:      (twilio_total_price + stripe_fee).round(4),
+        currency:        total[:currency],
+        period:          total[:period]
+      }
     end
 
     response
@@ -223,6 +258,7 @@ class Twilio::UsageService
     record = category_map[id]
     formatted = record ? format_record(record) : zero_record(id)
     formatted[:level] = level
+    formatted[:is_summary] = item[:is_summary] if item.is_a?(Hash) && item[:is_summary]
 
     formatted[:description] = item[:desc] if item.is_a?(Hash) && item[:desc]
     formatted[:simple_desc] ||= item[:simple_desc] if item.is_a?(Hash) && item[:simple_desc]
@@ -235,7 +271,7 @@ class Twilio::UsageService
       end
     end
 
-    (formatted[:price].to_f != 0 || formatted[:count].to_i != 0 || formatted[:usage].to_i != 0) ? formatted : nil
+    (formatted[:price].to_f != 0 || formatted[:count].to_i != 0 || formatted[:usage].to_i != 0 || formatted[:is_summary]) ? formatted : nil
   end
 
   def format_record(record)
