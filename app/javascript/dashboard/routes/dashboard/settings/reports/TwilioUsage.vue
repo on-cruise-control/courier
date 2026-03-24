@@ -33,6 +33,18 @@ export default {
     categories() {
       return this.twilioUsage?.categories || [];
     },
+    summaryCategories() {
+      return this.twilioUsage?.summary_categories || [];
+    },
+    totalPriceCategory() {
+      return this.summaryCategories.find(c => c.category === 'totalprice') || {};
+    },
+    gatewayChargesCategory() {
+      return this.summaryCategories.find(c => c.category === 'stripe') || {};
+    },
+    grandTotalCategory() {
+      return this.summaryCategories.find(c => c.category === 'grand-total') || {};
+    },
     flattenedCategories() {
       const items = [];
       const flatten = (nodes) => {
@@ -98,12 +110,12 @@ export default {
 </script>
 
 <template>
-  <div class="flex flex-col gap-4">
+  <div class="flex flex-col gap-4 pb-12">
     <ReportHeader :header-title="$t('TWILIO_REPORTS.HEADER')" />
     
-    <div class="px-0 flex flex-col justify-between gap-3 md:flex-row">
-      <div class="w-full grid gap-y-2 gap-x-1.5 grid-cols-[repeat(auto-fill,minmax(250px,1fr))]">
-        <div class="multiselect-wrap--small">
+    <div class="px-0 flex flex-col md:flex-row justify-between items-start md:items-center gap-3 mb-2">
+      <div class="flex flex-col md:flex-row items-start md:items-center gap-4 w-full">
+        <div class="multiselect-wrap--small min-w-[200px]">
           <multiselect
             v-model="selectedPeriod"
             class="no-margin"
@@ -119,6 +131,16 @@ export default {
             @select="onPeriodChange"
           />
         </div>
+        <div v-if="twilioUsage && !isFetching" class="flex items-center gap-3 px-4 py-1.5 bg-n-solid-2 border border-n-weak rounded-lg shadow-sm">
+          <div class="flex flex-col">
+            <span class="text-[9px] font-bold uppercase text-n-slate-9 leading-none mb-0.5">{{ $t('TWILIO_REPORTS.METRICS.PERIOD') }}</span>
+            <span class="text-xs text-n-slate-12 tabular-nums">
+              {{ formatDate(totalUsage.period?.start_date) }} – {{ formatDate(totalUsage.period?.end_date) }}
+            </span>
+          </div>
+        </div>
+      </div>
+      <div v-if="twilioUsage && !isFetching" class="hidden lg:block">
       </div>
     </div>
 
@@ -127,27 +149,10 @@ export default {
     </div>
 
     <div v-else-if="twilioUsage" class="flex flex-col gap-6">
-      <!-- Summary Card -->
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div class="bg-n-solid-2 p-6 rounded-xl border border-n-weak shadow-sm">
-          <p class="text-sm text-n-slate-11 font-medium mb-1">{{ $t('TWILIO_REPORTS.METRICS.TOTAL_COST') }}</p>
-          <p class="text-2xl font-bold text-n-slate-12">
-            {{ formatCurrency(totalUsage.price) }}
-          </p>
-        </div>
-        <div class="bg-n-solid-2 p-6 rounded-xl border border-n-weak shadow-sm">
-          <p class="text-sm text-n-slate-11 font-medium mb-1">{{ $t('TWILIO_REPORTS.METRICS.PERIOD') }}</p>
-          <p class="text-sm font-medium text-n-slate-12">
-            {{ $t('TWILIO_REPORTS.PERIOD_DATE_RANGE', { startDate: formatDate(totalUsage.period?.start_date), endDate: formatDate(totalUsage.period?.end_date) }) }}
-          </p>
-        </div>
-      </div>
-
-      <!-- Categories Table -->
       <div class="bg-n-solid-2 overflow-hidden border border-n-weak rounded-xl shadow-sm">
 
         <div class="overflow-x-auto">
-          <table class="w-full text-sm text-left text-n-slate-11 table-fixed">
+          <table class="w-full text-sm text-left text-n-slate-11 table-fixed border-collapse">
             <thead class="text-xs uppercase bg-n-solid-1 text-n-slate-10 border-b border-n-weak">
               <tr>
                 <th scope="col" class="px-6 py-3 w-[50%]">{{ $t('TWILIO_REPORTS.TABLE.CATEGORY') }}</th>
@@ -190,6 +195,32 @@ export default {
               </tr>
             </tbody>
           </table>
+        </div>
+      </div>
+
+      <div v-if="summaryCategories.length" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div v-if="totalPriceCategory.category" class="bg-n-solid-2 p-6 rounded-xl border border-n-weak shadow-sm flex flex-col justify-between">
+          <p class="text-xs text-n-slate-11 font-semibold uppercase tracking-wider mb-2">Total Price</p>
+          <div>
+            <p class="text-2xl font-bold text-n-slate-12">{{ formatCurrency(totalPriceCategory.price) }}</p>
+            <p class="text-[10px] text-n-slate-9 mt-1 italic">{{ totalPriceCategory.simple_desc }}</p>
+          </div>
+        </div>
+
+        <div v-if="gatewayChargesCategory.category" class="bg-n-solid-2 p-6 rounded-xl border border-n-weak shadow-sm flex flex-col justify-between">
+          <p class="text-xs text-n-slate-11 font-semibold uppercase tracking-wider mb-2">Gateway Charges</p>
+          <div>
+            <p class="text-2xl font-bold text-n-slate-12">{{ formatCurrency(gatewayChargesCategory.price) }}</p>
+            <p class="text-[10px] text-n-slate-9 mt-1 italic">{{ gatewayChargesCategory.simple_desc }}</p>
+          </div>
+        </div>
+
+        <div v-if="grandTotalCategory.category" class="bg-n-slate-800/40 p-6 rounded-xl border border-n-weak shadow-md flex flex-col justify-between md:col-span-2 lg:col-span-1">
+          <p class="text-xs text-n-slate-11 font-semibold uppercase tracking-wider mb-2">Grand Total</p>
+          <div>
+            <p class="text-3xl font-extrabold text-green-500">{{ formatCurrency(grandTotalCategory.price) }}</p>
+            <p class="text-[10px] text-n-teal-11 mt-1 font-medium">{{ grandTotalCategory.simple_desc }}</p>
+          </div>
         </div>
       </div>
     </div>
