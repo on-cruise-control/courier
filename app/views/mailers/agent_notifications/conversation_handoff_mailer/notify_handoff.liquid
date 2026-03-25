@@ -3,7 +3,7 @@
     <p>Hello {{ account.name }}, Team</p>
 
     <p style="margin-bottom: 20px;">
-      We identified a conversation that needs to be escalated to a human with urgency. Please take over this conversation manually below.
+      We identified a conversation that needs to be escalated to a human with urgency. Please contact the customer as soon as possible.
     </p>
 
     <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 20px;">
@@ -12,12 +12,16 @@
         <td style="padding: 5px 0;"><strong>Name:</strong> {{ stark_customer_name }}</td>
       </tr>
       {% endif %}
+      {% if stark_customer_phone and stark_customer_phone != "(N/A)" %}
       <tr>
         <td style="padding: 5px 0;"><strong>Number:</strong> {{ stark_customer_phone }}</td>
       </tr>
+      {% endif %}
+      {% if stark_customer_email and stark_customer_email != "(N/A)" %}
       <tr>
         <td style="padding: 5px 0;"><strong>Email:</strong> {{ stark_customer_email }}</td>
       </tr>
+      {% endif %}
       <tr>
         <td style="padding: 5px 0;"><strong>Platform:</strong> {{ inbox.platform_name }}</td>
       </tr>

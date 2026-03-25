@@ -2,28 +2,36 @@ class Twilio::UsageService
   SURCHARGE_PERCENT = 0.05
 
   CATEGORY_METADATA = {
-    'channels' => { desc: 'Channels Platform', unit: 'messages' },
-    'channels-messaging-outbound' => { desc: 'Messaging Channels Outbound', unit: 'messages' },
-    'channels-messaging-inbound' => { desc: 'Messaging Channels Inbound', unit: 'messages' },
-    'sms' => { desc: 'SMS', unit: 'segments' },
-    'sms-outbound-longcode' => { desc: 'Standard Outbound SMS', unit: 'segments' },
-    'sms-inbound-longcode' => { desc: 'Standard Inbound SMS', unit: 'segments' },
-    'mms' => { desc: 'MMS', unit: 'segments' },
-    'mms-outbound-longcode' => { desc: 'Standard Outbound MMS', unit: 'segments' },
-    'mms-inbound-longcode' => { desc: 'Standard Inbound MMS', unit: 'segments' },
-    'a2p-10dlc-registrationfees-monthly' => { desc: 'Registration Fees - Monthly Fees', unit: 'month' },
-    'a2p-10dlc-registrationfees-campaigncharges' => { desc: 'Campaign Charges', unit: 'month' },
-    'a2p-10dlc-registrationfees-onetime' => { desc: 'Registration Fees - One-time Fees', unit: 'once' },
-    'a2p-10dlc-registrationfees-brandregistration' => { desc: 'Brand Registration', unit: 'once' },
-    'a2p-10dlc-registrationfees-campaignvetting' => { desc: 'Campaign Vetting', unit: 'once' },
-    'mms-messages-carrierfees' => { desc: 'MMS Carrier Fees', unit: 'messages' },
-    'failed-message-processing-fee' => { desc: 'Failed Message Processing Fee', unit: 'messages' },
-    'sms-messages-carrierfees' => { desc: 'SMS Carrier Fees', unit: 'segments' },
-    'phonenumbers' => { desc: 'Phone Numbers', unit: 'numbers' },
-    'phonenumbers-local' => { desc: 'Local Phone Numbers', unit: 'numbers' },
-    'phonenumbers-setups' => { desc: 'Phone Number Setups', unit: 'numbers' },
-    'channels-whatsapp-template-service' => { desc: 'Channels - WhatsApp - Service', unit: 'messages' },
-    'totalprice' => { desc: 'Total Price', unit: 'usd' }
+    'channels' => { desc: 'Channels Platform', simple_desc: 'Messages sent through Twilio from your app or system.', unit: 'messages' },
+    'channels-messaging' => { desc: 'Channels Platform', simple_desc: 'Messages sent through connected channels like WhatsApp or other chat apps.', unit: 'messages' },
+    'channels-messaging-outbound' => { desc: 'Messaging Channels Outbound', simple_desc: 'Messages your team sent out to customers.', unit: 'messages' },
+    'channels-messaging-inbound' => { desc: 'Messaging Channels Inbound', simple_desc: 'Messages customers sent back to you.', unit: 'messages' },
+    'sms' => { desc: 'SMS', simple_desc: 'Regular text messages.', unit: 'segments' },
+    'sms-outbound' => { desc: 'Outbound SMS', simple_desc: 'Text messages you sent to customers.', unit: 'segments' },
+    'sms-inbound' => { desc: 'Inbound SMS', simple_desc: 'Text messages customers sent to you.', unit: 'segments' },
+    'sms-outbound-longcode' => { desc: 'Standard Outbound SMS', simple_desc: 'Text messages you sent to customers.', unit: 'segments' },
+    'sms-inbound-longcode' => { desc: 'Standard Inbound SMS', simple_desc: 'Text messages customers sent to you.', unit: 'segments' },
+    'mms' => { desc: 'MMS', simple_desc: 'Messages with images, files, or other media.', unit: 'segments' },
+    'mms-outbound' => { desc: 'Outbound MMS', simple_desc: 'Media messages you sent to customers.', unit: 'segments' },
+    'mms-inbound' => { desc: 'Inbound MMS', simple_desc: 'Media messages customers sent to you.', unit: 'segments' },
+    'mms-outbound-longcode' => { desc: 'Standard Outbound MMS', simple_desc: 'Media messages you sent to customers.', unit: 'segments' },
+    'mms-inbound-longcode' => { desc: 'Standard Inbound MMS', simple_desc: 'Media messages customers sent to you.', unit: 'segments' },
+    'a2p-registration-fees' => { desc: 'Messaging A2P Registration Fees', simple_desc: 'Fees for registering business texting in the US.', unit: 'usd' },
+    'a2p-10dlc-registrationfees-monthly' => { desc: 'Registration Fees - Monthly Fees', simple_desc: 'Monthly fees to keep your campaign active.', unit: 'month' },
+    'a2p-10dlc-registrationfees-campaigncharges' => { desc: 'Campaign Charges', simple_desc: 'Monthly fee for your approved campaign.', unit: 'month' },
+    'a2p-10dlc-registrationfees-onetime' => { desc: 'Registration Fees - One-time Fees', simple_desc: 'One-time setup fees for business texting.', unit: 'once' },
+    'a2p-10dlc-registrationfees-brandregistration' => { desc: 'Brand Registration', simple_desc: 'One-time fee to register your business.', unit: 'once' },
+    'a2p-10dlc-registrationfees-campaignvetting' => { desc: 'Campaign Vetting', simple_desc: 'One-time fee to review and approve your texting campaign.', unit: 'once' },
+    'mms-messages-carrierfees' => { desc: 'MMS Carrier Fees', simple_desc: 'Extra charges from carriers for media messages.', unit: 'messages' },
+    'failed-message-processing-fee' => { desc: 'Failed Message Processing Fee', simple_desc: 'Small fee for messages that failed after processing.', unit: 'messages' },
+    'sms-messages-carrierfees' => { desc: 'SMS Carrier Fees', simple_desc: 'Extra charges from carriers for text messages.', unit: 'segments' },
+    'phonenumbers' => { desc: 'Phone Numbers', simple_desc: 'Monthly cost for the phone numbers you use.', unit: 'numbers' },
+    'phonenumbers-local' => { desc: 'Local Phone Numbers', simple_desc: 'Monthly cost for the phone numbers you use.', unit: 'numbers' },
+    'phonenumbers-setups' => { desc: 'Phone Number Setups', simple_desc: 'Monthly cost for the phone numbers you use.', unit: 'numbers' },
+    'channels-root' => { desc: 'Channels', simple_desc: 'Overall messaging usage from connected channels.', unit: 'messages' },
+    'channels-whatsapp' => { desc: 'WhatsApp', simple_desc: 'Messages sent or received on WhatsApp.', unit: 'messages' },
+    'channels-whatsapp-template-service' => { desc: 'Channels - WhatsApp - Service', simple_desc: 'WhatsApp messages handled through the service.', unit: 'messages' },
+    'totalprice' => { desc: 'Total Price', simple_desc: 'The bill for all messages, fees, phone numbers, and other charges.', unit: 'usd' }
   }.freeze
 
   HIERARCHY = [
@@ -43,12 +51,10 @@ class Twilio::UsageService
             {
               id: 'sms-outbound',
               desc: 'Outbound SMS',
-              children: ['sms-outbound-longcode']
             },
             {
               id: 'sms-inbound',
               desc: 'Inbound SMS',
-              children: ['sms-inbound-longcode']
             },
           ]
         },
@@ -59,12 +65,10 @@ class Twilio::UsageService
             {
               id: 'mms-outbound',
               desc: 'Outbound MMS',
-              children: ['mms-outbound-longcode']
             },
             {
               id: 'mms-inbound',
               desc: 'Inbound MMS',
-              children: ['mms-inbound-longcode']
             }
           ]
         },
@@ -104,16 +108,8 @@ class Twilio::UsageService
       ]
     },
     {
-      id: 'phonenumbers-root',
-      desc: 'Phone Numbers',
-      children: [
-        'phonenumbers-setups',
-        {
-          id: 'phonenumbers',
-          desc: 'Phone Numbers',
-          children: ['phonenumbers-local']
-        }
-      ]
+      id: 'phonenumbers',
+      desc: 'Phone Numbers'
     },
     {
       id: 'channels-root',
@@ -122,7 +118,6 @@ class Twilio::UsageService
         {
           id: 'channels-whatsapp',
           desc: 'WhatsApp',
-          children: ['channels-whatsapp-template-service']
         }
       ]
     }
@@ -196,25 +191,63 @@ class Twilio::UsageService
 
     if api_version == 'v2'
       category_map = records.index_by(&:category)
-      response[:categories] = HIERARCHY.map { |h| build_tree(h, category_map) }
+      response[:categories] = HIERARCHY.map { |h| build_tree(h, category_map) }.compact
 
-      # Calculate Stripe charges
+      twilio_total_price = response[:total_usage][:price].to_f
+      stripe_fee = (twilio_total_price * SURCHARGE_PERCENT).round(4)
+      
+      response[:summary_categories] = []
+      response[:summary_categories] << build_tree({ id: 'totalprice', desc: 'Total Price', is_summary: true }, category_map)
+
+      if stripe_fee.positive?
+        response[:summary_categories] << {
+          category: 'stripe',
+          description: 'Gateway charges',
+          simple_desc: '5% platform charges.',
+          count: 0,
+          usage: nil,
+          unit: '5%',
+          price: stripe_fee,
+          currency: 'USD',
+          level: 0,
+          is_summary: true,
+          period: response[:total_usage][:period] || {}
+        }
+      end
+
+      response[:total_usage][:price] = (twilio_total_price + stripe_fee).round(4)
+
+      response[:summary_categories] << {
+        category: 'grand-total',
+        description: 'Grand Total',
+        simple_desc: 'The total amount.',
+        count: 0,
+        usage: nil,
+        unit: '',
+        price: (twilio_total_price + stripe_fee).round(4),
+        currency: 'USD',
+        level: 0,
+        is_summary: true,
+        is_grand_total: true,
+        period: response[:total_usage][:period] || {}
+      }
+    else
       twilio_total_price = response[:total_usage][:price].to_f
       stripe_fee = (twilio_total_price * SURCHARGE_PERCENT).round(4)
 
-      response[:categories] << {
-        category: 'stripe',
-        description: 'Gateway charges',
-        count: 0,
-        usage: nil,
-        unit: '5% gateway charges',
-        price: stripe_fee,
-        currency: 'USD',
-        level: 0,
-        period: response[:total_usage][:period] || {}
+      total = response[:total_usage]
+      response[:total_usage] = {
+        category:        total[:category],
+        description:     total[:description],
+        count:           total[:count],
+        usage:           total[:usage],
+        unit:            total[:unit],
+        price:           total[:price],
+        gateway_charges: stripe_fee.round(4),
+        total_cost:      (twilio_total_price + stripe_fee).round(4),
+        currency:        total[:currency],
+        period:          total[:period]
       }
-
-      response[:total_usage][:price] = (twilio_total_price + stripe_fee).round(4)
     end
 
     response
@@ -225,24 +258,27 @@ class Twilio::UsageService
     record = category_map[id]
     formatted = record ? format_record(record) : zero_record(id)
     formatted[:level] = level
+    formatted[:is_summary] = item[:is_summary] if item.is_a?(Hash) && item[:is_summary]
 
     formatted[:description] = item[:desc] if item.is_a?(Hash) && item[:desc]
+    formatted[:simple_desc] ||= item[:simple_desc] if item.is_a?(Hash) && item[:simple_desc]
 
     if item.is_a?(Hash) && item[:children].present?
-      formatted[:children] = item[:children].map { |c| build_tree(c, category_map, level + 1) }
+      formatted[:children] = item[:children].map { |c| build_tree(c, category_map, level + 1) }.compact
       if formatted[:price].to_f == 0 && formatted[:count].to_i == 0
         formatted[:price] = formatted[:children].sum { |c| c[:price].to_f }.round(4)
         formatted[:count] = formatted[:children].sum { |c| c[:count].to_i }
       end
     end
 
-    formatted
+    (formatted[:price].to_f != 0 || formatted[:count].to_i != 0 || formatted[:usage].to_i != 0 || formatted[:is_summary]) ? formatted : nil
   end
 
   def format_record(record)
     {
       category: record.category,
       description: record.description,
+      simple_desc: CATEGORY_METADATA.dig(record.category, :simple_desc),
       count: record.count.to_i,
       usage: record.usage.to_i,
       unit: record.usage_unit,
@@ -256,10 +292,11 @@ class Twilio::UsageService
   end
 
   def zero_record(category)
-    meta = CATEGORY_METADATA[category] || { desc: category.titleize, unit: 'count' }
+    meta = CATEGORY_METADATA[category] || { desc: category.titlecase, simple_desc: '', unit: 'count' }
     {
       category: category,
       description: meta[:desc],
+      simple_desc: meta[:simple_desc],
       count: 0,
       usage: 0,
       unit: meta[:unit],
