@@ -19,14 +19,22 @@ class Conversations::FollowUpJob < ApplicationJob
     case follow_up_number
     when 1
       create_follow_up_message(conversation, 1, stark_response)
-      # Schedule Follow-up 2 (if still no reply in 22h)
+      # Schedule Follow-up 2 (default 5h)
       config_value = InstallationConfig.find_by(name: 'FOLLOW_UP_SECOND_DELAY_HOURS')&.value
-      follow_up_2_delay = (config_value || 22).to_i.hours
+      follow_up_2_delay = (config_value || 5).to_i.hours
       jid = Conversations::FollowUpJob.set(wait: follow_up_2_delay).perform_later(conversation.id, 2)
       conversation.update!(follow_up_jid: jid.provider_job_id)
 
     when 2
       create_follow_up_message(conversation, 2, stark_response)
+      # Schedule Follow-up 3 (default 22h)
+      config_value = InstallationConfig.find_by(name: 'FOLLOW_UP_THIRD_DELAY_HOURS')&.value
+      follow_up_3_delay = (config_value || 22).to_i.hours
+      jid = Conversations::FollowUpJob.set(wait: follow_up_3_delay).perform_later(conversation.id, 3)
+      conversation.update!(follow_up_jid: jid.provider_job_id)
+
+    when 3
+      create_follow_up_message(conversation, 3, stark_response)
       conversation.update!(follow_up_jid: nil)
     end
   end

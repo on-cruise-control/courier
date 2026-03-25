@@ -1,10 +1,12 @@
 class Sms::BookingNotificationService
-  def initialize(conversation:, booking_date:, phone:, email:)
+  def initialize(conversation:, booking_date:, phone:, email:, whatsapp_number: nil, text_number: nil)
     @conversation = conversation
     @account = conversation.account
     @booking_date = booking_date
     @customer_phone = phone
     @customer_email = email
+    @whatsapp_number = whatsapp_number
+    @text_number = text_number
   end
 
   def perform
@@ -61,7 +63,7 @@ class Sms::BookingNotificationService
       host: ENV.fetch('FRONTEND_URL', 'http://localhost:3000')
     )
 
-    <<~SMS
+    body = <<~SMS
       📆 New Booking Scheduled
 
       Dealership: #{account_name}
@@ -69,9 +71,14 @@ class Sms::BookingNotificationService
       Booking Date: #{@booking_date}
       Customer Phone: #{@customer_phone}
       Customer Email: #{@customer_email}
-
-      View conversation: #{conversation_url}
     SMS
+    
+    body += "      WhatsApp Number: #{@whatsapp_number}\n" if @whatsapp_number.present?
+    body += "      Text Number: #{@text_number}\n" if @text_number.present?
+    
+    body += "\n      View conversation: #{conversation_url}\n"
+    
+    body.strip
   end
 
   def send_sms_to_recipients(recipients, message_body)
