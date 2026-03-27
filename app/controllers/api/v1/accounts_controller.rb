@@ -52,6 +52,7 @@ class Api::V1::AccountsController < Api::BaseController
     @account.custom_attributes['onboarding_step'] = 'invite_team' if @account.custom_attributes['onboarding_step'] == 'account_update'
 
     @account.booking_emails = params[:booking_emails] if params.key?(:booking_emails)
+    @account.escalation_emails = params[:escalation_emails] if params.key?(:escalation_emails)
 
     @account.save!
   end
