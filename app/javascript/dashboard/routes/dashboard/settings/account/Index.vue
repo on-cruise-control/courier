@@ -18,6 +18,7 @@ import AccountDelete from './components/AccountDelete.vue';
 import AutoResolve from './components/AutoResolve.vue';
 import AudioTranscription from './components/AudioTranscription.vue';
 import BookingEmails from './components/BookingEmails.vue';
+import EscalationEmails from './components/EscalationEmails.vue';
 import SectionLayout from './components/SectionLayout.vue';
 
 export default {
@@ -30,6 +31,7 @@ export default {
     AutoResolve,
     AudioTranscription,
     BookingEmails,
+    EscalationEmails,
     SectionLayout,
     WithLabel,
     NextInput,
@@ -302,6 +304,7 @@ export default {
     <AutoResolve v-if="showAutoResolutionConfig" />
     <AudioTranscription v-if="showAudioTranscriptionConfig" />
     <BookingEmails />
+    <EscalationEmails />
     <AccountId />
     <div v-if="!uiFlags.isFetchingItem && isOnChatwootCloud">
       <AccountDelete />

@@ -1,12 +1,8 @@
-class Sms::BookingNotificationService
-  def initialize(conversation:, booking_date:, phone:, email:, whatsapp_number: nil, text_number: nil)
+class Sms::EscalationNotificationService
+  def initialize(conversation:, emails:)
     @conversation = conversation
     @account = conversation.account
-    @booking_date = booking_date
-    @customer_phone = phone
-    @customer_email = email
-    @whatsapp_number = whatsapp_number
-    @text_number = text_number
+    @emails = emails
   end
 
   def perform
@@ -18,7 +14,7 @@ class Sms::BookingNotificationService
     message_body = build_message_body
     send_sms_to_recipients(recipients, message_body)
   rescue StandardError => e
-    Rails.logger.error("Failed to send booking SMS notifications: #{e.message}")
+    Rails.logger.error("Failed to send escalation SMS notifications: #{e.message}")
   end
 
   private
@@ -42,9 +38,9 @@ class Sms::BookingNotificationService
   end
 
   def recipients_with_phone_numbers
-    # Get users whose emails are in the booking_emails list and have phone numbers
-    emails = @account.booking_emails || []
-    User.where(email: emails).where.not(phone_number: [nil, ''])
+    # Find users with the provided emails who have phone numbers
+    # We don't strictly enforce account membership if the user requested finding by email
+    User.where(email: @emails).where.not(phone_number: [nil, ''])
   end
 
   def build_message_body
@@ -56,19 +52,14 @@ class Sms::BookingNotificationService
     )
 
     body = <<~SMS
-      📆 New Booking Scheduled
-
+      🚨 Urgent Escalation Required
+      
       Dealership: #{account_name}
-
-      Booking Date: #{@booking_date}
-      Customer Phone: #{@customer_phone}
-      Customer Email: #{@customer_email}
+      
+      Please take over this conversation manually.
     SMS
     
-    body += "      WhatsApp Number: #{@whatsapp_number}\n" if @whatsapp_number.present?
-    body += "      Text Number: #{@text_number}\n" if @text_number.present?
-    
-    body += "\n      View conversation: #{conversation_url}\n"
+    body += "\nView conversation: #{conversation_url}\n"
     
     body.strip
   end
@@ -83,9 +74,9 @@ class Sms::BookingNotificationService
         body: message_body
       )
     rescue Twilio::REST::TwilioError => e
-      Rails.logger.error("Failed to send booking SMS to #{recipient.name} (#{recipient.phone_number}): #{e.message}")
+      Rails.logger.error("Failed to send escalation SMS to #{recipient.name} (#{recipient.phone_number}): #{e.message}")
     rescue StandardError => e
-      Rails.logger.error("Unexpected error sending booking SMS to #{recipient.name}: #{e.message}")
+      Rails.logger.error("Unexpected error sending escalation SMS to #{recipient.name}: #{e.message}")
     end
   end
 end

@@ -507,6 +507,7 @@ Rails.application.routes.draw do
         end
         # Add this block for messages
         post 'messages/send-message', to: 'messages#send_email_notification'
+        post 'escalations/send-escalation', to: 'escalations#create'
 
         # Dealership scoped Twilio Usage
         scope 'dealership/:dealership_id', as: :dealership do

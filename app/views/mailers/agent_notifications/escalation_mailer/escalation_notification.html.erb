@@ -1,0 +1,53 @@
+<div style="font-family: -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; color: #333; max-width: 600px; line-height: 1.5;">
+  <p>Hello,</p>
+
+  <p style="margin-bottom: 20px;">We would like to bring to your immediate attention a customer interaction that requires urgent escalation and follow-up.</p>
+
+  <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 20px;">
+    <tr>
+      <td style="padding: 5px 0;"><strong>Name:</strong> <%= @customer_name %></td>
+    </tr>
+    <tr>
+      <td style="padding: 5px 0;"><strong>Platform:</strong> <%= @platform_name %></td>
+    </tr>
+    <%
+      username = @conversation.contact.additional_attributes['social_instagram_user_name'] || 
+                 @conversation.contact.additional_attributes.dig('social_profiles', 'instagram')
+      if username.present? && @conversation.inbox.channel_type == 'Channel::Instagram'
+        profile_url = "https://www.instagram.com/#{username}"
+    %>
+      <tr>
+        <td style="padding: 5px 0;">
+          <strong>Instagram Profile:</strong> 
+          <a href="<%= profile_url %>" target="_blank" rel="noopener" style="color:#1f93ff; text-decoration:none;">
+            <%= profile_url %>
+          </a>
+        </td>
+      </tr>
+    <% end %>
+  </table>
+
+  <p><strong>Summary:</strong></p>
+  <div style="background-color: #f3f4f6; padding: 15px; border-radius: 6px; margin-bottom: 20px; line-height: 1.5;">
+    <% if @summary.present? %>
+      <%= simple_format(@summary) %>
+    <% else %>
+      No context summary was provided.
+    <% end %>
+  </div>
+
+  <p style="margin-bottom: 20px;">We recommend treating this as a high-priority recovery opportunity to improve the customer experience and reinforce brand trust.</p>
+
+  <p style="margin-bottom: 20px;">Please confirm once the outreach has been completed.</p>
+
+  <table cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 30px;">
+    <tr>
+      <td>
+        <% action_url = app_account_conversation_url(account_id: @account.id, id: @conversation.id) %>
+        <a href="<%= action_url %>" style="display: inline-block; padding: 10px 16px; background-color: #1f93ff; color: #ffffff; text-decoration: none; border-radius: 4px; font-weight: bold;">
+          View Conversation
+        </a>
+      </td>
+    </tr>
+  </table>
+</div>
