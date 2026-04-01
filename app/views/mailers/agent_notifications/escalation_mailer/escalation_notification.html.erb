@@ -42,9 +42,8 @@
 
   <table cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 30px;">
     <tr>
-      <td>
-        <% action_url = app_account_conversation_url(account_id: @account.id, id: @conversation.id) %>
-        <a href="<%= action_url %>" style="display: inline-block; padding: 10px 16px; background-color: #1f93ff; color: #ffffff; text-decoration: none; border-radius: 4px; font-weight: bold;">
+      <td style="padding-top: 30px;">
+        <a href="<%= @action_url %>" style="display: inline-block; padding: 10px 16px; background-color: #1f93ff; color: #ffffff; text-decoration: none; border-radius: 4px; font-weight: 600; font-size: 15px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
           View Conversation
         </a>
       </td>
