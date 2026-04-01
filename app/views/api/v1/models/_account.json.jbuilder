@@ -26,3 +26,4 @@ json.support_email @account.support_email
 json.status @account.status
 json.cache_keys @account.cache_keys
 json.booking_emails @account.booking_emails
+json.escalation_emails @account.escalation_emails

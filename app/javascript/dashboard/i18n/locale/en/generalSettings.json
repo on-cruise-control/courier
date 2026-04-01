@@ -134,6 +134,22 @@
           "ERROR": "Failed to update booking emails"
         }
       },
+      "ESCALATION_EMAILS": {
+        "TITLE": "Escalation Notification Emails",
+        "NOTE": "Add emails to receive escalation alerts. Recommended: GM, GSM, and Service Manager.",
+        "LABEL": "Add email address",
+        "HELP": "Enter an email address and click Add. You can add multiple email addresses.",
+        "PLACEHOLDER": "email{'@'}example.com",
+        "ADD_BUTTON": "Add",
+        "CONFIGURED_EMAILS": "Configured Email Addresses",
+        "EMPTY_STATE": "⚠️ No escalation notification emails configured. Add at least one email address to receive escalation notifications.",
+        "INVALID_EMAIL": "Please enter a valid email address",
+        "DUPLICATE_EMAIL": "This email address is already added",
+        "API": {
+          "SUCCESS": "Escalation emails updated successfully",
+          "ERROR": "Failed to update escalation emails"
+        }
+      },
       "FEATURES": {
         "INBOUND_EMAIL_ENABLED": "Conversation continuity with emails is enabled for your account.",
         "CUSTOM_EMAIL_DOMAIN_ENABLED": "You can receive emails in your custom domain now."

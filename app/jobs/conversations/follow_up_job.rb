@@ -15,23 +15,48 @@ class Conversations::FollowUpJob < ApplicationJob
     stark_response = Stark::FollowUpService.new(conversation, follow_up_number).get_follow_up_content
     return if stark_response.nil?
 
-    # Create follow-up message with content from Stark
     case follow_up_number
     when 1
       create_follow_up_message(conversation, 1, stark_response)
-      # Schedule Follow-up 2 (if still no reply in 22h)
-      config_value = InstallationConfig.find_by(name: 'FOLLOW_UP_SECOND_DELAY_HOURS')&.value
-      follow_up_2_delay = (config_value || 22).to_i.hours
-      jid = Conversations::FollowUpJob.set(wait: follow_up_2_delay).perform_later(conversation.id, 2)
-      conversation.update!(follow_up_jid: jid.provider_job_id)
-
+      schedule_next_follow_up(conversation, 2)
     when 2
       create_follow_up_message(conversation, 2, stark_response)
-      conversation.update!(follow_up_jid: nil)
+      schedule_next_follow_up(conversation, 3)
+    when 3
+      create_follow_up_message(conversation, 3, stark_response)
+      updated_additional_attributes = (conversation.additional_attributes || {}).merge(
+        'follow_up_jids' => nil,
+        'follow_up_base_time' => nil,
+        'follow_up_schedule_hours' => nil
+      )
+      conversation.update!(follow_up_jid: nil, additional_attributes: updated_additional_attributes)
     end
   end
 
   private
+
+  def schedule_next_follow_up(conversation, next_follow_up_number)
+    base_time_unix = conversation.additional_attributes&.dig('follow_up_base_time')
+    base_time = base_time_unix.present? ? Time.at(base_time_unix.to_i) : Time.current
+
+    schedule_hours = conversation.additional_attributes&.dig('follow_up_schedule_hours') || {}
+    default_hours =
+      case next_follow_up_number
+      when 2 then 5
+      when 3 then 22
+      else 1
+      end
+    hours = (schedule_hours[next_follow_up_number.to_s] || default_hours).to_i
+
+    wait_time = [base_time + hours.hours - Time.current, 0].max
+    jid = Conversations::FollowUpJob.set(wait: wait_time)
+                                    .perform_later(conversation.id, next_follow_up_number).provider_job_id
+
+    updated_additional_attributes = (conversation.additional_attributes || {}).merge(
+      'follow_up_jids' => Array(conversation.additional_attributes&.dig('follow_up_jids')).compact + [jid].compact
+    )
+    conversation.update!(follow_up_jid: jid, additional_attributes: updated_additional_attributes)
+  end
 
   def create_follow_up_message(conversation, follow_up_number, content)
     conversation.messages.create!(

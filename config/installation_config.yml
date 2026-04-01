@@ -413,8 +413,13 @@
   locked: false
 - name: FOLLOW_UP_SECOND_DELAY_HOURS
   display_title: 'Follow Up Second Delay Hours'
-  value: 22
+  value: 5
   description: 'The delay in hours before the second follow-up message is sent'
+  locked: false
+- name: FOLLOW_UP_THIRD_DELAY_HOURS
+  display_title: 'Follow Up Third Delay Hours'
+  value: 22
+  description: 'The delay in hours before the third follow-up message is sent'
   locked: false
 # ------- End of Follow Up Job Config ------- #
 # ------- TikTok Channel Related Config ------- #

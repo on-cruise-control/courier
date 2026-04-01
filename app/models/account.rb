@@ -58,6 +58,7 @@ class Account < ApplicationRecord
   validates :domain, length: { maximum: 100 }
   validates :name, presence: true
   validates :dealership_id, presence: true
+  validate :validate_escalation_emails
   validates_with JsonSchemaValidator,
                  schema: SETTINGS_PARAMS_SCHEMA,
                  attribute_resolver: ->(record) { record.settings }
@@ -174,6 +175,10 @@ class Account < ApplicationRecord
     super || []
   end
 
+  def escalation_emails
+    super || []
+  end
+
   private
 
   def notify_creation
@@ -203,6 +208,21 @@ class Account < ApplicationRecord
       agent_bot_inboxes.destroy_all
     end
     ActionCable.server.broadcast("account_#{id}", { event: 'page:reload', data: {} })
+  end
+
+  def validate_escalation_emails
+    return if escalation_emails.blank?
+
+    unless escalation_emails.is_a?(Array)
+      errors.add(:escalation_emails, 'must be an array')
+      return
+    end
+
+    escalation_emails.each do |email|
+      unless email =~ Devise.email_regexp
+        errors.add(:escalation_emails, "#{email} is not a valid email")
+      end
+    end
   end
 end
 
