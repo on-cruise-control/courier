@@ -222,14 +222,23 @@ class Conversation < ApplicationRecord
   end
 
   def cancel_existing_follow_up_job
-    return unless follow_up_jid.present?
+    jids = []
+    jids << follow_up_jid if follow_up_jid.present?
+    jids.concat(Array(additional_attributes&.dig('follow_up_jids')).compact)
+    return if jids.empty?
 
-    job = Sidekiq::ScheduledSet.new.find_job(follow_up_jid)
+    scheduled_set = Sidekiq::ScheduledSet.new
 
-    return unless job
+    jids.each do |jid|
+      job = scheduled_set.find_job(jid)
+      job&.delete
+    end
 
-    job.delete
-    update_column(:follow_up_jid, nil)
+    updated_additional_attributes = (additional_attributes || {}).merge(
+      'follow_up_jids' => nil,
+      'follow_up_base_time' => nil
+    )
+    update_columns(follow_up_jid: nil, additional_attributes: updated_additional_attributes)
   end
 
   private
@@ -240,6 +249,7 @@ class Conversation < ApplicationRecord
     create_activity
     notify_conversation_updation
     send_deferred_spam_replies
+    reset_unspam_reply_sent
   end
 
   def handle_resolved_status_change
@@ -362,34 +372,53 @@ class Conversation < ApplicationRecord
 
   def send_deferred_spam_replies
     return unless saved_change_to_is_spam? && previous_changes[:is_spam] == [true, false]
+    return if additional_attributes&.dig('unspam_reply_sent') == true
+
+    updated_additional_attributes = (additional_attributes || {}).merge(
+      'skip_follow_up_on_unspam' => true,
+      'unspam_reply_sent' => true
+    )
+    update_column(:additional_attributes, updated_additional_attributes)
 
     # Find internal notes containing the 'deferred_spam_reply: true' flag
     deferred_messages = messages.where(private: true).where("additional_attributes->>'deferred_spam_reply' = 'true'")
+    return if deferred_messages.blank?
 
-    deferred_messages.each do |stark_message|
-      new_message = messages.create!(
-        content: stark_message.content,
-        message_type: stark_message.message_type,
-        account_id: stark_message.account_id,
-        inbox_id: stark_message.inbox_id,
-        sender: stark_message.sender,
-        private: false,
-        metadata: stark_message.metadata,
-        additional_attributes: stark_message.additional_attributes.except('deferred_spam_reply')
+    # Send only the most recent deferred reply to avoid spamming on unmark.
+    stark_message = deferred_messages.order(created_at: :desc).first
+
+    new_message = messages.create!(
+      content: stark_message.content,
+      message_type: stark_message.message_type,
+      account_id: stark_message.account_id,
+      inbox_id: stark_message.inbox_id,
+      sender: stark_message.sender,
+      private: false,
+      metadata: stark_message.metadata,
+      additional_attributes: stark_message.additional_attributes.except('deferred_spam_reply').merge('skip_follow_up' => true)
+    )
+
+    stark_message.attachments.each do |attachment|
+      new_message.attachments.create!(
+        account_id: attachment.account_id,
+        file_type: attachment.file_type,
+        external_url: attachment.external_url,
+        file: attachment.file.blob
       )
-
-      stark_message.attachments.each do |attachment|
-        new_message.attachments.create!(
-          account_id: attachment.account_id,
-          file_type: attachment.file_type,
-          external_url: attachment.external_url,
-          file: attachment.file.blob
-        )
-      end
-
-      # Remove the old internal note
-      stark_message.destroy
     end
+
+    # Remove all deferred spam replies after sending the latest one
+    deferred_messages.destroy_all
+  end
+
+  def reset_unspam_reply_sent
+    return unless saved_change_to_is_spam? && is_spam
+
+    updated_additional_attributes = (additional_attributes || {}).merge(
+      'unspam_reply_sent' => false,
+      'skip_follow_up_on_unspam' => false
+    )
+    update_column(:additional_attributes, updated_additional_attributes)
   end
 
   # creating db triggers

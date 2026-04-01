@@ -490,6 +490,14 @@ class Message < ApplicationRecord
 
     conversation.with_lock do
       conversation.reload
+      if conversation.additional_attributes&.dig('skip_follow_up_on_unspam') == true
+        updated_additional_attributes = (conversation.additional_attributes || {}).merge(
+          'skip_follow_up_on_unspam' => false
+        )
+        conversation.update!(additional_attributes: updated_additional_attributes)
+        return
+      end
+      return if additional_attributes&.dig('skip_follow_up') == true
       conversation.cancel_existing_follow_up_job
 
       return if conversation.stop_follow_up || conversation.assignee_id.present?
@@ -497,10 +505,34 @@ class Message < ApplicationRecord
       message_type = conversation.additional_attributes['type']
       return if message_type == 'feed_comments' || message_type == 'instagram_comments'
 
-      config_value = InstallationConfig.find_by(name: 'FOLLOW_UP_FIRST_DELAY_HOURS')&.value
-      follow_up_1_delay = (config_value || 1).to_i.hours
-      jid = Conversations::FollowUpJob.set(wait: follow_up_1_delay).perform_later(conversation.id, 1)
-      conversation.update!(follow_up_jid: jid.provider_job_id)
+      last_incoming_message = conversation.messages
+                                          .incoming
+                                          .not_activity
+                                          .not_template
+                                          .reorder(created_at: :desc)
+                                          .first
+      return if last_incoming_message.nil?
+
+      base_time = last_incoming_message.created_at
+
+      follow_up_1_hours = (InstallationConfig.find_by(name: 'FOLLOW_UP_FIRST_DELAY_HOURS')&.value || 1).to_i
+      follow_up_2_hours = (InstallationConfig.find_by(name: 'FOLLOW_UP_SECOND_DELAY_HOURS')&.value || 5).to_i
+      follow_up_3_hours = (InstallationConfig.find_by(name: 'FOLLOW_UP_THIRD_DELAY_HOURS')&.value || 22).to_i
+
+      follow_up_1_wait = [base_time + follow_up_1_hours.hours - Time.current, 0].max
+      jid = Conversations::FollowUpJob.set(wait: follow_up_1_wait)
+                                      .perform_later(conversation.id, 1).provider_job_id
+
+      updated_additional_attributes = (conversation.additional_attributes || {}).merge(
+        'follow_up_base_time' => base_time.to_i,
+        'follow_up_jids' => [jid].compact,
+        'follow_up_schedule_hours' => {
+          '1' => follow_up_1_hours,
+          '2' => follow_up_2_hours,
+          '3' => follow_up_3_hours
+        }
+      )
+      conversation.update!(follow_up_jid: jid, additional_attributes: updated_additional_attributes)
     end
   end
 
