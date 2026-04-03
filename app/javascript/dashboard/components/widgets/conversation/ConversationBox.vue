@@ -94,6 +94,7 @@ export default {
     class="conversation-details-wrap flex flex-col min-w-0 w-full bg-n-background relative"
     :class="{
       'border-l rtl:border-l-0 rtl:border-r border-n-weak': !isOnExpandedLayout,
+      'is-empty': !currentChat.id
     }"
   >
     <ConversationHeader

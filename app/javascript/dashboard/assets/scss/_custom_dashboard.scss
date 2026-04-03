@@ -1,0 +1,921 @@
+// Custom Styles for Cruise Control Dashboard
+
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+
+// CUSTOM START
+.custom-ui-font,
+.custom-ui-font * {
+    font-family: 'Outfit', 'Inter', -apple-system, system-ui, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Tahoma, Arial, sans-serif !important;
+}
+
+// Mobile Sidebar Launcher Button Override (style only - visibility is controlled by md:hidden)
+#mobile-sidebar-launcher {
+    .bg-n-alpha-2 {
+        background: rgba(27, 92, 182, 0.95) !important;
+        backdrop-filter: blur(12px) !important;
+    }
+
+    button {
+        background: #1b5cb6 !important;
+        color: white !important;
+        border: 1px solid rgba(255, 255, 255, 0.2) !important;
+
+        &:hover {
+            background: #1e6ad4 !important;
+        }
+    }
+}
+
+// At exactly 768px, Tailwind's md:hidden kicks in hiding the button,
+// but we treat 768px as small screen - force show the launcher
+@media (max-width: 768px) {
+    #mobile-sidebar-launcher {
+        display: block !important;
+    }
+}
+
+// Hide empty conversation state when mobile sidebar overlay is open
+.mobile-sidebar-open {
+
+    .conversation-box.is-empty,
+    .is-empty {
+        visibility: hidden !important;
+    }
+}
+
+// CUSTOM END
+
+// Variables
+$sidebar-width: 64px;
+$primary-blue: #1b5cb6;
+$conversation-card-bg: #ffffff;
+$conversation-list-bg: #f3f7ff; // Very light blue background for the list area
+$active-item-bg: rgba(255, 255, 255, 0.2);
+
+// Slim Sidebar Overrides
+.custom-sidebar {
+    width: $sidebar-width !important;
+    min-width: $sidebar-width !important;
+    max-width: $sidebar-width !important;
+    background-color: $primary-blue !important;
+    border-right: none !important;
+    padding: 12px 0 !important;
+
+    .sidebar-logo {
+        height: 64px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #f8fafc; // Light Gray
+        border-bottom: 2px solid #e2e8f0;
+        cursor: pointer;
+        transition: background-color 0.2s;
+
+        &:hover {
+            background-color: #f1f5f9;
+        }
+
+        body.dark & {
+            background-color: #111112;
+            border-bottom-color: #1e293b;
+
+            &:hover {
+                background-color: #1e293b;
+            }
+        }
+    }
+
+    .sidebar-item {
+        width: 40px;
+        height: 40px;
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        color: #fff !important;
+        transition: background 0.2s;
+        margin: 4px auto;
+
+        &:hover {
+            background: $active-item-bg !important;
+        }
+
+        &.router-link-active {
+            background: $active-item-bg !important;
+        }
+
+        i {
+            font-size: 20px;
+        }
+    }
+
+    // Hide labels and profile metadata in custom sidebar
+    .sidebar-label,
+    .sidebar-profile-metadata,
+    // Added a fallback class name if I were to add it, but using existing ones below
+    button.flex.gap-2 div.min-w-0 {
+        display: none !important;
+    }
+
+    // Adjust SidebarProfileMenu button to only show and center avatar
+    button.flex.gap-2 {
+        gap: 0 !important;
+        justify-content: center !important;
+        padding: 4px !important;
+        width: 40px !important;
+        height: 40px !important;
+        margin: 0 auto !important;
+    }
+}
+
+// Conversation List Overrides (Single Block Look)
+.custom-dashboard-main {
+    .conversations-list-wrap {
+        background-color: $conversation-list-bg !important;
+        border-right: 1px solid rgba(0, 0, 0, 0.05) !important;
+        padding-left: 20px !important; // Space between sidebar and cards
+
+        // Target the list container
+        .conversations-list,
+        .vue-virtual-scroller,
+        .vue-virtual-scroller__item-wrapper {
+            background-color: transparent !important;
+            padding: 16px !important;
+            scrollbar-width: none !important; // Hide scrollbar for Firefox
+
+            &::-webkit-scrollbar {
+                display: none !important; // Hide scrollbar for Chrome/Safari/Edge
+                width: 0 !important;
+                height: 0 !important;
+            }
+        }
+
+        .vue-virtual-scroller__item-view {
+            background-color: transparent !important;
+            margin-bottom: 16px !important; // Reduced space between blocks
+        }
+
+        // Target the conversation card
+        .conversation {
+            margin: 0 0 1px 0 !important;
+            border-radius: 12px !important;
+            background-color: $conversation-card-bg !important;
+            border: 1px solid #eef2f6 !important;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.041) !important;
+            padding: 10px 10px !important; // Reduced padding
+            transition: transform 0.2s, box-shadow 0.2s;
+            flex-direction: row !important;
+            align-items: center !important;
+            min-height: 60px !important; // Reduced min-height
+
+            // Remove connections to other blocks
+            &::after,
+            &::before {
+                display: none !important;
+            }
+
+            &.active {
+                box-shadow: 0 8px 12px -3px rgba(0, 0, 0, 0.08) !important;
+                background-color: #fff !important;
+                border: 1px solid rgba($primary-blue, 0.2) !important;
+
+                &.z-n-alpha-1 {
+                    background-color: #fff !important;
+                }
+            }
+
+            &:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1) !important;
+                background-color: #ebebeb !important;
+            }
+
+            div[class*="border-b"] {
+                border-bottom: none !important;
+            }
+
+            .relative {
+                margin-top: 0 !important;
+            }
+        }
+    }
+
+    // Inbox Card Style (My Inbox)
+    .inbox-card {
+        margin: 0 0 0 0 !important;
+        border-radius: 12px !important;
+        background-color: $conversation-card-bg !important;
+        border: 1px solid #eef2f6 !important;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.041) !important;
+        padding: 12px 16px !important;
+        transition: transform 0.2s, box-shadow 0.2s;
+        border-bottom: 1px solid #eef2f6 !important; // Clear override for default divide-y
+        min-height: 72px !important;
+
+        &::after,
+        &::before {
+            display: none !important;
+        }
+
+        &:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1) !important;
+            background-color: #ebebeb !important;
+        }
+
+        &.active,
+        &.bg-n-alpha-1,
+        &.dark\:bg-n-alpha-3 {
+            // Override tailwind classes for active
+            box-shadow: 0 8px 12px -3px rgba(0, 0, 0, 0.08) !important;
+            background-color: #fff !important;
+            border: 1px solid rgba($primary-blue, 0.2) !important;
+        }
+
+        body.dark & {
+            background-color: #201f1f !important;
+            border-color: #313131 !important;
+            color: #f1f5f9 !important;
+
+            &:hover,
+            &.active,
+            &.dark\:bg-n-alpha-3 {
+                background-color: #2e2e2e !important;
+            }
+        }
+    }
+
+    // --- LIGHT MODE (Default) ---
+    // User-provided Geometric SVG Background
+
+    main {
+        background-color: rgb(var(--background-color)) !important;
+    }
+
+    .conversation-panel,
+    .conversation-panel ul {
+        background-color: transparent !important;
+        // background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400' viewBox='0 0 200 200'%3E%3Crect fill='%23FAFFFE' width='200' height='200'/%3E%3Cg fill='none' stroke='%23DAEAEA' stroke-width='1' stroke-opacity='0.2'%3E%3Crect x='-40' y='40' width='75' height='75'/%3E%3Crect x='-35' y='45' width='65' height='65'/%3E%3Crect x='-30' y='50' width='55' height='55'/%3E%3Crect x='-25' y='55' width='45' height='45'/%3E%3Crect x='-20' y='60' width='35' height='35'/%3E%3Crect x='-15' y='65' width='25' height='25'/%3E%3Crect x='-10' y='70' width='15' height='15'/%3E%3Crect x='-5' y='75' width='5' height='5'/%3E%3Crect width='35' height='35'/%3E%3Crect x='5' y='5' width='25' height='25'/%3E%3Crect x='10' y='10' width='15' height='15'/%3E%3Crect x='15' y='15' width='5' height='5'/%3E%3Crect x='40' width='75' height='75'/%3E%3Crect x='45' y='5' width='65' height='65'/%3E%3Crect x='50' y='10' width='55' height='55'/%3E%3Crect x='55' y='15' width='45' height='45'/%3E%3Crect x='60' y='20' width='35' height='35'/%3E%3Crect x='65' y='25' width='25' height='25'/%3E%3Crect x='70' y='30' width='15' height='15'/%3E%3Crect x='75' y='35' width='5' height='5'/%3E%3Crect x='40' y='80' width='35' height='35'/%3E%3Crect x='45' y='85' width='25' height='25'/%3E%3Crect x='50' y='90' width='15' height='15'/%3E%3Crect x='55' y='95' width='5' height='5'/%3E%3Crect x='120' y='-40' width='75' height='75'/%3E%3Crect x='125' y='-35' width='65' height='65'/%3E%3Crect x='130' y='-30' width='55' height='55'/%3E%3Crect x='135' y='-25' width='45' height='45'/%3E%3Crect x='140' y='-20' width='35' height='35'/%3E%3Crect x='145' y='-15' width='25' height='25'/%3E%3Crect x='150' y='-10' width='15' height='15'/%3E%3Crect x='155' y='-5' width='5' height='5'/%3E%3Crect x='120' y='40' width='35' height='35'/%3E%3Crect x='125' y='45' width='25' height='25'/%3E%3Crect x='130' y='50' width='15' height='15'/%3E%3Crect x='135' y='55' width='5' height='5'/%3E%3Crect y='120' width='75' height='75'/%3E%3Crect x='5' y='125' width='65' height='65'/%3E%3Crect x='10' y='130' width='55' height='55'/%3E%3Crect x='15' y='135' width='45' height='45'/%3E%3Crect x='20' y='140' width='35' height='35'/%3E%3Crect x='25' y='145' width='25' height='25'/%3E%3Crect x='30' y='150' width='15' height='15'/%3E%3Crect x='35' y='155' width='5' height='5'/%3E%3Crect x='200' y='120' width='75' height='75'/%3E%3Crect x='40' y='200' width='75' height='75'/%3E%3Crect x='80' y='80' width='75' height='75'/%3E%3Crect x='85' y='85' width='65' height='65'/%3E%3Crect x='90' y='90' width='55' height='55'/%3E%3Crect x='95' y='95' width='45' height='45'/%3E%3Crect x='100' y='100' width='35' height='35'/%3E%3Crect x='105' y='105' width='25' height='25'/%3E%3Crect x='110' y='110' width='15' height='15'/%3E%3Crect x='115' y='115' width='5' height='5'/%3E%3Crect x='80' y='160' width='35' height='35'/%3E%3Crect x='85' y='165' width='25' height='25'/%3E%3Crect x='90' y='170' width='15' height='15'/%3E%3Crect x='95' y='175' width='5' height='5'/%3E%3Crect x='120' y='160' width='75' height='75'/%3E%3Crect x='125' y='165' width='65' height='65'/%3E%3Crect x='130' y='170' width='55' height='55'/%3E%3Crect x='135' y='175' width='45' height='45'/%3E%3Crect x='140' y='180' width='35' height='35'/%3E%3Crect x='145' y='185' width='25' height='25'/%3E%3Crect x='150' y='190' width='15' height='15'/%3E%3Crect x='155' y='195' width='5' height='5'/%3E%3Crect x='160' y='40' width='75' height='75'/%3E%3Crect x='165' y='45' width='65' height='65'/%3E%3Crect x='170' y='50' width='55' height='55'/%3E%3Crect x='175' y='55' width='45' height='45'/%3E%3Crect x='180' y='60' width='35' height='35'/%3E%3Crect x='185' y='65' width='25' height='25'/%3E%3Crect x='190' y='70' width='15' height='15'/%3E%3Crect x='195' y='75' width='5' height='5'/%3E%3Crect x='160' y='120' width='35' height='35'/%3E%3Crect x='165' y='125' width='25' height='25'/%3E%3Crect x='170' y='130' width='15' height='15'/%3E%3Crect x='175' y='135' width='5' height='5'/%3E%3Crect x='200' y='200' width='35' height='35'/%3E%3Crect x='200' width='35' height='35'/%3E%3Crect y='200' width='35' height='35'/%3E%3C/g%3E%3C/svg%3E") !important;
+        background-repeat: repeat !important;
+        background-size: 400px 400px !important;
+
+        &,
+        ul {
+            background-color: transparent !important;
+        }
+
+        &.active,
+        &.bg-n-background {
+            background-color: transparent !important;
+        }
+    }
+
+    // Custom Color for Outgoing Message UI (Light Blue Gray)
+    .right-bubble,
+    .bg-n-solid-blue,
+    .bg-n-solid-iris {
+        background-color: #e0eaf5d3 !important;
+        color: #334155 !important;
+        border: 1px solid #e2e8f0 !important;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+    }
+
+    .inbox-list-shell {
+        background-color: transparent !important;
+    }
+
+    .inbox-list-panel {
+        background-color: #f3f7ff !important;
+    }
+
+    // --- DARK MODE OVERRIDES ---
+    body.dark & {
+        main {
+            background-color: #121212d3 !important;
+        }
+
+        .conversation-panel,
+        .conversation-panel ul {
+            background-color: #111112 !important;
+        }
+
+        .conversation-panel.bg-n-solid-blue,
+        .conversation-panel.bg-n-solid-iris {
+            background-color: #111112 !important;
+        }
+
+        // Updated SVG for Dark Mode (Slate-950 fill, Slate-800 strokes)
+        .conversation-panel,
+        .conversation-panel ul {
+            // background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400' viewBox='0 0 200 200'%3E%3Crect fill='%230f172a' width='200' height='200'/%3E%3Cg fill='none' stroke='%231e293b' stroke-width='1' stroke-opacity='0.4'%3E%3Crect x='-40' y='40' width='75' height='75'/%3E%3Crect x='-35' y='45' width='65' height='65'/%3E%3Crect x='-30' y='50' width='55' height='55'/%3E%3Crect x='-25' y='55' width='45' height='45'/%3E%3Crect x='-20' y='60' width='35' height='35'/%3E%3Crect x='-15' y='65' width='25' height='25'/%3E%3Crect x='-10' y='70' width='15' height='15'/%3E%3Crect x='-5' y='75' width='5' height='5'/%3E%3Crect width='35' height='35'/%3E%3Crect x='5' y='5' width='25' height='25'/%3E%3Crect x='10' y='10' width='15' height='15'/%3E%3Crect x='15' y='15' width='5' height='5'/%3E%3Crect x='40' width='75' height='75'/%3E%3Crect x='45' y='5' width='65' height='65'/%3E%3Crect x='50' y='10' width='55' height='55'/%3E%3Crect x='55' y='15' width='45' height='45'/%3E%3Crect x='60' y='20' width='35' height='35'/%3E%3Crect x='65' y='25' width='25' height='25'/%3E%3Crect x='70' y='30' width='15' height='15'/%3E%3Crect x='75' y='35' width='5' height='5'/%3E%3Crect x='40' y='80' width='35' height='35'/%3E%3Crect x='45' y='85' width='25' height='25'/%3E%3Crect x='50' y='90' width='15' height='15'/%3E%3Crect x='55' y='95' width='5' height='5'/%3E%3Crect x='120' y='-40' width='75' height='75'/%3E%3Crect x='125' y='-35' width='65' height='65'/%3E%3Crect x='130' y='-30' width='55' height='55'/%3E%3Crect x='135' y='-25' width='45' height='45'/%3E%3Crect x='140' y='-20' width='35' height='35'/%3E%3Crect x='145' y='-15' width='25' height='25'/%3E%3Crect x='150' y='-10' width='15' height='15'/%3E%3Crect x='155' y='-5' width='5' height='5'/%3E%3Crect x='120' y='40' width='35' height='35'/%3E%3Crect x='125' y='45' width='25' height='25'/%3E%3Crect x='130' y='50' width='15' height='15'/%3E%3Crect x='135' y='55' width='5' height='5'/%3E%3Crect y='120' width='75' height='75'/%3E%3Crect x='5' y='125' width='65' height='65'/%3E%3Crect x='10' y='130' width='55' height='55'/%3E%3Crect x='15' y='135' width='45' height='45'/%3E%3Crect x='20' y='140' width='35' height='35'/%3E%3Crect x='25' y='145' width='25' height='25'/%3E%3Crect x='30' y='150' width='15' height='15'/%3E%3Crect x='35' y='155' width='5' height='5'/%3E%3Crect x='200' y='120' width='75' height='75'/%3E%3Crect x='40' y='200' width='75' height='75'/%3E%3Crect x='80' y='80' width='75' height='75'/%3E%3Crect x='85' y='85' width='65' height='65'/%3E%3Crect x='90' y='90' width='55' height='55'/%3E%3Crect x='95' y='95' width='45' height='45'/%3E%3Crect x='100' y='100' width='35' height='35'/%3E%3Crect x='105' y='105' width='25' height='25'/%3E%3Crect x='110' y='110' width='15' height='15'/%3E%3Crect x='115' y='115' width='5' height='5'/%3E%3Crect x='80' y='160' width='35' height='35'/%3E%3Crect x='85' y='165' width='25' height='25'/%3E%3Crect x='90' y='170' width='15' height='15'/%3E%3Crect x='95' y='175' width='5' height='5'/%3E%3Crect x='120' y='160' width='75' height='75'/%3E%3Crect x='125' y='165' width='65' height='65'/%3E%3Crect x='130' y='170' width='55' height='55'/%3E%3Crect x='135' y='175' width='45' height='45'/%3E%3Crect x='140' y='180' width='35' height='35'/%3E%3Crect x='145' y='185' width='25' height='25'/%3E%3Crect x='150' y='190' width='15' height='15'/%3E%3Crect x='155' y='195' width='5' height='5'/%3E%3Crect x='160' y='40' width='75' height='75'/%3E%3Crect x='165' y='45' width='65' height='65'/%3E%3Crect x='170' y='50' width='55' height='55'/%3E%3Crect x='175' y='55' width='45' height='45'/%3E%3Crect x='180' y='60' width='35' height='35'/%3E%3Crect x='185' y='65' width='25' height='25'/%3E%3Crect x='190' y='70' width='15' height='15'/%3E%3Crect x='195' y='75' width='5' height='5'/%3E%3Crect x='160' y='120' width='35' height='35'/%3E%3Crect x='165' y='125' width='25' height='25'/%3E%3Crect x='170' y='130' width='15' height='15'/%3E%3Crect x='175' y='135' width='5' height='5'/%3E%3Crect x='200' y='200' width='35' height='35'/%3E%3Crect x='200' width='35' height='35'/%3E%3Crect y='200' width='35' height='35'/%3E%3C/g%3E%3C/svg%3E") !important;
+            background-repeat: repeat !important;
+            background-size: 400px 400px !important;
+        }
+
+        .right-bubble,
+        .bg-n-solid-blue,
+        .bg-n-solid-iris {
+            background-color: #272b66 !important;
+            color: #f1f5f9 !important;
+            border-color: #334155 !important;
+        }
+
+        .conversation-details-wrap {
+            background-color: #111112 !important;
+        }
+
+        // Conversation List Overrides for Dark Mode
+        .conversations-list-wrap {
+            background-color: #111112 !important;
+            border-right-color: #202020e5 !important;
+
+            .conversation {
+                background-color: #1a1919 !important;
+                border-color: #2c2c2c !important;
+                color: #f1f5f9 !important;
+
+                &:hover,
+                &.active {
+                    background-color: #242424 !important;
+                }
+            }
+        }
+
+        // Inbox view list panel
+        .inbox-list-shell,
+        .inbox-list-panel {
+            background-color: #111112 !important;
+        }
+
+        .inbox-list-panel {
+            border-right-color: #202020e5 !important;
+        }
+    }
+}
+
+// Custom Flyout Refinements
+.custom-flyout {
+    background-color: $conversation-list-bg !important; // Light Blue Gray
+    border-right: 1px solid rgba(0, 0, 0, 0.05) !important;
+    box-shadow: 10px 0 30px rgba(0, 0, 0, 0.05) !important;
+
+    .flyout-header-text {
+        color: #64748b !important; // Slate-500
+    }
+
+    .flyout-sub-header {
+        color: #94a3b8 !important; // Slate-400
+    }
+
+    .flyout-link {
+        color: #475569 !important; // Slate-600
+        border: 1px solid transparent !important;
+
+        &:hover {
+            background-color: rgba($primary-blue, 0.05) !important;
+            color: $primary-blue !important;
+
+            .flyout-link-indicator {
+                background-color: $primary-blue !important;
+            }
+        }
+
+        &.active,
+        &.router-link-active {
+            background-color: rgba($primary-blue, 0.1) !important;
+            color: $primary-blue !important;
+            border-color: rgba($primary-blue, 0.1) !important;
+
+            .flyout-link-indicator {
+                background-color: $primary-blue !important;
+            }
+        }
+
+        .flyout-link-indicator {
+            background-color: #cbd5e1 !important; // Slate-300
+        }
+    }
+
+    // Dark Mode Support for Flyout
+    body.dark & {
+        background-color: #111112 !important;
+        border-right-color: #202020e5 !important;
+        box-shadow: 10px 0 30px rgba(0, 0, 0, 0.5) !important;
+
+        .flyout-header-text {
+            color: #94a3b8 !important;
+        }
+
+        .flyout-sub-header {
+            color: #64748b !important;
+        }
+
+        .flyout-link {
+            color: #e2e8f0 !important;
+
+            &:hover {
+                background-color: #242424 !important;
+                color: #fff !important;
+
+                .flyout-link-indicator {
+                    background-color: #fff !important;
+                }
+            }
+
+            &.active,
+            &.router-link-active {
+                background-color: #1b5cb641 !important;
+                color: #fff !important;
+
+                .flyout-link-indicator {
+                    background-color: #fff !important;
+                }
+            }
+
+            .flyout-link-indicator {
+                background-color: #334155 !important;
+            }
+        }
+    }
+}
+
+// Global scrollbar hide for custom dashboard
+.custom-dashboard-main * {
+    &::-webkit-scrollbar {
+        display: none !important;
+        width: 0 !important;
+    }
+
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important; // IE and Edge
+}
+
+// --- Premium Floating Layout Overrides ---
+.custom-dashboard-main {
+
+    // Global layout background for the central app
+    section.flex.w-full.h-full {
+        background-color: #fdfdfd !important;
+        // background-color: $conversation-list-bg !important;
+
+        body.dark & {
+            background-color: #121212d3 !important;
+        }
+    }
+
+    // Ensure Contacts and other full-page sections have transparent roots to see the dashboard background
+    .bg-n-background.h-full,
+    section.bg-n-background {}
+
+    // Hide generic grid separation borders natively applied by standard chatwoot
+    .border-n-weak {
+        border-color: transparent !important;
+    }
+
+    // 1. Right Contact Sidebar (ConversationSidebar)
+    // It's the right-most div panel with bg-n-background in the section
+    section.flex>div.bg-n-background.flex.flex-col:not(.is-empty) {
+        background: #ffffff !important;
+        border-radius: 14px !important;
+        margin: 6px 6px 1px 6px !important;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03) !important;
+        height: calc(100% - 24px) !important;
+        border: 1px solid rgba(0, 0, 0, 0.02) !important;
+        overflow: hidden;
+
+        // DARK MODE OVERRIDE
+        body.dark & {
+            background: #111112 !important;
+            border-color: rgba(255, 255, 255, 0.05) !important;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2) !important;
+        }
+
+        // Give the inner contact panel container the matching rounded effect
+        .contact-panel {
+            border-radius: 14px !important;
+        }
+    }
+
+    // Main Center Messaging Array Wrap
+    .conversation-wrap,
+    .conversation-details-wrap {
+        background-color: transparent !important;
+        background: transparent !important;
+
+        &.is-empty {
+            background-color: #ffffff !important;
+
+            body.dark & {
+                background-color: #111112 !important;
+            }
+        }
+
+        // 2. Conversation Header (Top Bar)
+        // Targeted by its specific Flex layout signature
+        >div.bg-n-background.border-b {
+            background: #e4f2fc8e !important;
+            border-radius: 14px !important;
+            margin: 12px 6px 8px 12px !important;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03) !important;
+            border: 1px solid rgba(0, 0, 0, 0.02) !important;
+            border-bottom: none !important;
+            flex: none !important;
+            height: auto !important;
+            min-height: 64px;
+
+            // DARK MODE OVERRIDE
+            body.dark & {
+                background: #1a1919 !important;
+                border-color: rgba(255, 255, 255, 0.05) !important;
+            }
+        }
+
+        // Center Messages container (make its backdrop completely transparent to see the soft #f3f7f9)
+        .conversation-panel {
+            background-color: transparent !important;
+            padding: 8px 12px !important;
+        }
+
+        // 3. Reply Box Wrapper (Bottom Bar)
+        .reply-box-wrap {
+            background: #ffffff !important;
+            border-radius: 14px !important;
+            margin: 0px 6px 12px 12px !important;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03) !important;
+            border: 1px solid rgba(0, 0, 0, 0.02) !important;
+            border-top: none !important;
+            padding: 12px !important;
+
+            // DARK MODE OVERRIDE
+            body.dark & {
+                background: #1a1919 !important;
+                border-color: rgba(255, 255, 255, 0.05) !important;
+            }
+
+            // Strip out internal input borders natively supplied by standard UI
+            .reply-box {
+                border: none !important;
+                box-shadow: none !important;
+            }
+        }
+    }
+
+    // --- Conversation View & Sidebar Overhaul ---
+
+    .conv-view-pane {
+        background: #ffffff !important; // Light Mode: Clean white background for conversation view area
+
+        body.dark & {
+            background: #111112 !important; // Dark Mode: Color that shows in the old UI
+        }
+    }
+
+    // Floating Header Card
+    .conv-header {
+        background: white !important;
+        margin: 12px 12px 0 12px !important;
+        border-radius: 14px !important;
+        border: none !important;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
+        height: 64px !important;
+        display: flex !important;
+        align-items: center !important;
+
+        body.dark & {
+            background: #1a1919 !important;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
+        }
+    }
+
+    // Conversation Panel (Messages Area)
+    .conversation-panel {
+        background: transparent !important;
+        padding: 20px 24px !important;
+
+        // Scrollbar hide
+        &::-webkit-scrollbar {
+            display: none;
+        }
+    }
+
+    // Message Bubbles
+    .message-bubble-container {
+        margin-bottom: 16px !important;
+
+        // Contact/User Bubbles (Left)
+        &.justify-start {
+            .left-bubble {
+                background: rgba(233, 232, 232, 0.815) !important;
+                border: 1px solid #eef2f5 !important;
+                color: #334155 !important;
+                border-radius: 18px !important;
+                border-bottom-left-radius: 4px !important;
+                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02) !important;
+                font-size: 14px !important;
+                line-height: 1.5 !important;
+                padding: 10px 14px !important;
+
+                body.dark & {
+                    background: #262626 !important;
+                    border-color: #333 !important;
+                    color: #e2e8f0 !important;
+                }
+            }
+        }
+
+        // Agent/Bot Bubbles (Right)
+        &.justify-end {
+            .right-bubble {
+                background: #1b5cb6 !important; // Vibrant Blue
+                color: white !important;
+                border-radius: 18px !important;
+                border-bottom-right-radius: 4px !important;
+                box-shadow: 0 4px 12px rgba(79, 70, 229, 0.15) !important;
+                font-size: 14px !important;
+                line-height: 1.5 !important;
+                padding: 10px 14px !important;
+
+                p,
+                span {
+                    color: white !important;
+                }
+
+                // Meta data in right bubble
+                .text-n-slate-11 {
+                    color: rgba(255, 255, 255, 0.7) !important;
+                }
+            }
+
+            // Grouped messages fix
+            &.group-with-next {
+                margin-bottom: 4px !important;
+
+                .right-bubble {
+                    border-bottom-right-radius: 18px !important;
+                }
+            }
+
+            &+.message-bubble-container.justify-end {
+                .right-bubble {
+                    border-top-right-radius: 4px !important;
+                }
+            }
+        }
+
+        // Private Notes
+        .bg-n-solid-amber {
+            background: #fff4c7 !important;
+            border: 1px solid #fef3c7 !important;
+            color: #92400e !important;
+            border-radius: 14px !important;
+        }
+    }
+
+    // Reply Box Card
+    .reply-box {
+        background: white !important;
+        margin: 0 12px 12px 12px !important;
+        border-radius: 16px !important;
+        border: none !important;
+        box-shadow: 0 -2px 15px rgba(0, 0, 0, 0.03), 0 10px 30px rgba(0, 0, 0, 0.05) !important;
+        // removed overflow hidden to show emojis
+
+        &>*:first-child {
+            border-top-left-radius: 16px !important;
+            border-top-right-radius: 16px !important;
+        }
+
+        body.dark & {
+            background: #1a1919 !important;
+        }
+
+        &.is-private {
+            background: #fff3c4 !important; // Soft Amber for Private Note
+            border: 1px solid rgba(245, 158, 11, 0.1) !important;
+
+            body.dark & {
+                background: #1c1912 !important; // Deep Ochre/Amber in dark mode
+                border: 1px solid rgba(245, 158, 11, 0.1) !important;
+            }
+
+            button.bg-n-brand {
+                background: #e27b06 !important;
+                box-shadow: 0 4px 10px rgba(217, 119, 6, 0.2) !important;
+
+                &:hover {
+                    background: #b45309 !important;
+                }
+            }
+        }
+
+        // Fix Emoji Selector Positioning
+        .emoji-dialog {
+            top: auto !important;
+            bottom: 60px !important; // Position above the button row
+            left: 12px !important;
+            right: auto !important;
+            z-index: 2000 !important; // Absolute top
+            width: 320px !important;
+            height: 300px !important;
+            background: white !important;
+            border: 1px solid #eef2f5 !important;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1) !important;
+
+            body.dark & {
+                background: #1a1919 !important;
+                border: 1px solid rgba(255, 255, 255, 0.05) !important;
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5) !important;
+            }
+
+            &::before {
+                display: none !important; // Hide the old pointer
+            }
+        }
+
+        .woot-banner {
+            border-radius: 12px !important;
+            border: none !important;
+            margin-bottom: 8px !important;
+            background: #f8fafc !important;
+            color: #475569 !important;
+
+            body.dark & {
+                background: #252424 !important;
+                color: #94a3b8 !important;
+            }
+
+            .banner-message {
+                font-size: 13px !important;
+                font-weight: 500 !important;
+            }
+        }
+
+        .reply-editor {
+            background: rgba(0, 0, 0, 0.02) !important;
+            border-radius: 8px !important;
+            margin: 8px 0 !important;
+            border: none !important;
+
+            body.dark & {
+                background: rgba(255, 255, 255, 0.03) !important;
+                color: #cbd5e1 !important;
+            }
+        }
+
+        .normal-editor__canned-box,
+        .suggestion-list {
+            background: white !important;
+            border-radius: 12px !important;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1) !important;
+            border: 1px solid #f1f5f9 !important;
+
+            body.dark & {
+                background: #1a1919 !important;
+                border-color: rgba(255, 255, 255, 0.05) !important;
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5) !important;
+            }
+        }
+
+        .reply-box__top {
+            border: none !important;
+        }
+
+        // Tab Bar in Reply Box
+        .flex.justify-between.h-\[3\.25rem\] {
+            background: #f8fafc !important;
+            border-bottom: 1px solid #f1f5f9 !important;
+            height: 48px !important;
+            padding: 0 16px !important;
+            border-radius: 16px 16px 0 0 !important; // Rounded top corners
+
+            body.dark & {
+                background: #202020 !important;
+                border-color: #333 !important;
+            }
+        }
+
+        // Send Button Styling
+        button.bg-n-brand {
+            background: #4f46e5 !important;
+            border-radius: 10px !important;
+            font-weight: 600 !important;
+            padding: 0 20px !important;
+            height: 38px !important;
+            box-shadow: 0 4px 10px rgba(79, 70, 229, 0.2) !important;
+            transition: all 0.2s ease !important;
+
+            &:hover {
+                background: #4338ca !important;
+                transform: translateY(-1px) !important;
+            }
+        }
+    }
+
+    // Sidebar Overhaul
+    .conversation-sidebar {
+        background: #f8fafc !important;
+        border-left: 1px solid #edf2f7 !important;
+        padding: 12px !important;
+
+        // Contact Info card is handled by template but we ensure it fits
+        .relative.flex.flex-col.items-center {
+            background: white !important;
+            border-radius: 16px !important;
+            margin-bottom: 16px !important;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
+
+            body.dark & {
+                background: #1a1919 !important;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
+            }
+        }
+
+        // Accordion Sections as Individual Cards
+        .p-4.border-b.border-n-slate-3 {
+            border: none !important;
+            background: white !important;
+            border-radius: 14px !important;
+            margin-bottom: 12px !important;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02) !important;
+            padding: 0 !important;
+            overflow: hidden !important;
+
+            body.dark & {
+                background: #1a1919 !important;
+            }
+
+            button.dark\:bg-n-slate-2 {
+                background: transparent !important;
+                padding: 14px 16px !important;
+                font-weight: 600 !important;
+                color: #475569 !important;
+
+                &:hover {
+                    background: #f8fafc !important;
+                }
+            }
+
+            .p-4.pt-0 {
+                padding: 16px !important;
+                border-top: 1px solid #f1f5f9 !important;
+            }
+        }
+    }
+
+    // Self-Assign Banner (Removed per user request)
+    .banner--self-assign {
+        display: none !important;
+    }
+
+    // Label Suggestion Fix
+    .label-suggestion {
+        background: white !important;
+        border-radius: 12px !important;
+        border: 1px dashed #e2e8f0 !important;
+        margin: 10px 0 !important;
+    }
+
+    // --- Chat List Header & Tabs Overrides ---
+
+    // 4. Conversation List Header (Conversations | Open, Pending)
+    .chat-list--header {
+        background: transparent !important;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.03) !important;
+
+        h1 {
+            font-family: 'Outfit', sans-serif !important;
+            letter-spacing: -0.025em;
+        }
+    }
+
+    // 5. Chat Type Tabs V2 (Scrollable Pills)
+    .custom-pill-tabs-v2 {
+        background: transparent !important;
+        padding-top: 4px !important;
+        padding-bottom: 12px !important;
+
+        .scrollbar-hide {
+            &::-webkit-scrollbar {
+                display: none !important;
+            }
+        }
+
+        button {
+            font-family: 'Outfit', sans-serif !important;
+
+            &.bg-white {
+                box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06) !important;
+
+                body.dark & {
+                    background-color: #2e2e2e !important;
+                    color: #fff !important;
+                }
+            }
+        }
+
+        // Active state glow/depth
+        .shadow-sm {
+            box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.06), 0 1px 2px -1px rgba(0, 0, 0, 0.06) !important;
+        }
+    }
+}

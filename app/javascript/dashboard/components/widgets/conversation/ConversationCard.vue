@@ -378,7 +378,7 @@ const deleteConversation = () => {
       </p>
       <div
         class="absolute flex flex-col ltr:right-3 rtl:left-3"
-        :class="showMetaSection ? 'top-8' : 'top-4'"
+        :class="showMetaSection ? 'top-10' : 'top-6'"
       >
         <span class="ml-auto font-normal leading-4 text-xxs">
           <TimeAgo

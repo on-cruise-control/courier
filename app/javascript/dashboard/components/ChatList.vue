@@ -22,12 +22,15 @@ import {
 // https://tanstack.com/virtual/latest/docs/framework/vue/examples/variable
 import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller';
 import ChatListHeader from './ChatListHeader.vue';
+import CustomChatListHeader from './CustomChatListHeader.vue';
 import Dialog from 'dashboard/components-next/dialog/Dialog.vue';
 import ConversationFilter from 'next/filter/ConversationFilter.vue';
 import SaveCustomView from 'next/filter/SaveCustomView.vue';
 import ChatTypeTabs from './widgets/ChatTypeTabs.vue';
+import CustomChatTypeTabs from './widgets/CustomChatTypeTabs.vue';
 import ConversationItem from './ConversationItem.vue';
 import DeleteCustomViews from 'dashboard/routes/dashboard/customviews/DeleteCustomViews.vue';
+import { FEATURE_FLAGS } from 'dashboard/featureFlags';
 import ConversationBulkActions from './widgets/conversation/conversationBulkActions/Index.vue';
 import IntersectionObserver from './IntersectionObserver.vue';
 import TeleportWithDirection from 'dashboard/components-next/TeleportWithDirection.vue';
@@ -134,6 +137,16 @@ const labels = useMapGetter('labels/getLabels');
 const currentAccountId = useMapGetter('getCurrentAccountId');
 // We can't useFunctionGetter here since it needs to be called on setup?
 const getTeamFn = useMapGetter('teams/getTeam');
+const isFeatureEnabledonAccount = useMapGetter(
+  'accounts/isFeatureEnabledonAccount'
+);
+
+const isCustomUIEnabled = computed(() => {
+  return isFeatureEnabledonAccount.value(
+    currentAccountId.value,
+    FEATURE_FLAGS.CUSTOM_UI
+  );
+});
 
 useChatListKeyboardEvents(conversationListRef);
 const {
@@ -892,7 +905,24 @@ watch(conversationFilters, (newVal, oldVal) => {
     ]"
   >
     <slot />
+    <!-- CUSTOM UI -->
+    <CustomChatListHeader
+      v-if="isCustomUIEnabled"
+      :page-title="pageTitle"
+      :has-applied-filters="hasAppliedFilters"
+      :has-active-folders="hasActiveFolders"
+      :active-status="activeStatus"
+      :is-on-expanded-layout="isOnExpandedLayout"
+      :conversation-stats="conversationStats"
+      :is-list-loading="chatListLoading && !conversationList.length"
+      @add-folders="onClickOpenAddFoldersModal"
+      @delete-folders="onClickOpenDeleteFoldersModal"
+      @filters-modal="onToggleAdvanceFiltersModal"
+      @reset-filters="resetAndFetchData"
+      @basic-filter-change="onBasicFilterChange"
+    />
     <ChatListHeader
+      v-else
       :page-title="pageTitle"
       :has-applied-filters="hasAppliedFilters"
       :has-active-folders="hasActiveFolders"
@@ -928,8 +958,15 @@ watch(conversationFilters, (newVal, oldVal) => {
       @close="onCloseDeleteFoldersModal"
     />
 
+    <CustomChatTypeTabs
+      v-if="isCustomUIEnabled && !hasAppliedFiltersOrActiveFolders"
+      :items="assigneeTabItems"
+      :active-tab="activeAssigneeTab"
+      is-compact
+      @chat-tab-change="updateAssigneeTab"
+    />
     <ChatTypeTabs
-      v-if="!hasAppliedFiltersOrActiveFolders"
+      v-else-if="!hasAppliedFiltersOrActiveFolders"
       :items="assigneeTabItems"
       :active-tab="activeAssigneeTab"
       is-compact

@@ -222,9 +222,9 @@ onMounted(() => {
 </script>
 
 <template>
-  <section class="flex w-full h-full bg-n-solid-1">
+  <section class="inbox-list-shell flex w-full h-full">
     <div
-      class="flex flex-col h-full w-full lg:min-w-[340px] lg:max-w-[340px] ltr:border-r rtl:border-l border-n-weak"
+      class="inbox-list-panel flex flex-col h-full w-full lg:min-w-[340px] lg:max-w-[340px] ltr:border-r rtl:border-l border-n-weak"
       :class="!currentConversationId ? 'flex' : 'hidden xl:flex'"
     >
       <InboxListHeader
@@ -234,7 +234,7 @@ onMounted(() => {
       />
       <div
         ref="notificationList"
-        class="flex flex-col gap-0.5 w-full h-[calc(100%-56px)] pb-4 overflow-x-hidden px-2 overflow-y-auto divide-y divide-n-weak [&>*:hover]:!border-y-transparent [&>*.active]:!border-y-transparent [&>*:hover+*]:!border-t-transparent [&>*.active+*]:!border-t-transparent"
+        class="flex flex-col gap-4 w-full h-[calc(100%-56px)] pb-4 overflow-x-hidden px-2 overflow-y-auto pt-4"
       >
         <InboxCard
           v-for="notificationItem in notifications"
