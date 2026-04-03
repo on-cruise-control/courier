@@ -45,6 +45,9 @@ export const FEATURE_FLAGS = {
   COMPANIES: 'companies',
   WHATSAPP_EMBEDDED_SIGNUP: 'whatsapp_embedded_signup',
   CAPTAIN_V2: 'captain_integration_v2',
+  // CUSTOM START
+  CUSTOM_UI: 'custom_ui',
+  // CUSTOM END
 };
 
 export const PREMIUM_FEATURES = [

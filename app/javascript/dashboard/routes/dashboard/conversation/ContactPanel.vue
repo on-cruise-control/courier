@@ -11,6 +11,7 @@ import ContactConversations from './ContactConversations.vue';
 import ConversationAction from './ConversationAction.vue';
 import ConversationParticipant from './ConversationParticipant.vue';
 import ContactInfo from './contact/ContactInfo.vue';
+import CustomContactInfo from './contact/CustomContactInfo.vue';
 import ContactNotes from './contact/ContactNotes.vue';
 import ConversationInfo from './ConversationInfo.vue';
 import CustomAttributes from './customAttributes/CustomAttributes.vue';
@@ -48,6 +49,14 @@ const currentAccountId = useMapGetter('getCurrentAccountId');
 const isFeatureEnabledonAccount = useMapGetter(
   'accounts/isFeatureEnabledonAccount'
 );
+
+// CUSTOM UI
+const isCustomUIEnabled = computed(() => {
+  return isFeatureEnabledonAccount.value(
+    currentAccountId.value,
+    FEATURE_FLAGS.CUSTOM_UI
+  );
+});
 
 const shopifyIntegration = useFunctionGetter(
   'integrations/getIntegration',
@@ -144,7 +153,12 @@ onMounted(() => {
       :title="$t('CONVERSATION.SIDEBAR.CONTACT')"
       @close="closeContactPanel"
     />
-    <ContactInfo :contact="contact" :channel-type="channelType" />
+    <CustomContactInfo
+      v-if="isCustomUIEnabled"
+      :contact="contact"
+      :channel-type="channelType"
+    />
+    <ContactInfo v-else :contact="contact" :channel-type="channelType" />
     <div class="px-2 pb-8 list-group">
       <Draggable
         :list="conversationSidebarItems"
