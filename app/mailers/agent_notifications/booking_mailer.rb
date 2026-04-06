@@ -3,6 +3,10 @@ class AgentNotifications::BookingMailer < ApplicationMailer
     @conversation = conversation
     @account = conversation.account
     ensure_current_account(@account)
+
+    # Ensure summary is refreshed before sending the email
+    Conversations::SummaryService.new(conversation: @conversation, force_refresh: true).perform rescue nil
+    @conversation.reload
     
     # If account is suspended, send to SuperAdmins only
     recipients = if @account.suspended?
