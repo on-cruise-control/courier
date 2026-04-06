@@ -1,7 +1,8 @@
 class AgentNotifications::EscalationMailer < ApplicationMailer
-  def escalation_notification(emails:, conversation:)
+  def escalation_notification(emails:, conversation:, customer_data: nil)
     @conversation = conversation
     @account = conversation.account
+    @customer_data = customer_data || {}
     ensure_current_account(@account)
     
     # If account is suspended, send to SuperAdmins only
@@ -14,7 +15,9 @@ class AgentNotifications::EscalationMailer < ApplicationMailer
     return if recipients.blank?
 
     @summary = @conversation.summary
-    @customer_name = @conversation.contact.name || 'N/A'
+    @customer_name = @customer_data['name'].presence || @conversation.contact.name
+    @customer_email = @customer_data['email'].presence
+    @customer_phone = @customer_data['phone'].presence
     @platform_name = @conversation.inbox.platform_name
     @action_url = conversation_url(@conversation)
     

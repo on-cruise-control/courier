@@ -7,14 +7,23 @@ class ConversationHandoffService
     @conversation = conversation
   end
 
-  def process_handoff(customer_data = nil)
+  def process_handoff(customer_data = nil, handoff_reason = nil)
     return unless should_send_notification?
 
     ensure_labels_exist
     update_handoff_state
     schedule_label_change
 
-    ConversationHandoff::SendHandoffNotificationsJob.perform_later(@conversation, customer_data)
+    case handoff_reason
+    when 'frustrated_handoff'
+      if @conversation.account.escalation_emails.present?
+        EscalationNotificationJob.perform_later(@conversation.id, @conversation.account.escalation_emails, customer_data)
+      else
+        Rails.logger.warn("Escalation email not configured for account #{@conversation.account.id}")
+      end
+    when 'vehicle_parts'
+      ConversationHandoff::SendHandoffNotificationsJob.perform_later(@conversation, customer_data)
+    end
   end
 
   private

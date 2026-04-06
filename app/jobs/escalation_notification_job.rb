@@ -1,7 +1,7 @@
 class EscalationNotificationJob < ApplicationJob
   queue_as :low
 
-  def perform(conversation_id, emails)
+  def perform(conversation_id, emails, customer_data = nil)
     conversation = Conversation.find_by(id: conversation_id)
     return if conversation.blank?
 
@@ -13,7 +13,8 @@ class EscalationNotificationJob < ApplicationJob
 
     AgentNotifications::EscalationMailer.escalation_notification(
       emails: emails,
-      conversation: conversation
+      conversation: conversation,
+      customer_data: customer_data
     ).deliver_now
 
     Sms::EscalationNotificationService.new(

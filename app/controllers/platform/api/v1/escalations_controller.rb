@@ -12,7 +12,7 @@ class Platform::Api::V1::EscalationsController < PlatformController
       return
     end
 
-    EscalationNotificationJob.perform_later(conversation.id, emails)
+    EscalationNotificationJob.perform_later(conversation.id, emails, nil)
 
     render json: {
       success: true,
