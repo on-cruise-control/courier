@@ -500,6 +500,8 @@ class Message < ApplicationRecord
       return if additional_attributes&.dig('skip_follow_up') == true
       conversation.cancel_existing_follow_up_job
 
+      # or if the conversation is already assigned or stopped.
+      return if sender.is_a?(User)
       return if conversation.stop_follow_up || conversation.assignee_id.present?
 
       message_type = conversation.additional_attributes['type']
