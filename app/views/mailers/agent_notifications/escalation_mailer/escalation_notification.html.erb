@@ -4,9 +4,21 @@
   <p style="margin-bottom: 20px;">We would like to bring to your immediate attention a customer interaction that requires urgent escalation and follow-up.</p>
 
   <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 20px;">
+    <% if @customer_name.present? && @customer_name != "(N/A)" %>
     <tr>
       <td style="padding: 5px 0;"><strong>Name:</strong> <%= @customer_name %></td>
     </tr>
+    <% end %>
+    <% if @customer_phone.present? && @customer_phone != "(N/A)" %>
+    <tr>
+      <td style="padding: 5px 0;"><strong>Number:</strong> <%= @customer_phone %></td>
+    </tr>
+    <% end %>
+    <% if @customer_email.present? && @customer_email != "(N/A)" %>
+    <tr>
+      <td style="padding: 5px 0;"><strong>Email:</strong> <%= @customer_email %></td>
+    </tr>
+    <% end %>
     <tr>
       <td style="padding: 5px 0;"><strong>Platform:</strong> <%= @platform_name %></td>
     </tr>

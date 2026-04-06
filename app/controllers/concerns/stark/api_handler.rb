@@ -142,7 +142,8 @@ module Stark
       }
 
       if data['human_redirect']
-        ConversationHandoffService.new(conversation).process_handoff(refined_customer_data)
+        handoff_reason = data['handoff_reason']
+        ConversationHandoffService.new(conversation).process_handoff(refined_customer_data, handoff_reason)
       end
 
       {
