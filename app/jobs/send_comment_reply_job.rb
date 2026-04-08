@@ -25,21 +25,23 @@ class SendCommentReplyJob < ApplicationJob
     end
 
     comment_text = conversation.messages.first&.content || ''
+    post_url = conversation.additional_attributes['post_url']
 
-    lang_code = detect_comment_language(comment_text)
-
-    message_content = I18n.t('comment_reply', locale: lang_code)
-
-    job_key = "comment_reply_job_#{conversation.id}"
-    if Rails.cache.exist?(job_key)
-      Rails.logger.info "⏩ Duplicate job skipped for conversation #{conversation.id}"
+    # Try to get AI generated reply from Stark
+    stark_reply = Stark::CommentAnalysisService.new.analyze(comment_text, account.dealership_id, post_url)
+    
+    unless stark_reply && stark_reply[:status] == 'success' && stark_reply[:reply].present?
+      Rails.logger.warn "⚠️ Stark API failed or no reply for #{conversation.additional_attributes['type']}"
       return
     end
-    Rails.cache.write(job_key, true, expires_in: 5.seconds)
 
-    if conversation.messages.exists?(message_type: :outgoing, content: message_content)
-      Rails.logger.info "⏩ Skipping duplicate reply for conversation #{conversation.id}"
-      return
+    message_content = stark_reply[:reply]
+    Rails.logger.info "🤖 AI Generated Reply from Stark (#{conversation.additional_attributes['type']}): #{message_content}"
+
+    # Trigger escalation if sentiment is negative
+    if stark_reply[:sentiment_label] == 'Negative' && account.escalation_emails.present?
+      Rails.logger.info "🚨 Negative sentiment detected! Triggering escalation email to: #{account.escalation_emails.join(', ')}"
+      NegativeSentimentEscalationJob.perform_later(conversation.id, account.escalation_emails)
     end
 
     # Check type of comment (Instagram or Facebook)

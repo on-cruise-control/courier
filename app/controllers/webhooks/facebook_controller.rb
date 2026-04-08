@@ -131,7 +131,10 @@ class Webhooks::FacebookController < ActionController::API
     Rails.logger.info("✅ [FB Webhook] Conversation created successfully for comment_id: #{comment_id}")
 
     conversation.update!(
-      additional_attributes: conversation.additional_attributes.merge('comment_id' => comment_id)
+      additional_attributes: conversation.additional_attributes.merge(
+        'comment_id' => comment_id,
+        'post_url' => changes.dig('value', 'post', 'permalink_url')
+      ).compact
     )
 
     conversation

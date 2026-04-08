@@ -26,6 +26,32 @@ class AgentNotifications::EscalationMailer < ApplicationMailer
     mail(to: recipients, subject: subject)
   end
 
+  def negative_sentiment_notification(emails:, conversation:, customer_data: nil)
+    @conversation = conversation
+    @account = conversation.account
+    ensure_current_account(@account)
+
+    # If account is suspended, send to SuperAdmins only
+    recipients = if @account.suspended?
+                   super_admin_emails(@account)
+                 else
+                   emails
+                 end
+
+    return if recipients.blank?
+
+    @summary = @conversation.summary
+    @customer_name = @conversation.contact.name
+    @customer_email = @conversation.contact.email
+    @customer_phone = @conversation.contact.phone_number
+    @platform_name = @conversation.inbox.platform_name
+    @action_url = conversation_url(@conversation)
+
+    subject = 'Negative Comment Detected – High-Priority Follow-Up Required'
+
+    mail(to: recipients, subject: subject)
+  end
+
   private
 
   def conversation_url(conversation)
