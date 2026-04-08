@@ -1,0 +1,86 @@
+class Sms::NegativeSentimentEscalationService
+  def initialize(conversation:, emails:)
+    @conversation = conversation
+    @account = conversation.account
+    @emails = emails
+  end
+
+  def perform
+    return unless sms_config_enabled?
+
+    recipients = recipients_with_phone_numbers
+    return if recipients.blank?
+
+    message_body = build_message_body
+    send_sms_to_recipients(recipients, message_body)
+  rescue StandardError => e
+    Rails.logger.error("Failed to send negative sentiment escalation SMS notifications: #{e.message}")
+  end
+
+  private
+
+  def sms_config_enabled?
+    twilio_account_sid.present? &&
+      twilio_auth_token.present? &&
+      organization_phone_number.present?
+  end
+
+  def twilio_account_sid
+    @twilio_account_sid ||= GlobalConfig.get_value('TWILIO_ACCOUNT_SID')
+  end
+
+  def twilio_auth_token
+    @twilio_auth_token ||= GlobalConfig.get_value('TWILIO_AUTH_TOKEN')
+  end
+
+  def organization_phone_number
+    @organization_phone_number ||= GlobalConfig.get_value('TWILIO_ORGANIZATION_PHONE_NUMBER')
+  end
+
+  def recipients_with_phone_numbers
+    # Find users with the provided emails who have phone numbers
+    User.where(email: @emails).where.not(phone_number: [nil, ''])
+  end
+
+  def build_message_body
+    account_name = @account.name
+    platform_name = @conversation.inbox.platform_name
+    customer_name = @conversation.contact.name
+    
+    conversation_url = Rails.application.routes.url_helpers.app_account_conversation_url(
+      account_id: @account.id,
+      id: @conversation.id,
+      host: ENV.fetch('FRONTEND_URL', 'http://localhost:3000')
+    )
+
+    body = <<~SMS
+      🚨 Negative Comment Detected
+      
+      Dealership: #{account_name}
+      Platform: #{platform_name}
+      
+      Please address the comment promptly.
+    SMS
+    
+    body += "\nView conversation: #{conversation_url}\n"
+    
+    body.strip
+  end
+
+  def send_sms_to_recipients(recipients, message_body)
+    twilio_client = Twilio::REST::Client.new(twilio_account_sid, twilio_auth_token)
+
+    recipients.each do |recipient|
+      twilio_client.messages.create(
+        from: organization_phone_number,
+        to: recipient.phone_number,
+        body: message_body
+      )
+      Rails.logger.info "✅ Negative sentiment escalation SMS sent to #{recipient.name} (#{recipient.phone_number})"
+    rescue Twilio::REST::TwilioError => e
+      Rails.logger.error("Failed to send negative sentiment escalation SMS to #{recipient.name} (#{recipient.phone_number}): #{e.message}")
+    rescue StandardError => e
+      Rails.logger.error("Unexpected error sending negative sentiment escalation SMS to #{recipient.name}: #{e.message}")
+    end
+  end
+end
