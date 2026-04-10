@@ -29,6 +29,7 @@ import SaveCustomView from 'next/filter/SaveCustomView.vue';
 import ChatTypeTabs from './widgets/ChatTypeTabs.vue';
 import CustomChatTypeTabs from './widgets/CustomChatTypeTabs.vue';
 import ConversationItem from './ConversationItem.vue';
+import CustomConversationItem from './CustomConversationItem.vue';
 import DeleteCustomViews from 'dashboard/routes/dashboard/customviews/DeleteCustomViews.vue';
 import { FEATURE_FLAGS } from 'dashboard/featureFlags';
 import ConversationBulkActions from './widgets/conversation/conversationBulkActions/Index.vue';
@@ -1025,16 +1026,19 @@ watch(conversationFilters, (newVal, oldVal) => {
               item.inbox_id,
             ]"
           >
-            <ConversationItem
-              :source="item"
-              :label="label"
-              :team-id="teamId"
-              :folders-id="foldersId"
-              :conversation-type="conversationType"
-              :show-assignee="showAssigneeInConversationCard"
-              @select-conversation="selectConversation"
-              @de-select-conversation="deSelectConversation"
-            />
+            <div :class="{ 'custom-card-wrapper': isCustomUIEnabled }">
+              <component
+                :is="isCustomUIEnabled ? CustomConversationItem : ConversationItem"
+                :source="item"
+                :label="label"
+                :team-id="teamId"
+                :folders-id="foldersId"
+                :conversation-type="conversationType"
+                :show-assignee="showAssigneeInConversationCard"
+                @select-conversation="selectConversation"
+                @de-select-conversation="deSelectConversation"
+              />
+            </div>
           </DynamicScrollerItem>
         </template>
         <template #after>

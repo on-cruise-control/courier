@@ -68,14 +68,14 @@ const statusText = computed(() => {
 
 <template>
   <div
-    class="flex items-center justify-between gap-2 px-4 h-14 bg-transparent dark:bg-[#111112] transition-all border-b border-slate-50 dark:border-white/5"
+    class="flex items-center justify-between gap-1 px-2 sm:px-4 h-14 bg-transparent dark:bg-[#111112] transition-all border-b border-slate-50 dark:border-white/5"
     :class="{
       'border-b border-n-strong': hasAppliedFiltersOrActiveFolders,
     }"
   >
-    <div class="flex items-center min-w-0 gap-2">
+    <div class="flex items-center min-w-0 gap-1 sm:gap-2">
       <h1
-        class="text-[20px] font-bold tracking-tight text-slate-800 dark:text-slate-100 truncate"
+        class="text-base sm:text-lg 2xl:text-[20px] font-bold tracking-tight text-slate-800 dark:text-slate-100 truncate"
         :title="pageTitle"
       >
         {{ pageTitle }}
@@ -84,14 +84,14 @@ const statusText = computed(() => {
         v-if="
           allCount > 0 && hasAppliedFiltersOrActiveFolders && !isListLoading
         "
-        class="px-2 py-1 my-0.5 mx-1 rounded-md capitalize bg-n-slate-3 text-xxs text-n-slate-12 shrink-0"
+        class="px-1.5 py-0.5 my-0.5 mx-0.5 rounded-md capitalize bg-n-slate-3 text-[10px] text-n-slate-12 shrink-0"
         :title="allCount"
       >
         {{ formattedAllCount }}
       </span>
       <span
         v-if="!hasAppliedFiltersOrActiveFolders"
-        class="px-2.5 py-0.5 ml-1 rounded-full bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400 font-medium text-[11px] shrink-0 border border-slate-200/50 dark:border-white/5"
+        class="px-2 py-0.5 ml-0.5 rounded-full bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400 font-medium text-[10px] shrink-0 border border-slate-200/50 dark:border-white/5 truncate max-w-[80px] sm:max-w-[120px]"
       >
         {{ statusText }}
       </span>
@@ -110,8 +110,7 @@ const statusText = computed(() => {
           />
           <div
             id="saveFilterTeleportTarget"
-            class="absolute z-50 mt-2"
-            :class="{ 'ltr:right-0 rtl:left-0': isOnExpandedLayout }"
+            class="absolute z-50 mt-2 ltr:right-0 rtl:left-0"
           />
         </div>
         <NextButton
@@ -138,8 +137,7 @@ const statusText = computed(() => {
           />
           <div
             id="conversationFilterTeleportTarget"
-            class="absolute z-50 mt-2"
-            :class="{ 'ltr:right-0 rtl:left-0': isOnExpandedLayout }"
+            class="absolute z-50 mt-2 ltr:right-0 rtl:left-0"
           />
         </div>
         <NextButton
@@ -166,8 +164,7 @@ const statusText = computed(() => {
         />
         <div
           id="conversationFilterTeleportTarget"
-          class="absolute z-50 mt-2"
-          :class="{ 'ltr:right-0 rtl:left-0': isOnExpandedLayout }"
+          class="absolute z-50 mt-2 ltr:right-0 rtl:left-0"
         />
       </div>
       <ConversationBasicFilter

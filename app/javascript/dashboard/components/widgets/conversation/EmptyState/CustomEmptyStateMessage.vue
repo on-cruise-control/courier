@@ -37,7 +37,7 @@ const isCustomUIEnabled = computed(() => {
       
       <!-- Animated Graphic Top -->
       <div class="relative flex items-center justify-center mb-6">
-        <div class="absolute inset-0 bg-white/40 dark:bg-black/20 blur-2xl rounded-full scale-75"></div>
+        <div class="absolute inset-0 bg-white/10 dark:bg-black/20 blur-2xl rounded-full scale-75"></div>
         <DotLottieVue
           class="relative z-10"
           style="height: 320px; width: 320px; filter: drop-shadow(0 20px 25px rgba(0,0,0,0.06));"
@@ -53,7 +53,7 @@ const isCustomUIEnabled = computed(() => {
       </h2>
 
       <!-- Commands inside a Glassmorphic Pill -->
-      <div class="flex flex-col items-center bg-white/60 dark:bg-[#1f1f1f]/60 backdrop-blur-xl px-12 py-6 rounded-[2rem] border border-white/60 dark:border-white/5 shadow-sm transition-all duration-300 hover:shadow-md hover:bg-white/80 dark:hover:bg-[#1f1f1f]/80">
+      <div class="flex flex-col items-center bg-white/60 dark:bg-[#111112] backdrop-blur-xl px-12 py-6">
         <FeaturePlaceholder class="!mt-0" />
       </div>
     </div>

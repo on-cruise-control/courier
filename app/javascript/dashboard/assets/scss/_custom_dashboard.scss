@@ -133,7 +133,7 @@ $active-item-bg: rgba(255, 255, 255, 0.2);
     .conversations-list-wrap {
         background-color: $conversation-list-bg !important;
         border-right: 1px solid rgba(0, 0, 0, 0.05) !important;
-        padding-left: 20px !important; // Space between sidebar and cards
+        padding-left: 9px !important; // Space between sidebar and cards
 
         // Target the list container
         .conversations-list,
@@ -152,13 +152,16 @@ $active-item-bg: rgba(255, 255, 255, 0.2);
 
         .vue-virtual-scroller__item-view {
             background-color: transparent !important;
-            margin-bottom: 16px !important; // Reduced space between blocks
+        }
+
+        .custom-card-wrapper {
+            padding-bottom: 10px !important; // Increased gap between card boxes
         }
 
         // Target the conversation card
         .conversation {
-            margin: 0 0 1px 0 !important;
-            border-radius: 12px !important;
+            margin: 0 0 0 0 !important; // Remove margin here as we handle gap in item-view
+            border-radius: 16px !important; // Slightly more rounded for premium feel
             background-color: $conversation-card-bg !important;
             border: 1px solid #eef2f6 !important;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.041) !important;
@@ -381,7 +384,7 @@ $active-item-bg: rgba(255, 255, 255, 0.2);
         }
 
         &.active,
-        &.router-link-active {
+        &.router-link-exact-active {
             background-color: rgba($primary-blue, 0.1) !important;
             color: $primary-blue !important;
             border-color: rgba($primary-blue, 0.1) !important;
@@ -423,7 +426,7 @@ $active-item-bg: rgba(255, 255, 255, 0.2);
             }
 
             &.active,
-            &.router-link-active {
+            &.router-link-exact-active {
                 background-color: #1b5cb641 !important;
                 color: #fff !important;
 
@@ -796,7 +799,7 @@ $active-item-bg: rgba(255, 255, 255, 0.2);
 
         // Send Button Styling
         button.bg-n-brand {
-            background: #4f46e5 !important;
+            background: #1b5cb6 !important;
             border-radius: 10px !important;
             font-weight: 600 !important;
             padding: 0 20px !important;
@@ -805,7 +808,7 @@ $active-item-bg: rgba(255, 255, 255, 0.2);
             transition: all 0.2s ease !important;
 
             &:hover {
-                background: #4338ca !important;
+                background: #154b97 !important;
                 transform: translateY(-1px) !important;
             }
         }
@@ -891,8 +894,7 @@ $active-item-bg: rgba(255, 255, 255, 0.2);
     // 5. Chat Type Tabs V2 (Scrollable Pills)
     .custom-pill-tabs-v2 {
         background: transparent !important;
-        padding-top: 4px !important;
-        padding-bottom: 12px !important;
+        padding: 4px 12px 12px !important; // Added horizontal padding
 
         .scrollbar-hide {
             &::-webkit-scrollbar {

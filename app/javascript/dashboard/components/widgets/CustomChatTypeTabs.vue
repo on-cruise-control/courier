@@ -16,8 +16,6 @@ const props = defineProps({
 
 const emit = defineEmits(['chatTabChange']);
 
-const scrollContainer = ref(null);
-
 const activeTabIndex = computed(() => {
   return props.items.findIndex(item => item.key === props.activeTab);
 });
@@ -25,16 +23,6 @@ const activeTabIndex = computed(() => {
 const onTabChange = key => {
   if (key !== props.activeTab) {
     emit('chatTabChange', key);
-  }
-};
-
-const scroll = direction => {
-  if (scrollContainer.value) {
-    const scrollAmount = 100;
-    scrollContainer.value.scrollBy({
-      left: direction === 'left' ? -scrollAmount : scrollAmount,
-      behavior: 'smooth',
-    });
   }
 };
 
@@ -55,48 +43,31 @@ useKeyboardEvents(keyboardEvents);
 </script>
 
 <template>
-  <div class="flex items-center w-full gap-1.5 custom-pill-tabs-v2">
-    <!-- Left Arrow -->
-    <button
-      class="p-1 text-slate-400 hover:text-slate-600 transition-colors shrink-0"
-      @click="scroll('left')"
-    >
-      <i class="i-lucide-chevron-left h-4 w-4" />
-    </button>
-
+  <div class="flex items-center w-full custom-pill-tabs-v2">
     <!-- Tabs Container -->
     <div
-      ref="scrollContainer"
-      class="flex-1 flex items-center gap-1.5 p-1 bg-white dark:bg-white/5 rounded-xl overflow-x-auto scrollbar-hide select-none transition-all"
+      class="flex-1 flex items-center justify-start gap-0.5 p-0.5 bg-white dark:bg-white/5 rounded-lg select-none transition-all overflow-x-auto flex-nowrap scrollbar-hide"
     >
       <button
         v-for="item in items"
         :key="item.key"
-        class="relative px-2 py-1 text-[13px] font-bold transition-all duration-300 rounded-lg whitespace-nowrap outline-none"
+        class="relative flex-1 px-2 py-1 text-[11px] font-bold transition-all duration-300 rounded-md whitespace-nowrap outline-none flex items-center justify-center gap-0.5 flex-shrink-0"
         :class="
           activeTab === item.key
-            ? 'bg-n-blue-3 dark:bg-white/10 text-slate-800 dark:text-white shadow-sm'
-            : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'
+            ? 'bg-n-blue-5 dark:bg-white/10 text-slate-900 dark:text-white shadow-sm'
+            : 'text-slate-800 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200'
         "
         @click="onTabChange(item.key)"
       >
-        {{ item.name }}
+        <span>{{ item.name }}</span>
         <span
           v-if="item.count"
-          class="ml-1 opacity-70 font-medium text-[11px] bg-slate-100 dark:bg-white/5 p-1 rounded-lg"
+          class="font-black text-[10px] bg-slate-200/50 dark:bg-white/10 px-1 rounded-md text-slate-900 dark:text-slate-300"
         >
           {{ item.count }}
         </span>
       </button>
     </div>
-
-    <!-- Right Arrow -->
-    <button
-      class="p-1 text-slate-400 hover:text-slate-600 transition-colors shrink-0"
-      @click="scroll('right')"
-    >
-      <i class="i-lucide-chevron-right h-4 w-4" />
-    </button>
   </div>
 </template>
 

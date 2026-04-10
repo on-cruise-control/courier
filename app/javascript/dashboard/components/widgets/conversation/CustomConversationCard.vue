@@ -5,8 +5,11 @@ import { useStore, useMapGetter } from 'dashboard/composables/store';
 import { getLastMessage } from 'dashboard/helper/conversationHelper';
 import { frontendURL, conversationUrl } from 'dashboard/helper/URLHelper';
 import Avatar from 'next/avatar/Avatar.vue';
+import CustomAvatar from 'dashboard/custom/CustomAvatar.vue';
 import MessagePreview from './MessagePreview.vue';
 import InboxName from '../InboxName.vue';
+import CustomInboxName from 'dashboard/custom/CustomInboxName.vue';
+import CustomMessagePreview from 'dashboard/custom/CustomMessagePreview.vue';
 import ConversationContextMenu from './contextMenu/Index.vue';
 import TimeAgo from 'dashboard/components/ui/TimeAgo.vue';
 import CardLabels from './conversationCardComponents/CardLabels.vue';
@@ -252,13 +255,13 @@ const deleteConversation = () => {
 
 <template>
   <div
-    class="relative flex items-start flex-grow-0 flex-shrink-0 w-auto max-w-full py-0 border-t-0 border-b-0 border-l-0 border-r-0 border-transparent border-solid cursor-pointer conversation hover:bg-n-alpha-1 dark:hover:bg-n-alpha-3 group"
+    class="relative flex items-start flex-grow-0 flex-shrink-0 w-auto max-w-full py-0 border-t-0 border-b-0 border-l-0 border-r-0 border-transparent border-solid cursor-pointer conversation custom-conversation-card hover:bg-n-alpha-1 dark:hover:bg-n-alpha-3 group"
     :class="{
       'active animate-card-select bg-n-alpha-1 dark:bg-n-alpha-3 border-n-weak':
         isActiveChat,
       'bg-n-slate-2 dark:bg-n-slate-3': selected,
       'px-0': compact,
-      'px-3': !compact,
+      'px-2 sm:px-3': !compact,
     }"
     @click="onCardClick"
     @contextmenu="openContextMenu($event)"
@@ -268,7 +271,7 @@ const deleteConversation = () => {
       @mouseenter="onThumbnailHover"
       @mouseleave="onThumbnailLeave"
     >
-      <Avatar
+      <CustomAvatar
         v-if="!hideThumbnail"
         :name="currentContact.name"
         :src="currentContact.thumbnail"
@@ -295,7 +298,7 @@ const deleteConversation = () => {
             />
           </label>
         </template>
-      </Avatar>
+      </CustomAvatar>
     </div>
     <div
       class="px-0 py-3 border-b group-hover:border-transparent flex-1 border-n-slate-3 min-w-0"
@@ -312,7 +315,7 @@ const deleteConversation = () => {
           v-if="showInboxName"
           class="flex items-center gap-1.5 flex-1 min-w-0"
         >
-          <InboxName
+          <CustomInboxName
             :inbox="inbox"
             class="flex-1 min-w-0"
           />
@@ -358,9 +361,9 @@ const deleteConversation = () => {
         :direction="voiceCallData.direction"
         :message-preview-class="messagePreviewClass"
       />
-      <MessagePreview
+      <CustomMessagePreview
         v-if="lastMessageInChat"
-        key="message-preview"
+        key="custom-message-preview"
         :message="lastMessageInChat"
         class="my-0 mx-2 leading-6 h-6 flex-1 min-w-0 text-sm"
         :class="messagePreviewClass"

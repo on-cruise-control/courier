@@ -5,7 +5,7 @@ import { useAccount } from 'dashboard/composables/useAccount';
 import { useMapGetter } from 'dashboard/composables/store';
 import { useStore } from 'vuex';
 import { usePolicy } from 'dashboard/composables/usePolicy';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import SidebarProfileMenu from '../components-next/sidebar/SidebarProfileMenu.vue';
 import Logo from 'next/icon/Logo.vue';
 import { getInboxIconByType } from 'dashboard/helper/inbox';
@@ -44,6 +44,7 @@ const notificationsMeta = useMapGetter('notifications/getMeta');
 
 const { shouldShow } = usePolicy();
 const router = useRouter();
+const route = useRoute();
 
 const findRouteByName = name => {
   return router.getRoutes().find(route => route.name === name);
@@ -84,8 +85,6 @@ onMounted(() => {
   store.dispatch('customViews/get', 'contact');
 });
 
-const activeGroup = ref(null);
-
 const showAccountSwitcher = computed(
   () => (userAccounts.value || []).length > 1 && currentAccount.value.name
 );
@@ -119,6 +118,43 @@ const onComposeClose = () => {
   emitter.emit(BUS_EVENTS.NEW_CONVERSATION_MODAL, false);
 };
 
+const isChildActive = child => {
+  if (!child.to) return false;
+  
+  const currentRouteName = route.name;
+  const targetRouteName = child.to.name;
+  const targetNavigationPath = child.to.params?.navigationPath;
+
+  // Direct match
+  if (currentRouteName === targetRouteName) {
+    // If it's a generic route with params (like portals_index), ensure params match
+    if (targetNavigationPath) {
+       return route.params?.navigationPath === targetNavigationPath;
+    }
+    return true;
+  }
+
+  // Handle redirects/sub-routes for dynamic sections (Portals)
+  // Standard Chatwoot Portals sidebar items use navigationPath to store the target route name
+  if (targetNavigationPath && currentRouteName === targetNavigationPath) {
+    return true;
+  }
+
+  // Fallback for exact path comparison (helps with some CRM/Settings routes)
+  const currentPath = route.path;
+  const targetPath = typeof child.to === 'string' ? child.to : router.resolve(child.to).href;
+  
+  return currentPath === targetPath;
+};
+
+const isGroupActive = item => {
+  if (item.to && isChildActive(item)) return true;
+  if (item.children) {
+    return item.children.some(child => isChildActive(child));
+  }
+  return false;
+};
+
 const menuItems = computed(() => {
   const items = [
     {
@@ -130,9 +166,9 @@ const menuItems = computed(() => {
     {
       name: 'Conversation',
       label: t('SIDEBAR.CONVERSATIONS'),
-      icon: 'i-lucide-message-circle',
+      icon: 'i-lucide-message-square-more',
       children: [
-        { type: 'link', label: t('SIDEBAR.ALL_CONVERSATIONS'), icon: 'i-lucide-message-circle', to: accountScopedRoute('home') },
+        { type: 'link', label: t('SIDEBAR.ALL_CONVERSATIONS'), icon: 'i-lucide-message-square', to: accountScopedRoute('home') },
         { type: 'link', label: t('SIDEBAR.MENTIONED_CONVERSATIONS'), icon: 'i-lucide-at-sign', to: accountScopedRoute('conversation_mentions') },
         { type: 'link', label: t('SIDEBAR.UNATTENDED_CONVERSATIONS'), icon: 'i-lucide-clock', to: accountScopedRoute('conversation_unattended') },
         { type: 'link', label: t('SIDEBAR.SPAM'), icon: 'i-lucide-octagon-alert', to: accountScopedRoute('conversation_spam') },
@@ -169,7 +205,7 @@ const menuItems = computed(() => {
     {
       name: 'Contacts',
       label: t('SIDEBAR.CONTACTS'),
-      icon: 'i-lucide-contact',
+      icon: 'i-lucide-users-round',
       children: [
         { type: 'link', label: t('SIDEBAR.ALL_CONTACTS'), icon: 'i-lucide-users', to: accountScopedRoute('contacts_dashboard_index') },
         { type: 'link', label: t('SIDEBAR.ACTIVE'), icon: 'i-lucide-user-check', to: accountScopedRoute('contacts_dashboard_active') },
@@ -185,15 +221,15 @@ const menuItems = computed(() => {
     {
       name: 'Companies',
       label: t('SIDEBAR.COMPANIES'),
-      icon: 'i-lucide-building-2',
+      icon: 'i-lucide-briefcase',
       children: [
-        { type: 'link', label: t('SIDEBAR.ALL_COMPANIES'), icon: 'i-lucide-building-2', to: accountScopedRoute('companies_dashboard_index') },
+        { type: 'link', label: t('SIDEBAR.ALL_COMPANIES'), icon: 'i-lucide-building', to: accountScopedRoute('companies_dashboard_index') },
       ],
     },
     {
       name: 'Reports',
       label: t('SIDEBAR.REPORTS'),
-      icon: 'i-lucide-chart-spline',
+      icon: 'i-lucide-bar-chart-3',
       children: [
         { type: 'link', label: t('SIDEBAR.REPORTS_OVERVIEW'), icon: 'i-lucide-chart-pie', to: accountScopedRoute('account_overview_reports') },
         { type: 'link', label: t('SIDEBAR.REPORTS_CONVERSATION'), icon: 'i-lucide-message-square-dashed', to: accountScopedRoute('conversation_reports') },
@@ -205,11 +241,11 @@ const menuItems = computed(() => {
     {
       name: 'Campaigns',
       label: t('SIDEBAR.CAMPAIGNS'),
-      icon: 'i-lucide-megaphone',
+      icon: 'i-lucide-send-horizontal',
       children: [
-        { type: 'link', label: t('SIDEBAR.LIVE_CHAT'), icon: 'i-lucide-message-circle', to: accountScopedRoute('campaigns_livechat_index') },
+        { type: 'link', label: t('SIDEBAR.LIVE_CHAT'), icon: 'i-lucide-message-square', to: accountScopedRoute('campaigns_livechat_index') },
         { type: 'link', label: t('SIDEBAR.SMS'), icon: 'i-lucide-message-square', to: accountScopedRoute('campaigns_sms_index') },
-        { type: 'link', label: t('SIDEBAR.WHATSAPP'), icon: 'i-lucide-message-circle', to: accountScopedRoute('campaigns_whatsapp_index') },
+        { type: 'link', label: t('SIDEBAR.WHATSAPP'), icon: 'i-lucide-message-square-more', to: accountScopedRoute('campaigns_whatsapp_index') },
       ],
     },
     {
@@ -229,7 +265,7 @@ const menuItems = computed(() => {
     {
       name: 'Portals',
       label: t('SIDEBAR.HELP_CENTER.TITLE'),
-      icon: 'i-lucide-library-big',
+      icon: 'i-lucide-book-open-text',
       children: [
         { type: 'link', label: t('SIDEBAR.HELP_CENTER.ARTICLES'), icon: 'i-lucide-file-text', to: accountScopedRoute('portals_index', { navigationPath: 'portals_articles_index' }) },
         { type: 'link', label: t('SIDEBAR.HELP_CENTER.CATEGORIES'), icon: 'i-lucide-boxes', to: accountScopedRoute('portals_index', { navigationPath: 'portals_categories_index' }) },
@@ -240,7 +276,7 @@ const menuItems = computed(() => {
     {
       name: 'Settings',
       label: t('SIDEBAR.SETTINGS'),
-      icon: 'i-lucide-bolt',
+      icon: 'i-lucide-settings-2',
       children: [
         {
           type: 'link',
@@ -407,16 +443,41 @@ const bottomItems = computed(() => {
 
 const hasBottomItems = computed(() => bottomItems.value.length > 0);
 
-const openGroup = item => {
+const activeGroup = ref(null);
+const activeChildren = ref([]);
+
+const toggleGroup = item => {
   if (activeGroup.value === item.name) {
     activeGroup.value = null;
-    return;
+    activeChildren.value = [];
+  } else {
+    activeGroup.value = item.name;
+    activeChildren.value = item.children || [];
   }
+};
 
-  activeGroup.value = item.name;
-  const defaultChild = item.children?.find(child => child.type === 'link');
-  if (defaultChild?.to) {
-    router.push(defaultChild.to);
+const navigateItem = item => {
+  activeGroup.value = null;
+  activeChildren.value = [];
+  
+  if (item.children) {
+    const defaultChild = item.children.find(child => child.type === 'link');
+    if (defaultChild?.to) {
+      router.push(defaultChild.to);
+    }
+  } else if (item.to) {
+    router.push(item.to);
+  }
+  
+  if (isSmallScreen.value) {
+    emit('closeMobileSidebar');
+  }
+};
+const onChildClick = () => {
+  activeGroup.value = null;
+  activeChildren.value = [];
+  if (isSmallScreen.value) {
+    emit('closeMobileSidebar');
   }
 };
 </script>
@@ -436,10 +497,16 @@ const openGroup = item => {
     />
 
     <aside
-      class="custom-sidebar flex flex-col h-full items-center py-4 z-50 flex-shrink-0 border-r border-black/10 shadow-lg"
-      style="background-color: #1b5cb6; width: 64px; min-width: 64px; max-width: 64px;"
+      class="custom-sidebar flex flex-col h-full items-start py-4 z-50 flex-shrink-0 border-r border-black/10 shadow-lg relative"
+      style="background-color: transparent; width: 90px; min-width: 90px; max-width: 90px;"
     >
-      <div class="mb-6">
+      <!-- Fixed Blue Background (64px) -->
+      <div 
+        class="absolute inset-y-0 left-0 w-16 z-[-1]" 
+        style="background-color: #1b5cb6;"
+      />
+
+      <div class="mb-6 w-16 flex justify-center">
         <DropdownContainer>
           <template #trigger="{ toggle, isOpen }">
             <button
@@ -482,7 +549,7 @@ const openGroup = item => {
       </div>
 
       <!-- Search & Compose -->
-      <div class="flex flex-col gap-2 mb-4 px-2">
+      <div class="flex flex-col gap-2 mb-4 px-2 w-16">
         <router-link
           :to="{ name: 'search' }"
           class="size-10 rounded-xl bg-white/10 flex items-center justify-center text-white hover:bg-white/20 transition-all cursor-pointer"
@@ -503,79 +570,111 @@ const openGroup = item => {
       </div>
 
       <!-- Scrollable Nav Section -->
-      <nav class="flex flex-col gap-3 flex-grow items-center overflow-y-auto w-full no-scrollbar px-2 py-2">
+      <nav class="flex flex-col gap-3 flex-grow items-start overflow-y-auto w-[90px] no-scrollbar py-2">
         <template v-for="item in menuItems" :key="item.name">
-          <button
-            v-if="item.children"
-            class="sidebar-item p-2.5 rounded-xl hover:bg-white/10 transition-all flex-shrink-0 w-11 h-11 flex items-center justify-center cursor-pointer relative group"
-            :class="{ 'bg-white/20 shadow-inner': activeGroup === item.name }"
-            v-tooltip.right="item.label"
-            @click="openGroup(item)"
-          >
-            <div
-              class="size-6 text-white group-hover:scale-110 transition-transform"
-              :class="item.icon"
-            />
-            <div v-if="activeGroup === item.name" class="absolute -right-2 top-1/2 -translate-y-1/2 w-0 h-0 border-y-[6px] border-y-transparent border-l-[6px] border-l-white/20" />
-          </button>
-
-          <router-link
-            v-else
-            :to="item.to"
-            class="sidebar-item relative p-2.5 rounded-xl hover:bg-white/10 transition-all flex-shrink-0 w-11 h-11 flex items-center justify-center group"
-            active-class="bg-white/20"
-            v-tooltip.right="item.label"
-            @click="activeGroup = null; isSmallScreen && emit('closeMobileSidebar')"
-          >
-            <div
-              class="size-6 text-white group-hover:scale-110 transition-transform"
-              :class="item.icon"
-            />
-            <span
-              v-if="item.name === 'Inbox' && hasUnreadNotifications"
-              class="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full text-[10px] leading-4 text-white bg-n-teal-9 text-center"
+          <div v-if="item.children" class="relative flex items-center justify-center group w-16">
+            <button
+              class="sidebar-item p-2.5 rounded-xl hover:bg-white/10 transition-all flex-shrink-0 w-11 h-11 flex items-center justify-center cursor-pointer group/icon"
+              :class="{ 'bg-white/20 shadow-inner': activeGroup === item.name }"
+              v-tooltip.right="item.label"
+              @click="navigateItem(item)"
             >
-              {{ unreadNotificationsLabel }}
-            </span>
-          </router-link>
+              <div
+                class="size-6 text-white group-hover/icon:scale-110 transition-transform"
+                :class="item.icon"
+              />
+            </button>
+            
+            <!-- Beak Toggle (Fixed for Active Section) -->
+            <div
+              class="absolute left-full top-1/2 -translate-y-1/2 w-6 h-10 flex items-center justify-center bg-[#1b5cb6] rounded-r-xl shadow-[4px_0_10px_rgba(0,0,0,0.1)] transition-all duration-200 z-[110] cursor-pointer"
+              :class="{ 
+                'opacity-100 translate-x-0': activeGroup === item.name || isGroupActive(item), 
+                'opacity-0 -translate-x-1': activeGroup !== item.name && !isGroupActive(item)
+              }"
+              @click.stop="toggleGroup(item)"
+            >
+              <i 
+                class="i-lucide-chevron-right size-4 text-white transition-transform duration-300"
+                :class="{ 'rotate-180': activeGroup === item.name }"
+              />
+            </div>
+          </div>
+
+          <div v-else class="w-16 flex justify-center">
+            <router-link
+              :to="item.to"
+              class="sidebar-item relative p-2.5 rounded-xl hover:bg-white/10 transition-all flex-shrink-0 w-11 h-11 flex items-center justify-center group"
+              active-class="bg-white/20"
+              v-tooltip.right="item.label"
+              @click="navigateItem(item)"
+            >
+              <div
+                class="size-6 text-white group-hover:scale-110 transition-transform"
+                :class="item.icon"
+              />
+              <span
+                v-if="item.name === 'Inbox' && hasUnreadNotifications"
+                class="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full text-[10px] leading-4 text-white bg-n-teal-9 text-center"
+              >
+                {{ unreadNotificationsLabel }}
+              </span>
+            </router-link>
+          </div>
         </template>
       </nav>
 
       <template v-if="hasBottomItems">
         <div class="w-8 h-px bg-white/10 my-4 flex-shrink-0" />
-        <nav class="flex flex-col gap-3 items-center w-full px-2 mb-4">
+        <nav class="flex flex-col gap-3 items-start w-[90px] px-0 mb-4">
           <template v-for="item in bottomItems" :key="item.name">
-            <button
-              v-if="item.children"
-              class="sidebar-item p-2.5 rounded-xl hover:bg-white/10 transition-all flex-shrink-0 w-11 h-11 flex items-center justify-center cursor-pointer relative group"
-              :class="{ 'bg-white/20 shadow-inner': activeGroup === item.name }"
-              v-tooltip.right="item.label"
-              @click="openGroup(item)"
-            >
+            <div v-if="item.children" class="relative flex items-center justify-center group w-16 px-0">
+              <button
+                class="sidebar-item p-2.5 rounded-xl hover:bg-white/10 transition-all flex-shrink-0 w-11 h-11 flex items-center justify-center cursor-pointer group/icon"
+                :class="{ 'bg-white/20 shadow-inner': activeGroup === item.name }"
+                v-tooltip.right="item.label"
+                @click="navigateItem(item)"
+              >
+                <div
+                  class="size-6 text-white group-hover/icon:scale-110 transition-transform"
+                  :class="item.icon"
+                />
+              </button>
+              
+              <!-- Beak Toggle (Fixed for Active Section) -->
               <div
-                class="size-6 text-white group-hover:scale-110 transition-transform"
-                :class="item.icon"
-              />
-              <div v-if="activeGroup === item.name" class="absolute -right-2 top-1/2 -translate-y-1/2 w-0 h-0 border-y-[6px] border-y-transparent border-l-[6px] border-l-white/20" />
-            </button>
-            <router-link
-              v-else
-              :to="item.to"
-              class="sidebar-item p-2.5 rounded-xl hover:bg-white/10 transition-all flex-shrink-0 w-11 h-11 flex items-center justify-center group"
-              active-class="bg-white/20"
-              v-tooltip.right="item.label"
-              @click="activeGroup = null"
-            >
-              <div
-                class="size-6 text-white group-hover:scale-110 transition-transform"
-                :class="item.icon"
-              />
-            </router-link>
+                class="absolute left-full top-1/2 -translate-y-1/2 w-6 h-10 flex items-center justify-center bg-[#1b5cb6] rounded-r-xl shadow-[4px_0_10px_rgba(0,0,0,0.1)] transition-all duration-200 z-[110] cursor-pointer"
+                :class="{ 
+                  'opacity-100 translate-x-0': activeGroup === item.name || isGroupActive(item), 
+                  'opacity-0 -translate-x-1': activeGroup !== item.name && !isGroupActive(item)
+                }"
+                @click.stop="toggleGroup(item)"
+              >
+                <i 
+                  class="i-lucide-chevron-right size-4 text-white transition-transform duration-300"
+                  :class="{ 'rotate-180': activeGroup === item.name }"
+                />
+              </div>
+            </div>
+            <div v-else class="w-16 flex justify-center">
+              <router-link
+                :to="item.to"
+                class="sidebar-item p-2.5 rounded-xl hover:bg-white/10 transition-all flex-shrink-0 w-11 h-11 flex items-center justify-center group"
+                active-class="bg-white/20"
+                v-tooltip.right="item.label"
+                @click="navigateItem(item)"
+              >
+                <div
+                  class="size-6 text-white group-hover:scale-110 transition-transform"
+                  :class="item.icon"
+                />
+              </router-link>
+            </div>
           </template>
         </nav>
       </template>
 
-      <div class="px-2 pt-2 border-t border-white/10 w-full flex justify-center">
+      <div class="px-0 pt-2 border-t border-white/10 w-16 flex justify-center">
         <SidebarProfileMenu
           class="bg-transparent border-none !p-0"
           @open-key-shortcut-modal="emit('openKeyShortcutModal')"
@@ -613,7 +712,7 @@ const openGroup = item => {
         </div>
 
         <div class="flex-grow overflow-y-auto no-scrollbar px-3 flex flex-col gap-1">
-          <template v-for="child in [...menuItems, ...bottomItems].find(i => i.name === activeGroup)?.children" :key="child.label">
+          <template v-for="child in activeChildren" :key="child.label">
             <div v-if="child.type === 'header'" class="flyout-sub-header mt-4 mb-2 px-3 text-[9px] font-bold uppercase tracking-widest whitespace-nowrap opacity-60">
               {{ child.label }}
             </div>
@@ -621,8 +720,8 @@ const openGroup = item => {
               v-else
               :to="child.to"
               class="flyout-link group flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all whitespace-nowrap"
-              active-class="active"
-              @click="isSmallScreen && emit('closeMobileSidebar')"
+              :class="{ active: isChildActive(child) }"
+              @click="onChildClick"
             >
               <div 
                 v-if="child.color" 

@@ -7,11 +7,13 @@ import {
 } from 'dashboard/composables/store';
 import { useUISettings } from 'dashboard/composables/useUISettings';
 import AccordionItem from 'dashboard/components/Accordion/AccordionItem.vue';
+import CustomAccordionItem from 'dashboard/components/Accordion/CustomAccordionItem.vue';
 import ContactConversations from './ContactConversations.vue';
 import ConversationAction from './ConversationAction.vue';
 import ConversationParticipant from './ConversationParticipant.vue';
 import ContactInfo from './contact/ContactInfo.vue';
 import CustomContactInfo from './contact/CustomContactInfo.vue';
+import CustomConversationAction from './CustomConversationAction.vue';
 import ContactNotes from './contact/ContactNotes.vue';
 import ConversationInfo from './ConversationInfo.vue';
 import CustomAttributes from './customAttributes/CustomAttributes.vue';
@@ -19,6 +21,7 @@ import Draggable from 'vuedraggable';
 import MacrosList from './Macros/List.vue';
 import ShopifyOrdersList from 'dashboard/components/widgets/conversation/ShopifyOrdersList.vue';
 import SidebarActionsHeader from 'dashboard/components-next/SidebarActionsHeader.vue';
+import CustomSidebarActionsHeader from 'dashboard/components-next/CustomSidebarActionsHeader.vue';
 import LinearIssuesList from 'dashboard/components/widgets/conversation/linear/IssuesList.vue';
 import LinearSetupCTA from 'dashboard/components/widgets/conversation/linear/LinearSetupCTA.vue';
 import { FEATURE_FLAGS } from 'dashboard/featureFlags';
@@ -56,6 +59,16 @@ const isCustomUIEnabled = computed(() => {
     currentAccountId.value,
     FEATURE_FLAGS.CUSTOM_UI
   );
+});
+
+const AccordionComponent = computed(() => {
+  return isCustomUIEnabled.value ? CustomAccordionItem : AccordionItem;
+});
+
+const SidebarHeaderComponent = computed(() => {
+  return isCustomUIEnabled.value
+    ? CustomSidebarActionsHeader
+    : SidebarActionsHeader;
 });
 
 const shopifyIntegration = useFunctionGetter(
@@ -149,7 +162,9 @@ onMounted(() => {
 
 <template>
   <div class="w-full">
-    <SidebarActionsHeader
+    <component
+      :is="SidebarHeaderComponent"
+      v-if="!isCustomUIEnabled"
       :title="$t('CONVERSATION.SIDEBAR.CONTACT')"
       @close="closeContactPanel"
     />
@@ -157,9 +172,10 @@ onMounted(() => {
       v-if="isCustomUIEnabled"
       :contact="contact"
       :channel-type="channelType"
+      @panel-close="closeContactPanel"
     />
     <ContactInfo v-else :contact="contact" :channel-type="channelType" />
-    <div class="px-2 pb-8 list-group">
+    <div class="px-3 pb-8 list-group">
       <Draggable
         :list="conversationSidebarItems"
         animation="200"
@@ -175,24 +191,32 @@ onMounted(() => {
             v-if="element.name === 'conversation_actions'"
             class="conversation--actions"
           >
-            <AccordionItem
+            <component
+              :is="AccordionComponent"
               :title="$t('CONVERSATION_SIDEBAR.ACCORDION.CONVERSATION_ACTIONS')"
               :is-open="isContactSidebarItemOpen('is_conv_actions_open')"
               @toggle="
                 value => toggleSidebarUIState('is_conv_actions_open', value)
               "
             >
-              <ConversationAction
+              <CustomConversationAction
+                v-if="isCustomUIEnabled"
                 :conversation-id="conversationId"
                 :inbox-id="inboxId"
               />
-            </AccordionItem>
+              <ConversationAction
+                v-else
+                :conversation-id="conversationId"
+                :inbox-id="inboxId"
+              />
+            </component>
           </div>
           <div
             v-else-if="element.name === 'conversation_participants'"
             class="conversation--actions"
           >
-            <AccordionItem
+            <component
+              :is="AccordionComponent"
               :title="$t('CONVERSATION_PARTICIPANTS.SIDEBAR_TITLE')"
               :is-open="isContactSidebarItemOpen('is_conv_participants_open')"
               @toggle="
@@ -204,10 +228,11 @@ onMounted(() => {
                 :conversation-id="conversationId"
                 :inbox-id="inboxId"
               />
-            </AccordionItem>
+            </component>
           </div>
           <div v-else-if="element.name === 'conversation_info'">
-            <AccordionItem
+            <component
+              :is="AccordionComponent"
               :title="$t('CONVERSATION_SIDEBAR.ACCORDION.CONVERSATION_INFO')"
               :is-open="isContactSidebarItemOpen('is_conv_details_open')"
               compact
@@ -219,10 +244,11 @@ onMounted(() => {
                 :conversation-attributes="conversationAdditionalAttributes"
                 :contact-attributes="contactAdditionalAttributes"
               />
-            </AccordionItem>
+            </component>
           </div>
           <div v-else-if="element.name === 'contact_attributes'">
-            <AccordionItem
+            <component
+              :is="AccordionComponent"
               :title="$t('CONVERSATION_SIDEBAR.ACCORDION.CONTACT_ATTRIBUTES')"
               :is-open="isContactSidebarItemOpen('is_contact_attributes_open')"
               compact
@@ -240,10 +266,11 @@ onMounted(() => {
                   $t('CONVERSATION_CUSTOM_ATTRIBUTES.NO_RECORDS_FOUND')
                 "
               />
-            </AccordionItem>
+            </component>
           </div>
           <div v-else-if="element.name === 'previous_conversation'">
-            <AccordionItem
+            <component
+              :is="AccordionComponent"
               v-if="contact.id"
               :title="
                 $t('CONVERSATION_SIDEBAR.ACCORDION.PREVIOUS_CONVERSATION')
@@ -258,20 +285,21 @@ onMounted(() => {
                 :contact-id="contact.id"
                 :conversation-id="conversationId"
               />
-            </AccordionItem>
+            </component>
           </div>
           <woot-feature-toggle
             v-else-if="element.name === 'macros'"
             feature-key="macros"
           >
-            <AccordionItem
+            <component
+              :is="AccordionComponent"
               :title="$t('CONVERSATION_SIDEBAR.ACCORDION.MACROS')"
               :is-open="isContactSidebarItemOpen('is_macro_open')"
               compact
               @toggle="value => toggleSidebarUIState('is_macro_open', value)"
             >
               <MacrosList :conversation-id="conversationId" />
-            </AccordionItem>
+            </component>
           </woot-feature-toggle>
           <div
             v-else-if="
@@ -280,7 +308,8 @@ onMounted(() => {
               isLinearClientIdConfigured
             "
           >
-            <AccordionItem
+            <component
+              :is="AccordionComponent"
               :title="$t('CONVERSATION_SIDEBAR.ACCORDION.LINEAR_ISSUES')"
               :is-open="isContactSidebarItemOpen('is_linear_issues_open')"
               compact
@@ -291,14 +320,15 @@ onMounted(() => {
               <LinearSetupCTA v-if="!isLinearIntegrationEnabled" />
               <LinearSetupCTA v-if="!isLinearConnected" />
               <LinearIssuesList v-else :conversation-id="conversationId" />
-            </AccordionItem>
+            </component>
           </div>
           <div
             v-else-if="
               element.name === 'shopify_orders' && isShopifyFeatureEnabled
             "
           >
-            <AccordionItem
+            <component
+              :is="AccordionComponent"
               :title="$t('CONVERSATION_SIDEBAR.ACCORDION.SHOPIFY_ORDERS')"
               :is-open="isContactSidebarItemOpen('is_shopify_orders_open')"
               compact
@@ -307,10 +337,11 @@ onMounted(() => {
               "
             >
               <ShopifyOrdersList :contact-id="contactId" />
-            </AccordionItem>
+            </component>
           </div>
           <div v-else-if="element.name === 'contact_notes'">
-            <AccordionItem
+            <component
+              :is="AccordionComponent"
               :title="$t('CONVERSATION_SIDEBAR.ACCORDION.CONTACT_NOTES')"
               :is-open="isContactSidebarItemOpen('is_contact_notes_open')"
               compact
@@ -319,7 +350,7 @@ onMounted(() => {
               "
             >
               <ContactNotes :contact-id="contactId" />
-            </AccordionItem>
+            </component>
           </div>
         </template>
       </Draggable>
