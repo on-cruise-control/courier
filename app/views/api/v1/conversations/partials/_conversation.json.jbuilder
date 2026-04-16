@@ -61,5 +61,6 @@ json.priority conversation.priority
 json.waiting_since conversation.waiting_since.to_i.to_i
 json.sla_policy_id conversation.sla_policy_id
 json.is_spam conversation.is_spam
+json.comment_sentiment conversation.comment_sentiment
 json.mark_as_not_spam conversation.mark_as_not_spam
 json.partial! 'enterprise/api/v1/conversations/partials/conversation', conversation: conversation if ChatwootApp.enterprise?

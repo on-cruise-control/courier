@@ -1,4 +1,3 @@
-
 {
   "CHAT_LIST": {
     "LOADING": "Fetching conversations",
@@ -142,6 +141,7 @@
     "MESSAGE_READ": "Read",
     "SENDING": "Sending",
     "COMMENT_TAG": "Comment",
-    "SPAM_TAG": "Spam"
+    "SPAM_TAG": "Spam",
+    "NEGATIVE_TAG": "Negative Comment"
   }
 }

@@ -159,6 +159,7 @@ export default {
         ? this.$t('CONVERSATION_SIDEBAR.ENABLE_AI')
         : this.$t('CONVERSATION_SIDEBAR.DISABLE_AI');
     },
+
   },
   methods: {
     onSelfAssign() {
@@ -207,6 +208,7 @@ export default {
 
       this.assignedPriority = isSamePriority ? null : selectedPriorityItem;
     },
+
   },
 };
 </script>
@@ -295,6 +297,7 @@ export default {
         </h4>
         <ConversationLabels :conversation-id="conversationId" />
       </div>
+
     </div>
   </div>
 </template>

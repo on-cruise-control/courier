@@ -111,6 +111,7 @@ const showMetaSection = computed(() => {
     showInboxName.value ||
     isCommentConversation.value ||
     isSpamConversation.value ||
+    hasNegativeSentiment.value ||
     (props.showAssignee && assignee.value.name) ||
     props.chat.priority
   );
@@ -132,6 +133,10 @@ const isCommentConversation = computed(() => {
 
 const isSpamConversation = computed(() => {
   return props.chat.is_spam && props.conversationType !== 'spam';
+});
+
+const hasNegativeSentiment = computed(() => {
+  return props.chat.comment_sentiment === 'Negative';
 });
 
 const messagePreviewClass = computed(() => {
@@ -333,7 +338,7 @@ const deleteConversation = () => {
           <PriorityMark :priority="chat.priority" class="flex-shrink-0" />
         </div>
         <span
-          v-if="isCommentConversation"
+          v-if="isCommentConversation && !hasNegativeSentiment"
           class="ml-auto self-start inline-flex items-center px-3 py-0.5 text-[10px] font-semibold tracking-wide rounded-xl bg-n-blue-3 text-n-slate-11 dark:bg-n-blue-3"
         >
           {{ $t('CHAT_LIST.COMMENT_TAG') }}
@@ -343,6 +348,13 @@ const deleteConversation = () => {
           class="ml-auto self-start inline-flex items-center px-3 py-0.5 text-[10px] font-semibold tracking-wide rounded-xl bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-200"
         >
           {{ $t('CHAT_LIST.SPAM_TAG') }}
+        </span>
+        <span
+          v-if="hasNegativeSentiment"
+          class="self-start inline-flex items-center px-3 py-0.5 text-[10px] font-semibold tracking-wide rounded-xl bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-200"
+          :class="{ 'ml-auto': !isCommentConversation && !isSpamConversation, 'ml-2': isCommentConversation || isSpamConversation }"
+        >
+          {{ $t('CHAT_LIST.NEGATIVE_TAG') }}
         </span>
       </div>
       <h4

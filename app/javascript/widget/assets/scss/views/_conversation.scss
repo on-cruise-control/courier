@@ -15,7 +15,7 @@
     }
 
     .message-wrap {
-      @apply flex-grow flex-shrink-0 ltr:ml-2 rtl:mr-2 max-w-[90%];
+      @apply flex-grow min-w-0 ltr:ml-2 rtl:mr-2 max-w-[90%];
     }
   }
 

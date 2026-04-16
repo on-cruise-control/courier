@@ -128,7 +128,7 @@ export default {
       :submitted-values="messageContentAttributes.submitted_values"
       @submit="onFormSubmit"
     />
-    <div v-if="isCards">
+    <div v-if="isCards" class="flex gap-2 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
       <ChatCard
         v-for="item in messageContentAttributes.items"
         :key="item.title"

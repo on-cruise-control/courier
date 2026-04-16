@@ -451,5 +451,17 @@
   },
   "GALLERY_VIEW": {
     "ERROR_DOWNLOADING": "Unable to download attachment. Please try again"
+  },
+  "UPDATE_SENTIMENT": {
+    "BUTTON": "Mark as Not Negative",
+    "TITLE": "Update Comment Sentiment",
+    "DESCRIPTION": "Change the sentiment of this comment from Negative to Positive.",
+    "REASON_LABEL": "Reason (optional)",
+    "REASON_PLACEHOLDER": "Why are you changing the sentiment?",
+    "SUBMIT": "Update Sentiment",
+    "SUBMITTING": "Updating...",
+    "CANCEL": "Cancel",
+    "SUCCESS": "Comment sentiment updated to Positive.",
+    "ERROR": "Failed to update sentiment. Please try again."
   }
 }

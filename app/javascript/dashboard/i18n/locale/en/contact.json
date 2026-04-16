@@ -1,6 +1,18 @@
 {
   "CONTACT_PANEL": {
     "NOT_AVAILABLE": "Not Available",
+    "UPDATE_SENTIMENT": {
+      "BUTTON": "Mark as Positive Comment",
+      "TITLE": "Update Comment Sentiment",
+      "DESCRIPTION": "Change the sentiment of this comment from Negative to Positive.",
+      "REASON_LABEL": "Reason (optional)",
+      "REASON_PLACEHOLDER": "Why are you changing the sentiment?",
+      "SUBMIT": "Update Sentiment",
+      "SUBMITTING": "Updating...",
+      "CANCEL": "Cancel",
+      "SUCCESS": "Comment sentiment updated to Positive.",
+      "ERROR": "Failed to update sentiment. Please try again."
+    },
     "EMAIL_ADDRESS": "Email Address",
     "PHONE_NUMBER": "Phone number",
     "IDENTIFIER": "Identifier",

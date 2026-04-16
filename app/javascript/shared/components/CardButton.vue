@@ -11,6 +11,7 @@ export default {
       default: () => {},
     },
   },
+  emits: ['postback'],
   computed: {
     ...mapGetters({
       widgetColor: 'appConfig/getWidgetColor',
@@ -25,7 +26,7 @@ export default {
   methods: {
     onClick() {
       if (this.action.type === 'postback') {
-        // Send message to parent iframe
+        this.$emit('postback', this.action.payload);
         if (IFrameHelper.isIFrame()) {
           IFrameHelper.sendMessage({
             event: 'postback',

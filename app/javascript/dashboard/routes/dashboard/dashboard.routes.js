@@ -8,6 +8,7 @@ import { routes as inboxRoutes } from './inbox/routes';
 import { frontendURL } from '../../helper/URLHelper';
 import helpcenterRoutes from './helpcenter/helpcenter.routes';
 import campaignsRoutes from './campaigns/campaigns.routes';
+import bookingsRoutes from './bookings/bookings.routes';
 import contestsRoutes from './contests/contests.routes';
 import { routes as captainRoutes } from './captain/captain.routes';
 // CUSTOM START
@@ -27,6 +28,7 @@ export default {
         ...conversation.routes,
         ...settings.routes,
         ...contactRoutes,
+        ...bookingsRoutes.routes,
         ...contestsRoutes.routes,
         ...companyRoutes,
         ...searchRoutes,

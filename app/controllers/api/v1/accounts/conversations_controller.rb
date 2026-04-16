@@ -130,6 +130,31 @@ class Api::V1::Accounts::ConversationsController < Api::V1::Accounts::BaseContro
     head :ok
   end
 
+  def update_comment_sentiment
+    stark_comment_id = @conversation.additional_attributes&.dig('stark_comment_id')
+
+    if stark_comment_id.blank?
+      stark_comment_id = @conversation.messages
+                                      .where("content_attributes->>'stark_comment_id' IS NOT NULL")
+                                      .reorder(created_at: :desc)
+                                      .limit(1)
+                                      .pick(Arel.sql("content_attributes->>'stark_comment_id'"))
+    end
+
+    if stark_comment_id.present?
+      result = Stark::UpdateSentimentService.new.update(stark_comment_id, reason: params[:reason])
+      unless result[:status] == 'success'
+        render json: { error: result[:message] }, status: :unprocessable_entity
+        return
+      end
+    else
+      Rails.logger.warn "⚠️ stark_comment_id not found for conversation #{@conversation.id} — updating DB only"
+    end
+
+    @conversation.update!(comment_sentiment: 'Positive')
+    render json: { success: true, comment_sentiment: 'Positive' }
+  end
+
   private
 
   def permitted_update_params

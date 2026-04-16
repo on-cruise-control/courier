@@ -304,7 +304,7 @@
     "SWITCH": "Switch",
     "INBOX_VIEW": "Inbox View",
     "CONVERSATIONS": "Conversations",
-    "INBOX": "My Inbox",
+    "INBOX": "Notifications",
     "ALL_CONVERSATIONS": "All Conversations",
     "MENTIONED_CONVERSATIONS": "Mentions",
     "PARTICIPATING_CONVERSATIONS": "Participating",
@@ -807,6 +807,31 @@
       "DESCRIPTION": "Are you sure you want to delete this policy? This action cannot be undone.",
       "CONFIRM_BUTTON_LABEL": "Delete",
       "CANCEL_BUTTON_LABEL": "Cancel"
+    }
+  },
+  "BOOKINGS": {
+    "HEADER": "Bookings",
+    "SUBHEADER": "List of all bookings for this dealership",
+    "LIST_HEADING": "Bookings",
+    "LIST_SUBHEADING": "View and manage all booking requests",
+    "LOADING": "Fetching bookings...",
+    "EMPTY_MESSAGE": "No bookings found matching your criteria",
+    "DATE_RANGE_LABEL": "Date Range",
+    "APPLY_FILTER": "Apply",
+    "ERROR_FETCHING": "Failed to fetch bookings. Please try again.",
+    "TABLE": {
+      "NAME": "Name",
+      "CONTACT": "Contact Info",
+      "EMAIL": "Email",
+      "PHONE": "Phone",
+      "WHATSAPP": "WhatsApp",
+      "SMS": "SMS",
+      "PLATFORM": "Platform",
+      "TYPE": "Type",
+      "STATUS": "Status",
+      "CREATED_AT": "Created At",
+      "UPDATED_AT": "Updated At",
+      "SUMMARY": "Latest Summary"
     }
   }
 }

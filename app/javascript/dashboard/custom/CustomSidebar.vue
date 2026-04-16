@@ -263,6 +263,13 @@ const menuItems = computed(() => {
       to: accountScopedRoute('contests_index'),
     },
     {
+      name: 'Bookings',
+      label: t('BOOKINGS.HEADER'),
+      icon: 'i-lucide-calendar-check',
+      to: accountScopedRoute('bookings_index'),
+      activeOn: ['bookings_index'],
+    },
+    {
       name: 'Portals',
       label: t('SIDEBAR.HELP_CENTER.TITLE'),
       icon: 'i-lucide-book-open-text',

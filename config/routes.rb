@@ -113,6 +113,7 @@ Rails.application.routes.draw do
           resources :contests, only: [:index, :create, :update, :destroy] do
             get :report, on: :collection
           end
+          resources :bookings, only: [:index, :show]
           resources :sla_policies, only: [:index, :create, :show, :update, :destroy]
           resources :custom_roles, only: [:index, :create, :show, :update, :destroy]
           resources :agent_capacity_policies, only: [:index, :create, :show, :update, :destroy] do
@@ -155,6 +156,7 @@ Rails.application.routes.draw do
               post :update_last_seen
               post :unread
               post :custom_attributes
+              post :update_comment_sentiment
               get :attachments
               get :inbox_assistant
               get :reporting_events if ChatwootApp.enterprise?
