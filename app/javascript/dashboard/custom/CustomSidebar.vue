@@ -510,7 +510,7 @@ const onChildClick = () => {
       <!-- Fixed Blue Background (64px) -->
       <div 
         class="absolute inset-y-0 left-0 w-16 z-[-1]" 
-        style="background-color: #1b5cb6;"
+        style="background-color: #182933;"
       />
 
       <div class="mb-6 w-16 flex justify-center">
@@ -555,15 +555,8 @@ const onChildClick = () => {
         </DropdownContainer>
       </div>
 
-      <!-- Search & Compose -->
+      <!-- Compose -->
       <div class="flex flex-col gap-2 mb-4 px-2 w-16">
-        <router-link
-          :to="{ name: 'search' }"
-          class="size-10 rounded-xl bg-white/10 flex items-center justify-center text-white hover:bg-white/20 transition-all cursor-pointer"
-          v-tooltip.right="t('COMBOBOX.SEARCH_PLACEHOLDER')"
-        >
-          <div class="i-lucide-search size-5" />
-        </router-link>
         <ComposeConversation align-position="right" @close="onComposeClose">
           <template #trigger="{ toggle }">
             <button
@@ -594,7 +587,7 @@ const onChildClick = () => {
             
             <!-- Beak Toggle (Fixed for Active Section) -->
             <div
-              class="absolute left-full top-1/2 -translate-y-1/2 w-6 h-10 flex items-center justify-center bg-[#1b5cb6] rounded-r-xl shadow-[4px_0_10px_rgba(0,0,0,0.1)] transition-all duration-200 z-[110] cursor-pointer"
+              class="absolute left-full top-1/2 -translate-y-1/2 w-6 h-10 flex items-center justify-center bg-[#182933] rounded-r-xl shadow-[4px_0_10px_rgba(0,0,0,0.1)] transition-all duration-200 z-[110] cursor-pointer"
               :class="{ 
                 'opacity-100 translate-x-0': activeGroup === item.name || isGroupActive(item), 
                 'opacity-0 -translate-x-1': activeGroup !== item.name && !isGroupActive(item)
@@ -650,7 +643,7 @@ const onChildClick = () => {
               
               <!-- Beak Toggle (Fixed for Active Section) -->
               <div
-                class="absolute left-full top-1/2 -translate-y-1/2 w-6 h-10 flex items-center justify-center bg-[#1b5cb6] rounded-r-xl shadow-[4px_0_10px_rgba(0,0,0,0.1)] transition-all duration-200 z-[110] cursor-pointer"
+                class="absolute left-full top-1/2 -translate-y-1/2 w-6 h-10 flex items-center justify-center bg-[#182933] rounded-r-xl shadow-[4px_0_10px_rgba(0,0,0,0.1)] transition-all duration-200 z-[110] cursor-pointer"
                 :class="{ 
                   'opacity-100 translate-x-0': activeGroup === item.name || isGroupActive(item), 
                   'opacity-0 -translate-x-1': activeGroup !== item.name && !isGroupActive(item)

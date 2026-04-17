@@ -11,17 +11,17 @@
 // Mobile Sidebar Launcher Button Override (style only - visibility is controlled by md:hidden)
 #mobile-sidebar-launcher {
     .bg-n-alpha-2 {
-        background: rgba(27, 92, 182, 0.95) !important;
+        background: rgba(147, 156, 170, 0.26) !important;
         backdrop-filter: blur(12px) !important;
     }
 
     button {
-        background: #1b5cb6 !important;
+        background: #464c5236 !important;
         color: white !important;
-        border: 1px solid rgba(255, 255, 255, 0.2) !important;
+        border: 1px solid rgba(189, 184, 184, 0.2) !important;
 
         &:hover {
-            background: #1e6ad4 !important;
+            background: #616a724f !important;
         }
     }
 }
@@ -94,7 +94,7 @@ $active-item-bg: rgba(255, 255, 255, 0.2);
         border-radius: 8px;
         color: #fff !important;
         transition: background 0.2s;
-        margin: 4px auto;
+        margin: 0px auto;
 
         &:hover {
             background: $active-item-bg !important;
@@ -629,7 +629,7 @@ $active-item-bg: rgba(255, 255, 255, 0.2);
         // Agent/Bot Bubbles (Right)
         &.justify-end {
             .right-bubble {
-                background: #1b5cb6 !important; // Vibrant Blue
+                background: #182933 !important; // Vibrant Blue
                 color: white !important;
                 border-radius: 18px !important;
                 border-bottom-right-radius: 4px !important;
@@ -799,7 +799,7 @@ $active-item-bg: rgba(255, 255, 255, 0.2);
 
         // Send Button Styling
         button.bg-n-brand {
-            background: #1b5cb6 !important;
+            background: #182933 !important;
             border-radius: 10px !important;
             font-weight: 600 !important;
             padding: 0 20px !important;
@@ -808,7 +808,7 @@ $active-item-bg: rgba(255, 255, 255, 0.2);
             transition: all 0.2s ease !important;
 
             &:hover {
-                background: #154b97 !important;
+                background: #182933ec !important;
                 transform: translateY(-1px) !important;
             }
         }

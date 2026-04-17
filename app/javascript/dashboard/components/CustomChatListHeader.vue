@@ -68,11 +68,24 @@ const statusText = computed(() => {
 
 <template>
   <div
-    class="flex items-center justify-between gap-1 px-2 sm:px-4 h-14 bg-transparent dark:bg-[#111112] transition-all border-b border-slate-50 dark:border-white/5"
+    class="flex flex-col bg-transparent dark:bg-[#111112] transition-all border-b border-slate-50 dark:border-white/5"
     :class="{
       'border-b border-n-strong': hasAppliedFiltersOrActiveFolders,
     }"
   >
+    <!-- Search bar row -->
+    <div class="px-3 pt-3 pb-2">
+      <router-link
+        :to="{ name: 'search' }"
+        class="flex items-center gap-2 w-full px-3 py-2 rounded-lg bg-n-alpha-3 dark:bg-white/5 border border-n-weak hover:border-n-slate-6 dark:hover:border-white/20 transition-colors group"
+      >
+        <span class="i-lucide-search size-4 text-n-slate-10 group-hover:text-n-slate-11 flex-shrink-0" />
+        <span class="text-sm text-n-slate-10 group-hover:text-n-slate-11 truncate">
+          {{ $t('CHAT_LIST.SEARCH.INPUT') }}
+        </span>
+      </router-link>
+    </div>
+    <div class="flex items-center justify-between gap-1 px-2 sm:px-4 h-12">
     <div class="flex items-center min-w-0 gap-1 sm:gap-2">
       <h1
         class="text-base sm:text-lg 2xl:text-[20px] font-bold tracking-tight text-slate-800 dark:text-slate-100 truncate"
@@ -177,5 +190,7 @@ const statusText = computed(() => {
         @toggle="toggleConversationLayout"
       />
     </div>
+    </div>
   </div>
 </template>
+
