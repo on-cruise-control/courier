@@ -56,6 +56,9 @@ export default {
     isMessageSticker() {
       return this.message && this.message.content_type === 'sticker';
     },
+    isCardsMessage() {
+      return this.message && this.message.content_type === 'cards';
+    },
   },
 };
 </script>
@@ -101,6 +104,14 @@ export default {
         :icon="attachmentIcon"
       />
       {{ $t(`${attachmentMessageContent}`) }}
+    </span>
+    <span v-else-if="isCardsMessage">
+      <fluent-icon
+        size="16"
+        class="-mt-0.5 align-middle inline-block text-n-slate-11"
+        icon="image"
+      />
+      {{ $t('CHAT_LIST.ATTACHMENTS.cards.CONTENT') }}
     </span>
     <span v-else>
       {{ defaultEmptyMessage || $t('CHAT_LIST.NO_CONTENT') }}

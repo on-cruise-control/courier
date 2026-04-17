@@ -25,14 +25,23 @@ const metaClass = computed(() =>
         class="w-44 flex-none rounded-lg overflow-hidden bg-white dark:bg-n-solid-3 border border-n-slate-3 dark:border-n-solid-4 shadow-sm"
       >
         <img
-          :src="item.media_url"
+          :src="item.mediaUrl"
           :alt="item.title"
           class="w-full h-28 object-cover"
         />
         <div class="p-2">
-          <p class="text-xs font-medium text-n-slate-12 leading-snug line-clamp-2">
+          <p class="text-xs font-medium text-n-slate-12 leading-snug line-clamp-2 mb-1">
             {{ item.title }}
           </p>
+          <a
+            v-if="item.actions && item.actions.length"
+            :href="item.mediaUrl"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="inline-block text-xs text-n-brand font-medium hover:underline"
+          >
+            {{ item.actions[0].text }}
+          </a>
         </div>
       </div>
     </div>
