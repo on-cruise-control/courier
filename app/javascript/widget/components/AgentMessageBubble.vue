@@ -85,6 +85,17 @@ export default {
         messageId: this.messageId,
       });
     },
+    onWheelScroll(e) {
+      const el = e.currentTarget;
+      if (el.scrollWidth <= el.clientWidth) return;
+      // If this is a horizontal gesture (trackpad), let the browser handle it natively
+      if (e.deltaX !== 0) return;
+      const atRightEnd = el.scrollLeft + el.clientWidth >= el.scrollWidth;
+      const atLeftEnd = el.scrollLeft <= 0;
+      if ((e.deltaY > 0 && atRightEnd) || (e.deltaY < 0 && atLeftEnd)) return;
+      e.preventDefault();
+      el.scrollLeft += e.deltaY;
+    },
   },
 };
 </script>
@@ -128,7 +139,11 @@ export default {
       :submitted-values="messageContentAttributes.submitted_values"
       @submit="onFormSubmit"
     />
-    <div v-if="isCards" class="flex gap-2 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+    <div
+      v-if="isCards"
+      class="flex gap-2 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+      @wheel="onWheelScroll"
+    >
       <ChatCard
         v-for="item in messageContentAttributes.items"
         :key="item.title"
