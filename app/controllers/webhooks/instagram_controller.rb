@@ -126,17 +126,32 @@ class Webhooks::InstagramController < ActionController::API
     else
       # No conversation found, proceed to create a new conversation
   
+      # Extract media_id correctly from the nested 'media' object or direct 'media_id' field
+      media_id = changes.dig('value', 'media', 'id') || changes.dig('value', 'media_id')
+
+      additional_attrs = {
+        type: 'instagram_comments',
+        comment_id: comment_id,
+        media_id: media_id
+      }
+
+      # Fetch media metadata if media_id is present
+      if additional_attrs[:media_id].present?
+        metadata = fetch_instagram_media_metadata(additional_attrs[:media_id], page.access_token)
+        if metadata.present?
+          additional_attrs.merge!(metadata.slice('caption', 'media_type', 'timestamp'))
+          additional_attrs[:post_url] = metadata['permalink']
+          Rails.logger.info "🔗 [IG Webhook] Post URL: #{metadata['permalink']}"
+        end
+      end
+
       new_conversation = Conversation.create!(
         account_id: page.account_id,
         inbox_id: page.inbox.id,
         status: 'open',
         contact_id: contact_inbox.contact.id,
         contact_inbox_id: contact_inbox.id,
-        additional_attributes: {
-          type: 'instagram_comments',
-          comment_id: comment_id,
-          media_id: changes['value']['media_id']
-        }
+        additional_attributes: additional_attrs
       ).tap do |conv|
   
         Rails.logger.info("✅ [IG Webhook] Conversation created successfully for comment_id: #{comment_id}")
@@ -173,6 +188,27 @@ class Webhooks::InstagramController < ActionController::API
       SendCommentReplyJob.set(wait: 5.seconds).perform_later(contact_inbox.id, conversation)
       SendTemplateDmJob.set(wait: 10.seconds).perform_later(contact_inbox.id, conversation, comment_id)
     end
+  end
+
+  def fetch_instagram_media_metadata(media_id, access_token)
+    url = "https://graph.instagram.com/v23.0/#{media_id}"
+    response = HTTParty.get(
+      url,
+      query: {
+        fields: 'id,caption,media_type,permalink,timestamp',
+        access_token: access_token
+      }
+    )
+
+    if response.success?
+      response.parsed_response
+    else
+      Rails.logger.error "❌ [IG Webhook] Failed to fetch media metadata for #{media_id}: #{response.body}"
+      nil
+    end
+  rescue StandardError => e
+    Rails.logger.error "❌ [IG Webhook] Error fetching media metadata: #{e.message}"
+    nil
   end
 
   def job_already_enqueued?(contact_inbox_id, conversation_id, comment_id)

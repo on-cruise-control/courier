@@ -60,6 +60,9 @@ export default {
       ) {
         return false;
       }
+      if (this.contentType === 'cards') {
+        return true;
+      }
       return this.message.content;
     },
     readableTime() {
@@ -170,7 +173,11 @@ export default {
       'has-response': hasRecordedResponse || isASubmittedForm,
     }"
   >
-    <div v-if="!isASubmittedForm" class="agent-message">
+    <div
+      v-if="!isASubmittedForm"
+      class="agent-message"
+      :class="{ '!max-w-full': contentType === 'cards' }"
+    >
       <div class="avatar-wrap">
         <div class="user-thumbnail-box">
           <Avatar
@@ -182,13 +189,16 @@ export default {
           />
         </div>
       </div>
-      <div class="message-wrap">
+      <div
+        class="message-wrap"
+        :class="{ '!max-w-full': contentType === 'cards' }"
+      >
         <div v-if="hasReplyTo" class="flex mt-2 mb-1 text-xs">
           <ReplyToChip :reply-to="replyTo" />
         </div>
         <div class="flex w-full gap-1">
           <div
-            class="space-y-2"
+            class="space-y-2 flex-1 min-w-0"
             :class="{
               'w-full':
                 contentType === 'form' &&
@@ -243,7 +253,7 @@ export default {
               </div>
             </div>
           </div>
-          <div class="flex flex-col justify-end">
+          <div v-if="contentType !== 'cards'" class="flex flex-col justify-end">
             <MessageReplyButton
               class="transition-opacity delay-75 opacity-0 group-hover:opacity-100 sm:opacity-0"
               @click="toggleReply"

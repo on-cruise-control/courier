@@ -2,7 +2,7 @@ import { frontendURL } from '../../../../helper/URLHelper';
 import { FEATURE_FLAGS } from 'dashboard/featureFlags';
 
 import ReportsWrapper from './components/ReportsWrapper.vue';
-import Index from './Index.vue';
+import Index from 'dashboard/custom/reports/CustomConversationReportsWrapper.vue';
 
 import AgentReportsIndex from './AgentReportsIndex.vue';
 import InboxReportsIndex from './InboxReportsIndex.vue';
@@ -23,8 +23,8 @@ import CsatResponses from './CsatResponses.vue';
 import BotReports from './BotReports.vue';
 import LiveReports from './LiveReports.vue';
 import SLAReports from './SLAReports.vue';
-import BookingsReports from './BookingsReports.vue';
-import HandoffReports from './HandoffReports.vue';
+import BookingsReports from 'dashboard/custom/reports/CustomBookingsReportsWrapper.vue';
+import HandoffReports from 'dashboard/custom/reports/CustomHandoffReportsWrapper.vue';
 import TwilioUsageReports from './TwilioUsage.vue';
 
 const meta = {

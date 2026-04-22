@@ -5,11 +5,25 @@ import { useMapGetter } from 'dashboard/composables/store';
 import { useWindowSize } from '@vueuse/core';
 import { vOnClickOutside } from '@vueuse/components';
 import wootConstants from 'dashboard/constants/globals';
+import { FEATURE_FLAGS } from 'dashboard/featureFlags';
 import ConversationSummaryPanel from './ConversationSummaryPanel.vue';
+import CustomConversationSummaryPanel from './CustomConversationSummaryPanel.vue';
 
 const { width: windowWidth } = useWindowSize();
 const { uiSettings, updateUISettings } = useUISettings();
 const currentChat = useMapGetter('getSelectedChat');
+// CUSTOM UI
+const currentAccountId = useMapGetter('getCurrentAccountId');
+const isFeatureEnabledonAccount = useMapGetter(
+  'accounts/isFeatureEnabledonAccount'
+);
+
+const isCustomUIEnabled = computed(() => {
+  return isFeatureEnabledonAccount.value(
+    currentAccountId.value,
+    FEATURE_FLAGS.CUSTOM_UI
+  );
+});
 
 const isSmallScreen = computed(
   () => windowWidth.value < wootConstants.SMALL_SCREEN_BREAKPOINT
@@ -44,7 +58,13 @@ const closePanel = () => {
       },
     ]"
   >
-    <ConversationSummaryPanel :conversation-id="currentChat.id" />
+  <!-- CUSTOM UI -->
+    <CustomConversationSummaryPanel
+      v-if="isCustomUIEnabled"
+      :conversation-id="currentChat.id"
+    />
+    <!-- CUSTOM UI -->
+    <ConversationSummaryPanel v-else :conversation-id="currentChat.id" />
   </div>
   <template v-else />
 </template>

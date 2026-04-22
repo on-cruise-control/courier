@@ -500,6 +500,11 @@
   value: ''
   locked: false
   description: 'The endpoint path for Stark follow-up API'
+- name: STARK_COMMENT_ANALYSIS_ENDPOINT
+  display_title: 'Stark Comment Analysis Endpoint'
+  value: ''
+  locked: false
+  description: 'The endpoint path for Stark comment analysis API'
 ## ------ End of Configs added for Stark ------ ##
 
 ## ------ Configs added for Dealership API ------ ##
