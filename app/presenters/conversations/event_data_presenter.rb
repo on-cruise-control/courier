@@ -18,6 +18,7 @@ class Conversations::EventDataPresenter < SimpleDelegator
       priority: priority,
       waiting_since: waiting_since.to_i,
       is_spam: is_spam,
+      comment_sentiment: comment_sentiment,
       **push_timestamps
     }
   end

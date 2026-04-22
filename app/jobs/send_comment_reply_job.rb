@@ -37,6 +37,9 @@ class SendCommentReplyJob < ApplicationJob
 
     message_content = stark_reply[:reply]
     Rails.logger.info "🤖 AI Generated Reply from Stark (#{conversation.additional_attributes['type']}): #{message_content}"
+    # Store sentiment in the dedicated field and trigger broadcast to frontend
+    Rails.logger.info " Storing sentiment '#{stark_reply[:sentiment_label]}' in comment_sentiment field for conversation: #{conversation.id}"
+    conversation.update!(comment_sentiment: stark_reply[:sentiment_label])
 
     # Trigger escalation if sentiment is negative
     if stark_reply[:sentiment_label] == 'Negative' && account.escalation_emails.present?
@@ -44,12 +47,21 @@ class SendCommentReplyJob < ApplicationJob
       NegativeSentimentEscalationJob.perform_later(conversation.id, account.escalation_emails)
     end
 
+    # Persist stark_comment_id on the conversation so it is always retrievable
+    stark_comment_id = stark_reply[:stark_comment_id]
+    if stark_comment_id.present?
+      conversation.update!(
+        additional_attributes: conversation.additional_attributes.merge('stark_comment_id' => stark_comment_id)
+      )
+      Rails.logger.info " Saved stark_comment_id '#{stark_comment_id}' to conversation #{conversation.id}"
+    end
+
     # Check type of comment (Instagram or Facebook)
     case conversation.additional_attributes['type']
     when 'instagram_comments'
-      send_to_instagram_page(contact_inbox, conversation, message_content)
+      send_to_instagram_page(contact_inbox, conversation, message_content, stark_comment_id)
     when 'facebook_comments', 'feed_comments'
-      send_to_facebook_page(contact_inbox, conversation, message_content)
+      send_to_facebook_page(contact_inbox, conversation, message_content, stark_comment_id)
     else
       Rails.logger.warn "⚠️ Unsupported comment type: #{conversation.additional_attributes['type']}"
     end
@@ -77,7 +89,7 @@ class SendCommentReplyJob < ApplicationJob
     :en
   end
 
-  def send_to_facebook_page(contact_inbox, conversation, message_content)
+  def send_to_facebook_page(contact_inbox, conversation, message_content, stark_comment_id = nil)
     channel = contact_inbox.inbox.channel
     access_token = channel.page_access_token
     app_secret_proof = calculate_app_secret_proof(GlobalConfigService.load('FB_APP_SECRET', ''), access_token)
@@ -98,6 +110,7 @@ class SendCommentReplyJob < ApplicationJob
       return
     end
     stark_bot = AgentBot.find_by(bot_type: 'stark')
+    message_attrs = { stark_comment_id: stark_comment_id }.compact
     conversation.messages.create!(
       content: message_content,
       account: contact_inbox.inbox.account,
@@ -105,6 +118,7 @@ class SendCommentReplyJob < ApplicationJob
       sender: stark_bot,
       message_type: :outgoing,
       source_id: response['id'] || response['message_id'],
+      content_attributes: message_attrs,
       private: false
     )
 
@@ -129,7 +143,7 @@ class SendCommentReplyJob < ApplicationJob
   end
 
   # New method for Instagram reply
-  def send_to_instagram_page(contact_inbox, conversation, message_content)
+  def send_to_instagram_page(contact_inbox, conversation, message_content, stark_comment_id = nil)
     channel = contact_inbox.inbox.channel
     access_token = channel.access_token
 
@@ -156,6 +170,7 @@ class SendCommentReplyJob < ApplicationJob
       return
     end
     stark_bot = AgentBot.find_by(bot_type: 'stark')
+    message_attrs = { stark_comment_id: stark_comment_id }.compact
     conversation.messages.create!(
       content: message_content,
       account: contact_inbox.inbox.account,
@@ -163,6 +178,7 @@ class SendCommentReplyJob < ApplicationJob
       sender: stark_bot,
       message_type: :outgoing,
       source_id: response['id'] || response['message_id'],
+      content_attributes: message_attrs,
       private: false
     )
 

@@ -60,6 +60,9 @@ export default {
       ) {
         return false;
       }
+      if (this.contentType === 'cards') {
+        return true;
+      }
       return this.message.content;
     },
     readableTime() {
@@ -188,7 +191,7 @@ export default {
         </div>
         <div class="flex w-full gap-1">
           <div
-            class="space-y-2"
+            class="space-y-2 flex-1 min-w-0"
             :class="{
               'w-full':
                 contentType === 'form' &&

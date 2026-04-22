@@ -504,6 +504,13 @@ const menuItems = computed(() => {
       ],
     },
     {
+      name: 'Bookings',
+      label: t('BOOKINGS.HEADER'),
+      icon: 'i-lucide-calendar-check',
+      to: accountScopedRoute('bookings_index'),
+      activeOn: ['bookings_index'],
+    },
+    {
       name: 'Portals',
       label: t('SIDEBAR.HELP_CENTER.TITLE'),
       icon: 'i-lucide-library-big',

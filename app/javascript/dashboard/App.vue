@@ -157,6 +157,10 @@ export default {
 <style lang="scss">
 @import './assets/scss/app';
 
+// CUSTOM START
+@import './assets/scss/custom_dashboard';
+// CUSTOM END
+
 .v-popper--theme-tooltip .v-popper__inner {
   background: black !important;
   font-size: 0.75rem;

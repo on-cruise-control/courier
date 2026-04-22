@@ -20,6 +20,7 @@ module Stark
           {
             sentiment_label: response.dig('body', 'data', 'sentiment_label'),
             reply: response.dig('body', 'data', 'reply'),
+            stark_comment_id: response.dig('body', 'data', 'comment_id'),
             status: 'success'
           }
         when 400, 500

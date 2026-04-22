@@ -4,11 +4,14 @@ import { useAdmin } from 'dashboard/composables/useAdmin';
 import { useAccount } from 'dashboard/composables/useAccount';
 import OnboardingView from '../OnboardingView.vue';
 import EmptyStateMessage from './EmptyStateMessage.vue';
+import CustomEmptyStateMessage from './CustomEmptyStateMessage.vue';
+import { FEATURE_FLAGS } from 'dashboard/featureFlags';
 
 export default {
   components: {
     OnboardingView,
     EmptyStateMessage,
+    CustomEmptyStateMessage,
   },
   props: {
     isOnExpandedLayout: {
@@ -33,7 +36,17 @@ export default {
       inboxesList: 'inboxes/getInboxes',
       uiFlags: 'inboxes/getUIFlags',
       loadingChatList: 'getChatListLoadingStatus',
+      currentAccountId: 'getCurrentAccountId',
     }),
+    isFeatureEnabledonAccount() {
+      return this.$store.getters['accounts/isFeatureEnabledonAccount'];
+    },
+    isCustomUIEnabled() {
+      return this.isFeatureEnabledonAccount(
+        this.currentAccountId,
+        FEATURE_FLAGS.CUSTOM_UI
+      );
+    },
     loadingIndicatorMessage() {
       if (this.uiFlags.isFetching) {
         return this.$t('CONVERSATION.LOADING_INBOXES');
@@ -76,7 +89,13 @@ export default {
       class="clearfix mx-auto"
     >
       <OnboardingView v-if="isAdmin" />
-      <EmptyStateMessage v-else :message="$t('CONVERSATION.NO_INBOX_AGENT')" />
+      <template v-else>
+        <CustomEmptyStateMessage
+          v-if="isCustomUIEnabled"
+          :message="$t('CONVERSATION.NO_INBOX_AGENT')"
+        />
+        <EmptyStateMessage v-else :message="$t('CONVERSATION.NO_INBOX_AGENT')" />
+      </template>
     </div>
     <!-- Show empty state images if not loading -->
 
@@ -85,14 +104,21 @@ export default {
       class="flex flex-col items-center justify-center h-full"
     >
       <!-- No conversations available -->
-      <EmptyStateMessage
-        v-if="!allConversations.length"
-        :message="$t('CONVERSATION.NO_MESSAGE_1')"
-      />
-      <EmptyStateMessage
-        v-else-if="allConversations.length && !currentChat.id"
-        :message="conversationMissingMessage"
-      />
+       <!-- CUSTOM UI -->
+      <template v-if="!allConversations.length">
+        <CustomEmptyStateMessage
+          v-if="isCustomUIEnabled"
+          :message="$t('CONVERSATION.NO_MESSAGE_1')"
+        />
+        <EmptyStateMessage v-else :message="$t('CONVERSATION.NO_MESSAGE_1')" />
+      </template>
+      <template v-else-if="allConversations.length && !currentChat.id">
+        <CustomEmptyStateMessage
+          v-if="isCustomUIEnabled"
+          :message="conversationMissingMessage"
+        />
+        <EmptyStateMessage v-else :message="conversationMissingMessage" />
+      </template>
     </div>
   </div>
 </template>
