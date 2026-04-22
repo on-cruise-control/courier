@@ -12,12 +12,24 @@ const items = computed(() => contentAttributes.value?.items ?? []);
 const metaClass = computed(() =>
   orientation.value === ORIENTATION.RIGHT ? 'justify-end' : 'justify-start'
 );
+
+function onWheelScroll(e) {
+  const el = e.currentTarget;
+  if (el.scrollWidth <= el.clientWidth) return;
+  if (e.deltaX !== 0) return;
+  const atRightEnd = el.scrollLeft + el.clientWidth >= el.scrollWidth;
+  const atLeftEnd = el.scrollLeft <= 0;
+  if ((e.deltaY > 0 && atRightEnd) || (e.deltaY < 0 && atLeftEnd)) return;
+  e.preventDefault();
+  el.scrollLeft += e.deltaY;
+}
 </script>
 
 <template>
-  <div class="flex flex-col gap-1">
+  <div class="flex flex-col gap-1 w-full min-w-0">
     <div
       class="flex gap-2 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+      @wheel="onWheelScroll"
     >
       <div
         v-for="item in items"
