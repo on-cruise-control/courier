@@ -65,7 +65,6 @@ class Dealership::BookingCreateService
       status: 'completed',
       recent_messages: messages
     }
-    Rails.logger.info "------Dealership booking payload: #{payload_data}"
     payload_data
   end
 

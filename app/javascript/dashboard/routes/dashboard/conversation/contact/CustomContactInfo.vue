@@ -352,6 +352,15 @@ export default {
             </a>
           </div>
         </div>
+        <a
+          v-if="socialProfiles.instagram"
+          :href="`https://instagram.com/${socialProfiles.instagram}`"
+          target="_blank"
+          rel="noopener nofollow noreferrer"
+          class="flex items-center gap-1 text-xs text-slate-800 hover:text-pink-500 transition-colors mt-0.5"
+        >
+          <span>{{ socialProfiles.instagram }}</span>
+        </a>
         <p v-if="additionalAttributes.description" class="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-[240px] break-words">
           {{ additionalAttributes.description }}
         </p>
@@ -399,7 +408,12 @@ export default {
         emoji="🌍"
         :title="$t('CONTACT_PANEL.LOCATION')"
       />
-      <SocialIcons :social-profiles="socialProfiles" />
+      <div v-if="Object.values(socialProfiles).some(v => v)" class="flex items-center gap-2">
+        <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 whitespace-nowrap">
+          {{ $t('CONTACT_PANEL.SOCIAL_PROFILES') }}:
+        </span>
+        <SocialIcons :social-profiles="socialProfiles" />
+      </div>
     </div>
 
     <!-- Action Buttons -->

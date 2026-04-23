@@ -11,7 +11,7 @@
 // Mobile Sidebar Launcher Button Override (style only - visibility is controlled by md:hidden)
 #mobile-sidebar-launcher {
     .bg-n-alpha-2 {
-        background: rgba(147, 156, 170, 0.26) !important;
+        background: rgba(100, 116, 139, 0.45) !important;
         backdrop-filter: blur(12px) !important;
     }
 
@@ -46,7 +46,7 @@
 // CUSTOM END
 
 // Variables
-$sidebar-width: 64px;
+$sidebar-width: 4rem;
 $primary-blue: #1b5cb6;
 $conversation-card-bg: #ffffff;
 $conversation-list-bg: #f3f7ff; // Very light blue background for the list area
@@ -86,15 +86,13 @@ $active-item-bg: rgba(255, 255, 255, 0.2);
     }
 
     .sidebar-item {
-        width: 40px;
-        height: 40px;
         display: flex !important;
         align-items: center;
         justify-content: center;
-        border-radius: 8px;
+        border-radius: 0.5rem;
         color: #fff !important;
         transition: background 0.2s;
-        margin: 0px auto;
+        margin: 0 auto;
 
         &:hover {
             background: $active-item-bg !important;
@@ -102,10 +100,6 @@ $active-item-bg: rgba(255, 255, 255, 0.2);
 
         &.router-link-active {
             background: $active-item-bg !important;
-        }
-
-        i {
-            font-size: 20px;
         }
     }
 
@@ -633,7 +627,6 @@ $active-item-bg: rgba(255, 255, 255, 0.2);
                 color: white !important;
                 border-radius: 18px !important;
                 border-bottom-right-radius: 4px !important;
-                box-shadow: 0 4px 12px rgba(79, 70, 229, 0.15) !important;
                 font-size: 14px !important;
                 line-height: 1.5 !important;
                 padding: 10px 14px !important;
@@ -804,7 +797,6 @@ $active-item-bg: rgba(255, 255, 255, 0.2);
             font-weight: 600 !important;
             padding: 0 20px !important;
             height: 38px !important;
-            box-shadow: 0 4px 10px rgba(79, 70, 229, 0.2) !important;
             transition: all 0.2s ease !important;
 
             &:hover {
@@ -918,6 +910,95 @@ $active-item-bg: rgba(255, 255, 255, 0.2);
         // Active state glow/depth
         .shadow-sm {
             box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.06), 0 1px 2px -1px rgba(0, 0, 0, 0.06) !important;
+        }
+    }
+}
+
+// Custom UI: Override heatmap blue colors to brand dark scale (light mode)
+.custom-ui-font {
+    .bg-n-blue-3  { background-color: rgba(24, 41, 51, 0.12) !important; }
+    .bg-n-blue-5  { background-color: rgba(24, 41, 51, 0.28) !important; }
+    .bg-n-blue-7  { background-color: rgba(24, 41, 51, 0.45) !important; }
+    .bg-n-blue-8  { background-color: rgba(24, 41, 51, 0.60) !important; }
+    .bg-n-blue-10 { background-color: rgba(24, 41, 51, 0.80) !important; }
+    .bg-n-blue-11 { background-color: rgba(24, 41, 51, 1.00) !important; }
+}
+
+// Dark mode: heatmap and blue-tinted elements — use light grayish-blue
+body.dark .custom-ui-font {
+    .bg-n-blue-3  { background-color: rgba(100, 184, 226, 0.12) !important; }
+    .bg-n-blue-5  { background-color: rgba(100, 184, 226, 0.16) !important; }
+    .bg-n-blue-7  { background-color: rgba(100, 184, 226, 0.28) !important; }
+    .bg-n-blue-8  { background-color: rgba(100, 184, 226, 0.45) !important; }
+    .bg-n-blue-10 { background-color: rgba(100, 184, 226, 0.80) !important; }
+    .bg-n-blue-11 { background-color: rgba(100, 184, 226, 1.00) !important; }
+}
+
+// Custom UI: Override primary (blue) button color to brand dark (light mode)
+// Applies both inline (.custom-ui-font) and in teleported dialogs (body.custom-ui-active)
+.custom-ui-font,
+body.custom-ui-active {
+    .bg-n-brand {
+        background-color: #182933 !important;
+
+        &:hover:not(:disabled) {
+            background-color: #1f3a47 !important;
+            filter: none !important;
+        }
+
+        &:focus-visible {
+            background-color: #1f3a47 !important;
+            filter: none !important;
+        }
+    }
+
+    // Faded/outlined blue variants
+    .bg-n-brand\/10 {
+        background-color: rgba(24, 41, 51, 0.1) !important;
+    }
+
+    .bg-n-brand\/20 {
+        background-color: rgba(24, 41, 51, 0.2) !important;
+    }
+
+    .outline-n-brand {
+        outline-color: #182933 !important;
+    }
+
+    // Light mode: brand text links dark
+    .text-n-blue-text {
+        color: #182933 !important;
+    }
+}
+
+// Dark mode: brand buttons stay readable, text links use light grayish-blue
+body.dark {
+    &.custom-ui-active,
+    .custom-ui-font {
+        .bg-n-brand {
+            background-color: #243f50 !important;
+
+            &:hover:not(:disabled) {
+                background-color: #2d5068 !important;
+                filter: none !important;
+            }
+        }
+
+        .bg-n-brand\/10 {
+            background-color: rgba(122, 175, 202, 0.12) !important;
+        }
+
+        .bg-n-brand\/20 {
+            background-color: rgba(122, 175, 202, 0.20) !important;
+        }
+
+        .outline-n-brand {
+            outline-color: #7aafca !important;
+        }
+
+        // Links, "Assign to me", ghost/link buttons in dark mode
+        .text-n-blue-text {
+            color: #7aafca !important;
         }
     }
 }

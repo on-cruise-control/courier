@@ -90,6 +90,12 @@ export default {
       return conversationDisplayType;
     },
   },
+  mounted() {
+    document.body.classList.add('custom-ui-active');
+  },
+  beforeUnmount() {
+    document.body.classList.remove('custom-ui-active');
+  },
   watch: {
     isSmallScreen: {
       handler() {

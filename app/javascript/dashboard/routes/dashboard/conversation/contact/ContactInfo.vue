@@ -329,6 +329,16 @@ export default {
           </div>
         </div>
 
+        <a
+          v-if="socialProfiles.instagram"
+          :href="`https://instagram.com/${socialProfiles.instagram}`"
+          target="_blank"
+          rel="noopener nofollow noreferrer"
+          class="flex items-center gap-1 text-xs text-n-slate-11 hover:text-n-slate-12 transition-colors -mt-1"
+        >
+          <span>{{ socialProfiles.instagram }}</span>
+        </a>
+
         <p v-if="additionalAttributes.description" class="break-words mb-0.5">
           {{ additionalAttributes.description }}
         </p>

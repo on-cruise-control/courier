@@ -1,6 +1,8 @@
 {
   "LOGIN": {
     "TITLE": "Login to Cruise Control",
+    "HEADING": "Login to your account!",
+    "FOOTER": "Cruise Control. All rights reserved.",
     "EMAIL": {
       "LABEL": "Email",
       "PLACEHOLDER": "example{'@'}companyname.com",

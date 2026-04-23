@@ -51,11 +51,11 @@ useKeyboardEvents(keyboardEvents);
       <button
         v-for="item in items"
         :key="item.key"
-        class="relative flex-1 px-2 py-1 text-[11px] font-bold transition-all duration-300 rounded-md whitespace-nowrap outline-none flex items-center justify-center gap-0.5 flex-shrink-0"
+        class="relative flex-1 px-2 py-1 text-[14px] transition-all duration-300 rounded-md whitespace-nowrap outline-none flex items-center justify-center gap-0.5 flex-shrink-0"
         :class="
           activeTab === item.key
-            ? 'bg-n-blue-5 dark:bg-white/10 text-slate-900 dark:text-white shadow-sm'
-            : 'text-slate-800 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200'
+            ? 'bg-n-blue-5 dark:bg-white/10 text-slate-900 dark:text-white shadow-sm font-bold'
+            : 'text-slate-800 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 font-normal'
         "
         @click="onTabChange(item.key)"
       >

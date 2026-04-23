@@ -8,6 +8,8 @@ import { computed, watch } from 'vue';
 import { useUISettings } from 'dashboard/composables/useUISettings';
 import { useAlert } from 'dashboard/composables';
 import { useI18n } from 'vue-i18n';
+import { useMapGetter } from 'dashboard/composables/store';
+import { FEATURE_FLAGS } from 'dashboard/featureFlags';
 
 /**
  * Font size options with their pixel values
@@ -17,6 +19,14 @@ const FONT_SIZE_OPTIONS = {
   SMALLER: '14px',
   SMALL: '15px',
   DEFAULT: '16px',
+  LARGE: '18px',
+  LARGER: '20px',
+};
+
+const CUSTOM_UI_FONT_SIZE_OPTIONS = {
+  SMALLER: '13px',
+  SMALL: '14px',
+  DEFAULT: '15px',
   LARGE: '18px',
   LARGER: '20px',
 };
@@ -43,8 +53,8 @@ const getFontSizeLabelKey = name =>
  * @param {string} name - Font size name
  * @returns {Object} Font size option with value and label
  */
-const createFontSizeOption = (t, name) => ({
-  value: FONT_SIZE_OPTIONS[name],
+const createFontSizeOption = (t, sizeOptions, name) => ({
+  value: sizeOptions[name],
   label: t(getFontSizeLabelKey(name)),
 });
 
@@ -52,11 +62,12 @@ const createFontSizeOption = (t, name) => ({
  * Apply font size value to document root
  *
  * @param {string} pixelValue - Font size value in pixels
+ * @param {string} defaultValue - Fallback default value
  */
-const applyFontSizeToDOM = pixelValue => {
+const applyFontSizeToDOM = (pixelValue, defaultValue) => {
   document.documentElement.style.setProperty(
     'font-size',
-    pixelValue ?? FONT_SIZE_OPTIONS.DEFAULT
+    pixelValue ?? defaultValue
   );
 };
 
@@ -72,13 +83,23 @@ const applyFontSizeToDOM = pixelValue => {
 export const useFontSize = () => {
   const { uiSettings, updateUISettings } = useUISettings();
   const { t } = useI18n();
+  const currentAccountId = useMapGetter('getCurrentAccountId');
+  const isFeatureEnabledonAccount = useMapGetter('accounts/isFeatureEnabledonAccount');
+
+  const isCustomUIEnabled = computed(() =>
+    isFeatureEnabledonAccount.value(currentAccountId.value, FEATURE_FLAGS.CUSTOM_UI)
+  );
+
+  const activeFontSizeOptions = computed(() =>
+    isCustomUIEnabled.value ? CUSTOM_UI_FONT_SIZE_OPTIONS : FONT_SIZE_OPTIONS
+  );
 
   /**
    * Font size options for select dropdown
    * @type {Array<{value: string, label: string}>}
    */
   const fontSizeOptions = computed(() =>
-    FONT_SIZE_NAMES.map(name => createFontSizeOption(t, name))
+    FONT_SIZE_NAMES.map(name => createFontSizeOption(t, activeFontSizeOptions.value, name))
   );
 
   /**
@@ -86,7 +107,7 @@ export const useFontSize = () => {
    * @type {import('vue').ComputedRef<string>}
    */
   const currentFontSize = computed(
-    () => uiSettings.value.font_size || FONT_SIZE_OPTIONS.DEFAULT
+    () => uiSettings.value.font_size || activeFontSizeOptions.value.DEFAULT
   );
 
   /**
@@ -95,8 +116,9 @@ export const useFontSize = () => {
    * @returns {void}
    */
   const applyFontSize = pixelValue => {
-    // Use requestAnimationFrame for better performance
-    requestAnimationFrame(() => applyFontSizeToDOM(pixelValue));
+    requestAnimationFrame(() =>
+      applyFontSizeToDOM(pixelValue, activeFontSizeOptions.value.DEFAULT)
+    );
   };
 
   /**

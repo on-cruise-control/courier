@@ -305,7 +305,7 @@ const deleteConversation = () => {
       </CustomAvatar>
     </div>
     <div
-      class="px-0 py-3 border-b group-hover:border-transparent flex-1 border-n-slate-3 min-w-0"
+      class="px-0 py-1 border-b group-hover:border-transparent flex-1 border-n-slate-3 min-w-0"
     >
       <div
         v-if="showMetaSection"
@@ -330,13 +330,15 @@ const deleteConversation = () => {
             'flex-1 justify-between': !showInboxName,
           }"
         >
-          <span
+          <div
             v-if="showAssignee && assignee.name"
-            class="text-n-slate-11 text-xs font-medium leading-3 py-0.5 px-0 inline-flex items-center truncate"
+            class="flex flex-row items-center gap-0.5 flex-shrink-0"
           >
-            <fluent-icon icon="person" size="12" class="text-n-slate-11" />
-            {{ assignee.name }}
-          </span>
+            <span class="text-n-slate-11 font-medium inline-flex items-center gap-0.5 truncate max-w-[60px]" style="font-size: 9px;">
+              <fluent-icon icon="person" size="10" class="text-n-slate-11 flex-shrink-0" />
+              <span class="truncate">{{ assignee.name }}</span>
+            </span>
+          </div>
           <PriorityMark :priority="chat.priority" class="flex-shrink-0" />
         </div>
         <span
@@ -359,12 +361,28 @@ const deleteConversation = () => {
           {{ $t('CHAT_LIST.NEGATIVE_TAG') }}
         </span>
       </div>
-      <h4
-        class="conversation--user text-sm my-0 mx-2 capitalize pt-0.5 text-ellipsis overflow-hidden whitespace-nowrap flex-1 min-w-0 ltr:pr-16 rtl:pl-16 text-n-slate-12"
-        :class="hasUnread ? 'font-semibold' : 'font-medium'"
-      >
-        {{ currentContact.name }}
-      </h4>
+      <div class="flex items-start justify-between gap-1 mx-2 pt-0.5">
+        <h4
+          class="conversation--user text-sm my-0 capitalize text-ellipsis overflow-hidden whitespace-nowrap flex-1 min-w-0 text-n-slate-12"
+          :class="hasUnread ? 'font-semibold' : 'font-medium'"
+        >
+          {{ currentContact.name }}
+        </h4>
+        <div class="relative flex-shrink-0">
+          <span class="block font-normal mt-1 leading-4 text-xxs whitespace-nowrap">
+            <TimeAgo
+              :last-activity-timestamp="chat.timestamp"
+              :created-at-timestamp="chat.created_at"
+            />                                                                                                                                                                                            
+          </span>
+          <span
+            class="absolute top-full right-0 mt-0.5 shadow-lg rounded-full text-xxs font-semibold h-4 leading-4 min-w-[1rem] px-1 py-0 text-center text-white bg-n-teal-9"
+            :class="hasUnread ? 'block' : 'hidden'"
+          >
+            {{ unreadCount > 9 ? '9+' : unreadCount }}
+          </span>
+        </div>
+      </div>
       <VoiceCallStatus
         v-if="voiceCallData.status"
         key="voice-status-row"
@@ -394,23 +412,6 @@ const deleteConversation = () => {
           {{ $t(`CHAT_LIST.NO_MESSAGES`) }}
         </span>
       </p>
-      <div
-        class="absolute flex flex-col ltr:right-3 rtl:left-3"
-        :class="showMetaSection ? 'top-10' : 'top-6'"
-      >
-        <span class="ml-auto font-normal leading-4 text-xxs">
-          <TimeAgo
-            :last-activity-timestamp="chat.timestamp"
-            :created-at-timestamp="chat.created_at"
-          />
-        </span>
-        <span
-          class="shadow-lg rounded-full text-xxs font-semibold h-4 leading-4 ltr:ml-auto rtl:mr-auto mt-1 min-w-[1rem] px-1 py-0 text-center text-white bg-n-teal-9"
-          :class="hasUnread ? 'block' : 'hidden'"
-        >
-          {{ unreadCount > 9 ? '9+' : unreadCount }}
-        </span>
-      </div>
       <CardLabels
         v-if="showLabelsSection"
         :conversation-labels="chat.labels"
