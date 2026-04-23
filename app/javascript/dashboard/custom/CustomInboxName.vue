@@ -10,7 +10,7 @@ defineProps({
 </script>
 
 <template>
-  <div class="flex items-center text-n-slate-11 text-xs min-w-0">
+  <!-- <div class="flex items-center text-n-slate-11 text-xs min-w-0">
     <CustomChannelBadgeIcon
       :inbox="inbox"
       size-class="size-4"
@@ -19,5 +19,5 @@ defineProps({
     <span class="truncate">
       {{ inbox.name }}
     </span>
-  </div>
+  </div> -->
 </template>

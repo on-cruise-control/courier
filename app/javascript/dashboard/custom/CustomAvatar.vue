@@ -131,8 +131,8 @@ const badgeStyles = computed(() => {
   return {
     width: `${badgeSize}px`,
     height: `${badgeSize}px`,
-    top: `${props.size - badgeSize / 1.1}px`,
-    left: `${props.size - badgeSize / 1.1}px`,
+    top: `${props.size - badgeSize / 1.8}px`,
+    left: `${props.size - badgeSize / 1.5}px`,
   };
 });
 

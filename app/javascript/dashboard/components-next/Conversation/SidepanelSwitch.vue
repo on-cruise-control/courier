@@ -70,7 +70,7 @@ useKeyboardEvents(keyboardEvents);
 
 <template>
   <div
-    class="flex flex-col justify-center items-center absolute top-36 xl:top-24 ltr:right-2 rtl:left-2 bg-n-solid-2 border border-n-weak rounded-full gap-2 p-1"
+    class="flex flex-col justify-center items-center absolute top-36 xl:top-24 ltr:right-2 rtl:left-2 bg-n-solid-2 border border-n-gray-7 rounded-full gap-2 p-1"
   >
     <Button
       v-tooltip.top="$t('CONVERSATION.SIDEBAR.CONTACT')"
@@ -79,7 +79,7 @@ useKeyboardEvents(keyboardEvents);
       sm
       class="!rounded-full"
       :class="{
-        'bg-n-alpha-2': isContactSidebarOpen,
+        'bg-n-slate-6': isContactSidebarOpen,
       }"
       icon="i-ph-user-bold"
       @click="handleConversationSidebarToggle"
@@ -103,7 +103,7 @@ useKeyboardEvents(keyboardEvents);
       slate
       class="!rounded-full"
       :class="{
-        'bg-n-alpha-2 !text-n-iris-9': isConversationSummaryOpen,
+        'bg-n-slate-6 !text-n-iris-9': isConversationSummaryOpen,
       }"
       sm
       icon="i-lucide-sparkles"

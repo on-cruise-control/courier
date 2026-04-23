@@ -139,7 +139,7 @@ defineExpose({
            <div class="flex items-center gap-2">
             <i class="i-lucide-sparkles text-n-iris-10 text-sm" />
             <h3 class="text-xs font-bold text-n-slate-12 uppercase tracking-wider">
-               AI Summary
+               Summary
             </h3>
            </div>
            <span class="text-[10px] text-n-slate-10 font-medium">
