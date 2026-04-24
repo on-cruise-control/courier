@@ -96,7 +96,7 @@ export default {
             {{ $t('SET_NEW_PASSWORD.TITLE') }}
           </h2>
           <p class="mt-1.5 text-sm text-n-slate-10">
-            Choose a strong password for your account.
+            {{ $t('SET_NEW_PASSWORD.SUBTITLE') }}
           </p>
         </div>
 
@@ -144,7 +144,7 @@ export default {
       </div>
 
       <p class="text-xs text-n-slate-9 mt-2">
-        © {{ new Date().getFullYear() }} Cruise Control. All rights reserved.
+        © {{ new Date().getFullYear() }} {{ $t('LOGIN.FOOTER') }}
       </p>
     </div>
 
@@ -206,17 +206,26 @@ export default {
           <div class="absolute w-10 h-10 rounded-2xl flex items-center justify-center shadow-lg" style="top: 85px; right: 129px; background-color: #5865F2;">
             <svg viewBox="0 0 24 24" class="w-5 h-5 fill-white"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-3 9H7V9h10v2zm0-3H7V6h10v2z"/></svg>
           </div>
-          <!-- TikTok - bottom-right outer -->
-          <div class="absolute w-11 h-11 rounded-2xl flex items-center justify-center shadow-lg" style="bottom: 80px; right: 60px; background-color: #010101;">
-            <svg viewBox="0 0 24 24" class="w-5 h-5 fill-white"><path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/></svg>
+           <!-- TikTok - outer ring, bottom-right diagonal -->
+          <div
+            class="absolute w-11 h-11 rounded-2xl flex items-center justify-center shadow-lg"
+            style="bottom: 80px; right: 60px; background-color: #010101;"
+          >
+            <svg viewBox="0 0 24 24" class="w-5 h-5 fill-white">
+              <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/>
+            </svg>
+            <span
+              class="absolute -top-[-1px] -right-0.5 text-white font-semibold rounded-full px-1 py-px leading-none"
+              style="font-size: 7px; background-color: #FE2C55;"
+            >Soon</span>
           </div>
         </div>
 
         <h1 class="text-3xl font-bold leading-tight mb-3 text-white">
-          Connect Better,<br />Sell Smarter
+          {{ $t('LOGIN.CONNECT_BATTER') }}<br />{{ $t('LOGIN.SELL_SMARTER') }}
         </h1>
         <p class="text-sm leading-relaxed max-w-xs" style="color: rgba(255,255,255,0.55);">
-          Your all-in-one automotive sales platform — manage leads, conversations, and channels powered by AI.
+          {{ $t('LOGIN.TEXT') }}
         </p>
         <div class="flex flex-wrap gap-2 justify-center mt-6">
           <span v-for="feature in ['AI-Powered', 'Multi-Channel', 'Real-Time', 'Auto Responses']" :key="feature" class="px-3 py-1 rounded-full text-xs font-semibold" style="background-color: rgba(255,255,255,0.12); color: rgba(255,255,255,0.8);">{{ feature }}</span>
@@ -224,7 +233,7 @@ export default {
       </div>
 
       <p class="relative z-10 text-xs text-center" style="color: rgba(255,255,255,0.3);">
-        © {{ new Date().getFullYear() }} Cruise Control. All rights reserved.
+        © {{ new Date().getFullYear() }} {{ $t('LOGIN.FOOTER') }}
       </p>
     </div>
   </div>

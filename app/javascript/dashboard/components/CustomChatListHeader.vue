@@ -184,7 +184,7 @@ const statusText = computed(() => {
           />
           <div
             id="saveFilterTeleportTarget"
-            class="absolute z-50 mt-2 ltr:right-0 rtl:left-0"
+            class="absolute z-[200] mt-2"
           />
         </div>
         <NextButton
@@ -211,7 +211,7 @@ const statusText = computed(() => {
           />
           <div
             id="conversationFilterTeleportTarget"
-            class="absolute z-50 mt-2 ltr:right-0 rtl:left-0"
+            class="absolute z-[200] mt-2"
           />
         </div>
         <NextButton
@@ -238,7 +238,7 @@ const statusText = computed(() => {
         />
         <div
           id="conversationFilterTeleportTarget"
-          class="absolute z-50 mt-2 ltr:right-0 rtl:left-0"
+          class="absolute z-[200] mt-2"
         />
       </div>
       <ConversationBasicFilter

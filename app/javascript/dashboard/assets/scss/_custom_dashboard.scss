@@ -207,7 +207,7 @@ $active-item-bg: rgba(255, 255, 255, 0.2);
         padding: 12px 16px !important;
         transition: transform 0.2s, box-shadow 0.2s;
         border-bottom: 1px solid #eef2f6 !important; // Clear override for default divide-y
-        min-height: 72px !important;
+        min-height: 85px !important;
 
         &::after,
         &::before {
