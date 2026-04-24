@@ -332,8 +332,11 @@ const deleteConversation = () => {
         >
           <div
             v-if="showAssignee && assignee.name"
-            class="flex flex-row items-center gap-0.5 flex-shrink-0"
+            class="flex flex-row items-center gap-1 flex-shrink-0"
           >
+            <span class="inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-semibold border border-[#2b87c0] rounded-full bg-[#2b87c085] text-[#052a64] dark:bg-[#1d597eb3] dark:border-[#1d597e] dark:text-white leading-none">
+              {{ $t('CHAT_LIST.HUMAN') }}
+            </span>
             <span class="text-n-slate-11 font-medium inline-flex items-center gap-0.5 truncate max-w-[60px]" style="font-size: 9px;">
               <fluent-icon icon="person" size="10" class="text-n-slate-11 flex-shrink-0" />
               <span class="truncate">{{ assignee.name }}</span>

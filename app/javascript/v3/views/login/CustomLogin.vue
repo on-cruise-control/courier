@@ -255,14 +255,6 @@ export default {
 
               <!-- Remember me + Forgot password -->
               <div class="flex items-center justify-between pt-1">
-                <label class="flex items-center gap-2 cursor-pointer">
-                  <input
-                    v-model="rememberMe"
-                    type="checkbox"
-                    class="w-4 h-4 rounded border-n-container accent-[#182933] cursor-pointer"
-                  />
-                  <span class="text-sm text-n-slate-11">Remember me</span>
-                </label>
                 <router-link
                   v-if="!globalConfig.disableUserProfileUpdate"
                   to="auth/reset/password"
@@ -304,7 +296,7 @@ export default {
             </div>
 
             <p v-if="showSignupLink" class="mt-6 text-sm text-center text-n-slate-10">
-              Don't have an account?
+              {{ $t('LOGIN.NO_ACCOUNT') }}
               <router-link to="auth/signup" class="font-medium" style="color: #182933;">
                 {{ $t('LOGIN.CREATE_NEW_ACCOUNT') }}
               </router-link>
@@ -461,10 +453,10 @@ export default {
 
         <!-- Text -->
         <h1 class="text-3xl font-bold leading-tight mb-3 text-white">
-          Connect Better,<br />Sell Smarter
+          {{ $t('LOGIN.CONNTECT_BATTER') }}<br />{{ $t('LOGIN.SELL_SMARTER') }}
         </h1>
         <p class="text-sm leading-relaxed max-w-xs" style="color: rgba(255,255,255,0.55);">
-          Your all-in-one automotive sales platform — manage leads, conversations, and channels powered by AI.
+          {{ $t('LOGIN.TEXT') }}
         </p>
 
         <!-- Feature pills -->
@@ -481,7 +473,7 @@ export default {
       </div>
 
       <p class="relative z-10 text-xs text-center" style="color: rgba(255,255,255,0.3);">
-        © {{ new Date().getFullYear() }} Cruise Control. All rights reserved.
+        © {{ new Date().getFullYear() }} {{ $t('LOGIN.FOOTER') }}
       </p>
     </div>
   </div>
