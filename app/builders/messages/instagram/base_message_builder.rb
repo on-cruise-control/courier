@@ -189,7 +189,21 @@ class Messages::Instagram::BaseMessageBuilder < Messages::Messenger::MessageBuil
   end
 
   def message_already_exists?
-    find_message_by_source_id(@messaging[:message][:mid]).present?
+    return true if find_message_by_source_id(@messaging[:message][:mid]).present?
+    return true if @outgoing_echo && recent_duplicate_echo?
+
+    false
+  end
+
+  def recent_duplicate_echo?
+    content = @messaging.dig(:message, :text)
+    return false if content.blank?
+
+    conversation.messages
+                .outgoing
+                .where(content: content)
+                .where('created_at >= ?', 2.minutes.ago)
+                .exists?
   end
 
   def find_message_by_source_id(source_id)

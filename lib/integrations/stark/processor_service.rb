@@ -34,16 +34,29 @@ class Integrations::Stark::ProcessorService < Integrations::BotProcessorService
   end
 
   def last_message_allows_stark_reply?(current_message)
+    return true if current_message.instagram_story_mention?
+
     last_relevant = last_relevant_message_before(current_message)
 
     return true if last_relevant.blank?
 
     return true if last_relevant.sender == agent_bot
 
-    return false if (last_relevant.sent? || last_relevant.read?) &&
-                    last_relevant.created_at >= 24.hours.ago
+    if (last_relevant.sent? || last_relevant.read?) && last_relevant.created_at >= 24.hours.ago
+      return true if unassigned_after?(last_relevant)
+
+      return false
+    end
 
     true
+  end
+
+  def unassigned_after?(message)
+    current_conversation.messages
+                        .where(message_type: :activity)
+                        .where('created_at > ?', message.created_at)
+                        .where('content LIKE ?', '%Conversation unassigned by%')
+                        .exists?
   end
 
   def last_relevant_message_before(current_message)

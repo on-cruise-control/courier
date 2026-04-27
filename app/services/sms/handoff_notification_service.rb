@@ -36,6 +36,11 @@ class Sms::HandoffNotificationService
     @organization_phone_number ||= GlobalConfig.get_value('TWILIO_ORGANIZATION_PHONE_NUMBER')
   end
 
+  def conversation_summary
+    Conversations::SummaryService.new(conversation: @conversation).perform
+    @conversation.summary
+  end
+
   def recipients_with_phone_numbers
     # Get all agents and administrators with phone numbers
     # Include both User and SuperAdmin types (STI)
@@ -55,19 +60,23 @@ class Sms::HandoffNotificationService
     account_name = @account.name
     conversation_url = Rails.application.routes.url_helpers.app_account_conversation_url(
       account_id: @account.id,
-      id: @conversation.id,
+      id: @conversation.display_id,
       host: ENV.fetch('FRONTEND_URL', 'https://courier.getcruisecontrol.com')
     )
 
-    <<~SMS
+    body = <<~SMS
       🔔 Conversation Handoff Alert
 
       Dealership: #{account_name}
 
       Cruise Control is initiating a client handoff. Please take over this conversation manually.
-
-      View conversation: #{conversation_url}
     SMS
+
+    summary = conversation_summary
+    body += "\nSummary: #{summary}\n" if summary.present?
+    body += "\nView conversation: #{conversation_url}\n"
+
+    body.strip
   end
 
   def send_sms_to_recipients(recipients, message_body)

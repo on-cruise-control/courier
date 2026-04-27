@@ -41,6 +41,11 @@ class Sms::BookingNotificationService
     @organization_phone_number ||= GlobalConfig.get_value('TWILIO_ORGANIZATION_PHONE_NUMBER')
   end
 
+  def conversation_summary
+    Conversations::SummaryService.new(conversation: @conversation).perform
+    @conversation.summary
+  end
+
   def recipients_with_phone_numbers
     # Get users whose emails are in the booking_emails list and have phone numbers
     emails = @account.booking_emails || []
@@ -51,7 +56,7 @@ class Sms::BookingNotificationService
     account_name = @account.name
     conversation_url = Rails.application.routes.url_helpers.app_account_conversation_url(
       account_id: @account.id,
-      id: @conversation.id,
+      id: @conversation.display_id,
       host: ENV.fetch('FRONTEND_URL', 'http://localhost:3000')
     )
 
@@ -67,8 +72,11 @@ class Sms::BookingNotificationService
     
     body += "      WhatsApp Number: #{@whatsapp_number}\n" if @whatsapp_number.present?
     body += "      Text Number: #{@text_number}\n" if @text_number.present?
-    
-    body += "\n      View conversation: #{conversation_url}\n"
+
+    summary = conversation_summary
+    body += "\nSummary: #{summary}\n" if summary.present?
+
+    body += "\nView conversation: #{conversation_url}\n"
     
     body.strip
   end
