@@ -222,7 +222,7 @@ export default {
         </div>
 
         <h1 class="text-3xl font-bold leading-tight mb-3 text-white">
-          {{ $t('LOGIN.CONNECT_BATTER') }}<br />{{ $t('LOGIN.SELL_SMARTER') }}
+          {{ $t('LOGIN.CONNTECT_BATTER') }}<br />{{ $t('LOGIN.SELL_SMARTER') }}
         </h1>
         <p class="text-sm leading-relaxed max-w-xs" style="color: rgba(255,255,255,0.55);">
           {{ $t('LOGIN.TEXT') }}
