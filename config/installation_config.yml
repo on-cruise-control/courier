@@ -34,6 +34,10 @@
   value: 'https://www.getcruisecontrol.com'
   display_title: 'Brand URL'
   description: 'The URL that would be used in emails under the section “Powered By”'
+- name: FRONTEND_URL
+  value: 'https://courier.getcruisecontrol.com'
+  display_title: 'Frontend URL'
+  description: 'The base URL of the frontend application, used in email templates for assets and links'
 - name: WIDGET_BRAND_URL
   value: 'https://www.getcruisecontrol.com'
   display_title: 'Widget Brand URL'

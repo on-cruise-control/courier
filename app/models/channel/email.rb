@@ -55,6 +55,7 @@ class Channel::Email < ApplicationRecord
   validates :forward_to_email, uniqueness: true
 
   before_validation :ensure_forward_to_email, on: :create
+  after_commit :notify_if_reauthorization_required, on: :update
 
   def name
     'Email'
@@ -73,6 +74,13 @@ class Channel::Email < ApplicationRecord
   end
 
   private
+
+  def notify_if_reauthorization_required
+    return unless saved_change_to_imap_enabled? && imap_enabled?
+    return unless provider_config.blank? || reauthorization_required?
+
+    send_channel_reauthorization_email(:email_disconnect)
+  end
 
   def ensure_forward_to_email
     self.forward_to_email ||= "#{SecureRandom.hex}@#{account.inbound_email_domain}"

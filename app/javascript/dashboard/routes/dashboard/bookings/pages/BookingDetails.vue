@@ -7,6 +7,7 @@ import { useAlert } from 'dashboard/composables';
 import Button from 'dashboard/components-next/button/Button.vue';
 import Spinner from 'dashboard/components-next/spinner/Spinner.vue';
 import Avatar from 'dashboard/components-next/avatar/Avatar.vue';
+import ConversationAPI from 'dashboard/api/inbox/conversation';
 
 const route = useRoute();
 const router = useRouter();
@@ -15,13 +16,26 @@ const { t } = useI18n();
 
 const bookingId = computed(() => route.params.bookingId);
 const booking = ref(null);
+const contactThumbnail = ref('');
 const isLoading = computed(() => store.getters['bookings/getUIFlags'].isFetching);
+
+const fetchContactThumbnail = async (conversationId) => {
+  if (!conversationId) return;
+  try {
+    const { data } = await ConversationAPI.show(conversationId);
+    const thumbnail = data?.meta?.sender?.thumbnail;
+    if (thumbnail) contactThumbnail.value = thumbnail;
+  } catch {
+    // silently ignore — avatar is non-critical
+  }
+};
 
 const fetchBooking = async () => {
   // Try to find in store first for instant load
   const recordFromStore = store.getters['bookings/getRecordById'](bookingId.value);
   if (recordFromStore) {
     booking.value = recordFromStore;
+    fetchContactThumbnail(recordFromStore.conversation_id);
   }
 
   try {
@@ -29,6 +43,7 @@ const fetchBooking = async () => {
     // Only update if it's not an error object
     if (data && !data.error) {
       booking.value = data;
+      fetchContactThumbnail(data.conversation_id);
     } else if (!booking.value) {
       // If we don't have it in store AND API failed, alert
       useAlert(t('BOOKINGS.ERROR_FETCHING'));
@@ -108,6 +123,7 @@ const goBack = () => {
           <section class="p-8 rounded-2xl bg-n-solid-2 border border-n-weak/50 shadow-sm flex items-start gap-8">
             <Avatar
               :name="booking.name || 'Anonymous'"
+              :src="contactThumbnail"
               :size="80"
               rounded-full
             />

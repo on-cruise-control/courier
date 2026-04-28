@@ -198,6 +198,7 @@ const menuItems = computed(() => {
           label: inbox.name,
           icon: getInboxIconByType(inbox.channel_type || inbox.channelType, inbox.medium),
           to: accountScopedRoute('inbox_dashboard', { inbox_id: inbox.id }),
+          reauthorizationRequired: inbox.reauthorization_required,
         })),
         { type: 'header', label: t('SIDEBAR.LABELS'), icon: 'i-lucide-tag' },
         ...labels.value.map(label => ({
@@ -705,7 +706,14 @@ const onChildClick = () => {
                 v-else
                 class="flyout-link-indicator size-1.5 rounded-full transition-all flex-shrink-0" 
               />
-              <span class="text-[13px] font-semibold transition-colors truncate">{{ child.label }}</span>
+              <span class="text-[13px] font-semibold transition-colors truncate flex-1">{{ child.label }}</span>
+              <div
+                v-if="child.reauthorizationRequired"
+                v-tooltip.top-end="$t('SIDEBAR.REAUTHORIZE')"
+                class="grid place-content-center size-5 bg-n-ruby-5/60 rounded-full flex-shrink-0"
+              >
+                <Icon icon="i-woot-alert" class="size-3 text-n-ruby-9" />
+              </div>
             </router-link>
           </template>
         </div>
