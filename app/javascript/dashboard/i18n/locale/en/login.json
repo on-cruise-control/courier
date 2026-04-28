@@ -1,6 +1,11 @@
 {
   "LOGIN": {
     "TITLE": "Login to Cruise Control",
+    "HEADING": "Login to your account!",
+    "FOOTER": "Cruise Control. All rights reserved.",
+    "CONNTECT_BATTER": "Connect Better,",
+    "SELL_SMARTER": "Sell Smarter",
+    "TEXT": "Your all-in-one automotive sales platform — manage leads, conversations, and channels powered by AI.",
     "EMAIL": {
       "LABEL": "Email",
       "PLACEHOLDER": "example{'@'}companyname.com",
@@ -23,10 +28,11 @@
     "FORGOT_PASSWORD": "Forgot your password?",
     "CREATE_NEW_ACCOUNT": "Create a new account",
     "SUBMIT": "Login",
+    "NO_ACCOUNT": "Don't have an account?",
     "SAML": {
       "LABEL": "Login via SSO",
       "TITLE": "Initiate Single Sign-on (SSO)",
-      "SUBTITLE": "Enter your work email to access your organization",
+      "SUBTITLE": "Enter your work email to continue with SSO",
       "BACK_TO_LOGIN": "Login via Password",
       "WORK_EMAIL": {
         "LABEL": "Work Email",
@@ -37,5 +43,8 @@
         "ERROR_MESSAGE": "SSO authentication failed. Please check your credentials and try again."
       }
     }
+  },
+  "SET_NEW_PASSWORD": {
+    "SUBTITLE": "Choose a strong password for your account."
   }
 }

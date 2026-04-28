@@ -1,11 +1,11 @@
 import { frontendURL } from 'dashboard/helper/URLHelper';
 
-import Login from './login/Index.vue';
-import SamlLogin from './login/Saml.vue';
+import Login from './login/CustomLogin.vue';
+import SamlLogin from './login/CustomSaml.vue';
 import Signup from './auth/signup/Index.vue';
-import ResetPassword from './auth/reset/password/Index.vue';
+import ResetPassword from './auth/reset/password/CustomResetPassword.vue';
 import Confirmation from './auth/confirmation/Index.vue';
-import PasswordEdit from './auth/password/Edit.vue';
+import PasswordEdit from './auth/password/CustomPasswordEdit.vue';
 
 export default [
   {

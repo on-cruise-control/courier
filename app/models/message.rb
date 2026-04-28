@@ -498,6 +498,15 @@ class Message < ApplicationRecord
         return
       end
       return if additional_attributes&.dig('skip_follow_up') == true
+
+      last_incoming_message = conversation.messages
+                                          .incoming
+                                          .not_activity
+                                          .not_template
+                                          .reorder(created_at: :desc)
+                                          .first
+      return if last_incoming_message&.instagram_story_mention?
+
       conversation.cancel_existing_follow_up_job
 
       return if sender.is_a?(User)
@@ -506,12 +515,6 @@ class Message < ApplicationRecord
       message_type = conversation.additional_attributes['type']
       return if message_type == 'feed_comments' || message_type == 'instagram_comments'
 
-      last_incoming_message = conversation.messages
-                                          .incoming
-                                          .not_activity
-                                          .not_template
-                                          .reorder(created_at: :desc)
-                                          .first
       return if last_incoming_message.nil?
 
       base_time = last_incoming_message.created_at
@@ -538,6 +541,8 @@ class Message < ApplicationRecord
   end
 
   def cancel_follow_up_job
+    return if instagram_story_mention?
+
     conversation.cancel_existing_follow_up_job
   end
   def reindex_for_search

@@ -144,6 +144,7 @@
     "MESSAGE_READ": "Read",
     "SENDING": "Sending",
     "COMMENT_TAG": "Comment",
+    "HUMAN": "H",
     "SPAM_TAG": "Spam",
     "NEGATIVE_TAG": "Negative Comment"
   }

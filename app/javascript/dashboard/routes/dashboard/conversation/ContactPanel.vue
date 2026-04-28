@@ -44,6 +44,25 @@ const {
   toggleSidebarUIState,
 } = useUISettings();
 
+const ACCORDION_KEYS = [
+  'is_conv_actions_open',
+  'is_conv_participants_open',
+  'is_conv_details_open',
+  'is_contact_attributes_open',
+  'is_previous_conv_open',
+  'is_macro_open',
+  'is_linear_issues_open',
+  'is_shopify_orders_open',
+  'is_contact_notes_open',
+];
+
+const toggleAccordionItem = key => {
+  const isOpen = isContactSidebarItemOpen(key);
+  const updates = Object.fromEntries(ACCORDION_KEYS.map(k => [k, false]));
+  if (!isOpen) updates[key] = true;
+  updateUISettings(updates);
+};
+
 const dragging = ref(false);
 const conversationSidebarItems = ref([]);
 
@@ -195,9 +214,7 @@ onMounted(() => {
               :is="AccordionComponent"
               :title="$t('CONVERSATION_SIDEBAR.ACCORDION.CONVERSATION_ACTIONS')"
               :is-open="isContactSidebarItemOpen('is_conv_actions_open')"
-              @toggle="
-                value => toggleSidebarUIState('is_conv_actions_open', value)
-              "
+              @toggle="() => toggleAccordionItem('is_conv_actions_open')"
             >
               <CustomConversationAction
                 v-if="isCustomUIEnabled"
@@ -219,10 +236,7 @@ onMounted(() => {
               :is="AccordionComponent"
               :title="$t('CONVERSATION_PARTICIPANTS.SIDEBAR_TITLE')"
               :is-open="isContactSidebarItemOpen('is_conv_participants_open')"
-              @toggle="
-                value =>
-                  toggleSidebarUIState('is_conv_participants_open', value)
-              "
+              @toggle="() => toggleAccordionItem('is_conv_participants_open')"
             >
               <ConversationParticipant
                 :conversation-id="conversationId"
@@ -236,9 +250,7 @@ onMounted(() => {
               :title="$t('CONVERSATION_SIDEBAR.ACCORDION.CONVERSATION_INFO')"
               :is-open="isContactSidebarItemOpen('is_conv_details_open')"
               compact
-              @toggle="
-                value => toggleSidebarUIState('is_conv_details_open', value)
-              "
+              @toggle="() => toggleAccordionItem('is_conv_details_open')"
             >
               <ConversationInfo
                 :conversation-attributes="conversationAdditionalAttributes"
@@ -252,10 +264,7 @@ onMounted(() => {
               :title="$t('CONVERSATION_SIDEBAR.ACCORDION.CONTACT_ATTRIBUTES')"
               :is-open="isContactSidebarItemOpen('is_contact_attributes_open')"
               compact
-              @toggle="
-                value =>
-                  toggleSidebarUIState('is_contact_attributes_open', value)
-              "
+              @toggle="() => toggleAccordionItem('is_contact_attributes_open')"
             >
               <CustomAttributes
                 v-if="contactId"
@@ -277,9 +286,7 @@ onMounted(() => {
               "
               :is-open="isContactSidebarItemOpen('is_previous_conv_open')"
               compact
-              @toggle="
-                value => toggleSidebarUIState('is_previous_conv_open', value)
-              "
+              @toggle="() => toggleAccordionItem('is_previous_conv_open')"
             >
               <ContactConversations
                 :contact-id="contact.id"
@@ -296,7 +303,7 @@ onMounted(() => {
               :title="$t('CONVERSATION_SIDEBAR.ACCORDION.MACROS')"
               :is-open="isContactSidebarItemOpen('is_macro_open')"
               compact
-              @toggle="value => toggleSidebarUIState('is_macro_open', value)"
+              @toggle="() => toggleAccordionItem('is_macro_open')"
             >
               <MacrosList :conversation-id="conversationId" />
             </component>
@@ -313,9 +320,7 @@ onMounted(() => {
               :title="$t('CONVERSATION_SIDEBAR.ACCORDION.LINEAR_ISSUES')"
               :is-open="isContactSidebarItemOpen('is_linear_issues_open')"
               compact
-              @toggle="
-                value => toggleSidebarUIState('is_linear_issues_open', value)
-              "
+              @toggle="() => toggleAccordionItem('is_linear_issues_open')"
             >
               <LinearSetupCTA v-if="!isLinearIntegrationEnabled" />
               <LinearSetupCTA v-if="!isLinearConnected" />
@@ -332,9 +337,7 @@ onMounted(() => {
               :title="$t('CONVERSATION_SIDEBAR.ACCORDION.SHOPIFY_ORDERS')"
               :is-open="isContactSidebarItemOpen('is_shopify_orders_open')"
               compact
-              @toggle="
-                value => toggleSidebarUIState('is_shopify_orders_open', value)
-              "
+              @toggle="() => toggleAccordionItem('is_shopify_orders_open')"
             >
               <ShopifyOrdersList :contact-id="contactId" />
             </component>
@@ -345,9 +348,7 @@ onMounted(() => {
               :title="$t('CONVERSATION_SIDEBAR.ACCORDION.CONTACT_NOTES')"
               :is-open="isContactSidebarItemOpen('is_contact_notes_open')"
               compact
-              @toggle="
-                value => toggleSidebarUIState('is_contact_notes_open', value)
-              "
+              @toggle="() => toggleAccordionItem('is_contact_notes_open')"
             >
               <ContactNotes :contact-id="contactId" />
             </component>

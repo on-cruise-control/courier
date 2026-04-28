@@ -12,6 +12,7 @@ import { getInboxIconByType } from 'dashboard/helper/inbox';
 import ComposeConversation from 'dashboard/components-next/NewConversation/ComposeConversation.vue';
 import { emitter } from 'shared/helpers/mitt';
 import { BUS_EVENTS } from 'shared/constants/busEvents';
+import { useSidebarKeyboardShortcuts } from 'dashboard/components-next/sidebar/useSidebarKeyboardShortcuts';
 
 import {
   DropdownContainer,
@@ -45,6 +46,8 @@ const notificationsMeta = useMapGetter('notifications/getMeta');
 const { shouldShow } = usePolicy();
 const router = useRouter();
 const route = useRoute();
+
+useSidebarKeyboardShortcuts(() => emit('openKeyShortcutModal'));
 
 const findRouteByName = name => {
   return router.getRoutes().find(route => route.name === name);
@@ -120,30 +123,33 @@ const onComposeClose = () => {
 
 const isChildActive = child => {
   if (!child.to) return false;
-  
+
   const currentRouteName = route.name;
   const targetRouteName = child.to.name;
-  const targetNavigationPath = child.to.params?.navigationPath;
+  const targetParams = child.to.params || {};
+  const targetNavigationPath = targetParams.navigationPath;
 
-  // Direct match
   if (currentRouteName === targetRouteName) {
-    // If it's a generic route with params (like portals_index), ensure params match
     if (targetNavigationPath) {
-       return route.params?.navigationPath === targetNavigationPath;
+      return route.params?.navigationPath === targetNavigationPath;
+    }
+    // Compare all non-accountId params to distinguish items sharing the same route name
+    const relevantKeys = Object.keys(targetParams).filter(k => k !== 'accountId');
+    if (relevantKeys.length > 0) {
+      return relevantKeys.every(
+        k => String(route.params[k]) === String(targetParams[k])
+      );
     }
     return true;
   }
 
-  // Handle redirects/sub-routes for dynamic sections (Portals)
-  // Standard Chatwoot Portals sidebar items use navigationPath to store the target route name
   if (targetNavigationPath && currentRouteName === targetNavigationPath) {
     return true;
   }
 
-  // Fallback for exact path comparison (helps with some CRM/Settings routes)
   const currentPath = route.path;
   const targetPath = typeof child.to === 'string' ? child.to : router.resolve(child.to).href;
-  
+
   return currentPath === targetPath;
 };
 
@@ -192,6 +198,7 @@ const menuItems = computed(() => {
           label: inbox.name,
           icon: getInboxIconByType(inbox.channel_type || inbox.channelType, inbox.medium),
           to: accountScopedRoute('inbox_dashboard', { inbox_id: inbox.id }),
+          reauthorizationRequired: inbox.reauthorization_required,
         })),
         { type: 'header', label: t('SIDEBAR.LABELS'), icon: 'i-lucide-tag' },
         ...labels.value.map(label => ({
@@ -505,54 +512,16 @@ const onChildClick = () => {
 
     <aside
       class="custom-sidebar flex flex-col h-full items-start py-4 z-50 flex-shrink-0 border-r border-black/10 shadow-lg relative"
-      style="background-color: transparent; width: 90px; min-width: 90px; max-width: 90px;"
+      style="background-color: transparent; width: 5.625rem; min-width: 5.625rem; max-width: 5.625rem;"
     >
-      <!-- Fixed Blue Background (64px) -->
-      <div 
-        class="absolute inset-y-0 left-0 w-16 z-[-1]" 
+      <!-- Fixed Blue Background -->
+      <div
+        class="absolute inset-y-0 inset-x-0 z-[-1]"
         style="background-color: #182933;"
       />
 
-      <div class="mb-6 w-16 flex justify-center">
-        <DropdownContainer>
-          <template #trigger="{ toggle, isOpen }">
-            <button
-              class="p-0 rounded-lg transition-transform hover:scale-105 active:scale-95 cursor-pointer outline-none border-none bg-transparent"
-              title="Switch Account"
-              @click="() => showAccountSwitcher && toggle()"
-            >
-              <Logo class="size-10 text-white" />
-            </button>
-          </template>
-          <DropdownBody v-if="showAccountSwitcher" class="min-w-80 z-[60]">
-            <DropdownSection :title="t('SIDEBAR_ITEMS.SWITCH_ACCOUNT')">
-              <DropdownItem
-                v-for="account in sortedCurrentUserAccounts"
-                :id="`account-${account.id}`"
-                :key="account.id"
-                class="cursor-pointer"
-                @click="onChangeAccount(account.id)"
-              >
-                <template #label>
-                  <div class="text-left rtl:text-right flex gap-3 items-center w-full">
-                    <span class="text-n-slate-12 font-medium truncate flex-grow" :title="account.name">
-                      {{ account.name }}
-                    </span>
-                    <div class="flex-shrink-0 w-px h-3 bg-n-strong" />
-                    <span class="text-n-slate-11 text-xs capitalize whitespace-nowrap">
-                      {{ account.custom_role_id ? account.custom_role.name : account.role }}
-                    </span>
-                  </div>
-                  <Icon
-                    v-show="account.id === accountId"
-                    icon="i-lucide-check"
-                    class="text-n-teal-11 size-5 ml-2"
-                  />
-                </template>
-              </DropdownItem>
-            </DropdownSection>
-          </DropdownBody>
-        </DropdownContainer>
+      <div class="mb-6 w-16 flex justify-center py-1">
+        <Logo class="size-10 text-white" />
       </div>
 
       <!-- Compose -->
@@ -570,32 +539,32 @@ const onChildClick = () => {
       </div>
 
       <!-- Scrollable Nav Section -->
-      <nav class="flex flex-col gap-3 flex-grow items-start overflow-y-auto w-[90px] no-scrollbar py-2">
+      <nav class="flex flex-col gap-3 flex-grow items-start overflow-y-auto w-[110px] no-scrollbar py-2">
         <template v-for="item in menuItems" :key="item.name">
           <div v-if="item.children" class="relative flex items-center justify-center group w-16">
             <button
-              class="sidebar-item p-2.5 rounded-xl hover:bg-white/10 transition-all flex-shrink-0 w-11 h-11 flex items-center justify-center cursor-pointer group/icon"
-              :class="{ 'bg-white/20 shadow-inner': activeGroup === item.name }"
+              class="sidebar-item p-2 rounded-xl hover:bg-white/10 transition-all flex-shrink-0 w-9 h-9 flex items-center justify-center cursor-pointer group/icon"
+              :class="{ 'bg-white/35 shadow-inner': activeGroup === item.name }"
               v-tooltip.right="item.label"
               @click="navigateItem(item)"
             >
               <div
-                class="size-6 text-white group-hover/icon:scale-110 transition-transform"
+                class="size-5 text-white group-hover/icon:scale-110 transition-transform"
                 :class="item.icon"
               />
             </button>
             
             <!-- Beak Toggle (Fixed for Active Section) -->
             <div
-              class="absolute left-full top-1/2 -translate-y-1/2 w-6 h-10 flex items-center justify-center bg-[#182933] rounded-r-xl shadow-[4px_0_10px_rgba(0,0,0,0.1)] transition-all duration-200 z-[110] cursor-pointer"
-              :class="{ 
-                'opacity-100 translate-x-0': activeGroup === item.name || isGroupActive(item), 
+              class="absolute left-full top-1/2 -translate-y-1/2 w-[24px] h-[40px] flex items-center justify-center bg-[#182933] rounded-r-xl shadow-[4px_0_10px_rgba(0,0,0,0.1)] transition-all duration-200 z-[10] cursor-pointer"
+              :class="{
+                'opacity-100 translate-x-0': activeGroup === item.name || isGroupActive(item),
                 'opacity-0 -translate-x-1': activeGroup !== item.name && !isGroupActive(item)
               }"
               @click.stop="toggleGroup(item)"
             >
-              <i 
-                class="i-lucide-chevron-right size-4 text-white transition-transform duration-300"
+              <i
+                class="i-lucide-chevron-right size-[16px] text-white transition-transform duration-300"
                 :class="{ 'rotate-180': activeGroup === item.name }"
               />
             </div>
@@ -604,13 +573,13 @@ const onChildClick = () => {
           <div v-else class="w-16 flex justify-center">
             <router-link
               :to="item.to"
-              class="sidebar-item relative p-2.5 rounded-xl hover:bg-white/10 transition-all flex-shrink-0 w-11 h-11 flex items-center justify-center group"
-              active-class="bg-white/20"
+              class="sidebar-item relative p-2 rounded-xl hover:bg-white/10 transition-all flex-shrink-0 w-9 h-9 flex items-center justify-center group"
+              active-class="bg-white/35"
               v-tooltip.right="item.label"
               @click="navigateItem(item)"
             >
               <div
-                class="size-6 text-white group-hover:scale-110 transition-transform"
+                class="size-5 text-white group-hover:scale-110 transition-transform"
                 :class="item.icon"
               />
               <span
@@ -630,28 +599,28 @@ const onChildClick = () => {
           <template v-for="item in bottomItems" :key="item.name">
             <div v-if="item.children" class="relative flex items-center justify-center group w-16 px-0">
               <button
-                class="sidebar-item p-2.5 rounded-xl hover:bg-white/10 transition-all flex-shrink-0 w-11 h-11 flex items-center justify-center cursor-pointer group/icon"
-                :class="{ 'bg-white/20 shadow-inner': activeGroup === item.name }"
+                class="sidebar-item p-2 rounded-xl hover:bg-white/10 transition-all flex-shrink-0 w-9 h-9 flex items-center justify-center cursor-pointer group/icon"
+                :class="{ 'bg-white/35 shadow-inner': activeGroup === item.name }"
                 v-tooltip.right="item.label"
                 @click="navigateItem(item)"
               >
                 <div
-                  class="size-6 text-white group-hover/icon:scale-110 transition-transform"
+                  class="size-5 text-white group-hover/icon:scale-110 transition-transform"
                   :class="item.icon"
                 />
               </button>
               
               <!-- Beak Toggle (Fixed for Active Section) -->
               <div
-                class="absolute left-full top-1/2 -translate-y-1/2 w-6 h-10 flex items-center justify-center bg-[#182933] rounded-r-xl shadow-[4px_0_10px_rgba(0,0,0,0.1)] transition-all duration-200 z-[110] cursor-pointer"
-                :class="{ 
-                  'opacity-100 translate-x-0': activeGroup === item.name || isGroupActive(item), 
+                class="absolute left-full top-1/2 -translate-y-1/2 w-[24px] h-[40px] flex items-center justify-center bg-[#182933] rounded-r-xl shadow-[4px_0_10px_rgba(0,0,0,0.1)] transition-all duration-200 z-[10] cursor-pointer"
+                :class="{
+                  'opacity-100 translate-x-0': activeGroup === item.name || isGroupActive(item),
                   'opacity-0 -translate-x-1': activeGroup !== item.name && !isGroupActive(item)
                 }"
                 @click.stop="toggleGroup(item)"
               >
-                <i 
-                  class="i-lucide-chevron-right size-4 text-white transition-transform duration-300"
+                <i
+                  class="i-lucide-chevron-right size-[16px] text-white transition-transform duration-300"
                   :class="{ 'rotate-180': activeGroup === item.name }"
                 />
               </div>
@@ -659,13 +628,13 @@ const onChildClick = () => {
             <div v-else class="w-16 flex justify-center">
               <router-link
                 :to="item.to"
-                class="sidebar-item p-2.5 rounded-xl hover:bg-white/10 transition-all flex-shrink-0 w-11 h-11 flex items-center justify-center group"
-                active-class="bg-white/20"
+                class="sidebar-item p-2 rounded-xl hover:bg-white/10 transition-all flex-shrink-0 w-9 h-9 flex items-center justify-center group"
+                active-class="bg-white/35"
                 v-tooltip.right="item.label"
                 @click="navigateItem(item)"
               >
                 <div
-                  class="size-6 text-white group-hover:scale-110 transition-transform"
+                  class="size-5 text-white group-hover:scale-110 transition-transform"
                   :class="item.icon"
                 />
               </router-link>
@@ -703,7 +672,7 @@ const onChildClick = () => {
       <div
         v-if="activeGroup"
         class="custom-flyout h-full w-64 backdrop-blur-2xl z-40 border-r py-10 flex flex-col overflow-hidden flex-shrink-0"
-        style="min-width: 256px; max-width: 256px;"
+        style="min-width: 16rem; max-width: 16rem;"
       >
         <div class="px-6 mb-6">
           <div class="flyout-header-text text-[10px] font-black uppercase tracking-[0.2em] whitespace-nowrap">
@@ -737,7 +706,14 @@ const onChildClick = () => {
                 v-else
                 class="flyout-link-indicator size-1.5 rounded-full transition-all flex-shrink-0" 
               />
-              <span class="text-[13px] font-semibold transition-colors truncate">{{ child.label }}</span>
+              <span class="text-[13px] font-semibold transition-colors truncate flex-1">{{ child.label }}</span>
+              <div
+                v-if="child.reauthorizationRequired"
+                v-tooltip.top-end="$t('SIDEBAR.REAUTHORIZE')"
+                class="grid place-content-center size-5 bg-n-ruby-5/60 rounded-full flex-shrink-0"
+              >
+                <Icon icon="i-woot-alert" class="size-3 text-n-ruby-9" />
+              </div>
             </router-link>
           </template>
         </div>

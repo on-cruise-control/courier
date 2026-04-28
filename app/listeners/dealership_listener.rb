@@ -7,7 +7,6 @@ class DealershipListener < BaseListener
     return if conversation.contact.blank?
 
     unless conversation.inbox.whatsapp? || conversation.inbox.sms? || conversation.inbox.twilio?
-      Rails.logger.info "------Dealership customer and booking create skipped: not WhatsApp or SMS for contact_id: #{conversation.contact_id}-----"
       return
     end
 

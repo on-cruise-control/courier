@@ -143,11 +143,7 @@ const handleSortChange = value => {
     <div
       v-if="showActionsDropdown"
       v-on-click-outside="() => toggleDropdown()"
-      class="mt-1 bg-n-alpha-3 backdrop-blur-[100px] border border-n-weak w-72 rounded-xl p-4 absolute z-40 top-full"
-      :class="{
-        'ltr:left-0 rtl:right-0': !isOnExpandedLayout,
-        'ltr:right-0 rtl:left-0': isOnExpandedLayout,
-      }"
+      class="mt-1 bg-n-alpha-3 backdrop-blur-[100px] border border-n-gray-4 w-72 rounded-xl p-4 absolute z-40 top-full"
     >
       <div class="flex items-center justify-between last:mt-4 gap-2">
         <span class="text-sm truncate text-n-slate-12">

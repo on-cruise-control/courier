@@ -42,10 +42,33 @@ export default {
     );
     return { calculateTrend, isAverageMetricType };
   },
+  data() {
+    return {
+      isDarkMode: document.documentElement.classList.contains('dark'),
+    };
+  },
+  mounted() {
+    this._darkObserver = new MutationObserver(() => {
+      this.isDarkMode = document.documentElement.classList.contains('dark');
+    });
+    this._darkObserver.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class'],
+    });
+  },
+  beforeUnmount() {
+    this._darkObserver?.disconnect();
+  },
   computed: {
     ...mapGetters({
       accountReport: 'getAccountReports',
     }),
+    chartLineColor() {
+      return this.isDarkMode ? 'rgb(56, 200, 232)' : 'rgb(24, 41, 51)';
+    },
+    chartFillColor() {
+      return this.isDarkMode ? 'rgba(56, 200, 232, 0.15)' : 'rgba(24, 41, 51, 0.1)';
+    },
     metrics() {
       const reportKeys = Object.keys(this.reportKeys);
       const infoText = {
@@ -96,9 +119,9 @@ export default {
         return {
           type: 'line',
           fill: true,
-          backgroundColor: 'rgba(31, 147, 255, 0.1)',
-          borderColor: 'rgb(31, 147, 255)',
-          pointBackgroundColor: 'rgb(31, 147, 255)',
+          backgroundColor: this.chartFillColor,
+          borderColor: this.chartLineColor,
+          pointBackgroundColor: this.chartLineColor,
           pointRadius: 4,
           pointHoverRadius: 6,
           tension: 0.3,

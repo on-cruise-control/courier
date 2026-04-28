@@ -37,6 +37,11 @@ class Sms::EscalationNotificationService
     @organization_phone_number ||= GlobalConfig.get_value('TWILIO_ORGANIZATION_PHONE_NUMBER')
   end
 
+  def conversation_summary
+    Conversations::SummaryService.new(conversation: @conversation).perform
+    @conversation.summary
+  end
+
   def recipients_with_phone_numbers
     # Find users with the provided emails who have phone numbers
     # We don't strictly enforce account membership if the user requested finding by email
@@ -47,20 +52,23 @@ class Sms::EscalationNotificationService
     account_name = @account.name
     conversation_url = Rails.application.routes.url_helpers.app_account_conversation_url(
       account_id: @account.id,
-      id: @conversation.id,
-      host: ENV.fetch('FRONTEND_URL', 'http://localhost:3000')
+      id: @conversation.display_id,
+      host: ENV.fetch('FRONTEND_URL', 'https://courier.getcruisecontrol.com')
     )
 
     body = <<~SMS
       🚨 Urgent Escalation Required
-      
+
       Dealership: #{account_name}
-      
+
       Please take over this conversation manually.
     SMS
-    
+
+    summary = conversation_summary
+    body += "\nSummary: #{summary}\n" if summary.present?
+
     body += "\nView conversation: #{conversation_url}\n"
-    
+
     body.strip
   end
 

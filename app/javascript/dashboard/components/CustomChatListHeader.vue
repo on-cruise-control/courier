@@ -4,10 +4,19 @@ import { useUISettings } from 'dashboard/composables/useUISettings';
 import { formatNumber } from '@chatwoot/utils';
 import wootConstants from 'dashboard/constants/globals';
 import { useI18n } from 'vue-i18n';
+import { useAccount } from 'dashboard/composables/useAccount';
+import { useMapGetter } from 'dashboard/composables/store';
 
 import ConversationBasicFilter from './widgets/conversation/ConversationBasicFilter.vue';
 import SwitchLayout from 'dashboard/routes/dashboard/conversation/search/SwitchLayout.vue';
 import NextButton from 'dashboard/components-next/button/Button.vue';
+import {
+  DropdownContainer,
+  DropdownBody,
+  DropdownSection,
+  DropdownItem,
+} from 'next/dropdown-menu/base';
+import Icon from 'next/icon/Icon.vue';
 
 const props = defineProps({
   pageTitle: { type: String, required: true },
@@ -29,6 +38,18 @@ const emit = defineEmits([
 
 const { uiSettings, updateUISettings } = useUISettings();
 const { t } = useI18n();
+const { accountId, currentAccount } = useAccount();
+const currentUser = useMapGetter('getCurrentUser');
+
+const sortedAccounts = computed(() => {
+  return [...(currentUser.value?.accounts || [])].sort((a, b) =>
+    a.name.localeCompare(b.name)
+  );
+});
+
+const onChangeAccount = newId => {
+  window.location.href = `/app/accounts/${newId}/dashboard`;
+};
 
 const onBasicFilterChange = (value, type) => {
   emit('basicFilterChange', value, type);
@@ -74,10 +95,50 @@ const statusText = computed(() => {
     }"
   >
     <!-- Search bar row -->
-    <div class="px-3 pt-3 pb-2">
+    <div class="flex items-center gap-2 px-3 pt-3 pb-2">
+      <div style="width: 30%">
+        <DropdownContainer>
+          <template #trigger="{ toggle, isOpen }">
+            <button
+              class="flex items-center justify-between gap-1 w-full px-2 py-2 rounded-lg bg-n-alpha-3 dark:bg-white/8 border border-n-weak hover:border-n-slate-6 dark:hover:border-white/20 transition-colors text-sm text-n-slate-11 min-w-0"
+              :class="isOpen && 'border-n-slate-6 dark:border-white/20'"
+              @click="toggle"
+            >
+              <span class="truncate min-w-0 flex-1 text-left text-xs leading-5">{{ currentAccount.name }}</span>
+              <span class="i-lucide-chevrons-up-down size-3.5 flex-shrink-0 text-n-slate-10" />
+            </button>
+          </template>
+          <DropdownBody class="min-w-80 z-50 shadow-2xl border-none rounded-lg outline-none">
+            <DropdownSection :title="$t('SIDEBAR_ITEMS.SWITCH_ACCOUNT')">
+              <DropdownItem
+                v-for="account in sortedAccounts"
+                :key="account.id"
+                class="cursor-pointer"
+                @click="onChangeAccount(account.id)"
+              >
+                <template #label>
+                  <div class="flex items-center gap-3 text-left min-w-0 w-full">
+                    <span class="text-n-slate-12 font-medium truncate flex-grow" :title="account.name">{{ account.name }}</span>
+                    <div class="flex-shrink-0 w-px h-3 bg-n-strong" />
+                    <span class="text-n-slate-11 text-xs capitalize whitespace-nowrap">
+                      {{ account.custom_role_id ? account.custom_role?.name : account.role }}
+                    </span>
+                  </div>
+                  <Icon
+                    v-show="account.id === accountId"
+                    icon="i-lucide-check"
+                    class="text-n-teal-11 size-5 ml-2 flex-shrink-0"
+                  />
+                </template>
+              </DropdownItem>
+            </DropdownSection>
+          </DropdownBody>
+        </DropdownContainer>
+      </div>
       <router-link
         :to="{ name: 'search' }"
-        class="flex items-center gap-2 w-full px-3 py-2 rounded-lg bg-n-alpha-3 dark:bg-white/5 border border-n-weak hover:border-n-slate-6 dark:hover:border-white/20 transition-colors group"
+        class="flex items-center gap-2 px-3 py-2 rounded-lg bg-n-alpha-3 dark:bg-white/5 border border-n-weak hover:border-n-slate-6 dark:hover:border-white/20 transition-colors group"
+        style="width: 70%"
       >
         <span class="i-lucide-search size-4 text-n-slate-10 group-hover:text-n-slate-11 flex-shrink-0" />
         <span class="text-sm text-n-slate-10 group-hover:text-n-slate-11 truncate">
@@ -123,7 +184,7 @@ const statusText = computed(() => {
           />
           <div
             id="saveFilterTeleportTarget"
-            class="absolute z-50 mt-2 ltr:right-0 rtl:left-0"
+            class="absolute z-[200] mt-2"
           />
         </div>
         <NextButton
@@ -150,7 +211,7 @@ const statusText = computed(() => {
           />
           <div
             id="conversationFilterTeleportTarget"
-            class="absolute z-50 mt-2 ltr:right-0 rtl:left-0"
+            class="absolute z-[200] mt-2"
           />
         </div>
         <NextButton
@@ -177,7 +238,7 @@ const statusText = computed(() => {
         />
         <div
           id="conversationFilterTeleportTarget"
-          class="absolute z-50 mt-2 ltr:right-0 rtl:left-0"
+          class="absolute z-[200] mt-2"
         />
       </div>
       <ConversationBasicFilter

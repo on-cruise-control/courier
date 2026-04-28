@@ -88,8 +88,6 @@ module Stark
         end
 
       else
-        # Non-Instagram or no attachments: default behavior
-        Rails.logger.info("-------[Cards] Non-Instagram branch — platform=#{conversation.inbox.platform_name}, attachments=#{attachments.inspect}")
         contents.each do |content|
           create_text_message(conversation, content, metadata, is_deferred_spam_reply) if content.present?
         end
@@ -112,7 +110,25 @@ module Stark
 
     private
 
+    def duplicate_outgoing?(conversation, content: nil, cards_items: nil)
+      scope = conversation.messages
+                          .outgoing
+                          .where(sender: agent_bot)
+                          .where('created_at >= ?', 2.minutes.ago)
+
+      if cards_items
+        scope.where(content_type: :cards)
+             .any? { |m| m.content_attributes&.dig('items') == cards_items }
+      else
+        return false if content.blank?
+
+        scope.where(content: content).exists?
+      end
+    end
+
     def create_text_message(conversation, content, metadata = {}, is_deferred_spam_reply = false)
+      return if duplicate_outgoing?(conversation, content: content)
+
       conversation.messages.create!(
         content: content,
         message_type: :outgoing,
@@ -126,16 +142,13 @@ module Stark
     end
 
     def create_cards_message(conversation, attachments, metadata = {}, is_deferred_spam_reply = false)
-      Rails.logger.info("====[Cards] create_cards_message called — conversation=#{conversation.id}, attachments_count=#{attachments.size}")
-
       items = attachments.map do |attachment|
         url   = attachment.is_a?(Hash) ? (attachment['url']     || attachment[:url])     : attachment
         title = attachment.is_a?(Hash) ? (attachment['content'] || attachment[:content]) : nil
-        Rails.logger.info("=====[Cards] Building card item — title=#{title.inspect}, media_url=#{url.inspect}")
         { title: title, description: '', media_url: url, actions: [{ text: 'View Details', type: 'postback', payload: title }] }
       end
 
-      Rails.logger.info("=====[Cards] items built: #{items.inspect}")
+      return if duplicate_outgoing?(conversation, cards_items: items)
 
       msg = conversation.messages.create!(
         content_type: :cards,
@@ -149,7 +162,6 @@ module Stark
         additional_attributes: is_deferred_spam_reply ? { deferred_spam_reply: true } : {}
       )
 
-      Rails.logger.info("[Cards] Message created — id=#{msg.id}, content_type=#{msg.content_type}, content_attributes=#{msg.content_attributes.inspect}")
       msg
     end
 
