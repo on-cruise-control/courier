@@ -1,10 +1,11 @@
 <script setup>
-import { computed } from 'vue';
+import { computed, ref, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import CardLayout from 'dashboard/components-next/CardLayout.vue';
 import Avatar from 'dashboard/components-next/avatar/Avatar.vue';
 import Button from 'dashboard/components-next/button/Button.vue';
+import ConversationAPI from 'dashboard/api/inbox/conversation';
 
 const props = defineProps({
   booking: { type: Object, required: true },
@@ -16,6 +17,19 @@ const router = useRouter();
 const name = computed(() => props.booking.name || 'Anonymous');
 const email = computed(() => props.booking.email);
 const phone = computed(() => props.booking.phone);
+const contactThumbnail = ref('');
+
+onMounted(async () => {
+  const conversationId = props.booking.conversation_id;
+  if (!conversationId) return;
+  try {
+    const { data } = await ConversationAPI.show(conversationId);
+    const thumbnail = data?.meta?.sender?.thumbnail;
+    if (thumbnail) contactThumbnail.value = thumbnail;
+  } catch {
+    // silently ignore — avatar is non-critical
+  }
+});
 const summary = computed(() => props.booking.summary);
 const status = computed(() => props.booking.status);
 const createdAt = computed(() => props.booking.created_at);
@@ -67,6 +81,7 @@ const onClickViewDetails = () => {
     <div class="flex items-center justify-start flex-1 gap-4">
       <Avatar
         :name="name"
+        :src="contactThumbnail"
         :size="48"
         rounded-full
       />

@@ -1,7 +1,7 @@
 class ConversationHandoffService
   HANDOFF_COOLDOWN_MINUTES = 240 # 4 hours in minutes
-  HANDOFF_LABEL = %w[handoff].freeze
-  LABELS_LIST = %w[handoff].freeze
+  HANDOFF_LABEL = 'handoff'
+  ESCALATION_LABEL = 'escalation'
 
   def initialize(conversation)
     @conversation = conversation
@@ -10,8 +10,9 @@ class ConversationHandoffService
   def process_handoff(customer_data = nil, handoff_reason = nil)
     return unless should_send_notification?
 
-    ensure_labels_exist
-    update_handoff_state
+    label = label_for_reason(handoff_reason)
+    ensure_label_exists(label)
+    update_handoff_state(label)
     schedule_label_change
 
     case handoff_reason
@@ -28,6 +29,10 @@ class ConversationHandoffService
 
   private
 
+  def label_for_reason(handoff_reason)
+    handoff_reason == 'frustrated_handoff' ? ESCALATION_LABEL : HANDOFF_LABEL
+  end
+
   def should_send_notification?
     return true if @conversation.last_handoff_at.nil?
 
@@ -35,23 +40,16 @@ class ConversationHandoffService
     minutes_since_last_handoff >= HANDOFF_COOLDOWN_MINUTES
   end
 
-  def ensure_labels_exist
-    LABELS_LIST.each do |label_title|
-      Label.find_or_create_by!(account: @conversation.account, title: label_title) do |label|
-        label.show_on_sidebar = true
-        label.color = '#1f93ff'
-      end
+  def ensure_label_exists(label_title)
+    color = label_title == ESCALATION_LABEL ? '#FF0000' : '#1f93ff'
+    Label.find_or_create_by!(account: @conversation.account, title: label_title) do |label|
+      label.show_on_sidebar = true
+      label.color = color
     end
   end
 
-  def update_handoff_state
-    conversation_labels = @conversation.label_list.to_a
-
-    @conversation.update_labels(conversation_labels)
-    current_handoff_label = conversation_labels.find { |label| HANDOFF_LABEL.include?(label) }
-    available_label = current_handoff_label || HANDOFF_LABEL.first
-
-    @conversation.add_labels(HANDOFF_LABEL) unless @conversation.label_list.include?(available_label)
+  def update_handoff_state(label)
+    @conversation.add_labels([label]) unless @conversation.label_list.include?(label)
     @conversation.update_columns(
       last_handoff_at: Time.current,
       handoff_attended_at: nil,
