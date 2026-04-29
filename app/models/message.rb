@@ -509,7 +509,8 @@ class Message < ApplicationRecord
 
       conversation.cancel_existing_follow_up_job
 
-      return if sender.is_a?(User)
+      return if sender.is_a?(User) || sender.nil?
+      
       return if conversation.stop_follow_up || conversation.assignee_id.present?
 
       message_type = conversation.additional_attributes['type']
