@@ -70,6 +70,7 @@ class Integrations::Stark::ProcessorService < Integrations::BotProcessorService
 
   def relevant_message?(message)
     return false if message.failed?
+    return false if message.private?
     return false unless message.sent? || message.delivered? || message.read?
     return false if message.template? || message.activity?
     return false if message.instagram_story_mention?

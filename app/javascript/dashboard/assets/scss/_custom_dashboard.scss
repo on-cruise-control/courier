@@ -642,6 +642,59 @@ $active-item-bg: rgba(255, 255, 255, 0.2);
                 }
             }
 
+            .right-bubble.bg-n-solid-amber {
+                background: #fff4c7 !important;
+                border: 1px solid #fcefbc !important;
+                color: #111827 !important;
+                border-radius: 14px !important;
+
+                p,
+                .prose,
+                .prose *,
+                .message-text,
+                .message-text * {
+                    color: #111827 !important;
+                }
+
+                .text-n-slate-11,
+                .text-n-amber-12\/50 {
+                    color: rgba(146, 64, 14, 0.7) !important;
+                }
+
+                time {
+                    color: #92400eb3 !important;
+                }
+
+                .i-lucide-lock-keyhole,
+                .i-lucide-lock-keyhole::before,
+                svg {
+                    color: #553f31 !important;
+                }
+
+                body.dark & {
+                    background: #2c2416 !important;
+                    border: 1px solid #3a2f1c !important;
+                    color: #f8fafc !important;
+
+                    p,
+                    .prose,
+                    .prose *,
+                    .message-text,
+                    .message-text * {
+                        color: #f8fafc !important;
+                    }
+
+                    .text-n-slate-11,
+                    .text-n-amber-12\/50,
+                    time,
+                    .i-lucide-lock-keyhole,
+                    .i-lucide-lock-keyhole::before,
+                    svg {
+                        color: #fff4c7 !important;
+                    }
+                }
+            }
+
             // Grouped messages fix
             &.group-with-next {
                 margin-bottom: 4px !important;
@@ -686,7 +739,7 @@ $active-item-bg: rgba(255, 255, 255, 0.2);
         }
 
         &.is-private {
-            background: #fff3c4 !important; // Soft Amber for Private Note
+            background: #fce8c1 !important; // Soft Amber for Private Note
             border: 1px solid rgba(245, 158, 11, 0.1) !important;
 
             body.dark & {
