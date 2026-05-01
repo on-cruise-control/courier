@@ -37,7 +37,7 @@ const channelImageSrc = computed(() => {
     case 'Channel::TwilioSms':
       return inboxDetails.value.medium === 'whatsapp'
         ? '/assets/images/dashboard/channels/whatsapp.png'
-        : '/assets/images/dashboard/channels/twilio.png';
+        : '/assets/images/dashboard/channels/sms.png';
     case 'Channel::Telegram':
       return '/assets/images/dashboard/channels/telegram.png';
     case 'Channel::Line':
