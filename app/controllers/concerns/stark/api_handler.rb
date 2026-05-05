@@ -147,13 +147,19 @@ module Stark
         ConversationHandoffService.new(conversation).process_handoff(refined_customer_data, handoff_reason , message_text)
       end
 
+      if data['team_reached_out'] == false
+        escalation_emails = conversation.account.escalation_emails
+        TeamReachedOutNotificationJob.perform_later(conversation.id, escalation_emails)
+      end
+
       {
         'content' => data['answer'],
         'action' => nil,
         'stop_follow_up' => data['stop_follow_up'],
         'attachments' => data['attachments'] || [],
         'metadata' => data['metadata'] || {},
-        'is_spam' => data['is_spam']
+        'is_spam' => data['is_spam'],
+        'is_booking_created' => data['is_booking_created']
       }
     end
 

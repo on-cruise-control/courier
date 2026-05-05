@@ -47,6 +47,7 @@ export const FEATURE_FLAGS = {
   CAPTAIN_V2: 'captain_integration_v2',
   // CUSTOM START
   CUSTOM_UI: 'custom_ui',
+  BOOKINGS: 'bookings',
   // CUSTOM END
 };
 
