@@ -97,6 +97,7 @@ class Integrations::Stark::ProcessorService < Integrations::BotProcessorService
     return if response.nil? # Response is nil if there was an error (already handled by StarkRetryable)
 
     current_conversation.update_column(:stop_follow_up, response['stop_follow_up'])
+    schedule_booking_follow_up if response['is_booking_created']
     handle_response(response)
   end
 
@@ -105,6 +106,16 @@ class Integrations::Stark::ProcessorService < Integrations::BotProcessorService
 
     mark_conversation_open
     true
+  end
+
+  def schedule_booking_follow_up
+    delay_hours = GlobalConfig.get_value('BOOKING_FOLLOW_UP_DELAY_HOURS').to_i
+    delay_hours = 22 if delay_hours <= 0
+
+    jid = Conversations::BookingFollowUpJob.set(wait: delay_hours.hours)
+                                           .perform_later(current_conversation.id)
+                                           .provider_job_id
+    current_conversation.update_column(:booking_follow_up_jid, jid)
   end
 
   def current_conversation
