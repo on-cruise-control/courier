@@ -361,6 +361,7 @@ class Conversation < ApplicationRecord
 
   def trigger_escalation_on_label_add
     return unless saved_change_to_label_list?
+    return unless Current.user.is_a?(User)
 
     previous_labels, current_labels = saved_change_to_label_list
     return unless current_labels.is_a?(Array) && previous_labels.is_a?(Array)
@@ -379,7 +380,7 @@ class Conversation < ApplicationRecord
         if is_comment
           NegativeSentimentEscalationJob.perform_later(id, escalation_emails)
         else
-          EscalationNotificationJob.perform_later(id, escalation_emails)
+          EscalationNotificationJob.perform_later(id, escalation_emails, nil, escalation_trigger_message)
         end
       end
     end
@@ -387,6 +388,15 @@ class Conversation < ApplicationRecord
     if newly_added.include?('handoff')
       ConversationHandoff::SendHandoffNotificationsJob.perform_later(self)
     end
+  end
+
+  def escalation_trigger_message
+    scope = messages.where(message_type: :incoming)
+    msg = if last_handoff_at.present?
+            scope.where('created_at < ?', last_handoff_at).order(created_at: :desc).last
+          end
+    msg || nil
+    msg&.content
   end
 
   def cancel_follow_up_on_assignment
