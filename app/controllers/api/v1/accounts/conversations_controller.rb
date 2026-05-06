@@ -152,6 +152,7 @@ class Api::V1::Accounts::ConversationsController < Api::V1::Accounts::BaseContro
     end
 
     @conversation.update!(comment_sentiment: 'Positive')
+    @conversation.update_labels(@conversation.labels.map(&:name) - ['escalation'])
     render json: { success: true, comment_sentiment: 'Positive' }
   end
 

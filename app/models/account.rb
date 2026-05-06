@@ -117,8 +117,14 @@ class Account < ApplicationRecord
 
   scope :with_auto_resolve, -> { where("(settings ->> 'auto_resolve_after')::int IS NOT NULL") }
 
+  DEFAULT_LABELS = [
+    { title: 'escalation', color: '#FF0000', description: 'Escalated conversations requiring urgent attention' },
+    { title: 'handoff', color: '#1f93ff', description: 'Conversations handed off to a human agent' }
+  ].freeze
+
   before_validation :validate_limit_keys
   after_create_commit :notify_creation
+  after_create_commit :create_default_labels
   after_destroy :remove_account_sequences
   after_update :handle_status_change, if: :saved_change_to_status?
 
@@ -183,6 +189,16 @@ class Account < ApplicationRecord
 
   def notify_creation
     Rails.configuration.dispatcher.dispatch(ACCOUNT_CREATED, Time.zone.now, account: self)
+  end
+
+  def create_default_labels
+    DEFAULT_LABELS.each do |attrs|
+      labels.find_or_create_by(title: attrs[:title]) do |label|
+        label.color = attrs[:color]
+        label.description = attrs[:description]
+        label.show_on_sidebar = true
+      end
+    end
   end
 
   trigger.after(:insert).for_each(:row) do
