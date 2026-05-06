@@ -7,6 +7,7 @@
   <table style="border-collapse: separate; border-spacing: 0; width: 100%; margin-bottom: 28px; font-size: 15px;">
     <% 
       rows = [
+        { label: 'Dealership Name', value: @account&.name },
         { label: 'Name', value: @conversation&.contact&.name },
         { label: 'Date', value: @booking_date },
         { label: 'Platform', value: @platform_name },
