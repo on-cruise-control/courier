@@ -335,7 +335,7 @@ const deleteConversation = () => {
             <fluent-icon icon="person" size="12" class="text-n-slate-11" />
             {{ assignee.name }}
           </span>
-          <PriorityMark :priority="chat.priority" class="flex-shrink-0" />
+          <PriorityMark :priority="chat.priority" show-label class="flex-shrink-0" />
         </div>
         <span
           v-if="isCommentConversation"
