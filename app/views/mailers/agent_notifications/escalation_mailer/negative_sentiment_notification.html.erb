@@ -26,6 +26,7 @@
 
  <p><strong>Reason for Escalation:</strong></p>
  <div style="background-color: #f3f4f6; padding: 15px; border-radius: 6px; margin-bottom: 20px; line-height: 1.5;">
+    <% if @comment.present? %>
       <%= @comment %>
     <% else %>
       No comment was provided.
