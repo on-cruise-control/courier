@@ -105,7 +105,7 @@ const outsideClickHandler = [
 <template>
   <div
     v-on-click-outside="outsideClickHandler"
-    class="z-40 max-w-3xl w-[calc(100vw-2rem)] sm:w-[500px] lg:w-[750px] overflow-visible border border-n-gray-4 bg-n-alpha-3 backdrop-blur-[100px] shadow-lg rounded-xl p-4 sm:p-6 grid gap-6"
+    class="conversation-filter-panel z-40 max-w-3xl w-[calc(100vw-2rem)] sm:w-[500px] lg:w-[750px] overflow-visible border border-n-gray-4 bg-n-alpha-3 backdrop-blur-[100px] shadow-lg rounded-xl p-4 sm:p-6 grid gap-6"
   >
     <h3 class="text-base font-medium leading-6 text-n-slate-12">
       {{ filterModalHeaderTitle }}
@@ -146,12 +146,12 @@ const outsideClickHandler = [
         />
       </template>
     </ul>
-    <div class="flex gap-2 justify-between">
-      <Button sm ghost blue @click="addFilter">
+    <div class="conversation-filter-actions flex gap-2 justify-between">
+      <Button sm ghost blue class="conversation-filter-action-button" @click="addFilter">
         {{ $t('FILTER.ADD_NEW_FILTER') }}
       </Button>
       <div class="flex gap-2">
-        <Button sm faded slate @click="resetFilter">
+        <Button sm faded slate class="conversation-filter-action-button" @click="resetFilter">
           {{ t('FILTER.CLEAR_BUTTON_LABEL') }}
         </Button>
         <Button
@@ -159,12 +159,13 @@ const outsideClickHandler = [
           sm
           solid
           blue
+          class="conversation-filter-action-button"
           :disabled="!folderNameLocal"
           @click="updateSavedCustomViews"
         >
           {{ t('FILTER.UPDATE_BUTTON_LABEL') }}
         </Button>
-        <Button v-else sm solid blue @click="validateAndSubmit">
+        <Button v-else sm solid blue class="conversation-filter-action-button" @click="validateAndSubmit">
           {{ t('FILTER.SUBMIT_BUTTON_LABEL') }}
         </Button>
       </div>

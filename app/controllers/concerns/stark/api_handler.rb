@@ -20,7 +20,7 @@ module Stark
 
         case status_code
         when 200
-          parse_stark_response(response)
+          parse_stark_response(response , message)
         when 400, 500
           log_stark_error(status_code, response, conversation)
           nil
@@ -125,7 +125,7 @@ module Stark
       }
     end
 
-    def parse_stark_response(response)
+    def parse_stark_response(response , message = nil)
       data = response['body']['data']
       customer_data = data['customer'].is_a?(Hash) ? data['customer'] : {}
 
@@ -143,7 +143,8 @@ module Stark
 
       if data['human_redirect']
         handoff_reason = data['handoff_reason']
-        ConversationHandoffService.new(conversation).process_handoff(refined_customer_data, handoff_reason)
+        message_text = message.content
+        ConversationHandoffService.new(conversation).process_handoff(refined_customer_data, handoff_reason , message_text)
       end
 
       if data['team_reached_out'] == false
