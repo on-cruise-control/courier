@@ -66,6 +66,7 @@ export default {
       showCreateAccountModal: false,
       showShortcutModal: false,
       isMobileSidebarOpen: false,
+      mobileSidebarActiveGroup: null,
     };
   },
   computed: {
@@ -116,9 +117,16 @@ export default {
   methods: {
     toggleMobileSidebar() {
       this.isMobileSidebarOpen = !this.isMobileSidebarOpen;
+      if (!this.isMobileSidebarOpen) {
+        this.mobileSidebarActiveGroup = null;
+      }
     },
     closeMobileSidebar() {
       this.isMobileSidebarOpen = false;
+      this.mobileSidebarActiveGroup = null;
+    },
+    onSidebarActiveGroupChange(groupName) {
+      this.mobileSidebarActiveGroup = groupName;
     },
     openCreateAccountModal() {
       this.showAccountModal = false;
@@ -143,7 +151,13 @@ export default {
 <template>
   <div
     class="flex flex-grow overflow-hidden text-n-slate-12 custom-ui-font"
-    :class="{ 'mobile-sidebar-open': isSmallScreen && isMobileSidebarOpen }"
+    :class="{
+      'mobile-sidebar-open': isSmallScreen && isMobileSidebarOpen,
+      'mobile-conversation-flyout-open':
+        isSmallScreen &&
+        isMobileSidebarOpen &&
+        mobileSidebarActiveGroup === 'Conversation',
+    }"
   >
     <CustomSidebar
       :is-mobile-sidebar-open="isMobileSidebarOpen"
@@ -153,6 +167,7 @@ export default {
       @close-key-shortcut-modal="closeKeyShortcutModal"
       @show-create-account-modal="openCreateAccountModal"
       @close-mobile-sidebar="closeMobileSidebar"
+      @active-group-change="onSidebarActiveGroupChange"
     />
 
     <main class="flex flex-1 h-full w-full min-h-0 px-0 overflow-hidden custom-dashboard-main">

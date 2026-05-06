@@ -1,8 +1,10 @@
 class AgentNotifications::EscalationMailer < ApplicationMailer
-  def escalation_notification(emails:, conversation:, customer_data: nil)
+  def escalation_notification(emails:, conversation:, customer_data: nil , message: nil)
     @conversation = conversation
     @account = conversation.account
+    @dealership_name = conversation.account.name
     @customer_data = customer_data || {}
+    @last_incoming_message = message
     ensure_current_account(@account)
     
     # If account is suspended, send to SuperAdmins only
@@ -29,6 +31,12 @@ class AgentNotifications::EscalationMailer < ApplicationMailer
   def negative_sentiment_notification(emails:, conversation:, customer_data: nil)
     @conversation = conversation
     @account = conversation.account
+    @dealership_name = conversation.account.name
+
+    # either or the message
+    @comment_body = @conversation.messages.where(message_type: :incoming).last || ''
+    @comment = @comment_body.content || ''
+
     ensure_current_account(@account)
 
     # If account is suspended, send to SuperAdmins only

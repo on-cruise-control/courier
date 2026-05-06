@@ -4,6 +4,11 @@
   <p style="margin-bottom: 20px;">We would like to bring to your immediate attention a recent customer comment that has been identified as negative in sentiment and requires prompt follow-up.</p>
 
   <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 20px;">
+    <% if @dealership_name.present?%>
+        <tr>
+          <td style="padding:5px 0;"><strong>Dealership Name:</strong> <%= @dealership_name %></td>
+        </tr>
+        <% end %>
     <% if @customer_name.present? && @customer_name != "(N/A)" %>
     <tr>
       <td style="padding: 5px 0;"><strong>Name:</strong> <%= @customer_name %></td>
@@ -19,6 +24,14 @@
     </tr>
   </table>
 
+ <p><strong>Reason for Escalation:</strong></p>
+ <div style="background-color: #f3f4f6; padding: 15px; border-radius: 6px; margin-bottom: 20px; line-height: 1.5;">
+      <%= @comment %>
+    <% else %>
+      No comment was provided.
+    <% end %>
+  </div>
+  
   <p><strong>Summary:</strong></p>
   <div style="background-color: #f3f4f6; padding: 15px; border-radius: 6px; margin-bottom: 20px; line-height: 1.5;">
     <% if @summary.present? %>

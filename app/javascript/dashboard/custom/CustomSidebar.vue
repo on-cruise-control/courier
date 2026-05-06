@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useAccount } from 'dashboard/composables/useAccount';
 import { useMapGetter } from 'dashboard/composables/store';
@@ -33,7 +33,12 @@ const props = defineProps({
   },
 });
 
-const emit = defineEmits(['openKeyShortcutModal', 'showCreateAccountModal', 'closeMobileSidebar']);
+const emit = defineEmits([
+  'openKeyShortcutModal',
+  'showCreateAccountModal',
+  'closeMobileSidebar',
+  'activeGroupChange',
+]);
 
 const { t } = useI18n();
 const store = useStore();
@@ -460,6 +465,10 @@ const hasBottomItems = computed(() => bottomItems.value.length > 0);
 const activeGroup = ref(null);
 const activeChildren = ref([]);
 
+watch(activeGroup, groupName => {
+  emit('activeGroupChange', groupName);
+});
+
 const toggleGroup = item => {
   if (activeGroup.value === item.name) {
     activeGroup.value = null;
@@ -506,7 +515,7 @@ const onChildClick = () => {
     <!-- Backdrop overlay for mobile - clicking closes sidebar -->
     <div
       v-if="isSmallScreen && isMobileSidebarOpen"
-      class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[-1]"
+      class="fixed inset-0 bg-black/40 z-[-1]"
       @click="emit('closeMobileSidebar')"
     />
 
@@ -653,7 +662,7 @@ const onChildClick = () => {
       <!-- Mobile close button -->
       <button
         v-if="isSmallScreen"
-        class="mt-3 mx-auto mb-2 size-10 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20 transition-all cursor-pointer border border-white/20"
+        class="mt-3 ml-3 mb-2 size-10 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20 transition-all cursor-pointer border border-white/20"
         @click="emit('closeMobileSidebar')"
       >
         <div class="i-lucide-x size-5" />
