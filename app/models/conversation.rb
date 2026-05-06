@@ -250,6 +250,7 @@ class Conversation < ApplicationRecord
     notify_conversation_updation
     send_deferred_spam_replies
     reset_unspam_reply_sent
+    trigger_escalation_on_label_add
   end
 
   def handle_resolved_status_change
@@ -356,6 +357,36 @@ class Conversation < ApplicationRecord
 
     create_label_added(user_name, current_labels - previous_labels)
     create_label_removed(user_name, previous_labels - current_labels)
+  end
+
+  def trigger_escalation_on_label_add
+    return unless saved_change_to_label_list?
+
+    previous_labels, current_labels = saved_change_to_label_list
+    return unless current_labels.is_a?(Array) && previous_labels.is_a?(Array)
+
+    newly_added = current_labels - previous_labels
+
+    if newly_added.include?('escalation')
+      escalation_emails = account.escalation_emails
+
+      comment_types = %w[instagram_comments feed_comments facebook_comments]
+      is_comment = comment_types.include?(additional_attributes&.dig('type'))
+
+      update!(comment_sentiment: 'Negative') if is_comment
+
+      if escalation_emails.present?
+        if is_comment
+          NegativeSentimentEscalationJob.perform_later(id, escalation_emails)
+        else
+          EscalationNotificationJob.perform_later(id, escalation_emails)
+        end
+      end
+    end
+
+    if newly_added.include?('handoff')
+      ConversationHandoff::SendHandoffNotificationsJob.perform_later(self)
+    end
   end
 
   def cancel_follow_up_on_assignment

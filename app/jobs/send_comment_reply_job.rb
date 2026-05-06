@@ -40,6 +40,10 @@ class SendCommentReplyJob < ApplicationJob
     # Store sentiment in the dedicated field and trigger broadcast to frontend
     Rails.logger.info " Storing sentiment '#{stark_reply[:sentiment_label]}' in comment_sentiment field for conversation: #{conversation.id}"
     conversation.update!(comment_sentiment: stark_reply[:sentiment_label])
+    
+    if stark_reply[:sentiment_label] == 'Negative'
+      conversation.add_labels(['escalation'])
+    end
 
     # Trigger escalation if sentiment is negative
     if stark_reply[:sentiment_label] == 'Negative' && account.escalation_emails.present?

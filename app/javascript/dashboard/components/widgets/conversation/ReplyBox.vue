@@ -468,10 +468,6 @@ export default {
         this.setCCAndToEmailsFromLastChat();
       }
 
-      if (this.isOnPrivateNote) {
-        return;
-      }
-
       if (canReply || this.isAWhatsAppChannel || this.isAPIInbox) {
         this.replyType = REPLY_EDITOR_MODES.REPLY;
       } else {
