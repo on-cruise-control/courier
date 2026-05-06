@@ -342,7 +342,7 @@ const deleteConversation = () => {
               <span class="truncate">{{ assignee.name }}</span>
             </span>
           </div>
-          <PriorityMark :priority="chat.priority" class="flex-shrink-0" />
+          <PriorityMark :priority="chat.priority" show-label class="flex-shrink-0" />
         </div>
         <span
           v-if="isCommentConversation"

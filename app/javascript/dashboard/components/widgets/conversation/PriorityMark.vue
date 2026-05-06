@@ -10,6 +10,10 @@ export default {
       validate: value =>
         [...Object.values(CONVERSATION_PRIORITY), ''].includes(value),
     },
+    showLabel: {
+      type: Boolean,
+      default: false,
+    },
   },
   data() {
     return {
@@ -33,15 +37,13 @@ export default {
 <template>
   <span
     v-if="priority"
-    v-tooltip="{
-      content: tooltipText,
-      delay: { show: 1500, hide: 0 },
-      hideOnClick: true,
-    }"
-    class="shrink-0 rounded-sm inline-flex items-center justify-center w-3.5 h-3.5"
+    v-tooltip="!showLabel ? { content: tooltipText, delay: { show: 1500, hide: 0 }, hideOnClick: true } : undefined"
+    class="shrink-0 rounded-sm inline-flex items-center gap-0.5 h-3.5"
     :class="{
       'bg-n-ruby-4 text-n-ruby-10': isUrgent,
       'bg-n-slate-4 text-n-slate-11': !isUrgent,
+      'px-1': showLabel,
+      'justify-center w-3.5': !showLabel,
     }"
   >
     <fluent-icon
@@ -50,5 +52,8 @@ export default {
       class="flex-shrink-0"
       view-box="0 0 14 14"
     />
+    <span v-if="showLabel" class="text-[10px] font-semibold leading-none capitalize">
+      {{ priority }}
+    </span>
   </span>
 </template>
