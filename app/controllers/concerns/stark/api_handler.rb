@@ -152,6 +152,11 @@ module Stark
         TeamReachedOutNotificationJob.perform_later(conversation.id, escalation_emails)
       end
 
+      if data['team_reached_out'] == false
+        escalation_emails = conversation.account.escalation_emails
+        TeamReachedOutNotificationJob.perform_later(conversation.id, escalation_emails)
+      end
+
       {
         'content' => data['answer'],
         'action' => nil,
