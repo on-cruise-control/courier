@@ -425,6 +425,11 @@
   value: 22
   description: 'The delay in hours before the third follow-up message is sent'
   locked: false
+- name: BOOKING_FOLLOW_UP_DELAY_HOURS
+  display_title: 'Booking Follow Up Delay Hours'
+  value: 22
+  description: 'The delay in hours before the booking follow-up message is sent after a booking is created'
+  locked: false
 # ------- End of Follow Up Job Config ------- #
 # ------- TikTok Channel Related Config ------- #
 - name: TIKTOK_APP_ID

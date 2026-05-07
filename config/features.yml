@@ -92,6 +92,9 @@
 - name: contests
   display_name: Contests
   enabled: true
+- name: bookings
+  display_name: Bookings
+  enabled: true
 - name: crm
   display_name: CRM
   enabled: true
