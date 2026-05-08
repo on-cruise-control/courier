@@ -9,6 +9,7 @@ import { getLoginRedirectURL } from '../helpers/AuthHelper';
 export const login = async ({
   ssoAccountId,
   ssoConversationId,
+  redirectUrl,
   ...credentials
 }) => {
   try {
@@ -29,6 +30,7 @@ export const login = async ({
       ssoAccountId,
       ssoConversationId,
       user: response.data.data,
+      redirectUrl,
     });
     return null;
   } catch (error) {

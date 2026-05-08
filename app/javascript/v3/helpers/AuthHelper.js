@@ -26,7 +26,11 @@ export const getLoginRedirectURL = ({
   ssoAccountId,
   ssoConversationId,
   user,
+  redirectUrl,
 }) => {
+  if (redirectUrl && redirectUrl.startsWith('/app')) {
+    return redirectUrl;
+  }
   const accountPath = getSSOAccountPath({ ssoAccountId, user });
   if (accountPath) {
     if (ssoConversationId) {
