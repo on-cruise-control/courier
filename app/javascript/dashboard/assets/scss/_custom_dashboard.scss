@@ -359,8 +359,92 @@ $active-item-bg: rgba(255, 255, 255, 0.2);
     }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 767px) {
     .custom-dashboard-main {
+        .custom-bookings-page {
+            min-width: 0 !important;
+            overflow-x: hidden !important;
+
+            header,
+            main,
+            .custom-bookings-footer {
+                padding-left: 1rem !important;
+                padding-right: 1rem !important;
+            }
+
+            main {
+                overflow-x: hidden !important;
+            }
+        }
+
+        .custom-bookings-content,
+        .custom-bookings-list {
+            width: 100% !important;
+            max-width: 100% !important;
+            min-width: 0 !important;
+        }
+
+        .custom-booking-card {
+            width: 100% !important;
+            max-width: 100% !important;
+            min-width: 0 !important;
+            overflow: hidden !important;
+            box-sizing: border-box !important;
+
+            > .flex {
+                align-items: flex-start !important;
+                flex-wrap: wrap !important;
+                min-width: 0 !important;
+                padding-left: 1rem !important;
+                padding-right: 1rem !important;
+            }
+        }
+
+        .custom-booking-card-main,
+        .custom-booking-card-body,
+        .custom-booking-card-heading,
+        .custom-booking-contact-row,
+        .custom-booking-contact-item {
+            min-width: 0 !important;
+            max-width: 100% !important;
+        }
+
+        .custom-booking-card-main {
+            min-width: 0 !important;
+        }
+
+        .custom-booking-card-heading {
+            gap: 0.5rem !important;
+        }
+
+        .custom-booking-status {
+            max-width: 100% !important;
+            white-space: normal !important;
+            overflow-wrap: anywhere !important;
+            word-break: break-word !important;
+        }
+
+        .custom-booking-contact-row {
+            align-items: flex-start !important;
+        }
+
+        .custom-booking-contact-item {
+            flex: 1 1 100% !important;
+
+            span:last-child {
+                min-width: 0 !important;
+                overflow: hidden !important;
+                text-overflow: ellipsis !important;
+            }
+        }
+
+        .custom-booking-date,
+        .custom-booking-type {
+            max-width: 100% !important;
+            white-space: normal !important;
+            overflow-wrap: anywhere !important;
+        }
+
         .conversations-list-wrap {
             width: 100% !important;
             max-width: 100% !important;
@@ -808,6 +892,15 @@ $active-item-bg: rgba(255, 255, 255, 0.2);
                 p,
                 span {
                     color: white !important;
+                }
+
+                a, .prose a {
+                    color: #2781F6 !important;
+                    text-decoration: underline !important;
+
+                    &:hover {
+                        color: #4b96f8 !important;
+                    }
                 }
 
                 // Meta data in right bubble
