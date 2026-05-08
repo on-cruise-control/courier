@@ -83,7 +83,7 @@ const onCustomDateRangeChange = value => {
 </script>
 
 <template>
-  <div class="flex flex-col flex-1 h-full m-0 overflow-auto bg-n-background">
+  <div class="custom-bookings-page flex flex-col flex-1 h-full m-0 overflow-auto bg-n-background">
     <div class="flex flex-col w-full h-full">
       <!-- HEADER -->
       <header class="flex-shrink-0 pt-8 bg-n-background sticky top-0 z-20 px-6">
@@ -131,7 +131,7 @@ const onCustomDateRangeChange = value => {
 
       <!-- CONTENT -->
       <main class="flex-1 overflow-y-auto ltr:pl-6 rtl:pr-6 ltr:pr-6 rtl:pl-6 pt-2">
-        <div class="mx-auto max-w-[60rem] pb-8">
+        <div class="custom-bookings-content mx-auto max-w-[60rem] pb-8">
           <div v-if="uiFlags.isFetching" class="flex h-64 items-center justify-center">
             <Spinner />
           </div>
@@ -141,7 +141,7 @@ const onCustomDateRangeChange = value => {
             <p class="text-lg font-medium opacity-50">{{ t('BOOKINGS.EMPTY_MESSAGE') }}</p>
           </div>
 
-          <div v-else class="flex flex-col gap-4">
+          <div v-else class="custom-bookings-list flex flex-col gap-4">
             <BookingCard
               v-for="booking in bookings"
               :key="booking.id"
@@ -152,7 +152,7 @@ const onCustomDateRangeChange = value => {
       </main>
 
       <!-- FOOTER -->
-      <footer v-if="meta.count > 0" class="sticky bottom-0 z-10 px-6 pb-6">
+      <footer v-if="meta.count > 0" class="custom-bookings-footer sticky bottom-0 z-10 px-6 pb-6">
         <PaginationFooter
           :current-page="currentPage"
           :total-items="meta.count"

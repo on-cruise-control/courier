@@ -43,6 +43,7 @@ export default {
     ssoConversationId: { type: String, default: '' },
     email: { type: String, default: '' },
     authError: { type: String, default: '' },
+    redirectUrl: { type: String, default: '' },
   },
   setup() {
     const { replaceInstallationName } = useBranding();
@@ -169,6 +170,7 @@ export default {
         sso_auth_token: this.ssoAuthToken,
         ssoAccountId: this.ssoAccountId,
         ssoConversationId: this.ssoConversationId,
+        redirectUrl: this.redirectUrl,
       };
 
       login(credentials)
@@ -206,7 +208,7 @@ export default {
     handleMfaVerified() {
       // MFA verification successful, continue with login
       this.handleImpersonation();
-      window.location = '/app';
+      window.location = this.redirectUrl || '/app';
     },
     handleMfaCancel() {
       // User cancelled MFA, reset state
