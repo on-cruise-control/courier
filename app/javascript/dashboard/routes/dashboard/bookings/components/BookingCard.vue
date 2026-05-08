@@ -62,38 +62,55 @@ const onClickViewDetails = () => {
 </script>
 
 <template>
-  <CardLayout layout="row" class="hover:bg-n-solid-3 transition-colors duration-200">
-    <div class="flex items-center justify-start flex-1 gap-4">
+  <CardLayout
+    layout="row"
+    class="custom-booking-card hover:bg-n-solid-3 transition-colors duration-200 max-md:[&>div]:flex-wrap max-md:[&>div]:items-start"
+  >
+    <div class="custom-booking-card-main flex items-center justify-start flex-1 gap-4 max-md:flex-[1_1_100%] max-md:w-full max-md:gap-5">
       <Avatar
         :name="name"
         :src="contactThumbnail"
         :size="48"
         rounded-full
       />
-      <div class="flex flex-col gap-0.5 flex-1 min-w-0">
-        <div class="flex flex-wrap items-center gap-x-4 gap-y-1">
+      <div class="custom-booking-card-body flex flex-col gap-0.5 flex-1 min-w-0">
+        <div class="custom-booking-card-heading flex flex-wrap items-center gap-x-4 gap-y-1">
           <span class="text-base font-medium truncate text-n-slate-12">
             {{ name }}
           </span>
-          <div class="flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium" :class="statusBadgeClass">
+          <div
+            class="custom-booking-status flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium"
+            :class="statusBadgeClass"
+          >
             {{ status }}
           </div>
         </div>
-        
-        <div class="flex flex-wrap items-center justify-start gap-x-3 gap-y-1 mt-1">
-          <div v-if="email" class="flex items-center gap-1.5 text-sm text-n-slate-11 min-w-0">
+
+        <div
+          class="custom-booking-contact-row flex flex-wrap items-center justify-start gap-x-3 gap-y-1 mt-1 max-md:flex-col max-md:items-start max-md:gap-2 max-md:mt-3"
+        >
+          <div
+            v-if="email"
+            class="custom-booking-contact-item flex items-center gap-1.5 text-sm text-n-slate-11 min-w-0 max-md:w-full"
+          >
             <span class="i-lucide-mail size-3.5 flex-shrink-0" />
             <span class="truncate" :title="email">{{ email }}</span>
           </div>
-          <div v-if="email && phone" class="w-px h-3 bg-n-slate-6 flex-shrink-0" />
-          <div v-if="phone" class="flex items-center gap-1.5 text-sm text-n-slate-11 flex-shrink-0">
-            <span class="i-lucide-phone size-3.5" />
-            <span>{{ phone }}</span>
+          <div v-if="email && phone" class="w-px h-3 bg-n-slate-6 flex-shrink-0 max-md:hidden" />
+          <div
+            v-if="phone"
+            class="custom-booking-contact-item flex items-center gap-1.5 text-sm text-n-slate-11 flex-shrink-0 max-md:w-full max-md:min-w-0"
+          >
+            <span class="i-lucide-phone size-3.5 flex-shrink-0" />
+            <span class="max-md:min-w-0 max-md:truncate" :title="phone">{{ phone }}</span>
           </div>
-          <div v-if="platform" class="w-px h-3 bg-n-slate-6 flex-shrink-0" />
-          <div v-if="platform" class="flex items-center gap-1.5 text-sm text-n-slate-11 flex-shrink-0">
-            <span :class="platformIcon" class="size-3.5" />
-            <span>{{ platform || 'Not Available' }}</span>
+          <div v-if="platform" class="w-px h-3 bg-n-slate-6 flex-shrink-0 max-md:hidden" />
+          <div
+            v-if="platform"
+            class="custom-booking-contact-item flex items-center gap-1.5 text-sm text-n-slate-11 flex-shrink-0 max-md:w-full max-md:min-w-0"
+          >
+            <span :class="platformIcon" class="size-3.5 flex-shrink-0" />
+            <span class="max-md:min-w-0 max-md:truncate" :title="platform">{{ platform || 'Not Available' }}</span>
           </div>
         </div>
 
@@ -104,17 +121,18 @@ const onClickViewDetails = () => {
         </div>
       </div>
     </div>
-    
-    <div class="flex flex-col items-end justify-between self-stretch pl-4">
-      <div class="flex flex-col items-end gap-1">
-        <span class="text-xs text-n-slate-10 whitespace-nowrap pt-1">
+
+    <div class="custom-booking-card-side flex flex-col items-end justify-between self-stretch pl-4 max-md:flex-[1_1_100%] max-md:w-full max-md:items-start max-md:gap-2 max-md:self-auto max-md:pl-0">
+      <div class="flex flex-col items-end gap-1 max-md:items-start">
+        <span class="custom-booking-date text-xs text-n-slate-10 whitespace-nowrap pt-1 max-md:whitespace-normal max-md:pt-0">
           {{ formatDate(createdAt) }}
         </span>
-        <div class="text-[10px] uppercase tracking-wider font-bold text-n-brand">
+        <div class="custom-booking-type text-[10px] uppercase tracking-wider font-bold text-n-brand">
           {{ booking.type }}
         </div>
       </div>
       <Button
+        class="custom-booking-action"
         label="View Details"
         variant="link"
         size="xs"

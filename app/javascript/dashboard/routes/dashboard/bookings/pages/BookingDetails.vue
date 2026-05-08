@@ -78,9 +78,9 @@ const goBack = () => {
 
 <template>
   <div class="flex flex-col flex-1 h-full m-0 overflow-auto bg-n-background">
-    <div class="mx-auto max-w-[60rem] w-full flex flex-col h-full">
+    <div class="mx-auto max-w-[60rem] w-full min-w-0 flex flex-col h-full max-md:px-4">
       <!-- HEADER -->
-      <header class="flex items-center gap-4 pt-8 pb-6 bg-n-background sticky top-0 z-20">
+      <header class="flex items-center gap-4 pt-8 pb-6 bg-n-background sticky top-0 z-20 min-w-0">
         <Button
           icon="i-lucide-arrow-left"
           variant="ghost"
@@ -88,49 +88,53 @@ const goBack = () => {
           color="slate"
           @click="goBack"
         />
-        <h1 class="text-2xl font-semibold text-n-slate-12">
+        <h1 class="text-2xl font-semibold text-n-slate-12 min-w-0 break-words">
           {{ t('BOOKINGS.HEADER') }} Details
         </h1>
       </header>
 
-      <main class="flex-1 pb-10">
+      <main class="flex-1 pb-10 min-w-0">
         <div v-if="isLoading" class="flex h-64 items-center justify-center">
           <Spinner />
         </div>
 
-        <div v-else-if="booking" class="flex flex-col gap-8">
+        <div v-else-if="booking" class="flex flex-col gap-8 min-w-0">
           <!-- PRIMARY INFO -->
-          <section class="p-8 rounded-2xl bg-n-solid-2 border border-n-weak/50 shadow-sm flex items-start gap-8">
+          <section class="p-8 rounded-2xl bg-n-solid-2 border border-n-weak/50 shadow-sm flex items-start gap-8 min-w-0 overflow-hidden max-md:flex-col max-md:p-5 max-md:gap-5">
             <Avatar
               :name="booking.name || 'Anonymous'"
               :src="contactThumbnail"
               :size="80"
               rounded-full
             />
-            <div class="flex-1 space-y-4">
-              <div>
-                <h2 class="text-3xl font-bold text-n-slate-12">{{ booking.name || 'Anonymous' }}</h2>
-                <div class="text-n-brand font-bold uppercase tracking-widest text-xs mt-1">{{ booking.type }}</div>
+            <div class="flex-1 space-y-4 min-w-0 w-full">
+              <div class="min-w-0">
+                <h2 class="text-3xl font-bold text-n-slate-12 min-w-0 break-words max-md:text-2xl">
+                  {{ booking.name || 'Anonymous' }}
+                </h2>
+                <div class="text-n-brand font-bold uppercase tracking-widest text-xs mt-1 min-w-0 break-words">
+                  {{ booking.type }}
+                </div>
               </div>
               
-              <div class="grid grid-cols-2 gap-y-6 gap-x-12">
+              <div class="grid grid-cols-2 gap-y-6 gap-x-12 min-w-0 max-md:grid-cols-1 max-md:gap-y-5">
                 <!-- LEFT COLUMN -->
-                <div class="space-y-6">
+                <div class="space-y-6 min-w-0">
                   <!-- Phone / Messaging -->
-                  <div class="space-y-1">
+                  <div class="space-y-1 min-w-0">
                     <div class="text-xs font-bold uppercase text-n-slate-10 tracking-wider">Phone / Messaging</div>
                     <div class="space-y-1.5 mt-1">
-                      <div v-if="booking.phone" class="text-sm font-medium text-n-slate-12 flex items-center gap-2">
-                        <span class="i-lucide-phone size-4 text-n-slate-9" />
-                        {{ booking.phone }}
+                      <div v-if="booking.phone" class="text-sm font-medium text-n-slate-12 flex items-center gap-2 min-w-0">
+                        <span class="i-lucide-phone size-4 text-n-slate-9 flex-shrink-0" />
+                        <span class="min-w-0 break-words">{{ booking.phone }}</span>
                       </div>
-                      <div v-if="booking.whatsapp_number" class="text-sm font-medium text-n-slate-12 flex items-center gap-2">
-                        <span class="i-ph-whatsapp-logo size-4 text-n-slate-9" />
-                        {{ booking.whatsapp_number }}
+                      <div v-if="booking.whatsapp_number" class="text-sm font-medium text-n-slate-12 flex items-center gap-2 min-w-0">
+                        <span class="i-ph-whatsapp-logo size-4 text-n-slate-9 flex-shrink-0" />
+                        <span class="min-w-0 break-words">{{ booking.whatsapp_number }}</span>
                       </div>
-                      <div v-if="booking.sms_number" class="text-sm font-medium text-n-slate-12 flex items-center gap-2">
-                        <span class="i-lucide-message-square size-4 text-n-slate-9" />
-                        {{ booking.sms_number }}
+                      <div v-if="booking.sms_number" class="text-sm font-medium text-n-slate-12 flex items-center gap-2 min-w-0">
+                        <span class="i-lucide-message-square size-4 text-n-slate-9 flex-shrink-0" />
+                        <span class="min-w-0 break-words">{{ booking.sms_number }}</span>
                       </div>
                       <div v-if="!booking.phone && !booking.whatsapp_number && !booking.sms_number" class="text-sm text-n-slate-10">
                         Not Available
@@ -139,35 +143,37 @@ const goBack = () => {
                   </div>
 
                   <!-- Status -->
-                  <div class="space-y-1">
+                  <div class="space-y-1 min-w-0">
                     <div class="text-xs font-bold uppercase text-n-slate-10 tracking-wider">Status</div>
-                    <div class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold ring-1 ring-inset capitalize" :class="statusBadgeClass">
-                      {{ booking.status || 'No Status' }}
+                    <div class="inline-flex max-w-full items-center px-2.5 py-1 rounded-full text-xs font-bold ring-1 ring-inset capitalize" :class="statusBadgeClass">
+                      <span class="min-w-0 break-all">
+                        {{ booking.status || 'No Status' }}
+                      </span>
                     </div>
                   </div>
                 </div>
 
                 <!-- RIGHT COLUMN -->
-                <div class="space-y-6">
+                <div class="space-y-6 min-w-0">
                   <!-- Email -->
-                  <div class="space-y-1">
+                  <div class="space-y-1 min-w-0">
                     <div class="text-xs font-bold uppercase text-n-slate-10 tracking-wider">Email</div>
-                    <div v-if="booking.email" class="text-sm font-medium text-n-slate-12 flex items-center gap-2">
-                      <span class="i-lucide-mail size-4 text-n-slate-9" />
-                      {{ booking.email }}
+                    <div v-if="booking.email" class="text-sm font-medium text-n-slate-12 flex items-center gap-2 min-w-0">
+                      <span class="i-lucide-mail size-4 text-n-slate-9 flex-shrink-0" />
+                      <span class="min-w-0 break-all">{{ booking.email }}</span>
                     </div>
-                    <div v-else class="text-sm text-n-slate-10 flex items-center gap-2">
-                      <span class="i-lucide-mail size-4 text-n-slate-8" />
-                      Not Available
+                    <div v-else class="text-sm text-n-slate-10 flex items-center gap-2 min-w-0">
+                      <span class="i-lucide-mail size-4 text-n-slate-8 flex-shrink-0" />
+                      <span class="min-w-0 break-words">Not Available</span>
                     </div>
                   </div>
 
                   <!-- Platform -->
-                  <div class="space-y-1">
+                  <div class="space-y-1 min-w-0">
                     <div class="text-xs font-bold uppercase text-n-slate-10 tracking-wider">Platform</div>
-                    <div class="text-sm font-medium text-n-slate-12 flex items-center gap-2 capitalize">
-                      <span :class="platformIcon" class="size-4 text-n-slate-9" />
-                      {{ booking.platform || 'Not Available' }}
+                    <div class="text-sm font-medium text-n-slate-12 flex items-center gap-2 capitalize min-w-0">
+                      <span :class="platformIcon" class="size-4 text-n-slate-9 flex-shrink-0" />
+                      <span class="min-w-0 break-words">{{ booking.platform || 'Not Available' }}</span>
                     </div>
                   </div>
                 </div>
@@ -176,10 +182,10 @@ const goBack = () => {
           </section>
 
           <!-- SUMMARY SECTION -->
-          <section class="space-y-4">
+          <section class="space-y-4 min-w-0">
             <h3 class="text-lg font-bold text-n-slate-12">Interaction Summary</h3>
-            <div class="p-6 rounded-2xl bg-n-solid-2 border border-n-weak/50 min-h-[12rem] text-n-slate-11 leading-relaxed shadow-sm">
-              <p class="whitespace-pre-wrap">{{ booking.latest_summary || booking.summary || 'No summary available for this booking.' }}</p>
+            <div class="p-6 rounded-2xl bg-n-solid-2 border border-n-weak/50 min-h-[12rem] text-n-slate-11 leading-relaxed shadow-sm min-w-0 overflow-hidden max-md:p-5">
+              <p class="whitespace-pre-wrap break-words">{{ booking.latest_summary || booking.summary || 'No summary available for this booking.' }}</p>
             </div>
           </section>
         </div>
