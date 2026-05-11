@@ -4,6 +4,7 @@ import { useStore } from 'vuex';
 import { useI18n } from 'vue-i18n';
 import { format, subDays } from 'date-fns';
 import { useAlert } from 'dashboard/composables';
+import Button from 'dashboard/components-next/button/Button.vue';
 import Spinner from 'dashboard/components-next/spinner/Spinner.vue';
 import BookingCard from '../components/BookingCard.vue';
 import PaginationFooter from 'dashboard/components-next/pagination/PaginationFooter.vue';
@@ -28,6 +29,7 @@ const customDateRange = ref([new Date(), new Date()]);
 const isCustomDateRange = computed(() => selectedDateRange.value?.id === CUSTOM_DATE_RANGE_ID);
 
 const currentPage = ref(1);
+const isDownloading = ref(false);
 const dateRange = ref({
   start: format(subDays(new Date(), 29), 'yyyy-MM-dd'),
   end: format(new Date(), 'yyyy-MM-dd'),
@@ -46,6 +48,22 @@ const fetchBookings = async () => {
     });
   } catch (error) {
     useAlert(t('BOOKINGS.ERROR_FETCHING'));
+  }
+};
+
+const downloadBookings = async () => {
+  isDownloading.value = true;
+
+  try {
+    await store.dispatch('bookings/download', {
+      createdAtAfter: dateRange.value.start,
+      createdAtBefore: dateRange.value.end, 
+      fileName: `bookings-${dateRange.value.start}-to-${dateRange.value.end}.csv`,
+    });
+  } catch (error) {
+    useAlert(t('BOOKINGS.DOWNLOAD_FAILED'));
+  } finally {
+    isDownloading.value = false;
   }
 };
 
@@ -92,6 +110,14 @@ const onCustomDateRangeChange = value => {
             <h1 class="text-2xl font-semibold text-n-slate-12">
               {{ t('BOOKINGS.LIST_HEADING') }}
             </h1>
+            <Button
+              :label="t('BOOKINGS.DOWNLOAD')"
+              icon="i-lucide-download"
+
+              size="sm"
+              :is-loading="isDownloading"
+              @click="downloadBookings"
+            />
           </div>
 
           <!-- FILTERS -->
