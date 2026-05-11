@@ -818,6 +818,8 @@
     "EMPTY_MESSAGE": "No bookings found matching your criteria",
     "DATE_RANGE_LABEL": "Date Range",
     "APPLY_FILTER": "Apply",
+    "DOWNLOAD": "Download CSV",
+    "DOWNLOAD_FAILED": "Failed to download bookings. Please try again.",
     "ERROR_FETCHING": "Failed to fetch bookings. Please try again.",
     "TABLE": {
       "NAME": "Name",

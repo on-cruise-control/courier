@@ -27,7 +27,7 @@ module Bookings
 
       begin
         response = make_index_request(params)
-        parse_response(response)
+        parse_response(response, export: params[:export].present?)
       rescue ApiError => e
         Rails.logger.error("Dealership Bookings API Error (#{e.code}): #{e.message}")
         { results: [], count: 0, error: e.message }
@@ -85,6 +85,8 @@ module Bookings
       query_params[:id] = params[:id] if params[:id].present?
       query_params[:created_at_after] = params[:created_at_after] if params[:created_at_after].present?
       query_params[:created_at_before] = params[:created_at_before] if params[:created_at_before].present?
+      query_params[:export] = true if params[:export].present?
+
       
       headers = { 
         'Content-Type' => 'application/json', 
@@ -112,12 +114,13 @@ module Bookings
       end
     end
 
-    def parse_response(response)
+    def parse_response(response, export: false)
       body = response.parsed_response
       return { results: [], count: 0 } unless body.is_a?(Hash)
 
       data = body.dig('body', 'data') || body['data'] || body
-      
+      return { data: data } if export
+
       if data.is_a?(Hash) && data['results'].is_a?(Array)
         { 
           results: data['results'], 
