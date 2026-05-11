@@ -51,6 +51,23 @@ const updateAuthCookie = (cookieContent, baseDomain = '') =>
     baseDomain,
   });
 
+const injectGA = token => {
+  if (!token || window.gtag) return;
+  // eslint-disable-next-line no-console
+  console.log('Courier GA token found, injecting Google Analytics:G-XXXX');
+  const script = document.createElement('script');
+  script.async = true;
+  script.src = `https://www.googletagmanager.com/gtag/js?id=${token}`;
+  document.head.after(script);
+  window.dataLayer = window.dataLayer || [];
+  window.gtag = function gtag() {
+    // eslint-disable-next-line no-undef, prefer-rest-params
+    window.dataLayer.push(arguments);
+  };
+  window.gtag('js', new Date());
+  window.gtag('config', token);
+};
+
 export const setWebWidgetMessageSentCookie = (baseDomain = '') => {
   setCookieWithDomain('cw_web_widget_message_sent', 'true', {
     baseDomain,
@@ -269,6 +286,15 @@ export const IFrameHelper = {
       initOnEvents.forEach(e => {
         document.addEventListener(e, IFrameHelper.setupAudioListeners, false);
       });
+
+      const gaToken =
+        message.config.channelConfig.googleAnalyticsToken;
+      if (gaToken) {
+        injectGA(gaToken);
+      } else {
+        // eslint-disable-next-line no-console
+        console.log('Courier No GA token found in chatwootSettings');
+      }
 
       if (!window.$chatwoot.resetTriggered) {
         dispatchWindowEvent({ eventName: CHATWOOT_READY });
