@@ -515,6 +515,8 @@ Rails.application.routes.draw do
         scope 'dealership/:dealership_id', as: :dealership do
           resource :twilio_usage, only: [:show]
         end
+
+        post 'conversations/display_ids', to: 'conversations#display_ids'
       end
     end
   end
