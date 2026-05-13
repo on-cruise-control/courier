@@ -114,11 +114,6 @@ const onClickViewDetails = () => {
           </div>
         </div>
 
-        <div v-if="summary" class="mt-2 p-2.5 bg-n-alpha-2 rounded-lg border border-n-weak/50">
-          <p class="text-xs text-n-slate-11 line-clamp-2 leading-relaxed">
-            {{ summary }}
-          </p>
-        </div>
       </div>
     </div>
 

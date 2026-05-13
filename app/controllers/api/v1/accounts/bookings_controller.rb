@@ -4,7 +4,7 @@ class Api::V1::Accounts::BookingsController < Api::V1::Accounts::BaseController
   def index
     service = Bookings::BookingService.new(current_account.dealership_id)
     result = service.fetch_bookings(booking_params)
-    result[:results] = enrich_with_thumbnails(result[:results])
+    result[:results] = enrich_with_thumbnails(result[:results]) unless booking_params[:export].present?
     render json: result
   end
 
@@ -43,6 +43,6 @@ class Api::V1::Accounts::BookingsController < Api::V1::Accounts::BaseController
   private
 
   def booking_params
-    params.permit(:page, :page_size, :created_at_after, :created_at_before)
+    params.permit(:page, :page_size, :created_at_after, :created_at_before, :export)
   end
 end
