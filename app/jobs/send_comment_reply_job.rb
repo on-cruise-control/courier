@@ -24,7 +24,7 @@ class SendCommentReplyJob < ApplicationJob
       return
     end
 
-    comment_text = conversation.messages.first&.content || ''
+    comment_text = conversation.messages.last&.content || ''
     post_url = conversation.additional_attributes['post_url']
 
     # Try to get AI generated reply from Stark

@@ -1,8 +1,9 @@
 class Sms::EscalationNotificationService
-  def initialize(conversation:, emails:)
+  def initialize(conversation:, emails:, customer_data: nil)
     @conversation = conversation
     @account = conversation.account
     @emails = emails
+    @customer_data = customer_data
   end
 
   def perform
@@ -50,6 +51,8 @@ class Sms::EscalationNotificationService
 
   def build_message_body
     account_name = @account.name
+    platform_name = @conversation.inbox&.platform_name
+    customer_name = @customer_data&.dig('name').presence || @conversation.contact&.name
     conversation_url = Rails.application.routes.url_helpers.app_account_conversation_url(
       account_id: @account.id,
       id: @conversation.display_id,
@@ -60,6 +63,8 @@ class Sms::EscalationNotificationService
       🚨 Urgent Escalation Required
 
       Dealership: #{account_name}
+      #{"Platform: #{platform_name}" if platform_name.present?}
+      #{"Name: #{customer_name}" if customer_name.present?}
 
       Please take over this conversation manually.
     SMS

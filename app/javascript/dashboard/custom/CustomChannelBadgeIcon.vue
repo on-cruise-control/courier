@@ -49,7 +49,7 @@ const badgeImageSrc = computed(() => {
     case 'Channel::Tiktok':
       return '/integrations/channels/badges/tiktok.png';
     case 'Channel::WebWidget':
-      return '/assets/images/dashboard/channels/website.png';
+      return '/assets/images/dashboard/channels/websitenew.png';
     case 'Channel::Api':
       return '/assets/images/dashboard/channels/api.png';
     case 'Channel::Email':
