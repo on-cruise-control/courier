@@ -20,7 +20,8 @@ class EscalationNotificationJob < ApplicationJob
 
     Sms::EscalationNotificationService.new(
       conversation: conversation,
-      emails: emails
+      emails: emails,
+      customer_data: customer_data
     ).perform
   end
 end

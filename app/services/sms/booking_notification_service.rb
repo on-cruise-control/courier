@@ -59,17 +59,21 @@ class Sms::BookingNotificationService
       id: @conversation.display_id,
       host: ENV.fetch('FRONTEND_URL', 'http://localhost:3000')
     )
+    platform_name = @conversation.inbox&.platform_name
+    customer_name = @conversation.contact&.name
 
     body = <<~SMS
       📆 New Booking Scheduled
 
       Dealership: #{account_name}
+      #{"Platform: #{platform_name}" if platform_name.present?}
+      #{"Name: #{customer_name}" if customer_name.present?}
 
       Booking Date: #{@booking_date}
       Customer Phone: #{@customer_phone}
       Customer Email: #{@customer_email}
     SMS
-    
+
     body += "      WhatsApp Number: #{@whatsapp_number}\n" if @whatsapp_number.present?
     body += "      Text Number: #{@text_number}\n" if @text_number.present?
 
