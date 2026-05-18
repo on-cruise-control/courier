@@ -24,10 +24,7 @@ class Integrations::Stark::ProcessorService < Integrations::BotProcessorService
     return false if current_conversation.assignee_id.present?
 
     # Only send Stark's response when Stark sent the last relevant message
-    unless last_message_allows_stark_reply?(message)
-      notify_slack_on_human_block(message) if stark_blocked_by_human?(message)
-      return false
-    end
+    return false unless last_message_allows_stark_reply?(message)
 
     # Secondary checks from parent class
     return false if message.private?
@@ -79,35 +76,6 @@ class Integrations::Stark::ProcessorService < Integrations::BotProcessorService
     return false if message.instagram_story_mention?
 
     true
-  end
-
-  def stark_blocked_by_human?(message)
-    return false unless message.incoming?
-
-    last_relevant = last_relevant_message_before(message)
-    return false if last_relevant.blank?
-    return false if last_relevant.sender == agent_bot
-
-    (last_relevant.sent? || last_relevant.read?) &&
-      last_relevant.created_at >= 24.hours.ago &&
-      !unassigned_after?(last_relevant)
-  end
-
-  def notify_slack_on_human_block(message)
-    last_relevant = last_relevant_message_before(message)
-    return if last_relevant.blank?
-
-    # Only schedule once per human message — if a job is already pending for this trigger, skip
-    existing_jid = current_conversation.additional_attributes['stark_disable_notification_jid']
-    return if existing_jid.present? && Sidekiq::ScheduledSet.new.find_job(existing_jid)
-
-    job = AgentBots::StarkDisableNotificationJob
-            .set(wait: 2.minute)
-            .perform_later(current_conversation.id, last_relevant.id)
-
-    current_conversation.additional_attributes['stark_disable_notification_jid'] = job.provider_job_id
-    current_conversation.save!
-
   end
 
   def process_conversation
