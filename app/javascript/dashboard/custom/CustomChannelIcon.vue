@@ -45,7 +45,7 @@ const channelImageSrc = computed(() => {
     case 'Channel::TwitterProfile':
       return '/assets/images/dashboard/channels/twitter.png';
     case 'Channel::WebWidget':
-      return '/assets/images/dashboard/channels/website.png';
+      return '/assets/images/dashboard/channels/websitenew.png';
     case 'Channel::Sms':
       return '/assets/images/dashboard/channels/sms.png';
     case 'Channel::Tiktok':

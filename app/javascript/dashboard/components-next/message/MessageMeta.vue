@@ -126,12 +126,16 @@ const statusToShow = computed(() => {
 </script>
 
 <template>
-  <div class="text-xs flex items-center gap-1.5">
-    <div class="inline">
+  <div
+    class="text-xs flex"
+    :class="isPrivate ? 'flex-col items-end gap-y-0' : 'flex-wrap items-center gap-x-1.5'"
+  >
+    <div class="flex items-center gap-1.5">
       <time class="inline">{{ readableTime }}</time>
+      <Icon v-if="isPrivate" icon="i-lucide-lock-keyhole" class="size-3" />
+      <MessageStatus v-if="showStatusIndicator" :status="statusToShow" />
     </div>
-    <Icon v-if="isPrivate" icon="i-lucide-lock-keyhole" class="size-3" />
-    <MessageStatus v-if="showStatusIndicator" :status="statusToShow" />
+    <span v-if="isPrivate" class="private-note-label font-semibold">{{ $t('CONVERSATION.REPLYBOX.PRIVATE_NOTE') }}</span>
   </div>
 </template>
 `

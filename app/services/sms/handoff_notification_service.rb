@@ -1,7 +1,8 @@
 class Sms::HandoffNotificationService
-  def initialize(conversation)
+  def initialize(conversation , customer_data: nil)
     @conversation = conversation
     @account = conversation.account
+    @customer_data = customer_data
   end
 
   def perform
@@ -63,11 +64,16 @@ class Sms::HandoffNotificationService
       id: @conversation.display_id,
       host: ENV.fetch('FRONTEND_URL', 'https://courier.getcruisecontrol.com')
     )
+    platform_name = @conversation.inbox&.platform_name
+    customer_name = @customer_data&.dig('name').presence || @conversation.contact&.name
 
     body = <<~SMS
       🔔 Conversation Handoff Alert
 
       Dealership: #{account_name}
+      #{"Platform: #{platform_name}" if platform_name.present?}
+      #{"Name: #{customer_name}" if customer_name.present?}
+
 
       Cruise Control is initiating a client handoff. Please take over this conversation manually.
     SMS

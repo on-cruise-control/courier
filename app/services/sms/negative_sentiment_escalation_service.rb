@@ -49,8 +49,10 @@ class Sms::NegativeSentimentEscalationService
 
   def build_message_body
     account_name = @account.name
-    platform_name = @conversation.inbox.platform_name
-    customer_name = @conversation.contact.name
+    platform_name = @conversation.inbox&.platform_name
+    customer_name = @conversation.contact&.name
+    comment = @conversation.messages.where(message_type: :incoming).last&.content || nil
+
     
     conversation_url = Rails.application.routes.url_helpers.app_account_conversation_url(
       account_id: @account.id,
@@ -62,12 +64,14 @@ class Sms::NegativeSentimentEscalationService
       🚨 Negative Comment Detected
 
       Dealership: #{account_name}
-      Platform: #{platform_name}
+      #{"Platform: #{platform_name} (comment)" if platform_name.present?}
+      #{"Name: #{customer_name}" if customer_name.present?}
 
       Please address the comment promptly.
     SMS
 
     summary = conversation_summary
+    body+= "\nNegative Comment: #{comment}\n" if comment.present?
     body += "\nSummary: #{summary}\n" if summary.present?
 
     body += "\nView conversation: #{conversation_url}\n"

@@ -7,7 +7,6 @@ class Sms::TeamReachedOutNotificationService
 
   def perform
     return unless sms_config_enabled?
-
     recipients = recipients_with_phone_numbers
     return if recipients.blank?
 
@@ -43,6 +42,8 @@ class Sms::TeamReachedOutNotificationService
 
   def build_message_body
     account_name = @account.name
+    platform_name = @conversation.inbox&.platform_name
+    customer_name = @conversation.contact&.name
     conversation_url = Rails.application.routes.url_helpers.app_account_conversation_url(
       account_id: @account.id,
       id: @conversation.display_id,
@@ -53,6 +54,8 @@ class Sms::TeamReachedOutNotificationService
       Follow-Up Required: Team Has Not Reached Out
 
       Dealership: #{account_name}
+      #{"Platform: #{platform_name}" if platform_name.present?}
+      #{"Name: #{customer_name}" if customer_name.present?}
 
       Our system has detected that the team has not yet reached out to this customer. Please follow up as soon as possible.
     SMS
