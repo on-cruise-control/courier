@@ -58,7 +58,6 @@ class AgentBotListener < BaseListener
     when 'stark'
       if message.outgoing? && !message.instagram_story_mention? && message.sender != agent_bot
         conversation.cancel_existing_follow_up_job
-        cancel_stark_disable_notification_job(conversation)
         return
       end
 
@@ -75,16 +74,6 @@ class AgentBotListener < BaseListener
     return unless inbox.agent_bot_inbox&.active?
 
     inbox.agent_bot
-  end
-
-  def cancel_stark_disable_notification_job(conversation)
-    jid = conversation.additional_attributes['stark_disable_notification_jid']
-    return if jid.blank?
-
-    job = Sidekiq::ScheduledSet.new.find_job(jid)
-    job&.delete
-    conversation.additional_attributes.delete('stark_disable_notification_jid')
-    conversation.save!
   end
 
   def process_stark_bot_event(event, agent_bot, message, conversation)
