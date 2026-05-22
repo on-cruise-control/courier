@@ -73,6 +73,18 @@
       "SHOW_LABELS": "Show labels",
       "HIDE_LABELS": "Hide labels"
     },
+    "LABELS": {
+      "ADD_DIALOG": {
+        "TITLE": "Confirm Addition",
+        "DESCRIPTION": "Are you sure you want to add \"{label}\" to this conversation?",
+        "CONFIRM": "Add"
+      },
+      "DELETE_DIALOG": {
+        "TITLE": "Confirm Deletion",
+        "DESCRIPTION": "Are you sure you want to remove \"{label}\" from this conversation?",
+        "CONFIRM": "Delete"
+      }
+    },
     "VOICE_CALL": {
       "INCOMING_CALL": "Incoming call",
       "OUTGOING_CALL": "Outgoing call",
@@ -188,7 +200,8 @@
       "PRIVATE_MSG_INPUT": "Shift + enter for new line. This will be visible only to Agents",
       "MESSAGE_SIGNATURE_NOT_CONFIGURED": "Message signature is not configured, please configure it in profile settings.",
       "CLICK_HERE": "Click here to update",
-      "WHATSAPP_TEMPLATES": "Whatsapp Templates"
+      "WHATSAPP_TEMPLATES": "Whatsapp Templates",
+      "META_TEMPLATES": "Meta Templates"
     },
     "REPLYBOX": {
       "REPLY": "Reply",
