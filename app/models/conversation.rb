@@ -367,6 +367,9 @@ class Conversation < ApplicationRecord
     return unless current_labels.is_a?(Array) && previous_labels.is_a?(Array)
 
     newly_added = current_labels - previous_labels
+    removed_labels = previous_labels - current_labels
+
+    sync_stark_human_redirect(newly_added, removed_labels)
 
     if newly_added.include?('escalation')
       escalation_emails = account.escalation_emails
@@ -388,6 +391,34 @@ class Conversation < ApplicationRecord
     if newly_added.include?('handoff')
       ConversationHandoff::SendHandoffNotificationsJob.perform_later(self)
     end
+  end
+
+  def sync_stark_human_redirect(newly_added, removed_labels)
+    human_redirect = if newly_added.include?('escalation')
+                       true
+                     elsif removed_labels.include?('escalation')
+                       false
+                     end
+    return if human_redirect.nil?
+
+    stark_message = last_outgoing_stark_message
+    return if stark_message.blank?
+
+    result = Stark::UpdateMessageService.new(stark_message).update_human_redirect(human_redirect: human_redirect)
+    return if result[:status] == 'success'
+
+    Rails.logger.error("Failed to sync Stark human_redirect for conversation #{id}: #{result[:message]}")
+  end
+
+  def last_outgoing_stark_message 
+    stark_bot = inbox.agent_bot if inbox.agent_bot&.stark?
+    stark_bot ||= AgentBot.accessible_to(account).find_by(bot_type: 'stark')
+    return if stark_bot.blank?
+
+    messages.outgoing
+            .where(sender_type: 'AgentBot', sender_id: stark_bot.id)
+            .reorder(created_at: :desc)
+            .first
   end
 
   def escalation_trigger_message
