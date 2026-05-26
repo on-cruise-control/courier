@@ -199,6 +199,7 @@ class ActionCableConnector extends BaseActionCableConnector {
     this.app.$store.dispatch('labels/revalidate', { newKey: keys.label });
     this.app.$store.dispatch('inboxes/revalidate', { newKey: keys.inbox });
     this.app.$store.dispatch('teams/revalidate', { newKey: keys.team });
+    emitter.emit(BUS_EVENTS.ACCOUNT_CACHE_INVALIDATED, data);
   };
 }
 

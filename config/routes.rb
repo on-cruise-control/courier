@@ -228,6 +228,16 @@ Rails.application.routes.draw do
             end
 
             resource :csat_template, only: [:show, :create], controller: 'inbox_csat_templates'
+
+            resources :twilio_templates, only: [:index, :create, :update, :destroy],
+                      controller: 'inboxes/twilio_templates' do
+              collection do
+                post :sync
+              end
+              member do
+                post :submit_approval
+              end
+            end
           end
 
           resources :inbox_members, only: [:create, :show], param: :inbox_id do

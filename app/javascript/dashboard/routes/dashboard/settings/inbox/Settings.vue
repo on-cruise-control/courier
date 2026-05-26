@@ -24,6 +24,7 @@ import CollaboratorsPage from './settingsPage/CollaboratorsPage.vue';
 import WidgetBuilder from './WidgetBuilder.vue';
 import BotConfiguration from './components/BotConfiguration.vue';
 import AccountHealth from './components/AccountHealth.vue';
+import TwilioTemplates from './TwilioTemplates/index.vue';
 import { FEATURE_FLAGS } from '../../../../featureFlags';
 import SenderNameExamplePreview from './components/SenderNameExamplePreview.vue';
 import NextButton from 'dashboard/components-next/button/Button.vue';
@@ -56,6 +57,7 @@ export default {
     Editor,
     Avatar,
     AccountHealth,
+    TwilioTemplates,
   },
   mixins: [inboxMixin],
   setup() {
@@ -186,6 +188,16 @@ export default {
           {
             key: 'whatsapp-health',
             name: this.$t('INBOX_MGMT.TABS.ACCOUNT_HEALTH'),
+          },
+        ];
+      }
+
+      if (this.isATwilioWhatsAppChannel) {
+        visibleToAllChannelTabs = [
+          ...visibleToAllChannelTabs,
+          {
+            key: 'twilio-templates',
+            name: this.$t('INBOX_MGMT.TABS.TWILIO_TEMPLATES'),
           },
         ];
       }
@@ -1002,6 +1014,9 @@ export default {
       </div>
       <div v-if="selectedTabKey === 'whatsapp-health'">
         <AccountHealth :health-data="healthData" />
+      </div>
+      <div v-if="selectedTabKey === 'twilio-templates'" class="mx-8">
+        <TwilioTemplates :inbox="inbox" />
       </div>
     </section>
   </div>
