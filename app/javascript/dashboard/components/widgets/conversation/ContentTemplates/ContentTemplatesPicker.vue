@@ -5,6 +5,7 @@ import { useStore } from 'dashboard/composables/store';
 import Icon from 'dashboard/components-next/icon/Icon.vue';
 import { useI18n } from 'vue-i18n';
 import { TWILIO_CONTENT_TEMPLATE_TYPES } from 'shared/constants/messages';
+import twilioTemplatesApi from 'dashboard/api/twilioTemplates';
 
 const props = defineProps({
   inboxId: {
@@ -19,35 +20,44 @@ const { t } = useI18n();
 const store = useStore();
 const query = ref('');
 const isRefreshing = ref(false);
+const syncedTemplates = ref(null);
 
 const twilioTemplates = computed(() => {
+  if (syncedTemplates.value !== null) return syncedTemplates.value;
   const inbox = store.getters['inboxes/getInbox'](props.inboxId);
-  return inbox?.content_templates?.templates || [];
+  return (inbox?.content_templates?.templates || []).filter(
+    t => t.status === 'approved'
+  );
 });
 
 const filteredTemplateMessages = computed(() =>
-  twilioTemplates.value.filter(
-    template =>
-      template.friendly_name
-        .toLowerCase()
-        .includes(query.value.toLowerCase()) && template.status === 'approved'
+  twilioTemplates.value.filter(template =>
+    template.friendly_name.toLowerCase().includes(query.value.toLowerCase())
   )
 );
 
+const TYPE_LABEL_MAP = {
+  [TWILIO_CONTENT_TEMPLATE_TYPES.MEDIA]: 'CONTENT_TEMPLATES.PICKER.TYPES.MEDIA',
+  [TWILIO_CONTENT_TEMPLATE_TYPES.QUICK_REPLY]: 'CONTENT_TEMPLATES.PICKER.TYPES.QUICK_REPLY',
+  [TWILIO_CONTENT_TEMPLATE_TYPES.CALL_TO_ACTION]: 'CONTENT_TEMPLATES.PICKER.TYPES.CALL_TO_ACTION',
+  [TWILIO_CONTENT_TEMPLATE_TYPES.LIST_PICKER]: 'CONTENT_TEMPLATES.PICKER.TYPES.LIST_PICKER',
+  [TWILIO_CONTENT_TEMPLATE_TYPES.CARD]: 'CONTENT_TEMPLATES.PICKER.TYPES.CARD',
+  [TWILIO_CONTENT_TEMPLATE_TYPES.CATALOG]: 'CONTENT_TEMPLATES.PICKER.TYPES.CATALOG',
+  [TWILIO_CONTENT_TEMPLATE_TYPES.CAROUSEL]: 'CONTENT_TEMPLATES.PICKER.TYPES.CAROUSEL',
+};
+
 const getTemplateType = template => {
-  if (template.template_type === TWILIO_CONTENT_TEMPLATE_TYPES.MEDIA) {
-    return t('CONTENT_TEMPLATES.PICKER.TYPES.MEDIA');
-  }
-  if (template.template_type === TWILIO_CONTENT_TEMPLATE_TYPES.QUICK_REPLY) {
-    return t('CONTENT_TEMPLATES.PICKER.TYPES.QUICK_REPLY');
-  }
-  return t('CONTENT_TEMPLATES.PICKER.TYPES.TEXT');
+  const key = TYPE_LABEL_MAP[template.template_type];
+  return key ? t(key) : t('CONTENT_TEMPLATES.PICKER.TYPES.TEXT');
 };
 
 const refreshTemplates = async () => {
   isRefreshing.value = true;
   try {
-    await store.dispatch('inboxes/syncTemplates', props.inboxId);
+    const { data } = await twilioTemplatesApi.sync(props.inboxId);
+    syncedTemplates.value = (data.templates || []).filter(
+      tpl => tpl.status === 'approved'
+    );
     useAlert(t('CONTENT_TEMPLATES.PICKER.REFRESH_SUCCESS'));
   } catch (error) {
     useAlert(t('CONTENT_TEMPLATES.PICKER.REFRESH_ERROR'));
