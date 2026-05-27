@@ -72,7 +72,7 @@ const STATUS_CONFIG = {
     icon: 'i-lucide-clock',
   },
   rejected: {
-    classes: 'bg-ruby-50 text-ruby-700 ring-1 ring-ruby-200',
+    classes: 'bg-red-50 text-red-700 ring-1 ring-red-200',
     icon: 'i-lucide-x-circle',
   },
   unsubmitted: {
@@ -474,7 +474,7 @@ onBeforeUnmount(() => {
               </span>
             </div>
             <button
-              v-if="tpl.status !== 'approved' && tpl.status !== 'pending'"
+              v-if="!tpl.status || tpl.status === 'unsubmitted'"
               class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-[#182933]/10 text-[#182933] hover:bg-[#182933]/20 border border-[#182933]/20 dark:bg-n-slate-4 dark:text-n-slate-11 dark:hover:bg-n-slate-5 dark:border-n-slate-6 rounded-lg transition-colors"
               @click="openApproval(tpl)"
             >

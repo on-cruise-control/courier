@@ -14,7 +14,7 @@ const { t } = useI18n();
 const STATUS_CONFIG = {
   approved: { dot: 'bg-green-500', label: 'text-green-700' },
   pending: { dot: 'bg-yellow-400', label: 'text-yellow-700' },
-  rejected: { dot: 'bg-ruby-500', label: 'text-ruby-700' },
+  rejected: { dot: 'bg-red-500', label: 'text-red-700' },
   unsubmitted: { dot: 'bg-n-slate-5', label: 'text-n-slate-9' },
 };
 
@@ -344,7 +344,7 @@ function languageName(code) {
 
     <div class="sticky bottom-0 flex flex-wrap items-center gap-2 px-1 py-3 bg-n-slate-1 border-t border-n-slate-3">
       <button
-        v-if="template.status !== 'approved' && template.status !== 'pending'"
+        v-if="!template.status || template.status === 'unsubmitted'"
         class="px-4 py-2 text-sm font-medium bg-[#182933] hover:bg-[#182933]/90 text-white border border-[#182933] rounded-lg transition-colors"
         @click="emit('submitApproval', template)"
       >
