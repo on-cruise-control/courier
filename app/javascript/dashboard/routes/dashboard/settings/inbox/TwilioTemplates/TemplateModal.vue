@@ -225,10 +225,15 @@ const showSamplesStep = ref(false);
 const variableSamples = ref({});
 
 const detectedVariableKeys = computed(() => {
-  const matches = form.value.body.match(/\{\{(\d+)\}\}/g) || [];
-  return [...new Set(matches.map(m => m.replace(/[{}]/g, '')))].sort(
-    (a, b) => Number(a) - Number(b)
-  );
+  const matches = form.value.body.match(/\{\{(\w+)\}\}/g) || [];
+  return [...new Set(matches.map(m => m.replace(/[{}]/g, '')))].sort((a, b) => {
+    const aNum = Number(a);
+    const bNum = Number(b);
+    if (!isNaN(aNum) && !isNaN(bNum)) return aNum - bNum;
+    if (!isNaN(aNum)) return -1;
+    if (!isNaN(bNum)) return 1;
+    return a.localeCompare(b);
+  });
 });
 
 const allSamplesFilled = computed(() =>

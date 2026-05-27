@@ -31,6 +31,8 @@ class Twilio::UsageService
     'channels-root' => { desc: 'Channels', simple_desc: 'Overall messaging usage from connected channels.', unit: 'messages' },
     'channels-whatsapp' => { desc: 'WhatsApp', simple_desc: 'Messages sent or received on WhatsApp.', unit: 'messages' },
     'channels-whatsapp-template-service' => { desc: 'Channels - WhatsApp - Service', simple_desc: 'WhatsApp messages handled through the service.', unit: 'messages' },
+    'channels-whatsapp-template-marketing' => { desc: 'Channels - WhatsApp - Template Marketing', simple_desc: 'WhatsApp marketing template messages sent to customers.', unit: 'messages' },
+    'channels-whatsapp-template-utility' => { desc: 'Channels - WhatsApp - Template Utility', simple_desc: 'WhatsApp utility template messages sent to customers.', unit: 'messages' },
     'totalprice' => { desc: 'Total Price', simple_desc: 'The bill for all messages, fees, phone numbers, and other charges.', unit: 'usd' }
   }.freeze
 
@@ -118,6 +120,10 @@ class Twilio::UsageService
         {
           id: 'channels-whatsapp',
           desc: 'WhatsApp',
+          children: [
+            { id: 'channels-whatsapp-template-marketing', desc: 'Channels - WhatsApp - Template Marketing' },
+            { id: 'channels-whatsapp-template-utility', desc: 'Channels - WhatsApp - Template Utility' }
+          ]
         }
       ]
     }
