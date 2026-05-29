@@ -92,7 +92,24 @@ export default {
       },
     },
   },
+  beforeUnmount() {
+    window.removeEventListener('resize', this._appHeightHandler);
+    window.visualViewport?.removeEventListener('resize', this._appHeightHandler);
+  },
   mounted() {
+    this._appHeightHandler = () => {
+      const app = document.getElementById('app');
+      if (app) {
+        const h = window.visualViewport
+          ? window.visualViewport.height
+          : window.innerHeight;
+        app.style.height = `${h}px`;
+      }
+    };
+    this._appHeightHandler();
+    window.addEventListener('resize', this._appHeightHandler);
+    window.visualViewport?.addEventListener('resize', this._appHeightHandler);
+
     const { websiteToken, locale, widgetColor, widgetPosition } =
       window.chatwootWebChannel;
     this.setLocale(locale);
@@ -408,6 +425,9 @@ export default {
           });
           window.referrerURL = referrerURL;
           this.setReferrerHost(referrerHost);
+        } else if (message.event === 'mobile-viewport-height') {
+          const app = document.getElementById('app');
+          if (app) app.style.height = `${message.height}px`;
         } else if (message.event === 'toggle-close-button') {
           this.isMobile = message.isMobile;
         } else if (message.event === 'push-event') {

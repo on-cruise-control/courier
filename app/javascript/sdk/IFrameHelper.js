@@ -121,6 +121,7 @@ export const IFrameHelper = {
     IFrameHelper.initPostMessageCommunication();
     IFrameHelper.initWindowSizeListener();
     IFrameHelper.preventDefaultScroll();
+    IFrameHelper.initMobileKeyboardFix();
   },
   getAppFrame: () => document.getElementById('chatwoot_live_chat_widget'),
   getBubbleHolder: () => document.getElementsByClassName('woot--bubble-holder'),
@@ -148,6 +149,21 @@ export const IFrameHelper = {
   },
   initWindowSizeListener: () => {
     window.addEventListener('resize', () => IFrameHelper.toggleCloseButton());
+  },
+  initMobileKeyboardFix: () => {
+    if (!window.visualViewport) return;
+    window.visualViewport.addEventListener('resize', () => {
+      if (!window.matchMedia('(max-width: 667px)').matches) return;
+      const holder = document.getElementById('cw-widget-holder');
+      if (!holder) return;
+      const h = window.visualViewport.height;
+      holder.style.height = `${h}px`;
+      window.scrollTo(0, 0);
+      IFrameHelper.sendMessage('mobile-viewport-height', { height: h });
+    });
+    window.visualViewport.addEventListener('scroll', () => {
+      window.scrollTo(0, 0);
+    });
   },
   preventDefaultScroll: () => {
     widgetHolder.addEventListener('wheel', event => {
