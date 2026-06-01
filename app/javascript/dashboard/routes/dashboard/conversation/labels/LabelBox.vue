@@ -25,7 +25,10 @@ export default {
       savedLabels,
       activeLabels,
       accountLabels,
+      addLabelToConversation,
     } = useConversationLabels();
+
+    const CONFIRM_REQUIRED_LABELS = ['escalation', 'handoff'];
 
     const showSearchDropdownLabel = ref(false);
     const confirmAddLabelDialogRef = ref(null);
@@ -47,8 +50,12 @@ export default {
     };
 
     const openConfirmAddLabelDialog = label => {
-      labelPendingAddition.value = label;
-      confirmAddLabelDialogRef.value?.dialogRef.open();
+      if (CONFIRM_REQUIRED_LABELS.includes(label.title)) {
+        labelPendingAddition.value = label;
+        confirmAddLabelDialogRef.value?.dialogRef.open();
+      } else {
+        addLabelToConversation(label);
+      }
     };
 
     const keyboardEvents = {
@@ -73,6 +80,7 @@ export default {
       savedLabels,
       activeLabels,
       accountLabels,
+      addLabelToConversation,
       confirmAddLabelDialogRef,
       confirmDeleteLabelDialogRef,
       labelPendingAddition,

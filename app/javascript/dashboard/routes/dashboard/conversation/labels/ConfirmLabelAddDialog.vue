@@ -17,11 +17,31 @@ const { addLabelToConversation } = useConversationLabels();
 
 const dialogRef = ref(null);
 
-const description = computed(() =>
-  t('CONVERSATION.LABELS.ADD_DIALOG.DESCRIPTION', {
-    label: props.label.title,
-  })
-);
+const capitalizedLabel = computed(() => {
+  const title = props.label.title ?? '';
+  return title.charAt(0).toUpperCase() + title.slice(1);
+});
+
+const LABEL_KEYS = {
+  escalation: {
+    title: 'CONVERSATION.LABELS.ADD_DIALOG.ESCALATION_TITLE',
+    description: 'CONVERSATION.LABELS.ADD_DIALOG.ESCALATION_DESCRIPTION',
+  },
+  handoff: {
+    title: 'CONVERSATION.LABELS.ADD_DIALOG.HANDOFF_TITLE',
+    description: 'CONVERSATION.LABELS.ADD_DIALOG.HANDOFF_DESCRIPTION',
+  },
+};
+
+const dialogTitle = computed(() => {
+  const key = LABEL_KEYS[props.label.title]?.title;
+  return key ? t(key) : '';
+});
+
+const description = computed(() => {
+  const key = LABEL_KEYS[props.label.title]?.description;
+  return key ? t(key, { label: props.label.title }) : '';
+});
 
 const handleDialogConfirm = async () => {
   if (!props.label?.title) return;
@@ -37,9 +57,9 @@ defineExpose({ dialogRef });
   <Dialog
     ref="dialogRef"
     type="alert"
-    :title="t('CONVERSATION.LABELS.ADD_DIALOG.TITLE')"
+    :title="dialogTitle"
     :description="description"
-    :confirm-button-label="t('CONVERSATION.LABELS.ADD_DIALOG.CONFIRM')"
+    :confirm-button-label="t('CONVERSATION.LABELS.ADD_DIALOG.CONFIRM', { label: capitalizedLabel })"
     @confirm="handleDialogConfirm"
   />
 </template>
