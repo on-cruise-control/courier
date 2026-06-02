@@ -417,6 +417,7 @@ class Conversation < ApplicationRecord
 
     messages.outgoing
             .where(sender_type: 'AgentBot', sender_id: stark_bot.id)
+            .where("metadata->>'stark_message_id' IS NOT NULL AND metadata->>'stark_message_id' != ''")
             .reorder(created_at: :desc)
             .first
   end
