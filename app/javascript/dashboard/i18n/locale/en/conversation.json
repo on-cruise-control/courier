@@ -79,7 +79,7 @@
         "HANDOFF_TITLE": "Handoff this conversation?",
         "ESCALATION_DESCRIPTION": "Are you sure you want to escalate this conversation? This will notify all admins.",
         "HANDOFF_DESCRIPTION": "Are you sure you want to handoff this conversation? This will notify all admins and agents.",
-        "CONFIRM": "{label}"
+        "CONFIRM": "Yes"
       },
       "DELETE_DIALOG": {
         "TITLE": "Remove this label?",
