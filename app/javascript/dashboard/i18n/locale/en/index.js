@@ -38,6 +38,7 @@ import sla from './sla.json';
 import teamsSettings from './teamsSettings.json';
 import whatsappTemplates from './whatsappTemplates.json';
 import contentTemplates from './contentTemplates.json';
+import twilioTemplates from './twilioTemplates.json';
 import mfa from './mfa.json';
 import yearInReview from './yearInReview.json';
 
@@ -82,6 +83,7 @@ export default {
   ...teamsSettings,
   ...whatsappTemplates,
   ...contentTemplates,
+  ...twilioTemplates,
   ...mfa,
   ...yearInReview,
 };

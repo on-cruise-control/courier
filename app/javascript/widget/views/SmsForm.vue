@@ -141,7 +141,7 @@ export default {
 </script>
 
 <template>
-  <div class="flex flex-col flex-1 w-full p-4">
+  <div class="flex flex-col flex-1 w-full p-4 overflow-y-auto min-h-0">
     <!-- SMS Form -->
     <div class="mb-4">
       <h2 class="text-lg font-semibold text-n-slate-12">

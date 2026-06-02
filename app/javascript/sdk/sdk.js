@@ -282,6 +282,27 @@ export const SDK_CSS = `
   }
 }
 
+@media only screen and (max-width: 667px) {
+  .woot-greeting-preview.woot-elements--right,
+  .woot-greeting-preview.woot-elements--left {
+    left: 8px !important;
+    right: 8px !important;
+    bottom: 240px;
+  }
+
+  .woot-greeting-input-box.woot-elements--right,
+  .woot-greeting-input-box.woot-elements--left {
+    left: 8px !important;
+    right: 8px !important;
+    bottom: 90px;
+  }
+
+  .woot-greeting-input-wrapper {
+    padding: 6px 8px;
+    margin: 8px;
+  }
+}
+
 @media only screen and (min-width: 667px) {
   .woot-widget-holder {
     border-radius: 16px;
@@ -324,6 +345,8 @@ export const SDK_CSS = `
   border-radius: 16px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.08);
   width: 390px;
+  max-width: calc(100vw - 16px);
+  box-sizing: border-box;
   cursor: pointer;
   border: 1px solid #e5e7eb;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
@@ -449,6 +472,8 @@ export const SDK_CSS = `
   border-radius: 16px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.08);
   width: 390px;
+  max-width: calc(100vw - 16px);
+  box-sizing: border-box;
   border: 1px solid #e5e7eb;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   overflow: hidden;
@@ -478,6 +503,7 @@ export const SDK_CSS = `
 
 .woot-greeting-input-text-us {
   flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .woot-greeting-input-text-us:hover {
@@ -519,6 +545,7 @@ export const SDK_CSS = `
 
 .woot-greeting-input {
   flex: 1;
+  min-width: 0;
   border: none;
   outline: none;
   font-size: 15px;
@@ -572,19 +599,4 @@ export const SDK_CSS = `
   height: 20px;
 }
 
-@media only screen and (max-width: 667px) {
-  .woot-greeting-preview {
-    right: 20px !important;
-    left: 20px !important;
-    max-width: calc(100vw - 40px);
-    bottom: 240px !important;
-  }
-
-  .woot-greeting-input-box {
-    right: 20px !important;
-    left: 20px !important;
-    max-width: calc(100vw - 40px);
-    bottom: 100px !important;
-  }
-}
 `;

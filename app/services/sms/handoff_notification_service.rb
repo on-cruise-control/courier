@@ -71,7 +71,7 @@ class Sms::HandoffNotificationService
       🔔 Conversation Handoff Alert
 
       Dealership: #{account_name}
-      #{"Platform: #{platform_name}" if platform_name.present?}
+      #{"Platform: #{platform_name} (DM)" if platform_name.present?}
       #{"Name: #{customer_name}" if customer_name.present?}
 
 

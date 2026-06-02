@@ -28,7 +28,12 @@
       "TYPES": {
         "MEDIA": "Media",
         "QUICK_REPLY": "Quick Reply",
-        "TEXT": "Text"
+        "TEXT": "Text",
+        "CALL_TO_ACTION": "Call to Action",
+        "LIST_PICKER": "List Picker",
+        "CARD": "Card",
+        "CATALOG": "Catalog",
+        "CAROUSEL": "Carousel"
       }
     },
     "PARSER": {

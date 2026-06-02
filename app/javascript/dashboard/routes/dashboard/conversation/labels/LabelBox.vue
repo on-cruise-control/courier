@@ -4,12 +4,16 @@ import { mapGetters } from 'vuex';
 import { useAdmin } from 'dashboard/composables/useAdmin';
 import { useConversationLabels } from 'dashboard/composables/useConversationLabels';
 import { useKeyboardEvents } from 'dashboard/composables/useKeyboardEvents';
+import ConfirmLabelAddDialog from './ConfirmLabelAddDialog.vue';
+import ConfirmLabelDeleteDialog from './ConfirmLabelDeleteDialog.vue';
 import Spinner from 'shared/components/Spinner.vue';
 import LabelDropdown from 'shared/components/ui/label/LabelDropdown.vue';
 import AddLabel from 'shared/components/ui/dropdown/AddLabel.vue';
 
 export default {
   components: {
+    ConfirmLabelAddDialog,
+    ConfirmLabelDeleteDialog,
     Spinner,
     LabelDropdown,
     AddLabel,
@@ -22,10 +26,15 @@ export default {
       activeLabels,
       accountLabels,
       addLabelToConversation,
-      removeLabelFromConversation,
     } = useConversationLabels();
 
+    const CONFIRM_REQUIRED_LABELS = ['escalation', 'handoff'];
+
     const showSearchDropdownLabel = ref(false);
+    const confirmAddLabelDialogRef = ref(null);
+    const confirmDeleteLabelDialogRef = ref(null);
+    const labelPendingAddition = ref({});
+    const labelPendingDeletion = ref('');
 
     const toggleLabels = () => {
       showSearchDropdownLabel.value = !showSearchDropdownLabel.value;
@@ -33,6 +42,20 @@ export default {
 
     const closeDropdownLabel = () => {
       showSearchDropdownLabel.value = false;
+    };
+
+    const openConfirmDeleteLabelDialog = label => {
+      labelPendingDeletion.value = label;
+      confirmDeleteLabelDialogRef.value?.dialogRef.open();
+    };
+
+    const openConfirmAddLabelDialog = label => {
+      if (CONFIRM_REQUIRED_LABELS.includes(label.title)) {
+        labelPendingAddition.value = label;
+        confirmAddLabelDialogRef.value?.dialogRef.open();
+      } else {
+        addLabelToConversation(label);
+      }
     };
 
     const keyboardEvents = {
@@ -58,10 +81,15 @@ export default {
       activeLabels,
       accountLabels,
       addLabelToConversation,
-      removeLabelFromConversation,
+      confirmAddLabelDialogRef,
+      confirmDeleteLabelDialogRef,
+      labelPendingAddition,
+      labelPendingDeletion,
       showSearchDropdownLabel,
       closeDropdownLabel,
       toggleLabels,
+      openConfirmAddLabelDialog,
+      openConfirmDeleteLabelDialog,
     };
   },
   data() {
@@ -99,7 +127,7 @@ export default {
           :color="label.color"
           variant="smooth"
           class="max-w-[calc(100%-0.5rem)]"
-          @remove="removeLabelFromConversation"
+          @remove="openConfirmDeleteLabelDialog"
         />
 
         <div
@@ -114,13 +142,21 @@ export default {
             :account-labels="accountLabels"
             :selected-labels="savedLabels"
             :allow-creation="isAdmin"
-            @add="addLabelToConversation"
-            @remove="removeLabelFromConversation"
+            @add="openConfirmAddLabelDialog"
+            @remove="openConfirmDeleteLabelDialog"
           />
         </div>
       </div>
     </div>
     <Spinner v-else />
+    <ConfirmLabelAddDialog
+      ref="confirmAddLabelDialogRef"
+      :label="labelPendingAddition"
+    />
+    <ConfirmLabelDeleteDialog
+      ref="confirmDeleteLabelDialogRef"
+      :label-title="labelPendingDeletion"
+    />
   </div>
 </template>
 

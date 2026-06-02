@@ -141,7 +141,7 @@ export default {
 </script>
 
 <template>
-  <div class="flex flex-col flex-1 w-full p-4">
+  <div class="flex flex-col flex-1 w-full p-4 overflow-y-auto min-h-0">
     <div
       v-if="isSuccess"
       class="flex flex-col items-center justify-center flex-1 text-center"

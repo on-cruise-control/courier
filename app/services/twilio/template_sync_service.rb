@@ -26,15 +26,16 @@ class Twilio::TemplateSyncService
   end
 
   def format_template(template)
+    approval_info = fetch_whatsapp_approval_info(template.sid)
     {
       content_sid: template.sid,
       friendly_name: template.friendly_name,
       language: template.language,
-      status: derive_status(template),
+      status: approval_info[:status],
       template_type: derive_template_type(template),
       media_type: derive_media_type(template),
       variables: template.variables || {},
-      category: derive_category(template),
+      category: approval_info[:category],
       body: extract_body_content(template),
       types: template.types,
       created_at: template.date_created,
@@ -50,10 +51,15 @@ class Twilio::TemplateSyncService
     @client ||= channel.send(:client)
   end
 
-  def derive_status(_template)
-    # For now, assume all fetched templates are approved
-    # In the future, this could check approval status from Twilio
-    'approved'
+  def fetch_whatsapp_approval_info(content_sid)
+    approval = client.content.v1.contents(content_sid).approval_fetch.fetch
+    {
+      status: approval.whatsapp&.dig('status') || 'unsubmitted',
+      category: approval.whatsapp&.dig('category')&.downcase
+    }
+  rescue Twilio::REST::TwilioError => e
+    Rails.logger.warn("Could not fetch approval info for #{content_sid}: #{e.message}")
+    { status: 'unsubmitted', category: nil }
   end
 
   def derive_template_type(template)
@@ -63,8 +69,16 @@ class Twilio::TemplateSyncService
       'media'
     elsif template_types.include?('twilio/quick-reply')
       'quick_reply'
+    elsif template_types.include?('twilio/call-to-action')
+      'call_to_action'
+    elsif template_types.include?('twilio/list-picker')
+      'list_picker'
+    elsif template_types.include?('twilio/card')
+      'card'
     elsif template_types.include?('twilio/catalog')
       'catalog'
+    elsif template_types.include?('twilio/carousel')
+      'carousel'
     else
       'text'
     end
@@ -85,32 +99,10 @@ class Twilio::TemplateSyncService
     end
   end
 
-  def derive_category(template)
-    # Map template friendly names or other attributes to categories
-    # For now, use utility as default
-    case template.friendly_name
-    when /marketing|promo|offer|sale/i
-      'marketing'
-    when /auth|otp|verify|code/i
-      'authentication'
-    else
-      'utility'
-    end
-  end
-
   def extract_body_content(template)
-    template_types = template.types
-
-    if template_types['twilio/text']
-      template_types['twilio/text']['body']
-    elsif template_types['twilio/media']
-      template_types['twilio/media']['body']
-    elsif template_types['twilio/quick-reply']
-      template_types['twilio/quick-reply']['body']
-    elsif template_types['twilio/catalog']
-      template_types['twilio/catalog']['body']
-    else
-      ''
+    template.types.each_value do |type_data|
+      return type_data['body'] if type_data.is_a?(Hash) && type_data['body'].present?
     end
+    ''
   end
 end
