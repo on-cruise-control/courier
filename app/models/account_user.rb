@@ -25,11 +25,14 @@
 #
 
 class AccountUser < ApplicationRecord
+  SESSION_ACTIVE_TIMEOUT = 2.minutes
+
   include AvailabilityStatusable
 
   belongs_to :account
   belongs_to :user
   belongs_to :inviter, class_name: 'User', optional: true
+  has_many :user_sessions, ->(account_user) { where(account_id: account_user.account_id) }, class_name: 'UserSession', foreign_key: :user_id, primary_key: :user_id, dependent: :destroy_async
 
   enum role: { agent: 0, administrator: 1 }
   enum availability: { online: 0, offline: 1, busy: 2 }
@@ -64,6 +67,23 @@ class AccountUser < ApplicationRecord
       role: role,
       user_id: user_id
     }
+  end
+
+  def record_session_activity!(timestamp = Time.current)
+    UserSessions::RecordActivityService.new(account_user: self, timestamp: timestamp).perform
+  end
+
+  def end_session!(timestamp = Time.current)
+    UserSessions::FinalizeService.new(account_user: self, timestamp: timestamp, end_timestamp: timestamp).perform
+    update!(active_at: timestamp.in_time_zone)
+  end
+
+  def expire_stale_session!(timestamp = Time.current)
+    UserSessions::FinalizeService.new(account_user: self, timestamp: timestamp).perform
+  end
+
+  def session_active?(timestamp = Time.current)
+    active_at.present? && active_at >= timestamp - SESSION_ACTIVE_TIMEOUT
   end
 
   private

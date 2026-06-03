@@ -58,8 +58,7 @@ class Api::V1::AccountsController < Api::BaseController
   end
 
   def update_active_at
-    @current_account_user.active_at = Time.now.utc
-    @current_account_user.save!
+    @current_account_user.record_session_activity!
     head :ok
   end
 

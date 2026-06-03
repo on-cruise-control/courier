@@ -88,6 +88,7 @@ class User < ApplicationRecord
 
   has_many :account_users, dependent: :destroy_async
   has_many :accounts, through: :account_users
+  has_many :user_sessions, dependent: :destroy_async
   accepts_nested_attributes_for :account_users
 
   has_many :assigned_conversations, foreign_key: 'assignee_id', class_name: 'Conversation', dependent: :nullify, inverse_of: :assignee
