@@ -6,7 +6,8 @@ class OnlineStatusTracker
 
   # obj_type: Contact | User
   def self.update_presence(account_id, obj_type, obj_id)
-    ::Redis::Alfred.zadd(presence_key(account_id, obj_type), Time.now.to_i, obj_id)
+    timestamp = Time.now.to_i
+    ::Redis::Alfred.zadd(presence_key(account_id, obj_type), timestamp, obj_id)
   end
 
   def self.get_presence(account_id, obj_type, obj_id)
@@ -60,18 +61,26 @@ class OnlineStatusTracker
     user_ids.map.with_index { |id, index| [id, (user_availabilities[index] || get_availability_from_db(account_id, id))] }.to_h
   end
 
+  def self.get_present_user_ids(account_id)
+    range_start = (Time.zone.now - PRESENCE_DURATION).to_i
+    ::Redis::Alfred.zrangebyscore(presence_key(account_id, 'User'), range_start, '+inf')
+  end
+
+  def self.get_presence_timestamp(account_id, obj_type, obj_id)
+    ::Redis::Alfred.zscore(presence_key(account_id, obj_type), obj_id)&.to_i
+  end
+
   def self.get_availability_from_db(account_id, user_id)
-    availability = Account.find(account_id).account_users.find_by(user_id: user_id).availability
+    availability = AccountUser.find_by(account_id: account_id, user_id: user_id)&.availability
     set_status(account_id, user_id, availability)
     availability
   end
 
   def self.get_available_user_ids(account_id)
-    account = Account.find(account_id)
     range_start = (Time.zone.now - PRESENCE_DURATION).to_i
     user_ids = ::Redis::Alfred.zrangebyscore(presence_key(account_id, 'User'), range_start, '+inf')
     # since we are dealing with redis items as string, casting to string
-    user_ids += account.account_users.where(auto_offline: false)&.map(&:user_id)&.map(&:to_s)
+    user_ids += AccountUser.where(account_id: account_id, auto_offline: false).pluck(:user_id).map(&:to_s)
     user_ids.uniq
   end
 end

@@ -19,6 +19,11 @@ class DeviseOverrides::SessionsController < DeviseTokenAuth::SessionsController
     super
   end
 
+  def destroy
+    archive_open_sessions
+    super
+  end
+
   def render_create_success
     render partial: 'devise/auth', formats: [:json], locals: { resource: @resource }
   end
@@ -105,6 +110,15 @@ class DeviseOverrides::SessionsController < DeviseTokenAuth::SessionsController
 
   def render_mfa_error(message_key, status = :bad_request)
     render json: { error: I18n.t(message_key) }, status: status
+  end
+
+  def archive_open_sessions
+    user = current_user
+    return unless user
+
+    user.account_users.find_each do |account_user|
+      UserSessions::FinalizeService.new(account_user: account_user, end_timestamp: Time.current).perform
+    end
   end
 end
 

@@ -69,3 +69,9 @@ periodic_assignment_job:
   cron: '*/30 * * * *'
   class: 'AutoAssignment::PeriodicAssignmentJob'
   queue: scheduled_jobs
+
+# executed every minute
+expire_stale_account_user_sessions_job:
+  cron: '*/1 * * * *'
+  class: 'Internal::ExpireStaleAccountUserSessionsJob'
+  queue: scheduled_jobs
