@@ -735,7 +735,8 @@ class SuperAdmin::DealerMetricsService
   def percentage(numerator, denominator)
     return 0.0 if denominator.to_i.zero?
 
-    ((numerator.to_f / denominator) * 100).round(2)
+    calculated_rate=((numerator.to_f / denominator) * 100).round(2)
+    [calculated_rate, 100.0].min
   end
 
   def timestamp_to_iso8601(timestamp)

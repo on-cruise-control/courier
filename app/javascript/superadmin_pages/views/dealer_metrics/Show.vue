@@ -663,13 +663,13 @@ const prettyLabel = key =>
 
       <div
         v-else-if="showChartPanels"
-        class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
+        class="min-w-0 overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
       >
-        <div class="grid gap-6" :class="chartPanelsGridClass">
+        <div class="grid min-w-0 gap-6" :class="chartPanelsGridClass">
           <article
             v-for="panel in chartPanels"
             :key="panel.label"
-            class="min-h-[22rem]"
+            class="min-h-[22rem] min-w-0 max-w-full"
           >
             <p class="text-sm text-slate-500">{{ panel.label }}</p>
             <p class="mt-1 text-2xl font-semibold text-slate-900">
@@ -681,19 +681,21 @@ const prettyLabel = key =>
               </template>
             </p>
 
-            <div class="mt-4 h-72">
+            <div class="mt-4 h-72 w-full min-w-0 max-w-full overflow-hidden">
               <div
                 v-if="isBookingsLoading"
                 class="flex h-full items-center justify-center"
               >
                 <Spinner :size="32" class="text-slate-500" />
               </div>
-              <CustomLineChart
-                v-else
-                :key="chartPanelKey(panel)"
-                :collection="panel.collection"
-                :chart-options="countChartOptions"
-              />
+              <div v-else class="h-full w-full min-w-0">
+                <CustomLineChart
+                  :key="chartPanelKey(panel)"
+                  :collection="panel.collection"
+                  :chart-options="countChartOptions"
+                  class="h-full w-full"
+                />
+              </div>
             </div>
           </article>
         </div>
@@ -878,7 +880,7 @@ const prettyLabel = key =>
               <td class="px-6 py-3 text-slate-700">{{ prettyLabel(user.sessionState || '-') }}</td>
               <td class="px-6 py-3 text-slate-700">{{ formatDateTime(user.sessionStartedAt) }}</td>
               <td class="!pr-8 px-6 py-3 text-slate-700 whitespace-nowrap">
-                <span class="inline-block min-w-[8ch]  whitespace-nowrap">
+                <span class="inline-block min-w-[9ch] tabular-nums whitespace-nowrap">
                   {{ displaySessionDuration(user) }}
                 </span>
               </td>
