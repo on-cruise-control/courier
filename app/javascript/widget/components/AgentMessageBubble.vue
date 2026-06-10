@@ -7,6 +7,7 @@ import ChatArticle from './template/Article.vue';
 import EmailInput from './template/EmailInput.vue';
 import CustomerSatisfaction from 'shared/components/CustomerSatisfaction.vue';
 import IntegrationCard from './template/IntegrationCard.vue';
+import { IFrameHelper } from 'widget/helpers/utils';
 
 export default {
   name: 'AgentMessageBubble',
@@ -66,6 +67,14 @@ export default {
     },
   },
   methods: {
+    onViewVehicle(vehicleId) {
+      const conversationId =
+        this.$store.getters['conversationAttributes/getConversationParams']?.id;
+      IFrameHelper.sendMessage({
+        event: 'show-vehicle-details',
+        data: { vehicleId, conversationId },
+      });
+    },
     onResponse(messageResponse) {
       this.$store.dispatch('message/update', messageResponse);
     },
@@ -151,6 +160,7 @@ export default {
         :title="item.title"
         :description="item.description"
         :actions="item.actions"
+        @view-vehicle="onViewVehicle"
       />
     </div>
     <div v-if="isArticle">

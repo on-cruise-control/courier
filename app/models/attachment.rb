@@ -126,12 +126,12 @@ class Attachment < ApplicationRecord
       metadata[:height] = file.metadata[:height]
     end
 
-    # Instagram incoming messages — override URLs
-    if message.inbox.instagram? && message.incoming?
+    # For outgoing Instagram bot images, prefer the CDN URL over ActiveStorage
+    if message.inbox.instagram? && external_url.present? && message.outgoing?
       metadata[:data_url] = metadata[:thumb_url] = external_url
     end
 
-    # External URL without file attached (Stark bot case)
+    # No file attached anywhere — fall back to external_url
     if external_url.present? && !file.attached?
       metadata[:data_url] = metadata[:thumb_url] = external_url
     end

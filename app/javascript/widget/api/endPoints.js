@@ -107,6 +107,10 @@ const getMostReadArticles = (slug, locale) => ({
   },
 });
 
+const getVehicleDetails = vehicleId => ({
+  url: `/api/v1/widget/vehicles/${vehicleId}${window.location.search}`,
+});
+
 export default {
   createConversation,
   sendMessage,
@@ -117,4 +121,5 @@ export default {
   getCampaigns,
   triggerCampaign,
   getMostReadArticles,
+  getVehicleDetails,
 };

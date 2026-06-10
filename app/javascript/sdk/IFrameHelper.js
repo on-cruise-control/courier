@@ -45,6 +45,7 @@ import {
 import { isFlatWidgetStyle } from './settingsHelper';
 import { popoutChatWindow } from '../widget/helpers/popoutHelper';
 import addHours from 'date-fns/addHours';
+import { VehicleModalHelper } from './VehicleModalHelper';
 
 const updateAuthCookie = (cookieContent, baseDomain = '') =>
   setCookieWithDomain('cw_conversation', cookieContent, {
@@ -406,6 +407,26 @@ export const IFrameHelper = {
         addClasses(bubbleElement, 'unread-notification');
       } else if (event.unreadMessageCount === 0) {
         removeClasses(bubbleElement, 'unread-notification');
+      }
+    },
+
+    'show-vehicle-details': async ({ data: { vehicleId, conversationId } }) => {
+      const overlay = VehicleModalHelper.showLoading();
+      const { baseUrl, websiteToken } = window.$chatwoot;
+      try {
+        const res = await fetch(
+          `${baseUrl}/api/v1/widget/vehicles/${vehicleId}?website_token=${websiteToken}`,
+          { headers: { Accept: 'application/json' } }
+        );
+        const json = await res.json();
+        const vehicle = json?.body?.data;
+        if (vehicle) {
+          VehicleModalHelper.updateWithVehicle(overlay, vehicle, { baseUrl, websiteToken, conversationId });
+        } else {
+          overlay.remove();
+        }
+      } catch {
+        overlay.remove();
       }
     },
 

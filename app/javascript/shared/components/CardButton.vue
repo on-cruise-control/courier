@@ -11,7 +11,7 @@ export default {
       default: () => {},
     },
   },
-  emits: ['postback'],
+  emits: ['postback', 'view-vehicle'],
   computed: {
     ...mapGetters({
       widgetColor: 'appConfig/getWidgetColor',
@@ -33,6 +33,8 @@ export default {
             data: { payload: this.action.payload },
           });
         }
+      } else if (this.action.type === 'view_vehicle') {
+        this.$emit('view-vehicle', this.action.payload);
       }
     },
   },
