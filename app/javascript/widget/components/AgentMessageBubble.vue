@@ -8,6 +8,8 @@ import EmailInput from './template/EmailInput.vue';
 import CustomerSatisfaction from 'shared/components/CustomerSatisfaction.vue';
 import IntegrationCard from './template/IntegrationCard.vue';
 import { IFrameHelper } from 'widget/helpers/utils';
+import { API } from 'widget/helpers/axios';
+import endPoints from 'widget/api/endPoints';
 
 export default {
   name: 'AgentMessageBubble',
@@ -67,13 +69,23 @@ export default {
     },
   },
   methods: {
-    onViewVehicle(vehicleId) {
+    async onViewVehicle(vehicleId) {
       const conversationId =
         this.$store.getters['conversationAttributes/getConversationParams']?.id;
       IFrameHelper.sendMessage({
-        event: 'show-vehicle-details',
-        data: { vehicleId, conversationId },
+        event: 'show-vehicle-loading',
+        data: {},
       });
+      try {
+        const { data } = await API.get(endPoints.getVehicleDetails(vehicleId).url);
+        const vehicle = data?.body?.data;
+        IFrameHelper.sendMessage({
+          event: 'show-vehicle-details',
+          data: { vehicle, conversationId },
+        });
+      } catch {
+        IFrameHelper.sendMessage({ event: 'hide-vehicle-loading', data: {} });
+      }
     },
     onResponse(messageResponse) {
       this.$store.dispatch('message/update', messageResponse);
