@@ -23,7 +23,7 @@ export default {
       default: () => [],
     },
   },
-  emits: ['postback'],
+  emits: ['postback', 'view-vehicle'],
   methods: {
     onPostback(payload) {
       if (this.mediaUrl) {
@@ -57,6 +57,7 @@ export default {
         :key="action.payload || action.uri"
         :action="action"
         @postback="onPostback"
+        @view-vehicle="$emit('view-vehicle', $event)"
       />
     </div>
   </div>

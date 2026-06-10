@@ -423,6 +423,8 @@ Rails.application.routes.draw do
         end
         resources :inbox_members, only: [:index]
         resources :labels, only: [:create, :destroy]
+        resources :vehicles, only: [:show]
+        resources :vehicle_contacts, only: [:create]
         namespace :sms do
           post 'send', to: 'sms#send_sms'
         end

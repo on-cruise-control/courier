@@ -143,9 +143,12 @@ module Stark
 
     def create_cards_message(conversation, attachments, metadata = {}, is_deferred_spam_reply = false)
       items = attachments.map do |attachment|
-        url   = attachment.is_a?(Hash) ? (attachment['url']     || attachment[:url])     : attachment
-        title = attachment.is_a?(Hash) ? (attachment['content'] || attachment[:content]) : nil
-        { title: title, description: '', media_url: url, actions: [{ text: 'View Details', type: 'postback', payload: title }] }
+        url        = attachment.is_a?(Hash) ? (attachment['url']        || attachment[:url])        : attachment
+        title      = attachment.is_a?(Hash) ? (attachment['content']    || attachment[:content])    : nil
+        vehicle_id = attachment.is_a?(Hash) ? (attachment['vehicle_id'] || attachment[:vehicle_id]) : nil
+        action_type    = vehicle_id.present? ? 'view_vehicle' : 'postback'
+        action_payload = vehicle_id.presence || title
+        { title: title, description: '', media_url: url, vehicle_id: vehicle_id, actions: [{ text: 'View Details', type: action_type, payload: action_payload }] }
       end
 
       return if duplicate_outgoing?(conversation, cards_items: items)

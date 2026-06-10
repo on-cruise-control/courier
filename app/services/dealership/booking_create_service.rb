@@ -3,11 +3,14 @@
 class Dealership::BookingCreateService
   include HTTParty
 
-  def initialize(conversation)
+  def initialize(conversation, force: false, type: nil, summary: nil)
     @conversation = conversation
     @contact = conversation.contact
     @account = conversation.account
     @inbox = conversation.inbox
+    @force = force
+    @type_override    = type
+    @summary_override = summary
     @base_url = GlobalConfig.get('DEALERSHIP_API_BASE_URL')['DEALERSHIP_API_BASE_URL']
     @api_key = GlobalConfig.get('DEALERSHIP_API_KEY')['DEALERSHIP_API_KEY']
   end
@@ -15,7 +18,7 @@ class Dealership::BookingCreateService
   def perform
     return unless enabled?
 
-    unless whatsapp_or_sms?
+    unless @force || whatsapp_or_sms?
       return
     end
 
@@ -53,18 +56,22 @@ class Dealership::BookingCreateService
   end
 
   def payload
-    messages = format_recent_messages
-
     payload_data = {
       dealership_id: @account.dealership_id,
       contact_id: @contact.id,
       conversation_id: @conversation.id,
       account_id: @account.id,
       platform: @inbox.platform_name,
-      type: 'booking',
-      status: 'completed',
-      recent_messages: messages
+      type: @type_override || 'booking',
+      status: 'completed'
     }
+
+    if @summary_override.present?
+      payload_data[:summary] = @summary_override
+    else
+      payload_data[:recent_messages] = format_recent_messages
+    end
+
     payload_data
   end
 
