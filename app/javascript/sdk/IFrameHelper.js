@@ -410,23 +410,23 @@ export const IFrameHelper = {
       }
     },
 
-    'show-vehicle-details': async ({ data: { vehicleId, conversationId } }) => {
-      const overlay = VehicleModalHelper.showLoading();
+    'show-vehicle-loading': () => {
+      IFrameHelper._vehicleOverlay = VehicleModalHelper.showLoading();
+    },
+
+    'hide-vehicle-loading': () => {
+      IFrameHelper._vehicleOverlay?.remove();
+      IFrameHelper._vehicleOverlay = null;
+    },
+
+    'show-vehicle-details': ({ data: { vehicle, conversationId } }) => {
+      const overlay = IFrameHelper._vehicleOverlay;
+      IFrameHelper._vehicleOverlay = null;
       const { baseUrl, websiteToken } = window.$chatwoot;
-      try {
-        const res = await fetch(
-          `${baseUrl}/api/v1/widget/vehicles/${vehicleId}?website_token=${websiteToken}`,
-          { headers: { Accept: 'application/json' } }
-        );
-        const json = await res.json();
-        const vehicle = json?.body?.data;
-        if (vehicle) {
-          VehicleModalHelper.updateWithVehicle(overlay, vehicle, { baseUrl, websiteToken, conversationId });
-        } else {
-          overlay.remove();
-        }
-      } catch {
-        overlay.remove();
+      if (overlay && vehicle) {
+        VehicleModalHelper.updateWithVehicle(overlay, vehicle, { baseUrl, websiteToken, conversationId });
+      } else {
+        overlay?.remove();
       }
     },
 
