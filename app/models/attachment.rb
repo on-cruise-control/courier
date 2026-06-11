@@ -126,8 +126,8 @@ class Attachment < ApplicationRecord
       metadata[:height] = file.metadata[:height]
     end
 
-    # Instagram incoming messages — override URLs
-    if message.inbox.instagram? && message.incoming?
+    # For outgoing Instagram/Facebook bot images, prefer the CDN URL over ActiveStorage
+    if (message.inbox.instagram? || message.inbox.facebook?) && external_url.present? && message.outgoing?
       metadata[:data_url] = metadata[:thumb_url] = external_url
     end
 

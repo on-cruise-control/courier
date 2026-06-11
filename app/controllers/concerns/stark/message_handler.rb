@@ -24,7 +24,7 @@ module Stark
 
     def create_bot_response_message(conversation, contents, attachments = nil, metadata = {}, is_deferred_spam_reply: false)
       contents = Array(contents)
-      if instagram_channel?(conversation) && attachments.is_a?(Array) && attachments.any?
+      if (instagram_channel?(conversation) || facebook_channel?(conversation)) && attachments.is_a?(Array) && attachments.any?
 
         # 1. Send all content chunks
         contents.each do |content|
@@ -202,6 +202,10 @@ module Stark
 
     def instagram_channel?(conversation)
       conversation.inbox.platform_name == 'Instagram'
+    end
+
+    def facebook_channel?(conversation)
+      conversation.inbox.platform_name == 'Facebook'
     end
   end
 end

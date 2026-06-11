@@ -422,7 +422,11 @@ class Message < ApplicationRecord
 
   def send_reply
     return if private?
-    if inbox.channel_type == 'Channel::Instagram' && conversation.additional_attributes['type'] != 'instagram_comments' && additional_attributes['delivery_status'] != 'sent' && message_type == 'outgoing'
+
+    instagram_dm = inbox.channel_type == 'Channel::Instagram' && conversation.additional_attributes['type'] != 'instagram_comments'
+    facebook_dm  = inbox.channel_type == 'Channel::FacebookPage' && !%w[facebook_comments feed_comments].include?(conversation.additional_attributes['type'].to_s)
+
+    if (instagram_dm || facebook_dm) && additional_attributes['delivery_status'] != 'sent' && message_type == 'outgoing'
       mark_pending!
 
       first_pending_id = conversation.messages
