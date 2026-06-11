@@ -6,40 +6,44 @@ class Facebook::SendOnFacebookService < Base::SendOnChannelService
   end
 
   def perform_reply
-    # If the message has both content and image attachments, send a single
-    # generic template so that the caption is attached to the image(s).
-    if message.content.present? && message.attachments.present? && image_attachments_any?
-      send_message_to_facebook fb_generic_template_message_params(message.content, image_attachments)
-      # If there are any non-image attachments, send them separately as before
-      non_image_attachments.each do |attachment|
-        send_message_to_facebook fb_attachment_message_params(attachment)
-      end
-      return
-    end
-    send_message_to_facebook(fb_text_message_params)
+    success = true
 
-    if message.attachments.present?
-      message.attachments.each do |attachment|
-        send_message_to_facebook fb_attachment_message_params(attachment)
+    if message.content_type == 'cards'
+      items = message.content_attributes&.dig('items')
+      if items.is_a?(Array) && items.any?
+        success = send_message_to_facebook(fb_cards_template_params(items))
       end
+    else
+      send_message_to_facebook(fb_text_message_params) if message.content.present?
+
+      message.attachments.each do |attachment|
+        result = send_message_to_facebook(fb_attachment_message_params(attachment))
+        success = false if result == false
+      end
+    end
+
+    if success
+      message.mark_sent!
+      enqueue_next_message
     end
   rescue Facebook::Messenger::FacebookError => e
     # TODO : handle specific errors or else page will get disconnected
     handle_facebook_error(e)
-    display_message = friendly_message_for_facebook_error(e.message)
-    Messages::StatusUpdateService.new(message, 'failed', display_message).perform
+    Messages::StatusUpdateService.new(message, 'failed', e.message).perform
   end
 
   def send_message_to_facebook(delivery_params)
     parsed_result = deliver_message(delivery_params)
-    return if parsed_result.nil?
+    return false if parsed_result.nil?
 
     if parsed_result['error'].present?
       Messages::StatusUpdateService.new(message, 'failed', external_error(parsed_result)).perform
       Rails.logger.info "Facebook::SendOnFacebookService: Error sending message to Facebook : Page - #{channel.page_id} : #{parsed_result}"
+      return false
     end
 
     message.update!(source_id: parsed_result['message_id']) if parsed_result['message_id'].present?
+    true
   end
 
   def deliver_message(delivery_params)
@@ -55,13 +59,24 @@ class Facebook::SendOnFacebookService < Base::SendOnChannelService
     nil
   end
 
+  def enqueue_next_message
+    next_msg = conversation.messages
+                           .where('id > ?', message.id)
+                           .where("additional_attributes ->> 'delivery_status' = ?", 'pending')
+                           .order(:id)
+                           .first
+    return unless next_msg.present?
+
+    SendReplyJob.perform_later(next_msg.id)
+  end
+
   def fb_text_message_params
-    {
+    params = {
       recipient: { id: contact.get_source_id(inbox.id) },
-      message: fb_text_message_payload,
-      messaging_type: 'MESSAGE_TAG',
-      tag: 'ACCOUNT_UPDATE'
+      message: fb_text_message_payload
     }
+
+    merge_human_agent_tag(params)
   end
 
   def fb_text_message_payload
@@ -85,51 +100,49 @@ class Facebook::SendOnFacebookService < Base::SendOnChannelService
     # https://developers.facebook.com/docs/graph-api/guides/error-handling/
     error_message = response['error']['message']
     error_code = response['error']['code']
-    raw = "#{error_code} - #{error_message}"
 
-    friendly_message_for_facebook_error(raw, error_code: error_code)
-  end
-
-  def friendly_message_for_facebook_error(raw_message, error_code: nil)
-    code = error_code || extract_facebook_error_code(raw_message)
-    return raw_message if code.blank?
-
-    I18n.t("inbox.facebook_errors.#{code}", default: raw_message)
-  end
-
-  def extract_facebook_error_code(message)
-    return nil if message.blank?
-
-    # Match "10 - " or "(#10) " at the start of the message
-    m = message.match(/\A(?:\(#)?(\d+)\)?\s*-?\s*/)
-    m[1] if m
+    "#{error_code} - #{error_message}"
   end
 
   def fb_attachment_message_params(attachment)
-    {
+    url = attachment.external_url.presence || attachment.download_url
+    params = {
       recipient: { id: contact.get_source_id(inbox.id) },
       message: {
         attachment: {
           type: attachment_type(attachment),
           payload: {
-            url: attachment.download_url
+            url: url
           }
         }
-      },
-      messaging_type: 'MESSAGE_TAG',
-      tag: 'ACCOUNT_UPDATE'
+      }
     }
+
+    merge_human_agent_tag(params)
   end
 
-  def fb_generic_template_message_params(text_content, attachments)
-    elements = attachments.first(10).map do |attachment|
-      {
-        title: text_content,
-        image_url: attachment.download_url
-      }
+  def fb_cards_template_params(items)
+    elements = items.first(10).filter_map do |item|
+      title = item['title'].presence
+      next unless title
+
+      element = { title: title.truncate(80) }
+      element[:image_url] = item['media_url'] if item['media_url'].present?
+      element[:subtitle] = item['description'].truncate(80) if item['description'].present?
+
+      action = item['actions']&.first
+      if action.present?
+        element[:buttons] = [{
+          type: 'postback',
+          title: (action['text'].presence || 'View Details').truncate(20),
+          payload: action['payload'].to_s.truncate(1000)
+        }]
+      end
+
+      element
     end
 
-    {
+    params = {
       recipient: { id: contact.get_source_id(inbox.id) },
       message: {
         attachment: {
@@ -139,37 +152,27 @@ class Facebook::SendOnFacebookService < Base::SendOnChannelService
             elements: elements
           }
         }
-      },
-      messaging_type: 'MESSAGE_TAG',
-      tag: 'ACCOUNT_UPDATE'
+      }
     }
+
+    merge_human_agent_tag(params)
+  end
+
+  def merge_human_agent_tag(params)
+    unless GlobalConfigService.load('ENABLE_MESSENGER_CHANNEL_HUMAN_AGENT', nil)
+      params[:messaging_type] = 'RESPONSE'
+      return params
+    end
+
+    params[:messaging_type] = 'MESSAGE_TAG'
+    params[:tag] = 'HUMAN_AGENT'
+    params
   end
 
   def attachment_type(attachment)
     return attachment.file_type if %w[image audio video file].include? attachment.file_type
 
     'file'
-  end
-
-  def image_attachments
-    return [] unless message.attachments.present?
-
-    message.attachments.select { |att| att.file_type == 'image' }
-  end
-
-  def non_image_attachments
-    return [] unless message.attachments.present?
-
-    message.attachments.reject { |att| att.file_type == 'image' }
-  end
-
-  def image_attachments_any?
-    image_attachments.any?
-  end
-
-  def sent_first_outgoing_message_after_24_hours?
-    # we can send max 1 message after 24 hour window
-    conversation.messages.outgoing.where('id > ?', conversation.last_incoming_message.id).count == 1
   end
 
   def handle_facebook_error(exception)
