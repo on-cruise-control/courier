@@ -53,6 +53,7 @@ class Api::V1::AccountsController < Api::BaseController
 
     @account.booking_emails = params[:booking_emails] if params.key?(:booking_emails)
     @account.escalation_emails = params[:escalation_emails] if params.key?(:escalation_emails)
+    @account.vehicle_parts_emails = params[:vehicle_parts_emails] if params.key?(:vehicle_parts_emails)
 
     @account.save!
   end
