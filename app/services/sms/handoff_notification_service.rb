@@ -1,7 +1,8 @@
 class Sms::HandoffNotificationService
-  def initialize(conversation , customer_data: nil)
+  def initialize(conversation, emails:, customer_data: nil)
     @conversation = conversation
     @account = conversation.account
+    @emails = emails
     @customer_data = customer_data
   end
 
@@ -43,18 +44,7 @@ class Sms::HandoffNotificationService
   end
 
   def recipients_with_phone_numbers
-    # Get all agents and administrators with phone numbers
-    # Include both User and SuperAdmin types (STI)
-    # Use group instead of distinct to avoid JSON equality operator issues
-    User.unscoped
-        .joins(:account_users)
-        .where(account_users: { account_id: @account.id })
-        .where(account_users: { role: [
-                 AccountUser.roles[:agent],
-                 AccountUser.roles[:administrator]
-               ] })
-        .where.not(phone_number: [nil, ''])
-        .group('users.id')
+    User.where(email: @emails).where.not(phone_number: [nil, ''])
   end
 
   def build_message_body

@@ -1,5 +1,5 @@
 class AdministratorNotifications::ConversationHandoffMailer < AdministratorNotifications::BaseMailer
-  def notify_handoff(conversation, customer_data = nil)
+  def notify_handoff(conversation, customer_data = nil, to: nil)
     return unless smtp_config_set_or_development?
 
     @conversation   = conversation
@@ -11,10 +11,9 @@ class AdministratorNotifications::ConversationHandoffMailer < AdministratorNotif
 
     subject = "[Action required] High-priority conversation requires attention"
 
-    # If account is suspended, send to SuperAdmins only (handled in send_notification)
     send_notification(
       subject,
-      to: @account.suspended? ? super_admin_emails(@account) : admin_emails,
+      to: @account.suspended? ? super_admin_emails(@account) : to,
       action_url: @action_url,
       meta: {
         conversation_id: @conversation.display_id,

@@ -59,6 +59,7 @@ class Account < ApplicationRecord
   validates :name, presence: true
   validates :dealership_id, presence: true
   validate :validate_escalation_emails
+  validate :validate_vehicle_parts_emails
   validates_with JsonSchemaValidator,
                  schema: SETTINGS_PARAMS_SCHEMA,
                  attribute_resolver: ->(record) { record.settings }
@@ -186,6 +187,10 @@ class Account < ApplicationRecord
     super || []
   end
 
+  def vehicle_parts_emails
+    super || []
+  end
+
   private
 
   def notify_creation
@@ -238,6 +243,21 @@ class Account < ApplicationRecord
     escalation_emails.each do |email|
       unless email =~ Devise.email_regexp
         errors.add(:escalation_emails, "#{email} is not a valid email")
+      end
+    end
+  end
+
+  def validate_vehicle_parts_emails
+    return if vehicle_parts_emails.blank?
+
+    unless vehicle_parts_emails.is_a?(Array)
+      errors.add(:vehicle_parts_emails, 'must be an array')
+      return
+    end
+
+    vehicle_parts_emails.each do |email|
+      unless email =~ Devise.email_regexp
+        errors.add(:vehicle_parts_emails, "#{email} is not a valid email")
       end
     end
   end
