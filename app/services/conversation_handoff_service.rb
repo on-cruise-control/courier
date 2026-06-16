@@ -23,7 +23,11 @@ class ConversationHandoffService
         Rails.logger.warn("Escalation email not configured for account #{@conversation.account.id}")
       end
     when 'vehicle_parts'
-      ConversationHandoff::SendHandoffNotificationsJob.perform_later(@conversation, customer_data)
+      if @conversation.account.vehicle_parts_emails.present?
+        ConversationHandoff::SendHandoffNotificationsJob.perform_later(@conversation, customer_data, @conversation.account.vehicle_parts_emails)
+      else
+        Rails.logger.warn("Vehicle parts email not configured for account #{@conversation.account.id}")
+      end
     end
   end
 

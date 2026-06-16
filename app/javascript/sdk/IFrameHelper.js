@@ -45,6 +45,7 @@ import {
 import { isFlatWidgetStyle } from './settingsHelper';
 import { popoutChatWindow } from '../widget/helpers/popoutHelper';
 import addHours from 'date-fns/addHours';
+import { VehicleModalHelper } from './VehicleModalHelper';
 
 const updateAuthCookie = (cookieContent, baseDomain = '') =>
   setCookieWithDomain('cw_conversation', cookieContent, {
@@ -406,6 +407,26 @@ export const IFrameHelper = {
         addClasses(bubbleElement, 'unread-notification');
       } else if (event.unreadMessageCount === 0) {
         removeClasses(bubbleElement, 'unread-notification');
+      }
+    },
+
+    'show-vehicle-loading': () => {
+      IFrameHelper._vehicleOverlay = VehicleModalHelper.showLoading();
+    },
+
+    'hide-vehicle-loading': () => {
+      IFrameHelper._vehicleOverlay?.remove();
+      IFrameHelper._vehicleOverlay = null;
+    },
+
+    'show-vehicle-details': ({ data: { vehicle, conversationId } }) => {
+      const overlay = IFrameHelper._vehicleOverlay;
+      IFrameHelper._vehicleOverlay = null;
+      const { baseUrl, websiteToken } = window.$chatwoot;
+      if (overlay && vehicle) {
+        VehicleModalHelper.updateWithVehicle(overlay, vehicle, { baseUrl, websiteToken, conversationId });
+      } else {
+        overlay?.remove();
       }
     },
 

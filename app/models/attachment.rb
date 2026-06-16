@@ -131,7 +131,7 @@ class Attachment < ApplicationRecord
       metadata[:data_url] = metadata[:thumb_url] = external_url
     end
 
-    # External URL without file attached (Stark bot case)
+    # No file attached anywhere — fall back to external_url
     if external_url.present? && !file.attached?
       metadata[:data_url] = metadata[:thumb_url] = external_url
     end

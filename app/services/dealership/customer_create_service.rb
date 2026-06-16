@@ -3,10 +3,14 @@
 class Dealership::CustomerCreateService
   include HTTParty
 
-  def initialize(contact, inbox: nil)
+  def initialize(contact, inbox: nil, force: false, name: nil, email: nil, phone: nil)
     @contact = contact
     @inbox = inbox || contact.inboxes.first
     @account = contact.account
+    @force = force
+    @name_override  = name
+    @email_override = email
+    @phone_override = phone
     @base_url = GlobalConfig.get('DEALERSHIP_API_BASE_URL')['DEALERSHIP_API_BASE_URL']
     @api_key = GlobalConfig.get('DEALERSHIP_API_KEY')['DEALERSHIP_API_KEY']
   end
@@ -14,7 +18,7 @@ class Dealership::CustomerCreateService
   def perform
     return unless enabled?
 
-    unless whatsapp_or_sms?
+    unless @force || whatsapp_or_sms?
       return
     end
 
@@ -52,9 +56,9 @@ class Dealership::CustomerCreateService
       contact_id: @contact.id,
       account_id: @account.id,
       dealership_id: @account.dealership_id,
-      name: @contact.name.presence,
-      email: @contact.email.presence,
-      phone: @contact.phone_number.presence
+      name: @name_override.presence || @contact.name.presence,
+      email: @email_override.presence || @contact.email.presence,
+      phone: @phone_override.presence || @contact.phone_number.presence
     }
   end
 end

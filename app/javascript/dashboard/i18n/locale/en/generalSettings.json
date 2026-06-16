@@ -150,6 +150,22 @@
           "ERROR": "Failed to update escalation emails"
         }
       },
+      "VEHICLE_PARTS_EMAILS": {
+        "TITLE": "Vehicle Parts Notification Emails",
+        "NOTE": "Add emails to receive vehicle parts inquiry alerts. Recommended: Parts Manager and Service Advisor.",
+        "LABEL": "Add email address",
+        "HELP": "Enter an email address and click Add. You can add multiple email addresses.",
+        "PLACEHOLDER": "email{'@'}example.com",
+        "ADD_BUTTON": "Add",
+        "CONFIGURED_EMAILS": "Configured Email Addresses",
+        "EMPTY_STATE": "⚠️ No vehicle parts notification emails configured. Add at least one email address to receive vehicle parts notifications.",
+        "INVALID_EMAIL": "Please enter a valid email address",
+        "DUPLICATE_EMAIL": "This email address is already added",
+        "API": {
+          "SUCCESS": "Vehicle parts emails updated successfully",
+          "ERROR": "Failed to update vehicle parts emails"
+        }
+      },
       "FEATURES": {
         "INBOUND_EMAIL_ENABLED": "Conversation continuity with emails is enabled for your account.",
         "CUSTOM_EMAIL_DOMAIN_ENABLED": "You can receive emails in your custom domain now."

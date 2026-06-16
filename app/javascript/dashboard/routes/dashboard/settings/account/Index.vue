@@ -19,6 +19,7 @@ import AutoResolve from './components/AutoResolve.vue';
 import AudioTranscription from './components/AudioTranscription.vue';
 import BookingEmails from './components/BookingEmails.vue';
 import EscalationEmails from './components/EscalationEmails.vue';
+import VehiclePartsEmails from './components/VehiclePartsEmails.vue';
 import SectionLayout from './components/SectionLayout.vue';
 
 export default {
@@ -32,6 +33,7 @@ export default {
     AudioTranscription,
     BookingEmails,
     EscalationEmails,
+    VehiclePartsEmails,
     SectionLayout,
     WithLabel,
     NextInput,
@@ -304,6 +306,9 @@ export default {
     <AutoResolve v-if="showAutoResolutionConfig" />
     <AudioTranscription v-if="showAudioTranscriptionConfig" />
     <BookingEmails />
+    <hr class="border-t border-slate-200 dark:border-slate-700" />
+    <VehiclePartsEmails />
+    <hr class="border-t border-slate-200 dark:border-slate-700" />
     <EscalationEmails />
     <AccountId />
     <div v-if="!uiFlags.isFetchingItem && isOnChatwootCloud">

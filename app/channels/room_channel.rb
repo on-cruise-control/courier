@@ -32,7 +32,12 @@ class RoomChannel < ApplicationCable::Channel
   def update_subscription
     return if @current_account.blank?
 
-    ::OnlineStatusTracker.update_presence(@current_account.id, @current_user.class.name, @current_user.id)
+    if @current_user.is_a?(User)
+      @current_account.account_users.find_by(user_id: @current_user.id)&.record_session_activity!
+    end
+
+    obj_type = @current_user.is_a?(User) ? 'User' : @current_user.class.name
+    ::OnlineStatusTracker.update_presence(@current_account.id, obj_type, @current_user.id)
   end
 
   def pubsub_token

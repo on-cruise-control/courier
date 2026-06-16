@@ -423,6 +423,8 @@ Rails.application.routes.draw do
         end
         resources :inbox_members, only: [:index]
         resources :labels, only: [:create, :destroy]
+        resources :vehicles, only: [:show]
+        resources :vehicle_contacts, only: [:create]
         namespace :sms do
           post 'send', to: 'sms#send_sms'
         end
@@ -640,6 +642,7 @@ Rails.application.routes.draw do
       root to: 'dashboard#index'
 
       resource :app_config, only: [:show, :create]
+      resource :dealer_metrics, only: [:show]
 
       # order of resources affect the order of sidebar navigation in super admin
       resources :accounts, only: [:index, :new, :create, :show, :edit, :update, :destroy] do

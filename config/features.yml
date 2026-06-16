@@ -241,5 +241,5 @@
 # CUSTOM START
 - name: custom_ui
   display_name: Custom UI
-  enabled: false
+  enabled: true
 # CUSTOM END
