@@ -235,10 +235,6 @@ const compactCards = computed(() => {
     return [];
   }
 
-  if (section.value.key === 'conversations') {
-    return [];
-  }
-
   if (showChartPanels.value) {
     return secondaryCards.value;
   }
