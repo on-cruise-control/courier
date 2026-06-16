@@ -55,9 +55,11 @@ class Api::V1::Accounts::CallbacksController < Api::V1::Accounts::BaseController
   def reauthorize_page
     if @inbox&.facebook?
       fb_page_id = @inbox.channel.page_id
-      page_details = fb_object.get_connections('me', 'accounts')
+      fb_api = fb_object
+      return head :unprocessable_entity if fb_api.nil?
 
-      if (page_detail = (page_details || []).detect { |page| fb_page_id == page['id'] })
+      pages = fetch_all_facebook_pages(fb_api)
+      if (page_detail = pages.detect { |page| fb_page_id == page['id'] })
         update_fb_page(fb_page_id, page_detail['access_token'])
         render and return
       end
@@ -90,6 +92,8 @@ class Api::V1::Accounts::CallbacksController < Api::V1::Accounts::BaseController
 
   def fb_object
     @user_access_token = long_lived_token(params[:omniauth_token])
+    return nil if @user_access_token.nil?
+
     Koala::Facebook::API.new(@user_access_token)
   end
 
@@ -98,6 +102,21 @@ class Api::V1::Accounts::CallbacksController < Api::V1::Accounts::BaseController
     koala.exchange_access_token_info(omniauth_token)['access_token']
   rescue StandardError => e
     Rails.logger.error "Error in long_lived_token: #{e.message}"
+    nil
+  end
+
+  def fetch_all_facebook_pages(fb_api)
+    pages = []
+    fb_pages = fb_api.get_connections('me', 'accounts')
+    pages.concat(fb_pages)
+    while fb_pages.respond_to?(:next_page) && (next_page = fb_pages.next_page)
+      fb_pages = next_page
+      pages.concat(fb_pages)
+    end
+    pages
+  rescue StandardError => e
+    Rails.logger.error "Error fetching Facebook pages: #{e.message}"
+    []
   end
 
   def mark_already_existing_facebook_pages(data)
