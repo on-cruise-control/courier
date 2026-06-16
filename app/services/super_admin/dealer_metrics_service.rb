@@ -71,10 +71,20 @@ class SuperAdmin::DealerMetricsService
     conversation_total = total_conversations
     message_total = total_messages
     average_messages = average(message_total, conversation_total)
+    selected_dealership = dealership_id.present?
 
     {
       key: 'conversations',
       title: 'Conversations',
+      cards: selected_dealership ? [
+        metric_card('New conversations', conversation_total),
+        metric_card('Total messages', message_total),
+        metric_card('Avg messages per conversation', average_messages)
+      ] : [
+        metric_card('Avg conversations per dealer', average(conversation_total, accounts.size)),
+        metric_card('Avg conversations per day', average(conversation_total, timeline_dates.size)),
+        metric_card('Avg messages per conversation', average_messages)
+      ],
       chartSummaryValues: {
         'Conversations' => average(conversation_total, accounts.size),
         'Messages' => average_messages
