@@ -155,6 +155,7 @@ export const IFrameHelper = {
     if (!window.visualViewport) return;
     window.visualViewport.addEventListener('resize', () => {
       if (!window.matchMedia('(max-width: 667px)').matches) return;
+      if (!window.$chatwoot?.isOpen) return;
       const holder = document.getElementById('cw-widget-holder');
       if (!holder) return;
       const h = window.visualViewport.height;
@@ -163,7 +164,9 @@ export const IFrameHelper = {
       IFrameHelper.sendMessage('mobile-viewport-height', { height: h });
     });
     window.visualViewport.addEventListener('scroll', () => {
-      window.scrollTo(0, 0);
+      if (window.$chatwoot?.isOpen) {
+        window.scrollTo(0, 0);
+      }
     });
   },
   preventDefaultScroll: () => {
