@@ -50,6 +50,14 @@ describe ActionService do
       action_service.assign_agent(['nil'])
       expect(conversation.reload.assignee).to be_nil
     end
+
+    it 'assigns any account user even if they are not in the inbox' do
+      outsider = create(:user, account: account, role: :agent)
+
+      expect do
+        action_service.assign_agent([outsider.id])
+      end.to change { conversation.reload.assignee_id }.to(outsider.id)
+    end
   end
 
   describe '#assign_team' do
