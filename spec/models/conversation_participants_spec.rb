@@ -21,9 +21,16 @@ RSpec.describe ConversationParticipant do
       expect(conversation_participant.account_id).to eq(conversation.account_id)
     end
 
-    it 'throws error if inbox member does not belongs to account' do
+    it 'allows any account user' do
       conversation = create(:conversation)
       user = create(:user, account: conversation.account)
+      participant = build(:conversation_participant, user: user, conversation: conversation)
+      expect(participant).to be_valid
+    end
+
+    it 'throws error if the user does not belong to the account' do
+      conversation = create(:conversation)
+      user = create(:user)
       participant = build(:conversation_participant, user: user, conversation: conversation)
       expect { participant.save! }.to raise_error(ActiveRecord::RecordInvalid)
       expect(participant.errors.messages[:user]).to eq(['must have inbox access'])

@@ -23,35 +23,36 @@ RSpec.describe 'Assignable Agents API', type: :request do
       end
     end
 
-    context 'when the user is not part of an inbox' do
-      context 'when the user is an admininstrator' do
-        it 'returns all assignable inbox members along with administrators' do
-          get "/api/v1/accounts/#{account.id}/assignable_agents",
-              params: { inbox_ids: [inbox1.id, inbox2.id] },
-              headers: admin.create_new_auth_token,
-              as: :json
+    context 'when the user is an administrator' do
+      it 'returns all account users' do
+        get "/api/v1/accounts/#{account.id}/assignable_agents",
+            params: { inbox_ids: [inbox1.id, inbox2.id] },
+            headers: admin.create_new_auth_token,
+            as: :json
 
-          expect(response).to have_http_status(:success)
-          response_data = JSON.parse(response.body, symbolize_names: true)[:payload]
-          expect(response_data.size).to eq(2)
-          expect(response_data.pluck(:role)).to include('agent', 'administrator')
-        end
+        expect(response).to have_http_status(:success)
+        response_data = JSON.parse(response.body, symbolize_names: true)[:payload]
+        expect(response_data.size).to eq(3)
+        expect(response_data.pluck(:role)).to include('agent', 'administrator')
       end
+    end
 
-      context 'when the user is an agent' do
-        it 'returns unauthorized' do
-          get "/api/v1/accounts/#{account.id}/assignable_agents",
-              params: { inbox_ids: [inbox1.id, inbox2.id] },
-              headers: agent2.create_new_auth_token,
-              as: :json
+    context 'when the user is an agent who is not part of the inbox' do
+      it 'returns all account users' do
+        get "/api/v1/accounts/#{account.id}/assignable_agents",
+            params: { inbox_ids: [inbox1.id, inbox2.id] },
+            headers: agent2.create_new_auth_token,
+            as: :json
 
-          expect(response).to have_http_status(:unauthorized)
-        end
+        expect(response).to have_http_status(:success)
+        response_data = JSON.parse(response.body, symbolize_names: true)[:payload]
+        expect(response_data.size).to eq(3)
+        expect(response_data.pluck(:role)).to include('agent', 'administrator')
       end
     end
 
     context 'when the user is part of the inbox' do
-      it 'returns all assignable inbox members along with administrators' do
+      it 'returns all account users' do
         get "/api/v1/accounts/#{account.id}/assignable_agents",
             params: { inbox_ids: [inbox1.id, inbox2.id] },
             headers: agent1.create_new_auth_token,
@@ -59,7 +60,7 @@ RSpec.describe 'Assignable Agents API', type: :request do
 
         expect(response).to have_http_status(:success)
         response_data = JSON.parse(response.body, symbolize_names: true)[:payload]
-        expect(response_data.size).to eq(2)
+        expect(response_data.size).to eq(3)
         expect(response_data.pluck(:role)).to include('agent', 'administrator')
       end
     end

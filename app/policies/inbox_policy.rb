@@ -11,7 +11,7 @@ class InboxPolicy < ApplicationPolicy
     end
 
     def resolve
-      user.assigned_inboxes
+      account.inboxes
     end
   end
 
@@ -23,7 +23,7 @@ class InboxPolicy < ApplicationPolicy
     # FIXME: for agent bots, lets bring this validation to policies as well in future
     return true if @user.is_a?(AgentBot)
 
-    Current.user.assigned_inboxes.include? record
+    @account_user.present?
   end
 
   def assignable_agents?
