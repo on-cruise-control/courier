@@ -159,28 +159,6 @@ class Rack::Attack
     end
   end
 
-  ## MFA throttling - prevent brute force attacks
-  throttle('mfa_verification/ip', limit: 5, period: 1.minute) do |req|
-    if req.path_without_extentions == '/api/v1/profile/mfa'
-      req.ip if req.delete? # Throttle disable attempts
-    elsif req.path_without_extentions.match?(%r{/api/v1/profile/mfa/(verify|backup_codes)})
-      req.ip if req.post? # Throttle verify and backup_codes attempts
-    end
-  end
-
-  # Separate rate limiting for MFA verification attempts
-  throttle('mfa_login/ip', limit: 10, period: 1.minute) do |req|
-    req.ip if req.path_without_extentions == '/auth/sign_in' && req.post? && req.params['mfa_token'].present?
-  end
-
-  throttle('mfa_login/token', limit: 10, period: 1.minute) do |req|
-    if req.path_without_extentions == '/auth/sign_in' && req.post?
-      # Track by MFA token to prevent brute force on a specific token
-      mfa_token = req.params['mfa_token'].presence
-      (mfa_token.presence)
-    end
-  end
-
   ## Prevent Brute-Force Signup Attacks ###
   throttle('accounts/ip', limit: 5, period: 30.minutes) do |req|
     req.ip if req.path_without_extensions == '/api/v1/accounts' && req.post?
@@ -222,6 +200,15 @@ class Rack::Attack
   throttle('/api/v1/accounts/:account_id/conversations/:conversation_id/transcript',
            limit: ENV.fetch('RATE_LIMIT_CONVERSATION_TRANSCRIPT', '1000').to_i, period: 1.hour) do |req|
     match_data = %r{/api/v1/accounts/(?<account_id>\d+)/conversations/(?<conversation_id>\d+)/transcript}.match(req.path)
+    match_data[:account_id] if match_data.present?
+  end
+
+  ## Prevent abuse of conversation delete API (per account)
+  throttle('/api/v1/accounts/:account_id/conversations/:id DELETE',
+           limit: ENV.fetch('RATE_LIMIT_CONVERSATION_DELETE', '60').to_i, period: 1.minute) do |req|
+    next unless req.delete?
+
+    match_data = %r{\A/api/v1/accounts/(?<account_id>\d+)/conversations/(?<id>\d+)/?\z}.match(req.path_without_extensions)
     match_data[:account_id] if match_data.present?
   end
 
