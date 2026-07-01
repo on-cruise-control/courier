@@ -40,6 +40,9 @@ RUN apk update && apk add --no-cache \
   git \
   curl \
   xz \
+  linux-headers \
+  imagemagick \
+  imagemagick-dev \
   && mkdir -p /var/app \
   && gem install bundler -v "$BUNDLER_VERSION"
 
