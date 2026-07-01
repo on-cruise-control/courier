@@ -1,35 +1,24 @@
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useStore } from 'vuex';
 import { useI18n } from 'vue-i18n';
 import { format, subDays } from 'date-fns';
 import { useAlert } from 'dashboard/composables';
 import Button from 'dashboard/components-next/button/Button.vue';
 import Spinner from 'dashboard/components-next/spinner/Spinner.vue';
+import WootDatePicker from 'dashboard/components/ui/DatePicker/DatePicker.vue';
+import { DATE_RANGE_TYPES } from 'dashboard/components/ui/DatePicker/helpers/DatePickerHelper';
 import BookingCard from '../components/BookingCard.vue';
 import PaginationFooter from 'dashboard/components-next/pagination/PaginationFooter.vue';
-import WootDateRangePicker from 'dashboard/components/ui/DateRangePicker.vue';
 
 const store = useStore();
 const { t } = useI18n();
 
-const CUSTOM_DATE_RANGE_ID = 5;
-
-const dateRangeOptions = computed(() => [
-  { id: 0, name: t('REPORT.DATE_RANGE_OPTIONS.LAST_7_DAYS') },
-  { id: 1, name: t('REPORT.DATE_RANGE_OPTIONS.LAST_30_DAYS') },
-  { id: 2, name: t('REPORT.DATE_RANGE_OPTIONS.LAST_3_MONTHS') },
-  { id: 3, name: t('REPORT.DATE_RANGE_OPTIONS.LAST_6_MONTHS') },
-  { id: 4, name: t('REPORT.DATE_RANGE_OPTIONS.LAST_YEAR') },
-  { id: 5, name: t('REPORT.DATE_RANGE_OPTIONS.CUSTOM_DATE_RANGE') },
-]);
-
-const selectedDateRange = ref({ id: 1, name: t('REPORT.DATE_RANGE_OPTIONS.LAST_30_DAYS') });
-const customDateRange = ref([new Date(), new Date()]);
-const isCustomDateRange = computed(() => selectedDateRange.value?.id === CUSTOM_DATE_RANGE_ID);
-
 const currentPage = ref(1);
 const isDownloading = ref(false);
+
+const customDateRange = ref([subDays(new Date(), 29), new Date()]);
+const selectedDateRange = ref(DATE_RANGE_TYPES.LAST_30_DAYS);
 const dateRange = ref({
   start: format(subDays(new Date(), 29), 'yyyy-MM-dd'),
   end: format(new Date(), 'yyyy-MM-dd'),
@@ -46,174 +35,109 @@ const fetchBookings = async () => {
       createdAtAfter: dateRange.value.start,
       createdAtBefore: dateRange.value.end,
     });
-  } catch (error) {
+  } catch {
     useAlert(t('BOOKINGS.ERROR_FETCHING'));
   }
 };
 
 const downloadBookings = async () => {
   isDownloading.value = true;
-
   try {
     await store.dispatch('bookings/download', {
       createdAtAfter: dateRange.value.start,
-      createdAtBefore: dateRange.value.end, 
+      createdAtBefore: dateRange.value.end,
       fileName: `bookings-${dateRange.value.start}-to-${dateRange.value.end}.csv`,
     });
-  } catch (error) {
+  } catch {
     useAlert(t('BOOKINGS.DOWNLOAD_FAILED'));
   } finally {
     isDownloading.value = false;
   }
 };
 
-onMounted(fetchBookings);
-
-watch(currentPage, fetchBookings);
-
-const applyFilter = () => {
+const onDateRangeChange = value => {
+  const [startDate, endDate, rangeType] = value;
+  customDateRange.value = [startDate, endDate];
+  selectedDateRange.value = rangeType || DATE_RANGE_TYPES.CUSTOM_RANGE;
+  dateRange.value = {
+    start: format(startDate, 'yyyy-MM-dd'),
+    end: format(endDate, 'yyyy-MM-dd'),
+  };
   currentPage.value = 1;
   fetchBookings();
 };
 
-const diffMap = { 0: 6, 1: 29, 2: 89, 3: 179, 4: 364 };
-
-const onDateRangeSelect = selected => {
-  selectedDateRange.value = selected;
-  if (selected.id !== CUSTOM_DATE_RANGE_ID) {
-    const diff = diffMap[selected.id] ?? 29;
-    dateRange.value = {
-      start: format(subDays(new Date(), diff), 'yyyy-MM-dd'),
-      end: format(new Date(), 'yyyy-MM-dd'),
-    };
-    applyFilter();
-  }
+const onPageChange = page => {
+  currentPage.value = page;
+  fetchBookings();
 };
 
-const onCustomDateRangeChange = value => {
-  customDateRange.value = value;
-  dateRange.value = {
-    start: format(value[0], 'yyyy-MM-dd'),
-    end: format(value[1], 'yyyy-MM-dd'),
-  };
-  applyFilter();
-};
+onMounted(fetchBookings);
 </script>
 
 <template>
-  <div class="custom-bookings-page flex flex-col flex-1 h-full m-0 overflow-auto bg-n-background">
-    <div class="flex flex-col w-full h-full">
-      <!-- HEADER -->
-      <header class="flex-shrink-0 pt-8 bg-n-background sticky top-0 z-20 px-6">
-        <div class="mx-auto max-w-[60rem] flex flex-col gap-6">
-          <div class="flex items-center justify-between">
-            <h1 class="text-2xl font-semibold text-n-slate-12">
-              {{ t('BOOKINGS.LIST_HEADING') }}
-            </h1>
-            <Button
-              :label="t('BOOKINGS.DOWNLOAD')"
-              icon="i-lucide-download"
+  <div class="flex flex-col w-full h-full overflow-hidden bg-n-surface-1">
+    <!-- HEADER -->
+    <header class="flex-shrink-0 bg-n-surface-1 px-6 py-5">
+      <div class="mx-auto max-w-[60rem] flex items-center justify-between gap-6">
+        <h1 class="text-xl font-semibold text-n-slate-12">
+          {{ t('BOOKINGS.LIST_HEADING') }}
+        </h1>
+        <Button
+          :label="t('BOOKINGS.DOWNLOAD')"
+          icon="i-lucide-download"
+          size="sm"
+          :is-loading="isDownloading"
+          @click="downloadBookings"
+        />
+      </div>
+      <div class="mx-auto max-w-[60rem] mt-3">
+        <WootDatePicker
+          v-model:date-range="customDateRange"
+          v-model:range-type="selectedDateRange"
+          @date-range-changed="onDateRangeChange"
+        />
+      </div>
+    </header>
 
-              size="sm"
-              :is-loading="isDownloading"
-              @click="downloadBookings"
-            />
-          </div>
-
-          <!-- FILTERS -->
-          <div class="flex flex-wrap items-end gap-4">
-            <div class="multiselect-wrap--small min-w-[180px] bookings-filter-multiselect">
-              <p class="mb-2 text-xs font-medium text-n-slate-11">
-                <!-- {{ t('BOOKINGS.DATE_RANGE_LABEL') }} -->
-              </p>
-              <multiselect
-                v-model="selectedDateRange"
-                track-by="id"
-                label="name"
-                :placeholder="t('REPORT.CUSTOM_DATE_RANGE.PLACEHOLDER')"
-                selected-label=""
-                select-label=""
-                deselect-label=""
-                :options="dateRangeOptions"
-                :searchable="false"
-                :allow-empty="false"
-                @select="onDateRangeSelect"
-              />
-            </div>
-            <div v-if="isCustomDateRange" class="min-w-[220px]">
-              <p class="mb-2 text-xs font-medium text-n-slate-11">
-                {{ t('REPORT.CUSTOM_DATE_RANGE.PLACEHOLDER') }}
-              </p>
-              <WootDateRangePicker
-                :value="customDateRange"
-                :confirm-text="t('REPORT.CUSTOM_DATE_RANGE.CONFIRM')"
-                :placeholder="t('REPORT.CUSTOM_DATE_RANGE.PLACEHOLDER')"
-                @change="onCustomDateRangeChange"
-              />
-            </div>
-          </div>
+    <!-- CONTENT -->
+    <main class="flex-1 overflow-y-auto py-5 px-6">
+      <div class="mx-auto max-w-[60rem]">
+        <div v-if="uiFlags.isFetching" class="flex h-64 items-center justify-center">
+          <Spinner />
         </div>
-      </header>
-
-      <!-- CONTENT -->
-      <main class="flex-1 overflow-y-auto ltr:pl-6 rtl:pr-6 ltr:pr-6 rtl:pl-6 pt-2">
-        <div class="custom-bookings-content mx-auto max-w-[60rem] pb-8">
-          <div v-if="uiFlags.isFetching" class="flex h-64 items-center justify-center">
-            <Spinner />
-          </div>
-          
-          <div v-else-if="bookings.length === 0" class="flex h-64 flex-col items-center justify-center text-n-slate-11 bg-n-solid-2 rounded-2xl border border-n-weak/30">
-            <div class="i-lucide-calendar-x mb-4 size-10 opacity-20" />
-            <p class="text-lg font-medium opacity-50">{{ t('BOOKINGS.EMPTY_MESSAGE') }}</p>
-          </div>
-
-          <div v-else class="custom-bookings-list flex flex-col gap-4">
-            <BookingCard
-              v-for="booking in bookings"
-              :key="booking.id"
-              :booking="booking"
-            />
-          </div>
+        <div
+          v-else-if="bookings.length === 0"
+          class="flex h-64 flex-col items-center justify-center rounded-2xl border border-n-weak bg-n-solid-1 text-n-slate-11"
+        >
+          <div class="i-lucide-calendar-x mb-4 size-10 opacity-30" />
+          <p class="text-base font-medium opacity-60">
+            {{ t('BOOKINGS.EMPTY_MESSAGE') }}
+          </p>
         </div>
-      </main>
+        <div v-else class="flex flex-col gap-3 pb-4">
+          <BookingCard
+            v-for="booking in bookings"
+            :key="booking.id"
+            :booking="booking"
+          />
+        </div>
+      </div>
+    </main>
 
-      <!-- FOOTER -->
-      <footer v-if="meta.count > 0" class="custom-bookings-footer sticky bottom-0 z-10 px-6 pb-6">
+    <!-- PAGINATION -->
+    <footer
+      v-if="meta.count > 0"
+      class="flex-shrink-0 bg-n-surface-1 px-6 py-3"
+    >
+      <div class="mx-auto max-w-[60rem]">
         <PaginationFooter
           :current-page="currentPage"
           :total-items="meta.count"
           :items-per-page="10"
-          @update:current-page="currentPage = $event"
+          @update:current-page="onPageChange"
         />
-      </footer>
-    </div>
+      </div>
+    </footer>
   </div>
 </template>
-
-<style scoped lang="scss">
-.bookings-filter-multiselect {
-  :deep() {
-    .multiselect__tags,
-    .multiselect__input,
-    .multiselect {
-      @apply bg-n-alpha-3 !border-n-weak text-n-slate-12 rounded-lg text-sm min-h-[2.5rem];
-    }
-
-    .multiselect__tags {
-      @apply bg-n-alpha-3 border border-n-weak m-0 min-h-[2.5rem] pt-0;
-    }
-
-    .multiselect__single {
-      @apply bg-n-alpha-3 text-n-slate-12;
-    }
-
-    .multiselect__content-wrapper {
-      @apply bg-n-solid-2 border border-n-weak text-n-slate-12;
-    }
-
-    .multiselect__select {
-      @apply min-h-0;
-    }
-  }
-}
-</style>

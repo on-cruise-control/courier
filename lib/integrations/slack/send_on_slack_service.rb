@@ -102,7 +102,8 @@ class Integrations::Slack::SendOnSlackService < Base::SendOnChannelService
   def send_message
     post_message if message_content.present?
     upload_files if message.attachments.any?
-  rescue Slack::Web::Api::Errors::AccountInactive, Slack::Web::Api::Errors::MissingScope, Slack::Web::Api::Errors::InvalidAuth,
+  rescue Slack::Web::Api::Errors::IsArchived, Slack::Web::Api::Errors::AccountInactive, Slack::Web::Api::Errors::MissingScope,
+         Slack::Web::Api::Errors::InvalidAuth,
          Slack::Web::Api::Errors::ChannelNotFound, Slack::Web::Api::Errors::NotInChannel => e
     Rails.logger.error e
     hook.prompt_reauthorization!
@@ -120,22 +121,22 @@ class Integrations::Slack::SendOnSlackService < Base::SendOnChannelService
     )
   end
 
-  def upload_file
-    message.attachments.each do |attachment|
-      next unless attachment.with_attached_file?
+  def upload_files
+    files = build_files_array
+    return if files.empty?
 
-      begin
-        result = slack_client.files_upload_v2(
-          filename: attachment.file.filename.to_s,
-          content: attachment.file.download,
-          initial_comment: 'Attached File!',
-          thread_ts: conversation.identifier,
-          channel_id: hook.reference_id
-        )
-        Rails.logger.info "slack_upload_result: #{result}"
-      rescue Slack::Web::Api::Errors::SlackError => e
-        Rails.logger.error "Failed to upload file #{attachment.file.filename}: #{e.message}"
-      end
+    begin
+      result = slack_client.files_upload_v2(
+        files: files,
+        initial_comment: 'Attached File!',
+        thread_ts: conversation.identifier,
+        channel_id: hook.reference_id
+      )
+      Rails.logger.info "slack_upload_result: #{result}"
+    rescue Slack::Web::Api::Errors::SlackError => e
+      Rails.logger.error "Failed to upload files: #{e.message}"
+    ensure
+      files.each { |file| file[:content]&.clear }
     end
   end
 

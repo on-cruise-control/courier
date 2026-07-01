@@ -41,30 +41,6 @@ const createDialog = ref(null);
 
 const selectedAssistantId = computed(() => Number(route.params.assistantId));
 
-
-const statusOptions = computed(() =>
-  ['all', 'pending', 'approved'].map(key => ({
-    label: t(`CAPTAIN.RESPONSES.STATUS.${key.toUpperCase()}`),
-    value: key,
-    action: 'filter',
-  }))
-);
-
-const filteredResponses = computed(() => {
-  return selectedStatus.value === 'pending'
-    ? responses.value.filter(r => r.status === 'pending')
-    : responses.value;
-});
-
-const selectedStatusLabel = computed(() => {
-  const status = statusOptions.value.find(
-    option => option.value === selectedStatus.value
-  );
-  return t('CAPTAIN.RESPONSES.FILTER.STATUS', {
-    selected: status ? status.label : '',
-  });
-});
-
 const pendingCount = useMapGetter('captainResponses/getPendingCount');
 
 const handleDelete = () => {
@@ -141,26 +117,6 @@ const fetchResponses = (page = 1) => {
 const bulkSelectedIds = ref(new Set());
 const hoveredCard = ref(null);
 
-const bulkSelectionState = computed(() => {
-  const selectedCount = bulkSelectedIds.value.size;
-  const totalCount = filteredResponses.value?.length || 0;
-
-  return {
-    hasSelected: selectedCount > 0,
-    isIndeterminate: selectedCount > 0 && selectedCount < totalCount,
-    allSelected: totalCount > 0 && selectedCount === totalCount,
-  };
-});
-
-const bulkCheckbox = computed({
-  get: () => bulkSelectionState.value.allSelected,
-  set: value => {
-    bulkSelectedIds.value = value
-      ? new Set(filteredResponses.value.map(r => r.id))
-      : new Set();
-  },
-});
-
 const selectedCountLabel = computed(() => {
   return t('CAPTAIN.RESPONSES.SELECTED', {
     count: bulkSelectedIds.value.size,
@@ -200,23 +156,6 @@ const fetchResponseAfterBulkAction = () => {
 
   // Clear selection
   bulkSelectedIds.value = new Set();
-};
-
-
-const handleBulkApprove = async () => {
-  try {
-    await store.dispatch(
-      'captainBulkActions/handleBulkApprove',
-      Array.from(bulkSelectedIds.value)
-    );
-
-    fetchResponseAfterBulkAction();
-    useAlert(t('CAPTAIN.RESPONSES.BULK_APPROVE.SUCCESS_MESSAGE'));
-  } catch (error) {
-    useAlert(
-      error?.message || t('CAPTAIN.RESPONSES.BULK_APPROVE.ERROR_MESSAGE')
-    );
-  }
 };
 
 const onPageChange = page => {
@@ -330,95 +269,6 @@ onMounted(() => {
       <CaptainPaywall />
     </template>
 
-    <template #controls>
-      <div
-        v-if="shouldShowDropdown"
-        class="mb-4 -mt-3 flex justify-between items-center w-fit py-1"
-        :class="{
-          'ltr:pl-3 rtl:pr-3 ltr:pr-1 rtl:pl-1 rounded-lg outline outline-1 outline-n-weak bg-n-solid-3':
-            bulkSelectionState.hasSelected,
-        }"
-      >
-        <div v-if="!bulkSelectionState.hasSelected" class="flex gap-3">
-          <OnClickOutside @trigger="isStatusFilterOpen = false">
-            <Button
-              :label="selectedStatusLabel"
-              icon="i-lucide-chevron-down"
-              size="sm"
-              color="slate"
-              trailing-icon
-              class="max-w-48"
-              @click="isStatusFilterOpen = !isStatusFilterOpen"
-            />
-
-            <DropdownMenu
-              v-if="isStatusFilterOpen"
-              :menu-items="statusOptions"
-              class="mt-2"
-              @action="handleStatusFilterChange"
-            />
-          </OnClickOutside>
-          <AssistantSelector
-            :assistant-id="selectedAssistant"
-            @update="handleAssistantFilterChange"
-          />
-        </div>
-
-        <transition
-          name="slide-fade"
-          enter-active-class="transition-all duration-300 ease-out"
-          enter-from-class="opacity-0 transform ltr:-translate-x-4 rtl:translate-x-4"
-          enter-to-class="opacity-100 transform translate-x-0"
-          leave-active-class="hidden opacity-0"
-        >
-          <div
-            v-if="bulkSelectionState.hasSelected"
-            class="flex items-center gap-3"
-          >
-            <div class="flex items-center gap-3">
-              <div class="flex items-center gap-1.5">
-                <Checkbox
-                  v-model="bulkCheckbox"
-                  :indeterminate="bulkSelectionState.isIndeterminate"
-                />
-                <span class="text-sm text-n-slate-12 font-medium tabular-nums">
-                  {{ buildSelectedCountLabel }}
-                </span>
-              </div>
-              <span class="text-sm text-n-slate-10 tabular-nums">
-                {{
-                  $t('CAPTAIN.RESPONSES.SELECTED', {
-                    count: bulkSelectedIds.size,
-                  })
-                }}
-              </span>
-            </div>
-            <div class="h-4 w-px bg-n-strong" />
-            <div class="flex gap-3 items-center">
-              <Button
-                :label="$t('CAPTAIN.RESPONSES.BULK_APPROVE_BUTTON')"
-                sm
-                ghost
-                icon="i-lucide-check"
-                class="!px-1.5"
-                @click="handleBulkApprove"
-              />
-              <div class="h-4 w-px bg-n-strong" />
-              <Button
-                :label="$t('CAPTAIN.RESPONSES.BULK_DELETE_BUTTON')"
-                sm
-                ruby
-                ghost
-                class="!px-1.5"
-                icon="i-lucide-trash"
-                @click="bulkDeleteDialog.dialogRef.open()"
-              />
-            </div>
-          </div>
-        </transition>
-      </div>
-    </template>
-
     <template #body>
       <LimitBanner class="mb-5" />
       <Banner
@@ -467,7 +317,7 @@ onMounted(() => {
       v-if="bulkSelectedIds"
       ref="bulkDeleteDialog"
       :bulk-ids="bulkSelectedIds"
-      type="Responses"
+      type="AssistantResponse"
       @delete-success="onBulkDeleteSuccess"
     />
 

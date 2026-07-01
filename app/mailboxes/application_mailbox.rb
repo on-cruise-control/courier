@@ -18,7 +18,7 @@ class ApplicationMailbox < ActionMailbox::Base
   routing(all: :default)
 
   class << self
-    # checks if follow this pattern then send it to reply_mailbox
+    # checks if follows this pattern then send it to reply_mailbox
     # <account/#{@account.id}/conversation/#{@conversation.uuid}@#{@account.inbound_email_domain}>
     def in_reply_to_mail?(inbound_mail)
       in_reply_to = inbound_mail.mail.in_reply_to
@@ -32,8 +32,8 @@ class ApplicationMailbox < ActionMailbox::Base
       Array.wrap(in_reply_to).any? { it.match?(CONVERSATION_MESSAGE_ID_PATTERN) }
     end
 
-    # checks if follow this pattern  send it to reply_mailbox
-    # reply+<conversation-uuid>@<mailer-domain.com>
+    # checks if follows this pattern: reply+<conversation-uuid>@<mailer-domain.com>
+
     def reply_uuid_mail?(inbound_mail)
       inbound_mail.mail.to&.any? do |email|
         conversation_uuid = email.split('@')[0]

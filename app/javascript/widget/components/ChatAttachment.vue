@@ -31,7 +31,6 @@ export default {
   computed: {
     ...mapGetters({
       globalConfig: 'globalConfig/get',
-      shouldShowFilePicker: 'appConfig/getShouldShowFilePicker',
     }),
     fileUploadSizeLimit() {
       return resolveMaximumFileUploadSize(
@@ -51,7 +50,6 @@ export default {
   methods: {
     handleClipboardPaste(e) {
       // If file picker is not enabled, do not allow paste
-      if (!this.shouldShowFilePicker) return;
       if (!this.canHandleAttachments) return;
 
       const items = (e.clipboardData || e.originalEvent.clipboardData).items;

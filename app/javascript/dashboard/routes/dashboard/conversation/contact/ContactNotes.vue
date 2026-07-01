@@ -23,7 +23,6 @@ const isCreatingNote = computed(() => uiFlags.value.isCreating);
 const contactId = computed(() => props.contactId);
 const noteContent = ref('');
 const shouldShowCreateModal = ref(false);
-const notGetterFn = useMapGetter('contactNotes/getAllNotesByContactId');
 const notes = computed(() => {
   if (!contactId.value) {
     return [];

@@ -92,43 +92,35 @@ class Messages::Instagram::BaseMessageBuilder < Messages::Messenger::MessageBuil
   end
 
   def build_message
+    # Find or reuse existing instagram_dm conversation for template DMs
     contact_id = contact.id
     inbox_id = @inbox.id
     account_id = @inbox.account_id
 
-    # Find existing conversation first
     template_dm_conversation = Conversation.where(
       contact_id: contact_id,
       inbox_id: inbox_id,
       account_id: account_id
     ).where("conversations.additional_attributes->>'type' = ?", 'instagram_dm').last
 
-    if template_dm_conversation
-      Rails.logger.info "Found existing template_dm conversation #{template_dm_conversation.id} for contact #{contact_id} in inbox #{inbox_id}"
-      @conversation = template_dm_conversation
-    else
-      Rails.logger.info "No existing template_dm conversation found, creating a new one for contact #{contact_id} in inbox #{inbox_id}"
-      @conversation = build_conversation
-    end
+    @conversation = template_dm_conversation || build_conversation
 
-    # Stop if this message was already processed
+    # Duplicate webhook events may be sent for the same message
+    # when a user is connected to the Instagram account through both Messenger and Instagram login.
     return if message_already_exists?
 
-    # Skip if no content and all attachments unsupported
     return if message_content.blank? && all_unsupported_files?
 
-    # Create the message
     @message = @conversation.messages.create!(message_params)
     save_story_id
 
-    # Update conversation to mark as instagram_dm if not already set
+    # Mark conversation type as instagram_dm
     additional_attributes = @conversation.additional_attributes || {}
     unless additional_attributes['type'] == 'instagram_dm'
       additional_attributes['type'] = 'instagram_dm'
       @conversation.update!(additional_attributes: additional_attributes)
     end
 
-    # Handle attachments
     attachments.each do |attachment|
       process_attachment(attachment)
     end
@@ -139,15 +131,26 @@ class Messages::Instagram::BaseMessageBuilder < Messages::Messenger::MessageBuil
   def save_story_id
     return if story_reply_attributes.blank?
 
-    story_payload = {
-      'id' => story_reply_attributes['id'],
-      'url' => story_reply_attributes['url'],
-      'story_sender' => story_sender_label
-    }.compact
+    @message.save_story_info(story_reply_attributes)
+    create_story_reply_attachment(story_reply_attributes['url'])
+  end
 
-    @message.save_story_info(story_payload)
-    ensure_story_attachment(story_payload['url'])
+  def create_story_reply_attachment(story_url)
+    return if story_url.blank?
 
+    attachment = @message.attachments.new(
+      file_type: :ig_story,
+      account_id: @message.account_id,
+      external_url: story_url
+    )
+    attachment.save!
+    begin
+      attach_file(attachment, story_url)
+    rescue Down::Error, StandardError => e
+      Rails.logger.warn "Failed to download Instagram story attachment: #{e.message}"
+    end
+    @message.content_attributes[:image_type] = 'ig_story_reply'
+    @message.save!
   end
 
   def build_conversation
@@ -175,15 +178,16 @@ class Messages::Instagram::BaseMessageBuilder < Messages::Messenger::MessageBuil
       account_id: conversation.account_id,
       inbox_id: conversation.inbox_id,
       message_type: message_type,
+      status: @outgoing_echo ? :delivered : :sent,
       source_id: message_identifier,
       content: message_content,
       sender: @outgoing_echo ? nil : contact,
       content_attributes: {
         in_reply_to_external_id: message_reply_attributes
-      },
-      additional_attributes: {'delivery_status': 'sent'}
+      }
     }
 
+    params[:content_attributes][:external_echo] = true if @outgoing_echo
     params[:content_attributes][:is_unsupported] = true if message_is_unsupported?
     params
   end
@@ -197,13 +201,21 @@ class Messages::Instagram::BaseMessageBuilder < Messages::Messenger::MessageBuil
 
   def recent_duplicate_echo?
     content = @messaging.dig(:message, :text)
-    return false if content.blank?
+  
+    if content.present?
+      # Text case
+      return conversation.messages.outgoing
+        .where(content: content)
+        .where('created_at >= ?', 2.minutes.ago)
+        .exists?
+    end
 
-    conversation.messages
-                .outgoing
-                .where(content: content)
-                .where('created_at >= ?', 2.minutes.ago)
-                .exists?
+    # Image case
+
+   conversation.messages.outgoing
+      .where(source_id: nil)
+      .where(content: nil)
+      .where('created_at >= ?', 1.minute.ago).exists?
   end
 
   def find_message_by_source_id(source_id)

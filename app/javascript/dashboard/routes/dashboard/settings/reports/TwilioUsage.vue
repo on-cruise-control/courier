@@ -12,13 +12,7 @@ export default {
   },
   data() {
     return {
-      selectedPeriod: { label: 'This Month', value: 'this_month' },
-      periods: [
-        { label: 'Today', value: 'today' },
-        { label: 'Yesterday', value: 'yesterday' },
-        { label: 'This month', value: 'this_month' },
-        { label: 'Last month', value: 'last_month' },
-      ],
+      selectedPeriod: 'this_month',
       expandedRows: [],
     };
   },
@@ -65,14 +59,12 @@ export default {
   methods: {
     fetchAllData() {
       this.$store.dispatch('fetchTwilioUsage', {
-        period: this.selectedPeriod.value,
+        period: this.selectedPeriod,
       });
     },
-    onPeriodChange(selectedRange) {
-      if (selectedRange) {
-        this.selectedPeriod = selectedRange;
-        this.fetchAllData();
-      }
+    onPeriodChange(event) {
+      this.selectedPeriod = event.target.value;
+      this.fetchAllData();
     },
     toggleRow(id) {
       const index = this.expandedRows.indexOf(id);
@@ -115,22 +107,17 @@ export default {
     
     <div class="px-0 flex flex-col md:flex-row justify-between items-start md:items-center gap-3 mb-2">
       <div class="flex flex-col md:flex-row items-start md:items-center gap-4 w-full">
-        <div class="multiselect-wrap--small min-w-[200px]">
-          <multiselect
-            v-model="selectedPeriod"
-            class="no-margin"
-            track-by="value"
-            label="label"
-            :placeholder="$t('FORMS.MULTISELECT.SELECT_ONE')"
-            selected-label="Selected"
-            :select-label="$t('FORMS.MULTISELECT.ENTER_TO_SELECT')"
-            deselect-label=""
-            :options="periods"
-            :searchable="false"
-            :allow-empty="false"
-            @select="onPeriodChange"
-          />
-        </div>
+        <select
+          v-model="selectedPeriod"
+          class="h-9 w-auto rounded-lg border border-n-weak bg-n-background text-n-slate-12 text-sm px-3 pr-8 cursor-pointer focus:outline-none focus:ring-1 focus:ring-n-brand min-w-[160px] mb-0"
+          @change="onPeriodChange"
+        >
+          <option value="today">{{ $t('TWILIO_REPORTS.PERIODS.TODAY') }}</option>
+          <option value="yesterday">{{ $t('TWILIO_REPORTS.PERIODS.YESTERDAY') }}</option>
+          <option value="this_month">{{ $t('TWILIO_REPORTS.PERIODS.THIS_MONTH') }}</option>
+          <option value="last_month">{{ $t('TWILIO_REPORTS.PERIODS.LAST_MONTH') }}</option>
+        </select>
+
         <div v-if="twilioUsage && !isFetching" class="flex items-center gap-3 px-4 py-1.5 bg-n-solid-2 border border-n-weak rounded-lg shadow-sm">
           <div class="flex flex-col">
             <span class="text-[9px] font-bold uppercase text-n-slate-9 leading-none mb-0.5">{{ $t('TWILIO_REPORTS.METRICS.PERIOD') }}</span>

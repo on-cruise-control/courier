@@ -152,19 +152,32 @@ export const IFrameHelper = {
     window.addEventListener('resize', () => IFrameHelper.toggleCloseButton());
   },
   initMobileKeyboardFix: () => {
-    if (!window.visualViewport) return;
-    window.visualViewport.addEventListener('resize', () => {
-      if (!window.matchMedia('(max-width: 667px)').matches) return;
-      const holder = document.getElementById('cw-widget-holder');
-      if (!holder) return;
-      const h = window.visualViewport.height;
-      holder.style.height = `${h}px`;
-      window.scrollTo(0, 0);
-      IFrameHelper.sendMessage('mobile-viewport-height', { height: h });
-    });
-    window.visualViewport.addEventListener('scroll', () => {
-      window.scrollTo(0, 0);
-    });
+    if (!window.visualViewport || IFrameHelper._mobileKeyboardFixActive) return;
+
+    const mobileQuery = window.matchMedia('(max-width: 667px)');
+    let rafPending = false;
+
+    const onViewportChange = () => {
+      if (!mobileQuery.matches || rafPending) return;
+      rafPending = true;
+      requestAnimationFrame(() => {
+        rafPending = false;
+        if (!widgetHolder) return;
+        const { height, offsetTop } = window.visualViewport;
+        widgetHolder.style.height = `${height}px`;
+        widgetHolder.style.transform = `translateY(${offsetTop}px)`;
+        IFrameHelper.sendMessage('mobile-viewport-height', { height });
+      });
+    };
+
+    window.visualViewport.addEventListener('resize', onViewportChange);
+    window.visualViewport.addEventListener('scroll', onViewportChange);
+    IFrameHelper._mobileKeyboardFixActive = true;
+    IFrameHelper._mobileKeyboardFixCleanup = () => {
+      window.visualViewport.removeEventListener('resize', onViewportChange);
+      window.visualViewport.removeEventListener('scroll', onViewportChange);
+      IFrameHelper._mobileKeyboardFixActive = false;
+    };
   },
   preventDefaultScroll: () => {
     widgetHolder.addEventListener('wheel', event => {

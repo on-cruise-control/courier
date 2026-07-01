@@ -6,6 +6,7 @@ import NextButton from 'dashboard/components-next/button/Button.vue';
 import PageHeader from '../../SettingsSubPageHeader.vue';
 import GreetingsEditor from 'shared/components/GreetingsEditor.vue';
 import { WIDGET_BUILDER_EDITOR_MENU_OPTIONS } from 'dashboard/constants/editor';
+
 import Editor from 'dashboard/components-next/Editor/Editor.vue';
 
 export default {
@@ -151,29 +152,9 @@ export default {
           )
         "
         :max-length="255"
-        :enabled-menu-options="welcomeTaglineEditorMenuOptions"
+        channel-type="Context::InboxSettings"
         class="mb-4"
       />
-      <div class="w-full">
-        <label>
-          {{ $t('INBOX_MGMT.WIDGET_BUILDER.WIDGET_OPTIONS.DEALER_NAME.LABEL') }}
-          <input
-            v-model="dealerName"
-            type="text"
-            :placeholder="$t('INBOX_MGMT.WIDGET_BUILDER.WIDGET_OPTIONS.DEALER_NAME.PLACE_HOLDER')"
-          />
-        </label>
-      </div>
-      <div class="w-full">
-        <label>
-          {{ $t('INBOX_MGMT.WIDGET_BUILDER.WIDGET_OPTIONS.DEALER_TAGLINE.LABEL') }}
-          <input
-            v-model="dealerTagline"
-            type="text"
-            :placeholder="$t('INBOX_MGMT.WIDGET_BUILDER.WIDGET_OPTIONS.DEALER_TAGLINE.PLACE_HOLDER')"
-          />
-        </label>
-      </div>
 
       <label class="w-full">
         {{ $t('INBOX_MGMT.ADD.WEBSITE_CHANNEL.CHANNEL_GREETING_TOGGLE.LABEL') }}

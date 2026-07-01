@@ -38,6 +38,11 @@ class Api::V2::Accounts::ReportsController < Api::V1::Accounts::BaseController
     generate_csv('teams_report', 'api/v2/accounts/reports/teams')
   end
 
+  def conversations_summary
+    @report_data = generate_conversations_report
+    generate_csv('conversations_summary_report', 'api/v2/accounts/reports/conversations_summary')
+  end
+
   def conversation_traffic
     @report_data = generate_conversations_heatmap_report
     timezone_offset = (params[:timezone_offset] || 0).to_f
@@ -59,7 +64,7 @@ class Api::V2::Accounts::ReportsController < Api::V1::Accounts::BaseController
 
   def booking_stats
     period = determine_period_from_params
-    
+
     service = Dealership::BookingStatsService.new(
       Current.account.dealership_id,
       period: period,
@@ -67,13 +72,11 @@ class Api::V2::Accounts::ReportsController < Api::V1::Accounts::BaseController
       until_time: params[:until]
     )
     booking_data = service.fetch_stats
-    
+
     filtered_data = filter_by_date_range(booking_data, params[:since], params[:until])
     formatted_data = format_booking_breakdown_data(filtered_data, period)
-    
-    # Fill in missing dates with zeros to show complete timeline
     formatted_data = fill_missing_dates_with_zeros(formatted_data, params[:since], params[:until], period)
-    
+
     render json: formatted_data
   end
 
@@ -92,6 +95,31 @@ class Api::V2::Accounts::ReportsController < Api::V1::Accounts::BaseController
     else
       render json: { error: result[:error] || result[:message] }, status: :unprocessable_entity
     end
+  end
+
+  def inbox_label_matrix
+    builder = V2::Reports::InboxLabelMatrixBuilder.new(
+      account: Current.account,
+      params: inbox_label_matrix_params
+    )
+    render json: builder.build
+  end
+
+  def first_response_time_distribution
+    builder = V2::Reports::FirstResponseTimeDistributionBuilder.new(
+      account: Current.account,
+      params: first_response_time_distribution_params
+    )
+    render json: builder.build
+  end
+
+  OUTGOING_MESSAGES_ALLOWED_GROUP_BY = %w[agent team inbox label].freeze
+
+  def outgoing_messages_count
+    return head :unprocessable_entity unless OUTGOING_MESSAGES_ALLOWED_GROUP_BY.include?(params[:group_by])
+
+    builder = V2::Reports::OutgoingMessagesCountBuilder.new(Current.account, outgoing_messages_count_params)
+    render json: builder.build
   end
 
   private
@@ -396,8 +424,7 @@ class Api::V2::Accounts::ReportsController < Api::V1::Accounts::BaseController
   def build_booking_summary
     period = determine_period_from_params
     metric_type = params[:metric_type] || 'booking'
-    
-    # Get current period data
+
     current_service = Dealership::BookingStatsService.new(
       Current.account.dealership_id,
       period: period,
@@ -406,8 +433,7 @@ class Api::V2::Accounts::ReportsController < Api::V1::Accounts::BaseController
     )
     current_data = current_service.fetch_stats
     current_filtered = filter_by_date_range(current_data, params[:since], params[:until])
-    
-    # Get previous period data
+
     previous_service = Dealership::BookingStatsService.new(
       Current.account.dealership_id,
       period: period,
@@ -416,13 +442,12 @@ class Api::V2::Accounts::ReportsController < Api::V1::Accounts::BaseController
     )
     previous_data = previous_service.fetch_stats
     previous_filtered = filter_by_date_range(previous_data, range[:previous][:since], range[:previous][:until])
-    
-    # Calculate totals for links_sent and forms_completed
+
     current_links = sum_metric(current_filtered, metric_type, 'links_sent')
     current_forms = sum_metric(current_filtered, metric_type, 'forms_completed')
     previous_links = sum_metric(previous_filtered, metric_type, 'links_sent')
     previous_forms = sum_metric(previous_filtered, metric_type, 'forms_completed')
-    
+
     {
       "#{metric_type}_links_sent".to_sym => current_links,
       "#{metric_type}_forms_completed".to_sym => current_forms,
@@ -440,5 +465,29 @@ class Api::V2::Accounts::ReportsController < Api::V1::Accounts::BaseController
       type_data = breakdown[metric_type] || {}
       type_data[metric_field] || 0
     end
+  end
+
+  def inbox_label_matrix_params
+    {
+      since: params[:since],
+      until: params[:until],
+      inbox_ids: params[:inbox_ids],
+      label_ids: params[:label_ids]
+    }
+  end
+
+  def first_response_time_distribution_params
+    {
+      since: params[:since],
+      until: params[:until]
+    }
+  end
+
+  def outgoing_messages_count_params
+    {
+      group_by: params[:group_by],
+      since: params[:since],
+      until: params[:until]
+    }
   end
 end

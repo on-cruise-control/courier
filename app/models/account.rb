@@ -7,7 +7,9 @@
 #  booking_emails        :jsonb
 #  custom_attributes     :jsonb
 #  domain                :string(100)
+#  escalation_emails     :jsonb
 #  feature_flags         :bigint           default(0), not null
+#  feature_flags_2       :bigint           default(0), not null
 #  internal_attributes   :jsonb            not null
 #  limits                :jsonb
 #  locale                :integer          default("en")
@@ -15,6 +17,7 @@
 #  settings              :jsonb
 #  status                :integer          default("active")
 #  support_email         :string(100)
+#  vehicle_parts_emails  :jsonb
 #  created_at            :datetime         not null
 #  updated_at            :datetime         not null
 #  dealership_id         :string
@@ -31,6 +34,9 @@ class Account < ApplicationRecord
   include Reportable
   include Featurable
   include CacheKeys
+  include CaptainFeaturable
+  include AccountEmailRateLimitable
+  include AccountSettingsSchema
 
   SETTINGS_PARAMS_SCHEMA = {
     'type': 'object',
@@ -55,17 +61,27 @@ class Account < ApplicationRecord
     check_for_column: false
   }.freeze
 
-  validates :domain, length: { maximum: 100 }
   validates :name, presence: true
   validates :dealership_id, presence: true
+  # `domain` is the inbound email domain used to construct reply addresses
+  # (see `inbound_email_domain`). Do not repurpose it for a website or any
+  # non-mail-related domain.
+  validates :domain, length: { maximum: 100 }
   validate :validate_escalation_emails
   validate :validate_vehicle_parts_emails
   validates_with JsonSchemaValidator,
                  schema: SETTINGS_PARAMS_SCHEMA,
                  attribute_resolver: ->(record) { record.settings }
+  validate :validate_reporting_timezone
+  validate :validate_support_email_format, if: :will_save_change_to_support_email?
 
   store_accessor :settings, :auto_resolve_after, :auto_resolve_message, :auto_resolve_ignore_waiting
   store_accessor :settings, :audio_transcriptions, :auto_resolve_label, :conversation_required_attributes
+  store_accessor :settings, :captain_models, :captain_features
+  store_accessor :settings, :reporting_timezone
+  store_accessor :settings, :keep_pending_on_bot_failure
+  store_accessor :settings, :captain_auto_resolve_mode
+  include AccountCaptainAutoResolve
 
   has_many :account_users, dependent: :destroy_async
   has_many :user_sessions, dependent: :destroy_async
@@ -127,6 +143,7 @@ class Account < ApplicationRecord
   before_validation :validate_limit_keys
   after_create_commit :notify_creation
   after_create_commit :create_default_labels
+  after_update_commit :clear_unread_conversation_counts_cache, if: :saved_change_to_feature_conversation_unread_counts?
   after_destroy :remove_account_sequences
   after_update :handle_status_change, if: :saved_change_to_status?
 
@@ -191,6 +208,19 @@ class Account < ApplicationRecord
     super || []
   end
 
+  def onboarding_step
+    step = custom_attributes['onboarding_step']
+    return nil if step.blank?
+
+    enrichment_key = format(Redis::Alfred::ACCOUNT_ONBOARDING_ENRICHMENT, account_id: id)
+    Redis::Alfred.exists?(enrichment_key) ? 'enrichment' : step
+  end
+
+  def reset_cache_keys
+    super
+    clear_unread_conversation_counts_cache
+  end
+
   private
 
   def notify_creation
@@ -207,6 +237,10 @@ class Account < ApplicationRecord
     end
   end
 
+  def clear_unread_conversation_counts_cache
+    ::Conversations::UnreadCounts::Store.clear_all_account!(id)
+  end
+
   trigger.after(:insert).for_each(:row) do
     "execute format('create sequence IF NOT EXISTS conv_dpid_seq_%s', NEW.id);"
   end
@@ -217,6 +251,22 @@ class Account < ApplicationRecord
 
   def validate_limit_keys
     # method overridden in enterprise module
+  end
+
+  def validate_reporting_timezone
+    return if reporting_timezone.blank? || ActiveSupport::TimeZone[reporting_timezone].present?
+
+    errors.add(:reporting_timezone, I18n.t('errors.account.reporting_timezone.invalid'))
+  end
+
+  def validate_support_email_format
+    value = attributes['support_email']
+    return if value.blank?
+
+    parsed = Mail::Address.new(value).address
+    errors.add(:support_email, I18n.t('errors.account.support_email.invalid')) if parsed.blank?
+  rescue Mail::Field::ParseError, Mail::Field::IncompleteParseError
+    errors.add(:support_email, I18n.t('errors.account.support_email.invalid'))
   end
 
   def remove_account_sequences

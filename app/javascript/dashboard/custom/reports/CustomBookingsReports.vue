@@ -1,6 +1,6 @@
 <script>
 import { useAlert, useTrack } from 'dashboard/composables';
-import ReportFilterSelector from 'dashboard/routes/dashboard/settings/reports/components/FilterSelector.vue';
+import ReportFilters from 'dashboard/routes/dashboard/settings/reports/components/ReportFilters.vue';
 import { GROUP_BY_FILTER } from 'dashboard/routes/dashboard/settings/reports/constants';
 import Spinner from 'dashboard/components-next/spinner/Spinner.vue';
 import { STATUS } from 'dashboard/store/constants';
@@ -17,7 +17,7 @@ export default {
   name: 'CustomBookingsReports',
   components: {
     ReportHeader,
-    ReportFilterSelector,
+    ReportFilters,
     CustomReportContainer,
     Spinner,
   },
@@ -122,10 +122,10 @@ export default {
 <template>
   <ReportHeader :header-title="$t('BOOKINGS_REPORTS.HEADER')" />
   <div class="flex flex-col gap-3">
-    <ReportFilterSelector
-      :show-agents-filter="false"
-      :show-business-hours-switch="false"
-      show-group-by-filter
+    <ReportFilters
+      :show-entity-filter="false"
+      :show-business-hours="false"
+      show-group-by
       @filter-change="onFilterChange"
     />
 

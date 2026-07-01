@@ -44,10 +44,15 @@ class Line::SendOnLineService < Base::SendOnChannelService
       # Support only image and video for now, https://developers.line.biz/en/reference/messaging-api/#image-message
       next unless attachment.file_type == 'image' || attachment.file_type == 'video'
 
+      # Use public_file_url (permanent redirect-based absolute URL) instead of download_url
+      # (signed URL that expires in 5 minutes); LINE lazy-loads images after delivery.
+      original_url = attachment.public_file_url
+      preview_url = attachment.public_thumb_url.presence || original_url
+
       {
         type: attachment.file_type,
-        originalContentUrl: attachment.download_url,
-        previewImageUrl: attachment.download_url
+        originalContentUrl: original_url,
+        previewImageUrl: preview_url
       }
     end
   end

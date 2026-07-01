@@ -105,7 +105,8 @@ class Facebook::SendOnFacebookService < Base::SendOnChannelService
   end
 
   def fb_attachment_message_params(attachment)
-    url = attachment.external_url.presence || attachment.download_url
+    # Prefer locally stored file URL over external CDN URL, which may have expired
+    url = attachment.file.attached? ? attachment.download_url : (attachment.external_url.presence || attachment.download_url)
     params = {
       recipient: { id: contact.get_source_id(inbox.id) },
       message: {

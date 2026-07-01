@@ -1,6 +1,7 @@
 {
   "REGISTER": {
     "TRY_WOOT": "ایجاد حساب کاربری",
+    "GET_STARTED": "Get started with Chatwoot",
     "TITLE": "ثبت نام",
     "TESTIMONIAL_HEADER": "تنها چیزی که لازم است یک قدم برای حرکت به جلو است",
     "TESTIMONIAL_CONTENT": "شما یک قدم تا جذب مشتریان خود، حفظ آنها و یافتن مشتریان جدید فاصله دارید.",
@@ -27,18 +28,17 @@
       "LABEL": "رمز عبور",
       "PLACEHOLDER": "رمز عبور",
       "ERROR": "رمز عبور خیلی کوتاه است",
-      "IS_INVALID_PASSWORD": "رمز عبور باید حداقل شامل 1 حرف بزرگ، 1 حرف کوچک، 1 عدد و 1 کاراکتر خاص باشد"
-    },
-    "DEALERSHIP": {
-      "LABEL": "شناسه نمایندگی",
-      "PLACEHOLDER": "شناسه نمایندگی خود را وارد کنید",
-      "ERROR": "شناسه نمایندگی الزامی است",
       "IS_INVALID_PASSWORD": "رمز عبور باید شامل حداقل ۱ حرف بزرگ، ۱ حرف کوچک، ۱ عدد و ۱ کاراکتر خاص باشد",
       "REQUIREMENTS_LENGTH": "At least 6 characters long",
       "REQUIREMENTS_UPPERCASE": "At least one uppercase letter",
       "REQUIREMENTS_LOWERCASE": "At least one lowercase letter",
       "REQUIREMENTS_NUMBER": "At least one number",
       "REQUIREMENTS_SPECIAL": "At least one special character"
+    },
+    "DEALERSHIP": {
+      "LABEL": "شناسه نمایندگی",
+      "PLACEHOLDER": "شناسه نمایندگی خود را وارد کنید",
+      "ERROR": "شناسه نمایندگی الزامی است"
     },
     "CONFIRM_PASSWORD": {
       "LABEL": "تکرار رمز عبور",
@@ -50,6 +50,13 @@
       "ERROR_MESSAGE": "ارتباط با سرور برقرار نشد، لطفا بعدا امتحان کنید"
     },
     "SUBMIT": "ایجاد حساب کاربری",
-    "HAVE_AN_ACCOUNT": "از قبل حساب‌کاربری دارید؟"
+    "HAVE_AN_ACCOUNT": "از قبل حساب‌کاربری دارید؟",
+    "VERIFY_EMAIL": {
+      "TITLE": "Check your inbox",
+      "DESCRIPTION": "We sent a verification link to {email}. Click the link to verify your email and get started.",
+      "RESEND": "ارسال مجدد ایمیل تایید",
+      "RESEND_SUCCESS": "Verification email sent. Please check your inbox.",
+      "RESEND_ERROR": "Could not send verification email. Please try again."
+    }
   }
 }

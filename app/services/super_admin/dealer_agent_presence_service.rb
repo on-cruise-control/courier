@@ -78,7 +78,7 @@ class SuperAdmin::DealerAgentPresenceService
   end
 
   def latest_session_for(account_user)
-    UserSession.where(account_id: account_user.account_id, user_id: account_user.user_id)
+    UserDailySession.where(account_id: account_user.account_id, user_id: account_user.user_id)
                .order(session_date: :desc, created_at: :desc)
                .first
   end

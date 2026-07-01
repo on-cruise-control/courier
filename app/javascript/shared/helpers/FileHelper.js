@@ -1,3 +1,6 @@
+import { getAllowedFileTypesByChannel } from '@chatwoot/utils';
+import { INBOX_TYPES } from 'dashboard/helper/inbox';
+
 export const DEFAULT_MAXIMUM_FILE_UPLOAD_SIZE = 40;
 
 export const formatBytes = (bytes, decimals = 2) => {
@@ -33,21 +36,52 @@ export const resolveMaximumFileUploadSize = value => {
 };
 
 /**
- * Get maximum file upload size (in MB) for a specific channel
- * @param {Object} options
- * @param {string} options.channelType - The channel type (e.g., 'Channel::TwilioSms', 'Channel::Whatsapp')
- * @param {string} [options.medium] - The medium for Twilio channels ('sms' | 'whatsapp')
- * @param {string} [options.mime] - The MIME type of the file (e.g., 'image/png')
- * @returns {number} Maximum file size in MB, or DEFAULT_MAXIMUM_FILE_UPLOAD_SIZE if no specific limit
+ * Validates if a file type is allowed for a specific channel
+ * @param {File} file - The file to validate
+ * @param {Object} options - Validation options
+ * @param {string} options.channelType - The channel type
+ * @param {string} options.medium - The channel medium
+ * @param {string} options.conversationType - The conversation type (for Instagram DM detection)
+ * @param {boolean} options.isInstagramChannel - Whether it's an Instagram channel
+ * @param {boolean} options.isOnPrivateNote - Whether composing a private note (uses broader file type list)
+ * @returns {boolean} - True if file type is allowed, false otherwise
  */
-export const getMaxUploadSizeByChannel = ({ channelType, medium, mime }) => {
-  // For now, return default size for all channels
-  // Channel-specific limits can be added here if needed
-  // Common limits:
-  // - WhatsApp: 16 MB for media, 100 MB for documents
-  // - SMS: Usually very small (e.g., 1-5 MB)
-  // - Instagram: 100 MB for videos, 8 MB for images
-  
-  // Return default - the calling code will use installation limit if this equals DEFAULT_MAXIMUM_FILE_UPLOAD_SIZE
-  return DEFAULT_MAXIMUM_FILE_UPLOAD_SIZE;
+export const isFileTypeAllowedForChannel = (file, options = {}) => {
+  if (!file || file.size === 0) return false;
+
+  const {
+    channelType: originalChannelType,
+    medium,
+    conversationType,
+    isInstagramChannel,
+    isOnPrivateNote,
+  } = options;
+
+  const allowedFileTypes = isOnPrivateNote
+    ? getAllowedFileTypesByChannel()
+    : getAllowedFileTypesByChannel({
+        channelType:
+          isInstagramChannel || conversationType === 'instagram_direct_message'
+            ? INBOX_TYPES.INSTAGRAM
+            : originalChannelType,
+        medium,
+      });
+
+  // Convert to array and validate
+  const allowedTypesArray = allowedFileTypes.split(',').map(t => t.trim());
+  const fileExtension = `.${file.name.split('.').pop()}`;
+
+  return allowedTypesArray.some(allowedType => {
+    // Check for exact file extension match
+    if (allowedType === fileExtension) return true;
+
+    // Check for wildcard MIME type (e.g., image/*)
+    if (allowedType.endsWith('/*')) {
+      const prefix = allowedType.slice(0, -2); // Remove '/*'
+      return file.type.startsWith(prefix + '/');
+    }
+
+    // Check for exact MIME type match
+    return allowedType === file.type;
+  });
 };

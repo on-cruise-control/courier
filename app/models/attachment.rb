@@ -25,18 +25,23 @@ class Attachment < ApplicationRecord
   include Rails.application.routes.url_helpers
 
   ACCEPTABLE_FILE_TYPES = %w[
-    text/csv text/plain text/rtf
+    text/csv text/plain text/rtf text/xml
     application/json application/pdf
+    application/xml
     application/zip application/x-7z-compressed application/vnd.rar application/x-tar
     application/msword application/vnd.ms-excel application/vnd.ms-powerpoint application/rtf
     application/vnd.oasis.opendocument.text
     application/vnd.openxmlformats-officedocument.presentationml.presentation
     application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
     application/vnd.openxmlformats-officedocument.wordprocessingml.document
+    application/x-pkcs12 application/pkcs12
   ].freeze
+  ACCEPTABLE_FILE_EXTENSIONS = %w[pfx xml].freeze
+  GENERIC_FILE_CONTENT_TYPES = %w[application/octet-stream].freeze
   belongs_to :account
   belongs_to :message
   has_one_attached :file
+  before_save :set_extension
   validate :acceptable_file
   validates :external_url, length: { maximum: Limits::URL_LENGTH_LIMIT }
   enum file_type: { :image => 0, :audio => 1, :video => 2, :file => 3, :location => 4, :fallback => 5, :share => 6, :story_mention => 7,
@@ -48,9 +53,13 @@ class Attachment < ApplicationRecord
     base_data.merge(metadata_for_file_type)
   end
 
-  # NOTE: the URl returned does a 301 redirect to the actual file
+  # NOTE: returns a root-relative path so browsers resolve it against the
+  # current origin — works correctly on localhost and ngrok without needing
+  # FRONTEND_URL to match the access URL.
   def file_url
-    file.attached? ? url_for(file) : ''
+    return '' unless file.attached?
+
+    Rails.application.routes.url_helpers.rails_storage_redirect_path(file)
   end
 
   # NOTE: for External services use this methods since redirect doesn't work effectively in a lot of cases
@@ -59,13 +68,39 @@ class Attachment < ApplicationRecord
     file.attached? ? file.blob.url : ''
   end
 
-  def thumb_url
+  # Returns an absolute redirect URL for external services that lazy-load media
+  # (e.g. LINE), where a signed blob URL that expires in minutes is too short-lived.
+  def public_file_url
+    return '' unless file.attached?
+
+    ActiveStorage::Current.url_options = Rails.application.routes.default_url_options if ActiveStorage::Current.url_options.blank?
+    Rails.application.routes.url_helpers.rails_storage_redirect_url(file)
+  end
+
+  # Absolute thumbnail URL for external services — mirrors thumb_url but keeps the host.
+  def public_thumb_url
     return '' unless file.attached? && image?
 
+    ActiveStorage::Current.url_options = Rails.application.routes.default_url_options if ActiveStorage::Current.url_options.blank?
     begin
       url_for(file.representation(resize_to_fill: [250, nil]))
     rescue ActiveStorage::UnrepresentableError => e
       Rails.logger.warn "Unrepresentable image attachment: #{id} (#{file.filename}) - #{e.message}"
+      ''
+    end
+  end
+
+  def thumb_url
+    return '' unless file.attached? && image?
+
+    ActiveStorage::Current.url_options = Rails.application.routes.default_url_options if ActiveStorage::Current.url_options.blank?
+    begin
+      full_url = url_for(file.representation(resize_to_fill: [250, nil]))
+      URI.parse(full_url).request_uri
+    rescue ActiveStorage::UnrepresentableError => e
+      Rails.logger.warn "Unrepresentable image attachment: #{id} (#{file.filename}) - #{e.message}"
+      ''
+    rescue URI::InvalidURIError
       ''
     end
   end
@@ -89,7 +124,7 @@ class Attachment < ApplicationRecord
     when :embed
       embed_data
     else
-      file_metadata
+      file.attached? ? file_metadata : { data_url: external_url, thumb_url: '' }
     end
   end
 
@@ -103,40 +138,29 @@ class Attachment < ApplicationRecord
     audio_file_data = base_data.merge(file_metadata)
     audio_file_data.merge(
       {
+        # Keep audio playback inline while avoiding the ActiveStorage proxy path.
+        data_url: inline_audio_url,
         transcribed_text: meta&.[]('transcribed_text') || ''
       }
     )
   end
 
+  def inline_audio_url
+    return '' unless file.attached?
+
+    Rails.application.routes.url_helpers.rails_storage_redirect_path(file, disposition: 'inline')
+  end
+
   def file_metadata
-    metadata = {
+    {
       extension: extension,
-      data_url: nil,
-      thumb_url: nil,
-      file_size: nil,
-      width: nil,
-      height: nil
+      content_type: file.content_type,
+      data_url: file_url,
+      thumb_url: thumb_url,
+      file_size: file.byte_size,
+      width: file.metadata[:width],
+      height: file.metadata[:height]
     }
-
-    if file.attached?
-      metadata[:data_url] = file_url
-      metadata[:thumb_url] = thumb_url
-      metadata[:file_size] = file.byte_size
-      metadata[:width] = file.metadata[:width]
-      metadata[:height] = file.metadata[:height]
-    end
-
-    # For outgoing Instagram/Facebook bot images, prefer the CDN URL over ActiveStorage
-    if (message.inbox.instagram? || message.inbox.facebook?) && external_url.present? && message.outgoing?
-      metadata[:data_url] = metadata[:thumb_url] = external_url
-    end
-
-    # No file attached anywhere — fall back to external_url
-    if external_url.present? && !file.attached?
-      metadata[:data_url] = metadata[:thumb_url] = external_url
-    end
-
-    metadata
   end
 
   def location_metadata
@@ -171,6 +195,21 @@ class Attachment < ApplicationRecord
     }
   end
 
+  def instagram_incoming_message?
+    return false unless message.incoming?
+
+    return true if message.inbox.instagram_direct?
+
+    message.inbox.instagram? && message.conversation&.additional_attributes&.dig('type') == 'instagram_direct_message'
+  end
+
+  def set_extension
+    return unless file.attached?
+    return if extension.present?
+
+    self.extension = File.extname(file.filename.to_s).delete_prefix('.').presence
+  end
+
   def should_validate_file?
     return unless file.attached?
     # we are only limiting attachment types in case of website widget
@@ -187,7 +226,10 @@ class Attachment < ApplicationRecord
   end
 
   def validate_file_content_type(file_content_type)
-    errors.add(:file, 'type not supported') unless media_file?(file_content_type) || ACCEPTABLE_FILE_TYPES.include?(file_content_type)
+    return if media_file?(file_content_type) || ACCEPTABLE_FILE_TYPES.include?(file_content_type)
+    return if generic_file_content_type?(file_content_type) && ACCEPTABLE_FILE_EXTENSIONS.include?(file_extension)
+
+    errors.add(:file, 'type not supported')
   end
 
   def validate_file_size(byte_size)
@@ -198,7 +240,15 @@ class Attachment < ApplicationRecord
   end
 
   def media_file?(file_content_type)
-    file_content_type.start_with?('image/', 'video/', 'audio/')
+    file_content_type.to_s.start_with?('image/', 'video/', 'audio/')
+  end
+
+  def generic_file_content_type?(file_content_type)
+    file_content_type.blank? || GENERIC_FILE_CONTENT_TYPES.include?(file_content_type)
+  end
+
+  def file_extension
+    File.extname(file.filename.to_s).delete_prefix('.').downcase
   end
 end
 

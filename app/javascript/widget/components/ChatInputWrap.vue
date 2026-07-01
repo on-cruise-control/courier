@@ -1,18 +1,25 @@
 <script>
+import { defineAsyncComponent } from 'vue';
 import { mapGetters } from 'vuex';
 import { getContrastingTextColor } from '@chatwoot/utils';
 import ChatSendButton from 'widget/components/ChatSendButton.vue';
 import { useAttachments } from '../composables/useAttachments';
 import configMixin from '../mixins/configMixin';
 import routerMixin from '../mixins/routerMixin';
+import FluentIcon from 'shared/components/FluentIcon/Index.vue';
 import ResizableTextArea from 'shared/components/ResizableTextArea.vue';
 import { trackEvent } from 'widget/helpers/analyticsHelper';
 
+const EmojiPicker = defineAsyncComponent(
+  () => import('shared/components/emoji/EmojiPicker.vue')
+);
 
 export default {
   name: 'ChatInputWrap',
   components: {
     ChatSendButton,
+    EmojiPicker,
+    FluentIcon,
     ResizableTextArea,
   },
   mixins: [configMixin, routerMixin],
@@ -23,9 +30,14 @@ export default {
     },
   },
   setup() {
-    const { canHandleAttachments, hasEmojiPickerEnabled } = useAttachments();
+    const {
+      canHandleAttachments,
+      shouldShowEmojiPicker,
+      hasEmojiPickerEnabled,
+    } = useAttachments();
     return {
       canHandleAttachments,
+      shouldShowEmojiPicker,
       hasEmojiPickerEnabled,
     };
   },
@@ -42,6 +54,9 @@ export default {
       widgetColor: 'appConfig/getWidgetColor',
       isWidgetOpen: 'appConfig/getIsWidgetOpen',
     }),
+    showAttachment() {
+      return this.canHandleAttachments && this.userInput.length === 0;
+    },
     showSendButton() {
       return this.userInput.length > 0;
     },
@@ -104,6 +119,9 @@ export default {
     emojiOnClick(emoji) {
       this.userInput = `${this.userInput}${emoji} `;
     },
+    onSelectEmoji({ value }) {
+      this.emojiOnClick(value);
+    },
     onTypingOff() {
       this.toggleTyping('off');
     },
@@ -114,7 +132,7 @@ export default {
       this.$store.dispatch('conversation/toggleUserTyping', { typingStatus });
     },
     focusInput() {
-      this.$refs.chatInput.focus();
+      this.$refs.chatInput?.focus();
     },
     handleTextUsClick() {
       // Navigate to SMS form
@@ -129,7 +147,7 @@ export default {
   <div
     class="items-center flex ltr:pl-3 rtl:pr-3 ltr:pr-2 rtl:pl-2 rounded-[7px] transition-all duration-200 bg-n-background !shadow-[0_0_0_1px,0_0_2px_3px]"
     :class="{
-      '!shadow-n-brand dark:!shadow-n-brand': isFocused,
+      '!shadow-[var(--widget-color,#2781f6)]': isFocused,
       '!shadow-n-strong dark:!shadow-n-strong': !isFocused,
     }"
     @keydown.esc="hideEmojiPicker"
@@ -147,12 +165,13 @@ export default {
       @focus="onFocus"
       @blur="onBlur"
     />
-    <div class="flex items-center ltr:pl-2 rtl:pr-2">
+    <div class="relative flex items-center ltr:pl-2 rtl:pr-2">
+      <!-- ChatAttachmentButton removed: component not yet available -->
       <!-- <ChatAttachmentButton
         v-if="showAttachment"
         class="text-n-slate-12"
         :on-attach="onSendAttachment"
-      />
+      /> -->
       <button
         v-if="shouldShowEmojiPicker && hasEmojiPickerEnabled"
         class="flex items-center justify-center min-h-8 min-w-8"
@@ -167,13 +186,14 @@ export default {
             'text-n-brand': showEmojiPicker,
           }"
         />
-      </button> -->
-      <!-- <EmojiInput
+      </button>
+      <EmojiPicker
         v-if="shouldShowEmojiPicker && showEmojiPicker"
         v-on-clickaway="hideEmojiPicker"
-        :on-click="emojiOnClick"
+        class="!bottom-full end-0 mb-2 max-w-[calc(100vw-3rem)]"
+        @select="onSelectEmoji"
         @keydown.esc="hideEmojiPicker"
-      /> -->
+      />
       <ChatSendButton
         v-if="showSendButton"
         :color="widgetColor"
@@ -194,10 +214,6 @@ export default {
 </template>
 
 <style scoped lang="scss">
-.emoji-dialog {
-  @apply max-w-full ltr:right-5 rtl:right-[unset] rtl:left-5 -top-[302px] before:ltr:right-2.5 before:rtl:right-[unset] before:rtl:left-2.5;
-}
-
 .user-message-input {
   @apply border-none outline-none flex-1 placeholder:text-n-slate-10 resize-none h-8 min-h-8 max-h-60 py-1 px-0 my-2 bg-n-background text-n-slate-12 transition-all duration-200;
 }

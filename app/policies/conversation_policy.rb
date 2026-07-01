@@ -4,7 +4,7 @@ class ConversationPolicy < ApplicationPolicy
   end
 
   def destroy?
-    @account_user&.administrator?
+    administrator?
   end
 
   def show?

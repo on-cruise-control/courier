@@ -18,9 +18,13 @@ class ConversationApi extends ApiClient {
     return axios.get('/api/v1/summary', {
       params: {
         conversation_id: conversationID,
-        force_refresh: forceRefresh
+        force_refresh: forceRefresh,
       },
     });
+  }
+
+  getUnreadCounts() {
+    return axios.get(`${this.url}/unread_counts`);
   }
 }
 

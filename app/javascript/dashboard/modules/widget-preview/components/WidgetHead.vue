@@ -51,28 +51,15 @@ const isDefaultScreen = computed(() => {
 
         <div v-if="!isDefaultScreen" class="flex flex-col">
           <div class="flex items-center justify-start gap-1">
-            <span
-              v-if="config.dealerName"
-              class="font-semibold dark:text-blue-300 text-base"
-            >
-              {{ config.dealerName }}
-            </span>
-            <span
-              v-else
-              class="text-base font-medium leading-3 text-slate-900 dark:text-white"
-            >
+            <span class="text-base font-medium leading-3 text-n-slate-12">
               {{ config.websiteName }}
             </span>
             <div
               v-if="config.isOnline"
-              class="w-2 h-2 bg-green-500 rounded-full"
-            ></div>
+              class="w-2 h-2 bg-n-teal-10 rounded-full"
+            />
           </div>
-
-          <span
-            v-if="!config.dealerTagline"
-            class="mt-1 text-xs text-slate-600 dark:text-slate-400"
-          >
+          <span v-if="!config.dealerTagline" class="mt-1 text-xs text-n-slate-11">
             {{ config.replyTime }}
           </span>
           <span

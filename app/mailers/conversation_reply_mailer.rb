@@ -35,9 +35,9 @@ class ConversationReplyMailer < ApplicationMailer
   end
 
   def email_reply(message)
-    return unless smtp_config_set_or_development?
-
     init_conversation_attributes(message.conversation)
+    return unless smtp_config_set_or_development? || email_smtp_enabled? || (email_imap_enabled? && email_oauth_enabled?)
+
     @message = message
     prepare_mail(true)
   end
@@ -104,7 +104,7 @@ class ConversationReplyMailer < ApplicationMailer
   end
 
   def business_name
-    @inbox.business_name || @inbox.sanitized_name
+    @inbox.sanitized_business_name
   end
 
   def from_email
@@ -137,10 +137,6 @@ class ConversationReplyMailer < ApplicationMailer
 
   def channel_email_with_name
     sender_name(@channel.email)
-  end
-
-  def parse_email(email_string)
-    Mail::Address.new(email_string).address
   end
 
   def inbox_from_email_address

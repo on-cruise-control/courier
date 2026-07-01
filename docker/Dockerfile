@@ -1,25 +1,13 @@
-# --------- Stage 1: Node Base Layer ---------
-FROM node:23-alpine as node
+# pre-build stage
+FROM node:24-alpine as node
 FROM ruby:3.4.4-alpine3.21 AS pre-builder
 
-# --------- Stage 2: Ruby Build Stage ---------
-FROM ruby:3.4.4-alpine3.21 AS pre-builder
-
-# ARGs & ENVs
-ARG NODE_VERSION="23.7.0"
+ARG NODE_VERSION="24.13.0"
 ARG PNPM_VERSION="10.2.0"
 ARG BUNDLER_VERSION="2.5.11"
 ARG BUNDLE_WITHOUT="development:test"
-ARG RAILS_ENV="production"
-ARG RAILS_SERVE_STATIC_FILES="true"
-ARG POSTMARK_API_TOKEN
-ARG SOURCE_TOKEN
-ARG INGESTING_HOST
-ARG CDN_ACCESS_KEY
-ARG CDN_ACCESS_SECRET
-ARG CDN_REGION
-ARG CDN_BUCKET
-ARG ASSET_CDN_HOST
+ENV BUNDLE_WITHOUT ${BUNDLE_WITHOUT}
+ENV BUNDLER_VERSION=2.5.16
 
 ENV NODE_VERSION=${NODE_VERSION} \
 PNPM_VERSION=${PNPM_VERSION} \
@@ -43,26 +31,17 @@ BUNDLE_RETRY=2
 
 # Install build dependencies (including openssl-dev and git)
 RUN apk update && apk add --no-cache \
-build-base \
-git \
-curl \
-tzdata \
-openssl \
-openssl-dev \
-postgresql-dev \
-postgresql-client \
-xz \
-ruby-dev \
-vips \
-linux-headers \
-make \
-g++ \
-libc6-compat \
-python3 \
-libuv \
-ca-certificates \
-imagemagick \
-imagemagick-dev
+  openssl \
+  tar \
+  build-base \
+  tzdata \
+  postgresql-dev \
+  postgresql-client \
+  git \
+  curl \
+  xz \
+  && mkdir -p /var/app \
+  && gem install bundler -v "$BUNDLER_VERSION"
 
 # Setup App Directory
 WORKDIR /app
@@ -125,26 +104,38 @@ RUN rm -rf /gems/ruby/3.4.0/cache/*.gem \
 # final build stage
 FROM ruby:3.4.4-alpine3.21
 
-ARG RAILS_ENV="production"
-ARG RAILS_SERVE_STATIC_FILES="true"
+ARG NODE_VERSION="24.13.0"
+ARG PNPM_VERSION="10.2.0"
+ENV NODE_VERSION=${NODE_VERSION}
+ENV PNPM_VERSION=${PNPM_VERSION}
 
-ENV RAILS_ENV=${RAILS_ENV} \
-RAILS_SERVE_STATIC_FILES=${RAILS_SERVE_STATIC_FILES} \
-EXECJS_RUNTIME=Disabled \
-BUNDLE_FORCE_RUBY_PLATFORM=1 \
-BUNDLE_PATH="/gems" \
-NODE_OPTIONS="--max-old-space-size=4096"
+ARG BUNDLE_WITHOUT="development:test"
+ENV BUNDLE_WITHOUT ${BUNDLE_WITHOUT}
+ENV BUNDLER_VERSION=2.5.16
+
+ARG EXECJS_RUNTIME="Disabled"
+ENV EXECJS_RUNTIME ${EXECJS_RUNTIME}
+
+ARG RAILS_SERVE_STATIC_FILES=true
+ENV RAILS_SERVE_STATIC_FILES ${RAILS_SERVE_STATIC_FILES}
+
+ARG BUNDLE_FORCE_RUBY_PLATFORM=1
+ENV BUNDLE_FORCE_RUBY_PLATFORM ${BUNDLE_FORCE_RUBY_PLATFORM}
+
+ARG RAILS_ENV=production
+ENV RAILS_ENV ${RAILS_ENV}
+ENV BUNDLE_PATH="/gems"
 
 # Runtime dependencies (keep git!)
 RUN apk update && apk add --no-cache \
-openssl \
-tzdata \
-postgresql-client \
-vips \
-libstdc++ \
-git \
-libuv \
-imagemagick
+  build-base \
+  openssl \
+  tzdata \
+  postgresql-client \
+  imagemagick \
+  git \
+  vips \
+  && gem install bundler -v "$BUNDLER_VERSION"
 
 # Copy Node runtime only
 COPY --from=node /usr/local/bin/node /usr/local/bin/

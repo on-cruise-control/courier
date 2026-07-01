@@ -11,11 +11,11 @@ class Captain::Copilot::ChatService < Llm::BaseAiService
     @user = nil
     @copilot_thread = nil
     @previous_history = []
-    @conversation_id = config[:conversation_id]
+    @conversation = @account.conversations.find_by(display_id: config[:conversation_id])
+    @conversation_id = @conversation&.display_id
 
     setup_user(config)
     setup_message_history(config)
-    register_tools
     @tools = build_tools
     @messages = build_messages(config)
   end
@@ -60,17 +60,6 @@ class Captain::Copilot::ChatService < Llm::BaseAiService
                         end
   end
 
-  def register_tools
-    @tool_registry = Captain::ToolRegistryService.new(@assistant, user: @user)
-    @tool_registry.register_tool(Captain::Tools::SearchDocumentationService)
-    @tool_registry.register_tool(Captain::Tools::Copilot::GetArticleService)
-    @tool_registry.register_tool(Captain::Tools::Copilot::GetContactService)
-    @tool_registry.register_tool(Captain::Tools::Copilot::GetConversationService)
-    @tool_registry.register_tool(Captain::Tools::Copilot::SearchArticlesService)
-    @tool_registry.register_tool(Captain::Tools::Copilot::SearchContactsService)
-    @tool_registry.register_tool(Captain::Tools::Copilot::SearchConversationsService)
-    @tool_registry.register_tool(Captain::Tools::Copilot::SearchLinearIssuesService)
-  end
   def build_tools
     tools = []
 
@@ -91,7 +80,7 @@ class Captain::Copilot::ChatService < Llm::BaseAiService
       role: 'system',
       content: Captain::Llm::SystemPromptsService.copilot_response_generator(
         @assistant.config['product_name'],
-        @tool_registry.tools_summary,
+        tools_summary,
         @assistant.config
       )
     }

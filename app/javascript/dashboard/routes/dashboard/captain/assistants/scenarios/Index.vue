@@ -10,7 +10,6 @@ import { useMessageFormatter } from 'shared/composables/useMessageFormatter';
 import Button from 'dashboard/components-next/button/Button.vue';
 import Input from 'dashboard/components-next/input/Input.vue';
 
-import SettingsPageLayout from 'dashboard/components-next/captain/SettingsPageLayout.vue';
 import PageLayout from 'dashboard/components-next/captain/PageLayout.vue';
 import SettingsHeader from 'dashboard/components-next/captain/pageComponents/settings/SettingsHeader.vue';
 import SuggestedScenarios from 'dashboard/components-next/captain/assistant/SuggestedRules.vue';
@@ -23,27 +22,13 @@ const route = useRoute();
 const store = useStore();
 const { uiSettings, updateUISettings } = useUISettings();
 const { formatMessage } = useMessageFormatter();
-const assistantId = route.params.assistantId;
+const assistantId = computed(() => Number(route.params.assistantId));
 
 const uiFlags = useMapGetter('captainScenarios/getUIFlags');
 const isFetching = computed(() => uiFlags.value.fetchingList);
-const assistant = computed(() =>
-  store.getters['captainAssistants/getRecord'](Number(assistantId))
-);
 const scenarios = useMapGetter('captainScenarios/getRecords');
 
 const searchQuery = ref('');
-
-const breadcrumbItems = computed(() => {
-  return [
-    {
-      label: t('CAPTAIN.ASSISTANTS.SETTINGS.BREADCRUMB.ASSISTANT'),
-      routeName: 'captain_assistants_index',
-    },
-    { label: assistant.value?.name, routeName: 'captain_assistants_edit' },
-    { label: t('CAPTAIN.ASSISTANTS.SCENARIOS.BREADCRUMB.TITLE') },
-  ];
-});
 
 const LINK_INSTRUCTION_CLASS =
   '[&_a[href^="tool://"]]:text-n-iris-11 [&_a:not([href^="tool://"])]:text-n-slate-12 [&_a]:pointer-events-none [&_a]:cursor-default';
@@ -120,7 +105,7 @@ const updateScenario = async scenario => {
   try {
     await store.dispatch('captainScenarios/update', {
       id: scenario.id,
-      assistantId: route.params.assistantId,
+      assistantId: assistantId.value,
       ...scenario,
       tools: getToolsFromInstruction(scenario.instruction),
     });
@@ -137,7 +122,7 @@ const deleteScenario = async id => {
   try {
     await store.dispatch('captainScenarios/delete', {
       id,
-      assistantId: route.params.assistantId,
+      assistantId: assistantId.value,
     });
     useAlert(t('CAPTAIN.ASSISTANTS.SCENARIOS.API.DELETE.SUCCESS'));
   } catch (error) {
@@ -155,7 +140,7 @@ const bulkDeleteScenarios = async ids => {
     idsArray.map(id =>
       store.dispatch('captainScenarios/delete', {
         id,
-        assistantId: route.params.assistantId,
+        assistantId: assistantId.value,
       })
     )
   );
@@ -166,7 +151,7 @@ const bulkDeleteScenarios = async ids => {
 const addScenario = async scenario => {
   try {
     await store.dispatch('captainScenarios/create', {
-      assistantId: route.params.assistantId,
+      assistantId: assistantId.value,
       ...scenario,
       tools: getToolsFromInstruction(scenario.instruction),
     });
@@ -183,7 +168,7 @@ const addAllExampleScenarios = async () => {
   try {
     scenariosExample.forEach(async scenario => {
       await store.dispatch('captainScenarios/create', {
-        assistantId: route.params.assistantId,
+        assistantId: assistantId.value,
         ...scenario,
       });
     });
@@ -198,7 +183,7 @@ const addAllExampleScenarios = async () => {
 
 onMounted(() => {
   store.dispatch('captainScenarios/get', {
-    assistantId: assistantId,
+    assistantId: assistantId.value,
   });
   store.dispatch('captainTools/getTools');
 });
@@ -206,8 +191,7 @@ onMounted(() => {
 
 <template>
   <PageLayout
-    :header-title="$t('CAPTAIN.DOCUMENTS.HEADER')"
-    :breadcrumb-items="breadcrumbItems"
+    :header-title="$t('CAPTAIN.ASSISTANTS.SCENARIOS.TITLE')"
     :is-fetching="isFetching"
     :show-know-more="false"
     :show-pagination-footer="false"

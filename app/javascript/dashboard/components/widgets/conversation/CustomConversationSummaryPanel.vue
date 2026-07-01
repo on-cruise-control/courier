@@ -3,7 +3,7 @@ import { ref, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useUISettings } from 'dashboard/composables/useUISettings';
 import CustomConversationSummary from './CustomConversationSummary.vue';
-import SidebarActionsHeader from 'dashboard/components-next/SidebarActionsHeader.vue';
+import Button from 'dashboard/components-next/button/Button.vue';
 
 const props = defineProps({
   conversationId: {
@@ -17,21 +17,10 @@ const { t } = useI18n();
 const { updateUISettings } = useUISettings();
 const conversationSummaryRef = ref(null);
 
-// Computed property to handle header buttons
-const headerButtons = computed(() => [
-  {
-    key: 'refresh',
-    icon: 'i-lucide-refresh-cw',
-    label: t('CONVERSATION.SUMMARY.REFRESH_LABEL'),
-    tooltip: t('CONVERSATION.SUMMARY.REFRESH_TOOLTIP'),
-    disabled: false,
-  },
-]);
+const title = computed(() => t('CONVERSATION.SIDEBAR.SUMMARY'));
 
-const handleHeaderAction = key => {
-  if (key === 'refresh') {
-    conversationSummaryRef.value?.fetchSummary(true);
-  }
+const refreshSummary = () => {
+  conversationSummaryRef.value?.fetchSummary(true);
 };
 
 const closePanel = () => {
@@ -42,15 +31,33 @@ const closePanel = () => {
 </script>
 
 <template>
-  <div class="flex flex-col h-full w-full bg-n-background custom-ui-font">
-    <SidebarActionsHeader
-      :title="$t('CONVERSATION.SIDEBAR.SUMMARY')"
-      :buttons="headerButtons"
-      close-icon="i-lucide-panel-left-close"
-      class="!bg-transparent !border-none !px-5 !pt-4"
-      @click="handleHeaderAction"
-      @close="closePanel"
-    />
+  <div class="flex flex-col h-full w-full bg-n-surface-1 custom-ui-font">
+    <div class="flex items-center justify-between h-14 px-5">
+      <h2
+        class="max-w-24 text-[11px] font-black uppercase leading-4 tracking-wide text-n-slate-12"
+      >
+        {{ title }}
+      </h2>
+      <div class="flex items-center gap-3">
+        <button
+          v-tooltip.bottom="t('CONVERSATION.SUMMARY.REFRESH_TOOLTIP')"
+          type="button"
+          class="flex items-center gap-1 text-xs font-medium text-n-slate-12 hover:text-n-brand"
+          @click="refreshSummary"
+        >
+          <i class="i-lucide-refresh-cw size-3.5" />
+          <span>{{ t('CONVERSATION.SUMMARY.REFRESH_LABEL') }}</span>
+        </button>
+        <Button
+          v-tooltip.bottom="$t('GENERAL.CLOSE')"
+          icon="i-lucide-panel-left-close"
+          ghost
+          sm
+          class="!text-n-slate-12 hover:!bg-transparent hover:!text-n-brand"
+          @click="closePanel"
+        />
+      </div>
+    </div>
     
     <div class="flex-1 overflow-y-auto">
       <CustomConversationSummary
@@ -60,16 +67,3 @@ const closePanel = () => {
     </div>
   </div>
 </template>
-
-<style lang="scss" scoped>
-.custom-ui-font {
-  font-family: 'Outfit', sans-serif !important;
-}
-
-::v-deep {
-  h2, .text-n-slate-12 {
-     font-family: 'Outfit', sans-serif !important;
-     @apply font-bold text-sm uppercase tracking-wide;
-  }
-}
-</style>

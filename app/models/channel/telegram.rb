@@ -155,11 +155,7 @@ class Channel::Telegram < ApplicationRecord
   end
 
   def message_request(chat_id, text, reply_markup = nil, reply_to_message_id = nil, business_connection_id: nil)
-    text_payload = convert_markdown_to_telegram_html(text)
     # text is already converted to HTML by MessageContentPresenter
-    business_body = {}
-    business_body[:business_connection_id] = business_connection_id if business_connection_id
-
     business_body = {}
     business_body[:business_connection_id] = business_connection_id if business_connection_id
 

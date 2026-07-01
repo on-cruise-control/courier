@@ -9,10 +9,6 @@ defineProps({
     type: Array,
     default: () => [],
   },
-  closeIcon: {
-    type: String,
-    default: 'i-lucide-x',
-  },
 });
 
 const emit = defineEmits(['click', 'close']);
@@ -24,33 +20,28 @@ const handleButtonClick = button => {
 
 <template>
   <div
-    class="border-b border-n-weak"
+    class="flex items-center justify-between px-4 py-2 border-b border-n-weak h-12"
   >
-    <div class="flex items-center justify-between px-4 py-2 h-12">
-      <div class="flex items-center justify-between gap-2 flex-1">
-        <span class="text-[11px] font-black uppercase tracking-[0.2em] text-n-slate-12">{{ title }}</span>
-        <div class="flex items-center">
-          <Button
-            v-for="button in buttons"
-            :key="button.key"
-            v-tooltip="button.tooltip"
-            :icon="button.icon"
-            :label="button.label"
-            ghost
-            sm
-            :disabled="button.disabled"
-            @click="handleButtonClick(button)"
-          />
-          <Button
-            v-tooltip="$t('GENERAL.CLOSE')"
-            :icon="closeIcon"
-            ghost
-            sm
-            @click="$emit('close')"
-          />
-        </div>
+    <div class="flex items-center justify-between gap-2 flex-1">
+      <span class="font-medium text-sm text-n-slate-12">{{ title }}</span>
+      <div class="flex items-center">
+        <Button
+          v-for="button in buttons"
+          :key="button.key"
+          v-tooltip="button.tooltip"
+          :icon="button.icon"
+          ghost
+          sm
+          @click="handleButtonClick(button)"
+        />
+        <Button
+          v-tooltip="$t('GENERAL.CLOSE')"
+          icon="i-lucide-x"
+          ghost
+          sm
+          @click="$emit('close')"
+        />
       </div>
     </div>
-    <slot />
   </div>
 </template>

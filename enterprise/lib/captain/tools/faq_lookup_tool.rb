@@ -28,12 +28,10 @@ class Captain::Tools::FaqLookupTool < Captain::Tools::BasePublicTool
         Question: #{response.question}
         Answer: #{response.answer}
         "
-    if response.documentable.present? && response.documentable.try(:external_link)
-      if should_show_source?(response)
+    if should_show_source?(response)
       formatted_response += "
           Source: #{response.documentable.external_link}
           "
-      end   
     end
 
     formatted_response

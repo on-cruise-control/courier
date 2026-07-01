@@ -44,7 +44,13 @@ class SuperAdmin::AccountsController < SuperAdmin::ApplicationController
         permitted_params[:limits] = params[:account][:limits].to_unsafe_h.compact
       end
     end
-    permitted_params[:selected_feature_flags] = params[:enabled_features].keys.map(&:to_sym) if params[:enabled_features].present?
+    if params[:enabled_features].present?
+      all_flags = params[:enabled_features].keys.map(&:to_sym)
+      column_1_values = Featurable::FEATURES_COLUMN_1.values.to_set
+      column_2_values = Featurable::FEATURES_COLUMN_2.values.to_set
+      permitted_params[:selected_feature_flags] = all_flags.select { |f| column_1_values.include?(f) }
+      permitted_params[:selected_feature_flags_2] = all_flags.select { |f| column_2_values.include?(f) }
+    end
     permitted_params
   end
 
