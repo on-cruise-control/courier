@@ -70,6 +70,7 @@ module Stark
         is_image_attached: message_has_image?(message),
         is_story_mentioned: is_story_mentioned?(message),
         session_id: conversation.id,
+        display_id: conversation.display_id,
         dealership_id: conversation.account&.dealership_id,
         account_id: conversation.account_id,
         customer_id: conversation.contact&.id,
@@ -91,6 +92,7 @@ module Stark
               .map do |message|
         message_data = {
           conversation_id: message.conversation_id,
+          display_id: message.conversation.display_id,
           message_type: message.message_type,
           content: message.content,
           customer_name: extract_customer_name(conversation.contact, conversation.inbox.platform_name),

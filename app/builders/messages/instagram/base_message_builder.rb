@@ -196,14 +196,22 @@ class Messages::Instagram::BaseMessageBuilder < Messages::Messenger::MessageBuil
   end
 
   def recent_duplicate_echo?
-    content = @messaging.dig(:message, :text)
-    return false if content.blank?
+    content = @messaging.dig(:message, :text)     # Echo's content
+  
+    if content.present?
+      # Text case
+      return conversation.messages.outgoing
+        .where(content: content)
+        .where('created_at >= ?', 2.minutes.ago)
+        .exists?
+    end
 
-    conversation.messages
-                .outgoing
-                .where(content: content)
-                .where('created_at >= ?', 2.minutes.ago)
-                .exists?
+    # Image case — runs only when echo's content is nil
+
+   conversation.messages.outgoing
+      .where(source_id: nil)
+      .where(content: nil)
+      .where('created_at >= ?', 1.minute.ago).exists?
   end
 
   def find_message_by_source_id(source_id)
