@@ -5,6 +5,7 @@ class Conversations::FollowUpJob < ApplicationJob
     conversation = Conversation.find_by(id: conversation_id)
     return if conversation.nil?
     return if (conversation.is_spam || conversation.stop_follow_up || conversation.assignee_id.present?)
+    return unless conversation.can_reply?
 
     last_message = conversation.messages
                                .not_activity

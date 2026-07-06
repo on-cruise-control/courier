@@ -113,6 +113,7 @@ export default {
       dealerName: '',
       dealerTagline: '',
       avatarName: '',
+      googleAnalyticsToken: '',
     };
   },
   computed: {
@@ -504,6 +505,10 @@ export default {
       this.widgetBubblePosition = this.inbox.widget_position || 'right';
       this.widgetBubbleType = this.inbox.widget_type || 'standard';
       this.widgetBubbleLauncherTitle = this.inbox.launcher_title || '';
+      this.dealerName = this.inbox.dealer_name || '';
+      this.dealerTagline = this.inbox.dealer_tagline || '';
+      this.avatarName = this.inbox.avatar_name || '';
+      this.googleAnalyticsToken = this.inbox.google_analytics_token || '';
     },
     async fetchHealthData() {
       if (!this.inbox) return;
@@ -584,40 +589,6 @@ export default {
       const tabIndex = this.tabs.findIndex(tab => tab.key === tabParam);
       this.selectedTabIndex = tabIndex === -1 ? 0 : tabIndex;
     },
-    fetchInboxSettings() {
-      this.selectedAgents = [];
-      this.$store.dispatch('agents/get');
-      this.$store.dispatch('teams/get');
-      this.$store.dispatch('labels/get');
-      this.$store.dispatch('inboxes/get').then(() => {
-        this.avatarUrl = this.inbox.avatar_url;
-        this.selectedInboxName = this.inbox.name;
-        this.webhookUrl = this.inbox.webhook_url;
-        this.greetingEnabled = this.inbox.greeting_enabled || false;
-        this.greetingMessage = this.inbox.greeting_message || '';
-        this.emailCollectEnabled = this.inbox.enable_email_collect;
-        this.senderNameType = this.inbox.sender_name_type;
-        this.businessName = this.inbox.business_name;
-        this.allowMessagesAfterResolved =
-          this.inbox.allow_messages_after_resolved;
-        this.continuityViaEmail = this.inbox.continuity_via_email;
-        this.channelWebsiteUrl = this.inbox.website_url;
-        this.channelWelcomeTitle = this.inbox.welcome_title;
-        this.channelWelcomeTagline = this.inbox.welcome_tagline || '';
-        this.selectedFeatureFlags = this.inbox.selected_feature_flags || [];
-        this.replyTime = this.inbox.reply_time;
-        this.locktoSingleConversation = this.inbox.lock_to_single_conversation;
-        this.selectedPortalSlug = this.inbox.help_center
-          ? this.inbox.help_center.slug
-          : '';
-        this.dealerName = this.inbox.dealer_name || '';
-        this.dealerTagline = this.inbox.dealer_tagline || '';
-        this.avatarName = this.inbox.avatar_name || '';
-
-        // Set initial tab after inbox data is loaded
-        this.setTabFromRouteParam();
-      });
-    },
     async updateInbox() {
       try {
         const payload = {
@@ -648,6 +619,7 @@ export default {
             dealer_name: this.dealerName,
             dealer_tagline: this.dealerTagline,
             avatar_name: this.avatarName,
+            google_analytics_token: this.googleAnalyticsToken,
             widget_position: this.widgetBubblePosition,
             widget_type: this.widgetBubbleType,
             launcher_title: this.widgetBubbleLauncherTitle,
@@ -1072,6 +1044,22 @@ export default {
               </SettingsFieldSection>
 
               <SettingsFieldSection
+                :label="
+                  $t('INBOX_MGMT.WIDGET_BUILDER.WIDGET_OPTIONS.GA_TOKEN.LABEL')
+                "
+              >
+                <woot-input
+                  v-model="googleAnalyticsToken"
+                  class="[&>input]:!mb-0"
+                  :placeholder="
+                    $t(
+                      'INBOX_MGMT.WIDGET_BUILDER.WIDGET_OPTIONS.GA_TOKEN.PLACE_HOLDER'
+                    )
+                  "
+                />
+              </SettingsFieldSection>
+
+              <SettingsFieldSection
                 :label="$t('INBOX_MGMT.ADD.WEBSITE_CHANNEL.WIDGET_COLOR.LABEL')"
               >
                 <div class="justify-start">
@@ -1403,9 +1391,9 @@ export default {
             @register-webhook="registerWebhook"
           />
         </div>
-      </div>
-      <div v-if="selectedTabKey === 'twilio-templates'" class="mx-8">
-        <TwilioTemplates :inbox="inbox" />
+        <div v-if="selectedTabKey === 'twilio-templates'" class="mx-8">
+          <TwilioTemplates :inbox="inbox" />
+        </div>
       </div>
     </section>
   </div>

@@ -790,7 +790,6 @@ $active-item-bg: rgba(255, 255, 255, 0.2);
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03) !important;
             border: 1px solid rgba(0, 0, 0, 0.02) !important;
             border-top: none !important;
-            padding: 12px !important;
 
             // DARK MODE OVERRIDE
             body.dark & {
@@ -971,6 +970,7 @@ $active-item-bg: rgba(255, 255, 255, 0.2);
                     .text-n-slate-11,
                     .text-n-amber-12\/50,
                     time,
+                    .private-note-label,
                     .i-lucide-lock-keyhole,
                     .i-lucide-lock-keyhole::before,
                     svg {

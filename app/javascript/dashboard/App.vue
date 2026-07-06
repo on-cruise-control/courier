@@ -63,6 +63,7 @@ export default {
       isRTL: 'accounts/isRTL',
       currentUser: 'getCurrentUser',
       authUIFlags: 'getAuthUIFlags',
+      accountUIFlags: 'accounts/getUIFlags',
     }),
     hideOnOnboardingView() {
       return !isOnOnboardingView(this.$route);
@@ -135,7 +136,7 @@ export default {
 
 <template>
   <div
-    v-if="!authUIFlags.isFetching"
+    v-if="!authUIFlags.isFetching && !accountUIFlags.isFetchingItem"
     id="app"
     class="flex flex-col w-full h-screen min-h-0 bg-n-background"
     :dir="isRTL ? 'rtl' : 'ltr'"
