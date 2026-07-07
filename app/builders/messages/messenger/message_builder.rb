@@ -2,12 +2,21 @@ class Messages::Messenger::MessageBuilder
   include ::FileTypeHelper
 
   def process_attachment(attachment)
-    # This check handles very rare case if there are multiple files to attach with only one usupported file
+    # This check handles very rare case if there are multiple files to attach with only one unsupported file
     return if unsupported_file_type?(attachment['type'])
 
-    attachment_obj = @message.attachments.new(attachment_params(attachment).except(:remote_file_url))
+    params = attachment_params(attachment)
+    attachment_obj = @message.attachments.new(params.except(:remote_file_url))
     attachment_obj.save!
-    attach_file(attachment_obj, attachment_params(attachment)[:remote_file_url]) if attachment_params(attachment)[:remote_file_url]
+    if facebook_reel?(attachment)
+      update_facebook_reel_content(attachment)
+    elsif params[:remote_file_url]
+      begin
+        attach_file(attachment_obj, params[:remote_file_url])
+      rescue Down::Error, StandardError => e
+        Rails.logger.warn "Failed to download attachment from #{params[:remote_file_url]}: #{e.message}"
+      end
+    end
     fetch_story_link(attachment_obj) if attachment_obj.file_type == 'story_mention'
     fetch_ig_story_link(attachment_obj) if attachment_obj.file_type == 'ig_story'
     fetch_ig_post_link(attachment_obj) if attachment_obj.file_type == 'ig_post'
@@ -15,18 +24,82 @@ class Messages::Messenger::MessageBuilder
   end
 
   def attach_file(attachment, file_url)
-    attachment_file = Down.download(
-      file_url
-    )
+    attachment_file = download_media(file_url, attachment.file_type)
+    return unless attachment_file
+
     attachment.file.attach(
       io: attachment_file,
       filename: attachment_file.original_filename,
       content_type: attachment_file.content_type
     )
+    # The Attachment row is saved before the blob is attached, so the
+    # after_create_commit broadcast bails on `file.attached?`. Re-fire here
+    # for audio so the bubble updates without waiting on transcription.
+    attachment.message&.reload&.send_update_event if attachment.file_type.to_sym == :audio
+  end
+
+  # Downloads the file from the given URL, validating that the content is
+  # actually media. Falls back to an authenticated URL for Facebook/Instagram
+  # CDN links that require the page access token.
+  def download_media(file_url, expected_file_type)
+    file = Down.download(file_url)
+    return file unless media_file_type?(expected_file_type)
+    return file if valid_media_content_type?(file.content_type)
+
+    # Content type doesn't match expected media — the CDN URL may have redirected
+    # to a login/error page. Retry with the channel access token if available.
+    token = channel_access_token
+    if token.present? && facebook_instagram_url?(file_url)
+      Rails.logger.warn("[AttachmentDownload] Unexpected content-type '#{file.content_type}' from #{file_url}. Retrying with access token.")
+      authenticated = append_access_token(file_url, token)
+      file = Down.download(authenticated)
+      return file if valid_media_content_type?(file.content_type)
+    end
+
+    Rails.logger.warn("[AttachmentDownload] Skipping attachment: non-media content-type '#{file.content_type}' from #{file_url}")
+    nil
+  end
+
+  def media_file_type?(file_type)
+    %i[image video audio ig_story].include?(file_type.to_sym)
+  end
+
+  def valid_media_content_type?(content_type)
+    content_type.to_s.start_with?('image/', 'video/', 'audio/')
+  end
+
+  def channel_access_token
+    return nil unless defined?(@inbox) && @inbox.respond_to?(:channel)
+
+    channel = @inbox.channel
+    return channel.access_token if channel.respond_to?(:access_token)
+    return channel.page_access_token if channel.respond_to?(:page_access_token)
+
+    nil
+  rescue StandardError
+    nil
+  end
+
+  def facebook_instagram_url?(url)
+    host = URI.parse(url).host.to_s
+    host.end_with?('facebook.com', 'fbcdn.net', 'cdninstagram.com', 'instagram.com', 'fbsbx.com')
+  rescue URI::InvalidURIError
+    false
+  end
+
+  def append_access_token(url, token)
+    uri = URI.parse(url)
+    params = URI.decode_www_form(uri.query || '')
+    return url if params.any? { |k, _| k == 'access_token' }
+
+    uri.query = URI.encode_www_form(params + [['access_token', token]])
+    uri.to_s
+  rescue URI::InvalidURIError
+    url
   end
 
   def attachment_params(attachment)
-    file_type = attachment['type'].to_sym
+    file_type = normalize_file_type(attachment['type'])
     params = { file_type: file_type, account_id: @message.account_id }
 
     if [:image, :file, :audio, :video, :share, :story_mention, :ig_reel, :ig_post, :ig_story].include? file_type
@@ -80,12 +153,49 @@ class Messages::Messenger::MessageBuilder
     message.update!(content: I18n.t('conversations.messages.instagram_story_content', story_sender: story_sender))
   end
 
+  def fetch_ig_story_link(attachment)
+    message = attachment.message
+    # For ig_story, we don't have the same API call as story_mention, so we'll set it up similarly but with generic content
+    message.content_attributes[:image_type] = 'ig_story'
+    message.content = I18n.t('conversations.messages.instagram_shared_story_content')
+    message.save!
+  end
+
+  def fetch_ig_post_link(attachment)
+    message = attachment.message
+    message.content_attributes[:image_type] = 'ig_post'
+    message.content = I18n.t('conversations.messages.instagram_shared_post_content')
+    message.save!
+  end
+
   # This is a placeholder method to be overridden by child classes
   def get_story_object_from_source_id(_source_id)
     {}
   end
 
   private
+
+  # Facebook may send attachment types that don't directly match our file_type enum.
+  # Map known aliases to their canonical enum values.
+  FACEBOOK_FILE_TYPE_MAP = { reel: :ig_reel }.freeze
+
+  def normalize_file_type(type)
+    sym = type.to_sym
+    FACEBOOK_FILE_TYPE_MAP.fetch(sym, sym)
+  end
+
+  # Facebook sends reel URLs as webpage links (facebook.com/reel/...) rather than
+  # direct video URLs. Downloading these yields HTML, not video content.
+  def facebook_reel?(attachment)
+    attachment['type'].to_sym == :reel
+  end
+
+  def update_facebook_reel_content(attachment)
+    url = attachment.dig('payload', 'url')
+    return if url.blank?
+
+    @message.update!(content: url) if @message.content.blank?
+  end
 
   def unsupported_file_type?(attachment_type)
     [:template, :unsupported_type, :ephemeral].include? attachment_type.to_sym

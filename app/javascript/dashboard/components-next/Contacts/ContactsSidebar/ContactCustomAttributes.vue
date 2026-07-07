@@ -89,9 +89,19 @@ const usedAttributes = computed(() => {
   return sortByUISettings(attributes);
 });
 
+const unusedAttributes = computed(() => {
+  if (!contactAttributes.value || !Array.isArray(contactAttributes.value)) {
+    return [];
+  }
+  return processContactAttributes(
+    contactAttributes.value,
+    props.selectedContact?.customAttributes || {},
+    (key, custom) => !(key in custom)
+  );
+});
 
 const filteredUnusedAttributes = computed(() => {
-  return unusedAttributes.value?.filter(attribute =>
+  return unusedAttributes.value.filter(attribute =>
     attribute.attributeDisplayName
       .toLowerCase()
       .includes(searchQuery.value.toLowerCase())
@@ -104,7 +114,7 @@ const hasNoUsedAttributes = computed(() => usedAttributes.value.length === 0);
 </script>
 
 <template>
-  <div v-if="hasContactAttributes" class="flex flex-col gap-6 px-6 py-6">
+  <div v-if="hasContactAttributes" class="flex flex-col gap-6 px-6">
     <div v-if="!hasNoUsedAttributes" class="flex flex-col gap-2">
       <ContactCustomAttributeItem
         v-for="attribute in usedAttributes"

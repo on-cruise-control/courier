@@ -6,25 +6,28 @@ import {
   useStore,
 } from 'dashboard/composables/store';
 import { useUISettings } from 'dashboard/composables/useUISettings';
+import { FEATURE_FLAGS } from 'dashboard/featureFlags';
+
 import AccordionItem from 'dashboard/components/Accordion/AccordionItem.vue';
 import CustomAccordionItem from 'dashboard/components/Accordion/CustomAccordionItem.vue';
+import SidebarActionsHeader from 'dashboard/components-next/SidebarActionsHeader.vue';
+import CustomSidebarActionsHeader from 'dashboard/components-next/CustomSidebarActionsHeader.vue';
+import ContactInfo from './contact/ContactInfo.vue';
 import ContactConversations from './ContactConversations.vue';
 import ConversationAction from './ConversationAction.vue';
 import ConversationParticipant from './ConversationParticipant.vue';
-import ContactInfo from './contact/ContactInfo.vue';
 import CustomContactInfo from './contact/CustomContactInfo.vue';
 import CustomConversationAction from './CustomConversationAction.vue';
+
 import ContactNotes from './contact/ContactNotes.vue';
 import ConversationInfo from './ConversationInfo.vue';
 import CustomAttributes from './customAttributes/CustomAttributes.vue';
+import SharedFiles from './SharedFiles.vue';
 import Draggable from 'vuedraggable';
 import MacrosList from './Macros/List.vue';
 import ShopifyOrdersList from 'dashboard/components/widgets/conversation/ShopifyOrdersList.vue';
-import SidebarActionsHeader from 'dashboard/components-next/SidebarActionsHeader.vue';
-import CustomSidebarActionsHeader from 'dashboard/components-next/CustomSidebarActionsHeader.vue';
 import LinearIssuesList from 'dashboard/components/widgets/conversation/linear/IssuesList.vue';
 import LinearSetupCTA from 'dashboard/components/widgets/conversation/linear/LinearSetupCTA.vue';
-import { FEATURE_FLAGS } from 'dashboard/featureFlags';
 
 const props = defineProps({
   conversationId: {
@@ -54,6 +57,7 @@ const ACCORDION_KEYS = [
   'is_linear_issues_open',
   'is_shopify_orders_open',
   'is_contact_notes_open',
+  'is_shared_files_open',
 ];
 
 const toggleAccordionItem = key => {
@@ -67,28 +71,19 @@ const dragging = ref(false);
 const conversationSidebarItems = ref([]);
 
 const currentAccountId = useMapGetter('getCurrentAccountId');
+const isFeatureEnabledonAccount = useMapGetter('accounts/isFeatureEnabledonAccount');
 
-const isFeatureEnabledonAccount = useMapGetter(
-  'accounts/isFeatureEnabledonAccount'
+const isCustomUIEnabled = computed(() =>
+  isFeatureEnabledonAccount.value(currentAccountId.value, FEATURE_FLAGS.CUSTOM_UI)
 );
 
-// CUSTOM UI
-const isCustomUIEnabled = computed(() => {
-  return isFeatureEnabledonAccount.value(
-    currentAccountId.value,
-    FEATURE_FLAGS.CUSTOM_UI
-  );
-});
+const AccordionComponent = computed(() =>
+  isCustomUIEnabled.value ? CustomAccordionItem : AccordionItem
+);
 
-const AccordionComponent = computed(() => {
-  return isCustomUIEnabled.value ? CustomAccordionItem : AccordionItem;
-});
-
-const SidebarHeaderComponent = computed(() => {
-  return isCustomUIEnabled.value
-    ? CustomSidebarActionsHeader
-    : SidebarActionsHeader;
-});
+const SidebarHeaderComponent = computed(() =>
+  isCustomUIEnabled.value ? CustomSidebarActionsHeader : SidebarActionsHeader
+);
 
 const shopifyIntegration = useFunctionGetter(
   'integrations/getIntegration',
@@ -99,19 +94,15 @@ const isShopifyFeatureEnabled = computed(
   () => shopifyIntegration.value.enabled
 );
 
+const isLinearFeatureEnabled = computed(() =>
+  isFeatureEnabledonAccount.value(currentAccountId.value, FEATURE_FLAGS.LINEAR)
+);
+
 const linearIntegration = useFunctionGetter(
   'integrations/getIntegration',
   'linear'
 );
 
-const isLinearIntegrationEnabled = computed(
-  () => linearIntegration.value?.enabled || false
-);
-
-const isLinearFeatureEnabled = isFeatureEnabledonAccount.value(
-  currentAccountId.value,
-  FEATURE_FLAGS.LINEAR
-);
 
 const isLinearClientIdConfigured = computed(() => {
   return !!linearIntegration.value?.id;
@@ -149,7 +140,7 @@ const getContactDetails = () => {
   }
 };
 
-// When contact changes, just load details; don't force Contact Attributes open.
+
 watch(contactId, (newContactId, prevContactId) => {
   if (newContactId && newContactId !== prevContactId) {
     getContactDetails();
@@ -267,10 +258,9 @@ onMounted(() => {
               @toggle="() => toggleAccordionItem('is_contact_attributes_open')"
             >
               <CustomAttributes
-                v-if="contactId"
                 attribute-type="contact_attribute"
                 attribute-from="conversation_contact_panel"
-                :contact-id="contactId"
+                :contact-id="contact.id"
                 :empty-state-message="
                   $t('CONVERSATION_CUSTOM_ATTRIBUTES.NO_RECORDS_FOUND')
                 "
@@ -322,7 +312,6 @@ onMounted(() => {
               compact
               @toggle="() => toggleAccordionItem('is_linear_issues_open')"
             >
-              <LinearSetupCTA v-if="!isLinearIntegrationEnabled" />
               <LinearSetupCTA v-if="!isLinearConnected" />
               <LinearIssuesList v-else :conversation-id="conversationId" />
             </component>
@@ -353,6 +342,17 @@ onMounted(() => {
               <ContactNotes :contact-id="contactId" />
             </component>
           </div>
+          <div v-else-if="element.name === 'shared_files'">
+            <component
+              :is="AccordionComponent"
+              :title="$t('CONVERSATION_SIDEBAR.ACCORDION.SHARED_FILES')"
+              :is-open="isContactSidebarItemOpen('is_shared_files_open')"
+              compact
+              @toggle="() => toggleAccordionItem('is_shared_files_open')"
+            >
+              <SharedFiles />
+            </component>
+          </div>
         </template>
       </Draggable>
     </div>
@@ -360,21 +360,7 @@ onMounted(() => {
 </template>
 
 <style lang="scss" scoped>
-::v-deep {
-  .contact--profile {
-    @apply pb-3 border-b border-solid border-n-weak;
-  }
-
-  .conversation--actions .multiselect-wrap--small {
-    .multiselect {
-      @apply box-border pl-6;
-    }
-
-    .multiselect__element {
-      span {
-        @apply w-full;
-      }
-    }
-  }
+:deep(.contact--profile) {
+  @apply pb-3 border-b border-solid border-n-weak;
 }
 </style>

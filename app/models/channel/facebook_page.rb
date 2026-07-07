@@ -4,8 +4,8 @@
 #
 #  id                :integer          not null, primary key
 #  facebook_page_url :string
-#  page_access_token :string           not null
-#  user_access_token :string           not null
+#  page_access_token :text             not null
+#  user_access_token :text             not null
 #  created_at        :datetime         not null
 #  updated_at        :datetime         not null
 #  account_id        :integer          not null

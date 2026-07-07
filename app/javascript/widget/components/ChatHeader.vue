@@ -21,6 +21,14 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  replyWaitMessage: {
+    type: String,
+    default: '',
+  },
+  showEndConversationButton: {
+    type: Boolean,
+    default: true,
+  },
   availableAgents: {
     type: Array,
     default: () => [],

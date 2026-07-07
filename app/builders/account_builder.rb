@@ -47,7 +47,8 @@ class AccountBuilder
     @account = Account.create!(
       name: account_name,
       locale: I18n.locale || I18n.default_locale,
-      dealership_id: @dealership_id
+      dealership_id: @dealership_id,
+      custom_attributes: { 'onboarding_step' => 'account_details' }
     )
     Current.account = @account
   end

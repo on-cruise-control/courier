@@ -58,7 +58,7 @@ module Stark
           )
 
           # (a) Image message (no content)
-          image_message = conversation.messages.create!(
+          image_message = conversation.messages.new(
             message_type: :outgoing,
             account_id: conversation.account_id,
             inbox_id: conversation.inbox_id,
@@ -66,8 +66,8 @@ module Stark
             private: is_deferred_spam_reply,
             additional_attributes: bypass_attributes(is_deferred_spam_reply, { 'sent_image': true })
           )
-          image_message.attachments.create!(
-            account_id: image_message.account_id,
+          image_message.attachments.new(
+            account_id: conversation.account_id,
             external_url: url,
             file: blob
           )

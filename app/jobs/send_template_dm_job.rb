@@ -150,7 +150,7 @@ class SendTemplateDmJob < ApplicationJob
     channel = contact_inbox.inbox.channel
     access_token = channel.page_access_token
     page_id = channel.page_id
-    app_secret = ENV.fetch('FB_APP_SECRET', '')
+    app_secret = GlobalConfigService.load('FB_APP_SECRET', '')
     app_secret_proof = calculate_app_secret_proof(app_secret, access_token)
 
     query = { access_token: access_token }
@@ -204,7 +204,10 @@ class SendTemplateDmJob < ApplicationJob
         additional_attributes: { 'delivery_status' => 'sent' }
       )
 
-      # Mark template DM as sent
+      # Mark template DM as sent. Reload first: creating the message above can trigger
+      # Message#schedule_follow_up_job, which reloads and updates this same conversation's
+      # additional_attributes - merging from a stale in-memory copy here would clobber that write.
+      template_dm_conversation.reload
       template_dm_conversation.update!(
         additional_attributes: template_dm_conversation.additional_attributes.merge('template_dm_sent' => true)
       )
@@ -265,7 +268,10 @@ class SendTemplateDmJob < ApplicationJob
         additional_attributes: { 'delivery_status' => 'sent' }
       )
 
-      # Mark template DM as sent
+      # Mark template DM as sent. Reload first: creating the message above can trigger
+      # Message#schedule_follow_up_job, which reloads and updates this same conversation's
+      # additional_attributes - merging from a stale in-memory copy here would clobber that write.
+      template_dm_conversation.reload
       template_dm_conversation.update!(
         additional_attributes: template_dm_conversation.additional_attributes.merge('instagram_dm_sent' => true)
       )

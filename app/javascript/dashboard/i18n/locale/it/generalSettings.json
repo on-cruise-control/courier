@@ -68,9 +68,9 @@
           "PLACEHOLDER": "Seleziona un'etichetta"
         },
         "IGNORE_WAITING": {
-          "LABEL": "Salta le conversazioni in attesa di risposta dell'agente"
+          "LABEL": "Salta le conversazioni in attesa di risposta dell'operatore"
         },
-        "UPDATE_BUTTON": "Salva modifiche"
+        "UPDATE_BUTTON": "Salva Modifiche"
       },
       "NAME": {
         "LABEL": "Nome account",
@@ -125,10 +125,10 @@
     },
     "UPDATE_CHATWOOT": "È disponibile un aggiornamento {latestChatwootVersion} per Chatwoot. Aggiorna la tua istanza.",
     "LEARN_MORE": "Scopri di più",
-    "PAYMENT_PENDING": "Your payment is pending. Please update your payment information to continue using Chatwoot",
+    "PAYMENT_PENDING": "Il tuo pagamento è in sospeso. Aggiorna le informazioni di pagamento per continuare a utilizzare Chatwoot",
     "UPGRADE": "Aggiorna per continuare a usare Chatwoot",
-    "LIMITS_UPGRADE": "Your account has exceeded the usage limits, please upgrade your plan to continue using Chatwoot",
-    "OPEN_BILLING": "Open billing",
+    "LIMITS_UPGRADE": "Il tuo account ha superato i limiti di utilizzo, aggiorna il tuo piano per continuare a utilizzare Chatwoot",
+    "OPEN_BILLING": "Apri fatturazione",
     "BOOKING_EMAILS": {
       "TITLE": "Booking Notification Emails",
       "NOTE": "Configure email addresses to receive booking notifications. Only these emails will receive booking alerts. If no emails are added, no booking notifications will be sent.",
@@ -198,6 +198,7 @@
   },
   "COMMAND_BAR": {
     "SEARCH_PLACEHOLDER": "Cerca o vai a",
+    "SNOOZE_PLACEHOLDER": "Digita un momento, ad esempio domani, tra 2 ore, venerdì prossimo, il 15 gennaio, ecc...",
     "SECTIONS": {
       "GENERAL": "Generale",
       "REPORTS": "Report",

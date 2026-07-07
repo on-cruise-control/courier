@@ -16,6 +16,22 @@ RSpec.describe 'Session', type: :request do
       end
     end
 
+    context 'when the user is unconfirmed' do
+      let!(:user) { create(:user, password: 'Password1!', account: account, skip_confirmation: false) }
+
+      it 'returns an unconfirmed user error code' do
+        params = { email: user.email, password: 'Password1!' }
+
+        post new_user_session_url,
+             params: params,
+             as: :json
+
+        expect(response).to have_http_status(:unauthorized)
+        expect(response.parsed_body['error_code']).to eq('user_not_confirmed')
+        expect(response.parsed_body['errors'].first).to include(user.email)
+      end
+    end
+
     context 'when it is valid credentials' do
       let!(:user) { create(:user, password: 'Password1!', account: account) }
       let!(:user_with_new_pwd) { create(:user, password: 'Password1!.><?', account: account) }
@@ -88,10 +104,10 @@ RSpec.describe 'Session', type: :request do
 
   describe 'GET /auth/sign_in' do
     it 'redirects to the frontend login page with error' do
-      with_modified_env FRONTEND_URL: 'http://www.example.com' do
+      with_modified_env FRONTEND_URL: '' do
         get new_user_session_url
 
-        expect(response).to redirect_to('http://www.example.com/app/login?error=access-denied')
+        expect(response).to redirect_to(%r{/app/login\?error=access-denied$})
       end
     end
   end

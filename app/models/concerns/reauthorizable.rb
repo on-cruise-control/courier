@@ -37,11 +37,14 @@ module Reauthorizable
   # Performed automatically if error threshold is breached
   # could used to manually prompt reauthorization if auth scope changes
   def prompt_reauthorization!
+    state_changed = !reauthorization_required?
+
     ::Redis::Alfred.set(reauthorization_required_key, true)
 
     reauthorization_handlers[self.class.name]&.call(self)
 
     invalidate_inbox_cache unless instance_of?(::AutomationRule)
+    dispatch_inbox_reauthorization_event(true) if state_changed
   end
 
   def process_integration_hook_reauthorization_emails
@@ -54,7 +57,6 @@ module Reauthorizable
 
   def send_channel_reauthorization_email(disconnect_type)
     # AdministratorNotifications::ChannelNotificationsMailer.with(account: account).public_send(disconnect_type, inbox).deliver_later
-    
     send_slack_notification_for_channel_reauthorization(disconnect_type)
   end
 
@@ -65,13 +67,23 @@ module Reauthorizable
 
   # call this after you successfully Reauthorized the object in UI
   def reauthorized!
+    state_changed = reauthorization_required?
+
     ::Redis::Alfred.delete(authorization_error_count_key)
     ::Redis::Alfred.delete(reauthorization_required_key)
 
     invalidate_inbox_cache unless instance_of?(::AutomationRule)
+    dispatch_inbox_reauthorization_event(false) if state_changed
   end
 
   private
+
+  def dispatch_inbox_reauthorization_event(reauthorization_required)
+    return unless respond_to?(:inbox)
+    return if inbox.blank?
+
+    inbox.dispatch_reauthorization_event(reauthorization_required)
+  end
 
   def reauthorization_handlers
     {
@@ -91,14 +103,14 @@ module Reauthorizable
     channel_name = inbox.channel.name
     channel_details = channel_specific_details(disconnect_type)
     inbox_url = "#{ENV.fetch('FRONTEND_URL', nil)}/app/accounts/#{account.id}/settings/inboxes/#{inbox.id}"
-    
+
     message = "⚠️ #{channel_name} inbox reauthorization required\n" \
               "Inbox: #{inbox.name} (ID: #{inbox.id})\n" \
               "Account: #{account.name} (ID: #{account.id})\n" \
               "#{channel_details}" \
               "Please reauthorize the connection to restore functionality.\n" \
               "<#{inbox_url}|Click here to re-connect.>"
-    
+
     SlackNotifierService.call(text: message)
   end
 
@@ -115,7 +127,7 @@ module Reauthorizable
       profile_url = inbox.channel.instagram_profile_url.presence || "Instagram ID: #{inbox.channel.instagram_id}"
       "Instagram Profile: #{profile_url}\n"
     else
-      ""
+      ''
     end
   end
 

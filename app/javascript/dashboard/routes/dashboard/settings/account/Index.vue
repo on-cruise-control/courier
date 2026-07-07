@@ -7,7 +7,6 @@ import { useUISettings } from 'dashboard/composables/useUISettings';
 import { useConfig } from 'dashboard/composables/useConfig';
 import { useAccount } from 'dashboard/composables/useAccount';
 import { FEATURE_FLAGS } from '../../../../featureFlags';
-import { getLanguageDirection } from 'dashboard/components/widgets/conversation/advancedFilterItems/languages';
 import WithLabel from 'v3/components/Form/WithLabel.vue';
 import NextInput from 'next/input/Input.vue';
 import BaseSettingsHeader from '../components/BaseSettingsHeader.vue';
@@ -15,12 +14,11 @@ import NextButton from 'dashboard/components-next/button/Button.vue';
 import AccountId from './components/AccountId.vue';
 import BuildInfo from './components/BuildInfo.vue';
 import AccountDelete from './components/AccountDelete.vue';
-import AutoResolve from './components/AutoResolve.vue';
 import AudioTranscription from './components/AudioTranscription.vue';
-import BookingEmails from './components/BookingEmails.vue';
-import EscalationEmails from './components/EscalationEmails.vue';
-import VehiclePartsEmails from './components/VehiclePartsEmails.vue';
 import SectionLayout from './components/SectionLayout.vue';
+import BookingEmails from './components/BookingEmails.vue';
+import VehiclePartsEmails from './components/VehiclePartsEmails.vue';
+import EscalationEmails from './components/EscalationEmails.vue';
 
 export default {
   components: {
@@ -29,14 +27,13 @@ export default {
     AccountId,
     BuildInfo,
     AccountDelete,
-    AutoResolve,
     AudioTranscription,
-    BookingEmails,
-    EscalationEmails,
-    VehiclePartsEmails,
     SectionLayout,
     WithLabel,
     NextInput,
+    BookingEmails,
+    VehiclePartsEmails,
+    EscalationEmails,
   },
   setup() {
     const { updateUISettings, uiSettings } = useUISettings();
@@ -71,12 +68,6 @@ export default {
       isFeatureEnabledonAccount: 'accounts/isFeatureEnabledonAccount',
       isOnChatwootCloud: 'globalConfig/isOnChatwootCloud',
     }),
-    showAutoResolutionConfig() {
-      return this.isFeatureEnabledonAccount(
-        this.accountId,
-        FEATURE_FLAGS.AUTO_RESOLVE_CONVERSATIONS
-      );
-    },
     showAudioTranscriptionConfig() {
       return this.isFeatureEnabledonAccount(
         this.accountId,
@@ -109,8 +100,18 @@ export default {
       return this.getAccount(this.accountId) || {};
     },
   },
+  watch: {
+    'currentAccount.id'(id) {
+      if (id) {
+        this.initializeAccount();
+      }
+    },
+  },
   mounted() {
-    this.initializeAccount();
+    // Account already in the store (navigated in): seed immediately.
+    if (this.currentAccount.id) {
+      this.initializeAccount();
+    }
   },
   methods: {
     async initializeAccount() {
@@ -118,7 +119,10 @@ export default {
         const { name, locale, id, domain, support_email, features } =
           this.getAccount(this.accountId);
 
-        this.$root.$i18n.locale = this.uiSettings?.locale || locale;
+        const effectiveLocale = this.uiSettings?.locale || locale;
+        if (effectiveLocale) {
+          this.$root.$i18n.locale = effectiveLocale;
+        }
         this.name = name;
         this.locale = locale;
         this.id = id;
@@ -144,70 +148,11 @@ export default {
           support_email: this.supportEmail,
         });
         // If user locale is set, update the locale with user locale
-        if (this.uiSettings?.locale) {
-          this.$root.$i18n.locale = this.uiSettings?.locale;
-        } else {
-          // If user locale is not set, update the locale with account locale
-          this.$root.$i18n.locale = this.locale;
+        const updatedLocale = this.uiSettings?.locale || this.locale;
+        if (updatedLocale) {
+          this.$root.$i18n.locale = updatedLocale;
         }
         this.getAccount(this.id).locale = this.locale;
-        useAlert(this.$t('GENERAL_SETTINGS.UPDATE.SUCCESS'));
-      } catch (error) {
-        useAlert(this.$t('GENERAL_SETTINGS.UPDATE.ERROR'));
-      }
-    },
-
-    updateDirectionView(locale) {
-      const isRTLSupported = getLanguageDirection(locale);
-      this.updateUISettings({
-        rtl_view: isRTLSupported,
-      });
-    },
-    // Delete Function
-    openDeletePopup() {
-      this.showDeletePopup = true;
-    },
-    closeDeletePopup() {
-      this.showDeletePopup = false;
-    },
-    async markAccountForDeletion() {
-      this.closeDeletePopup();
-      try {
-        // Use the enterprise API to toggle deletion with delete action
-        await this.$store.dispatch('accounts/toggleDeletion', {
-          action_type: 'delete',
-        });
-        // Refresh account data
-        await this.$store.dispatch('accounts/get');
-        useAlert(this.$t('GENERAL_SETTINGS.ACCOUNT_DELETE_SECTION.SUCCESS'));
-      } catch (error) {
-        // Handle error message
-        this.handleDeletionError(error);
-      }
-    },
-    handleDeletionError(error) {
-      const errorKey = error.response?.data?.error_key;
-      if (errorKey) {
-        useAlert(
-          this.$t(`GENERAL_SETTINGS.ACCOUNT_DELETE_SECTION.${errorKey}`)
-        );
-        return;
-      }
-      const message = error.response?.data?.message;
-      if (message) {
-        useAlert(message);
-        return;
-      }
-      useAlert(this.$t('GENERAL_SETTINGS.ACCOUNT_DELETE_SECTION.FAILURE'));
-    },
-    async clearDeletionMark() {
-      try {
-        // Use the enterprise API to toggle deletion with undelete action
-        await this.$store.dispatch('accounts/toggleDeletion', {
-          action_type: 'undelete',
-        });
-        // Refresh account data
-        await this.$store.dispatch('accounts/get');
         useAlert(this.$t('GENERAL_SETTINGS.UPDATE.SUCCESS'));
       } catch (error) {
         useAlert(this.$t('GENERAL_SETTINGS.UPDATE.ERROR'));
@@ -218,12 +163,13 @@ export default {
 </script>
 
 <template>
-  <div class="flex flex-col max-w-2xl mx-auto w-full">
+  <div class="flex flex-col w-full max-w-2xl ltr:mr-auto rtl:ml-auto">
     <BaseSettingsHeader :title="$t('GENERAL_SETTINGS.TITLE')" />
     <div class="flex-grow flex-shrink min-w-0 mt-3">
       <SectionLayout
         :title="$t('GENERAL_SETTINGS.FORM.GENERAL_SECTION.TITLE')"
         :description="$t('GENERAL_SETTINGS.FORM.GENERAL_SECTION.NOTE')"
+        class="!pt-0"
       >
         <form
           v-if="!uiFlags.isFetchingItem"
@@ -231,6 +177,7 @@ export default {
           @submit.prevent="updateAccount"
         >
           <WithLabel
+            name="account-name"
             :has-error="v$.name.$error"
             :label="$t('GENERAL_SETTINGS.FORM.NAME.LABEL')"
             :error-message="$t('GENERAL_SETTINGS.FORM.NAME.ERROR')"
@@ -244,6 +191,7 @@ export default {
             />
           </WithLabel>
           <WithLabel
+            name="site-language"
             :has-error="v$.locale.$error"
             :label="$t('GENERAL_SETTINGS.FORM.LANGUAGE.LABEL')"
             :error-message="$t('GENERAL_SETTINGS.FORM.LANGUAGE.ERROR')"
@@ -260,6 +208,7 @@ export default {
           </WithLabel>
           <WithLabel
             v-if="featureCustomReplyDomainEnabled"
+            name="custom-domain"
             :label="$t('GENERAL_SETTINGS.FORM.DOMAIN.LABEL')"
           >
             <NextInput
@@ -282,6 +231,7 @@ export default {
           </WithLabel>
           <WithLabel
             v-if="featureCustomReplyEmailEnabled"
+            name="support-email"
             :label="$t('GENERAL_SETTINGS.FORM.SUPPORT_EMAIL.LABEL')"
           >
             <NextInput
@@ -303,12 +253,9 @@ export default {
 
       <woot-loading-state v-if="uiFlags.isFetchingItem" />
     </div>
-    <AutoResolve v-if="showAutoResolutionConfig" />
     <AudioTranscription v-if="showAudioTranscriptionConfig" />
     <BookingEmails />
-    <hr class="border-t border-slate-200 dark:border-slate-700" />
     <VehiclePartsEmails />
-    <hr class="border-t border-slate-200 dark:border-slate-700" />
     <EscalationEmails />
     <AccountId />
     <div v-if="!uiFlags.isFetchingItem && isOnChatwootCloud">

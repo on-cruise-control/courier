@@ -71,7 +71,6 @@ const onClickViewDetails = () => {
         :name="name"
         :src="contactThumbnail"
         :size="48"
-        rounded-full
       />
       <div class="custom-booking-card-body flex flex-col gap-0.5 flex-1 min-w-0">
         <div class="custom-booking-card-heading flex flex-wrap items-center gap-x-4 gap-y-1">

@@ -26,37 +26,6 @@ const handleCreate = () => {
   nextTick(() => createAssistantDialog.value.dialogRef.open());
 };
 
-const handleEdit = () => {
-  router.push({
-    name: 'captain_assistants_edit',
-    params: { assistantId: selectedAssistant.value.id },
-  });
-};
-
-const handleViewConnectedInboxes = () => {
-  router.push({
-    name: 'captain_assistants_inboxes_index',
-    params: { assistantId: selectedAssistant.value.id },
-  });
-};
-
-const handleAction = ({ action, id }) => {
-  selectedAssistant.value = assistants.value.find(
-    assistant => id === assistant.id
-  );
-  nextTick(() => {
-    if (action === 'delete') {
-      handleDelete();
-    }
-    if (action === 'edit') {
-      handleEdit();
-    }
-    if (action === 'viewConnectedInboxes') {
-      handleViewConnectedInboxes();
-    }
-  });
-};
-
 const handleCreateClose = () => {
   dialogType.value = '';
   selectedAssistant.value = null;

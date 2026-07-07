@@ -53,7 +53,7 @@ describe('#actions', () => {
             {
               id: 11,
               timeOnPage: '20',
-              url: 'https://getcruisecontrol.com',
+              url: 'https://chatwoot.com',
               triggerOnlyDuringBusinessHours: false,
             },
           ],
@@ -70,7 +70,7 @@ describe('#actions', () => {
         { commit },
         {
           websiteToken: 'XDsafmADasd',
-          currentURL: 'https://getcruisecontrol.com',
+          currentURL: 'https://chatwoot.com',
           isInBusinessHours: true,
         }
       );

@@ -78,6 +78,12 @@
       },
       "waiting_since_desc": {
         "TEXT": "Pending Response: Shortest first"
+      },
+      "priority_desc_created_at_asc": {
+        "TEXT": "Priority: Highest first, Created: Oldest first"
+      },
+      "unread": {
+        "TEXT": "Unread Count: Highest first"
       }
     },
     "ATTACHMENTS": {
@@ -101,6 +107,18 @@
       },
       "ig_reel": {
         "CONTENT": "Instagram Reel"
+      },
+      "ig_post": {
+        "CONTENT": "Instagram Post"
+      },
+      "ig_story": {
+        "CONTENT": "Instagram Story"
+      },
+      "ig_story_reply": {
+        "CONTENT": "Replied to your story"
+      },
+      "story_mention": {
+        "CONTENT": "Mentioned you in their story"
       },
       "fallback": {
         "CONTENT": "has shared a url"
@@ -146,6 +164,7 @@
     "COMMENT_TAG": "Comment",
     "HUMAN": "H",
     "SPAM_TAG": "Spam",
-    "NEGATIVE_TAG": "Negative Comment"
+    "NEGATIVE_TAG": "Negative Comment",
+    "UNREAD_COUNT_OVERFLOW": "9+"
   }
 }

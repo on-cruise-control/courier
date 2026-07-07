@@ -80,7 +80,7 @@ export default {
       this.inReplyTo = null;
     },
     startNewConversation() {
-      this.replaceRoute('prechat-form');
+      this.router.replace({ name: 'prechat-form' });
       IFrameHelper.sendMessage({
         event: 'onEvent',
         eventIdentifier: CHATWOOT_ON_START_CONVERSATION,

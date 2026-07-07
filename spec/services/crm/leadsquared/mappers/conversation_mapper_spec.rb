@@ -122,13 +122,7 @@ RSpec.describe Crm::Leadsquared::Mappers::ConversationMapper do
         expect(result).to include('Channel: Test Inbox')
 
         # Check that messages appear in reverse order (newest first)
-        message_positions = {
-          '[2024-01-01 10:00] John Doe: Hello' => result.index('[2024-01-01 10:00] John Doe: Hello'),
-          '[2024-01-01 10:01] Jane Smith: Hi there' => result.index('[2024-01-01 10:01] Jane Smith: Hi there')
-        }
 
-        # Latest message (10:01) should come before older message (10:00)
-        expect(message_positions['[2024-01-01 10:01] Jane Smith: Hi there']).to be < message_positions['[2024-01-01 10:00] John Doe: Hello']
         newer = formatted_line_for(message2, hook)
         older = formatted_line_for(message1, hook)
         message_positions = {
@@ -195,12 +189,13 @@ RSpec.describe Crm::Leadsquared::Mappers::ConversationMapper do
       end
 
       context 'when sender has no name' do
+        let(:unnamed_contact) { create(:contact, account: account, name: '') }
         let(:unnamed_sender_message) do
           create(:message,
                  conversation: conversation,
-                 sender: create(:user, name: ''),
+                 sender: unnamed_contact,
                  content: 'Message',
-                 message_type: :outgoing,
+                 message_type: :incoming,
                  created_at: Time.zone.parse('2024-01-01 10:05'))
         end
 
@@ -208,7 +203,7 @@ RSpec.describe Crm::Leadsquared::Mappers::ConversationMapper do
 
         it 'uses sender type and id' do
           result = described_class.map_transcript_activity(hook, conversation)
-          expect(result).to include("User #{unnamed_sender_message.sender_id}")
+          expect(result).to include("Contact #{unnamed_sender_message.sender_id}")
         end
       end
     end
@@ -226,13 +221,13 @@ RSpec.describe Crm::Leadsquared::Mappers::ConversationMapper do
                              sender: user,
                              content: "#{long_message_content} #{i}",
                              message_type: :outgoing,
-                             created_at: Time.zone.parse("2024-01-01 #{10 + i}:00:00"))
+                             created_at: Time.zone.parse('2024-01-01 10:00:00') + i.hours)
         end
 
         result = described_class.map_transcript_activity(hook, conversation)
 
         # Verify latest message is included (message 14)
-        expect(result).to include("[2024-01-02 00:00] John Doe: #{long_message_content} 14")
+
         tz = Time.find_zone(hook.settings['timezone']) || Time.zone
         latest_label = "[#{messages.last.created_at.in_time_zone(tz).strftime('%Y-%m-%d %H:%M')}] John Doe: #{long_message_content} 14"
         expect(result).to include(latest_label)

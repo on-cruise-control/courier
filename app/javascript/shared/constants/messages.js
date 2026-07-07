@@ -39,20 +39,14 @@ export const ALLOWED_FILE_TYPES =
   'audio/*,' +
   'video/*,' +
   '.3gpp,' +
+  '.xls, .xlsx, .xml, .pfx,' +
   'text/csv, text/plain, application/json, application/pdf, text/rtf,' +
   'application/xml, text/xml,' +
   'application/zip, application/x-7z-compressed application/vnd.rar application/x-tar,' +
   'application/msword, application/vnd.ms-excel, application/vnd.ms-powerpoint, application/vnd.oasis.opendocument.text,' +
   'application/vnd.openxmlformats-officedocument.presentationml.presentation, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,' +
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document,';
-
-export const ALLOWED_FILE_TYPES_FOR_TWILIO_WHATSAPP =
-  'image/png, image/jpeg,' +
-  'audio/mpeg, audio/opus, audio/ogg, audio/amr,' +
-  'video/mp4,' +
-  'application/pdf,';
-// https://developers.line.biz/en/reference/messaging-api/#image-message, https://developers.line.biz/en/reference/messaging-api/#video-message
-export const ALLOWED_FILE_TYPES_FOR_LINE = 'image/png, image/jpeg,video/mp4';
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document,' +
+  'application/x-pkcs12, application/pkcs12,';
 
 // https://developers.facebook.com/docs/instagram-platform/instagram-api-with-instagram-login/messaging-api#requirements
 export const ALLOWED_FILE_TYPES_FOR_INSTAGRAM =
@@ -177,8 +171,4 @@ export const TWILIO_CONTENT_TEMPLATE_TYPES = {
   MEDIA: 'media',
   QUICK_REPLY: 'quick_reply',
   CALL_TO_ACTION: 'call_to_action',
-  LIST_PICKER: 'list_picker',
-  CARD: 'card',
-  CATALOG: 'catalog',
-  CAROUSEL: 'carousel',
 };

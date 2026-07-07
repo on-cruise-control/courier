@@ -263,7 +263,7 @@ class SuperAdmin::DealerMetricsService
 
     account = account_user.account
 
-    sessions = UserSession.where(account_id: account.id, user_id: account_user.user_id).order(session_date: :asc)
+    sessions = UserDailySession.where(account_id: account.id, user_id: account_user.user_id).order(session_date: :asc)
     latest_session = sessions.order(session_date: :desc, created_at: :desc).first
     active_session = live_session?(account_user, latest_session)
 
@@ -337,12 +337,12 @@ class SuperAdmin::DealerMetricsService
   end
 
   def user_total_duration_seconds(account_user)
-    sessions = UserSession.where(account_id: account_user.account_id, user_id: account_user.user_id)
+    sessions = UserDailySession.where(account_id: account_user.account_id, user_id: account_user.user_id)
     sessions.sum(:duration_seconds) + live_duration_seconds(account_user)
   end
 
   def live_duration_seconds(account_user)
-    latest_session = UserSession.where(account_id: account_user.account_id, user_id: account_user.user_id).order(session_date: :desc, created_at: :desc).first
+    latest_session = UserDailySession.where(account_id: account_user.account_id, user_id: account_user.user_id).order(session_date: :desc, created_at: :desc).first
     return 0 unless live_session?(account_user, latest_session)
     return 0 unless latest_session&.session_started_at.present?
 
@@ -350,7 +350,7 @@ class SuperAdmin::DealerMetricsService
   end
 
   def duration_minutes_for_date(account_user, date)
-    session = UserSession.find_by(account_id: account_user.account_id, user_id: account_user.user_id, session_date: date)
+    session = UserDailySession.find_by(account_id: account_user.account_id, user_id: account_user.user_id, session_date: date)
     return 0 unless session
 
     total_seconds = session.duration_seconds

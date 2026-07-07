@@ -1,6 +1,7 @@
 {
   "REGISTER": {
     "TRY_WOOT": "צור חשבון",
+    "GET_STARTED": "Get started with Chatwoot",
     "TITLE": "הירשם",
     "TESTIMONIAL_HEADER": "כל מה שצריך זה צעד אחד כדי להתקדם",
     "TESTIMONIAL_CONTENT": "אתה במרחק צעד אחד מלהפעיל את הלקוחות שלך, לשמר אותם ולמצוא חדשים.",
@@ -27,18 +28,17 @@
       "LABEL": "סיסמה",
       "PLACEHOLDER": "סיסמה",
       "ERROR": "הסיסמה קצרה מדי",
-      "IS_INVALID_PASSWORD": "הסיסמה חייבת להכיל לפחות אות גדולה אחת, אות קטנה אחת, ספרה אחת ותו מיוחד אחד"
-    },
-    "DEALERSHIP": {
-      "LABEL": "מספר סוכנות",
-      "PLACEHOLDER": "הכנס את מספר הסוכנות שלך",
-      "ERROR": "מספר סוכנות הוא שדה חובה",
       "IS_INVALID_PASSWORD": "הסיסמה צריכה להכיל לפחות אות אחת גדולה, אות קטנה אחת, מספר אחד ותו מיוחד אחד",
       "REQUIREMENTS_LENGTH": "לפחות 6 תווים",
       "REQUIREMENTS_UPPERCASE": "לפחות אות אחת גדולה",
       "REQUIREMENTS_LOWERCASE": "לפחות אות אחת קטנה",
       "REQUIREMENTS_NUMBER": "לפחות מספר אחד",
       "REQUIREMENTS_SPECIAL": "לפחות תו מיוחד אחד"
+    },
+    "DEALERSHIP": {
+      "LABEL": "מספר סוכנות",
+      "PLACEHOLDER": "הכנס את מספר הסוכנות שלך",
+      "ERROR": "מספר סוכנות הוא שדה חובה"
     },
     "CONFIRM_PASSWORD": {
       "LABEL": "אמת סיסמה",
@@ -50,6 +50,13 @@
       "ERROR_MESSAGE": "לא ניתן להתחבר לשרת Woot, נסה שוב מאוחר יותר"
     },
     "SUBMIT": "צור חשבון",
-    "HAVE_AN_ACCOUNT": "כבר יש לך חשבון?"
+    "HAVE_AN_ACCOUNT": "כבר יש לך חשבון?",
+    "VERIFY_EMAIL": {
+      "TITLE": "Check your inbox",
+      "DESCRIPTION": "We sent a verification link to {email}. Click the link to verify your email and get started.",
+      "RESEND": "שלח מחדש דוא\"ל אימות",
+      "RESEND_SUCCESS": "Verification email sent. Please check your inbox.",
+      "RESEND_ERROR": "Could not send verification email. Please try again."
+    }
   }
 }

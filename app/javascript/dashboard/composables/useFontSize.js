@@ -1,3 +1,4 @@
+
 /**
  * @file useFontSize.js
  * @description A composable for managing font size settings throughout the application.

@@ -1,9 +1,9 @@
 <script setup>
 import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useUISettings } from 'dashboard/composables/useUISettings';
 import { formatNumber } from '@chatwoot/utils';
 import wootConstants from 'dashboard/constants/globals';
-import { useI18n } from 'vue-i18n';
 
 import ConversationBasicFilter from './widgets/conversation/ConversationBasicFilter.vue';
 import SwitchLayout from 'dashboard/routes/dashboard/conversation/search/SwitchLayout.vue';
@@ -13,7 +13,7 @@ const props = defineProps({
   pageTitle: { type: String, required: true },
   hasAppliedFilters: { type: Boolean, required: true },
   hasActiveFolders: { type: Boolean, required: true },
-  activeStatus: { type: String, required: true },
+  activeStatus: { type: [String, Array], required: true },
   isOnExpandedLayout: { type: Boolean, required: true },
   conversationStats: { type: Object, required: true },
   isListLoading: { type: Boolean, required: true },
@@ -27,8 +27,8 @@ const emit = defineEmits([
   'filtersModal',
 ]);
 
-const { uiSettings, updateUISettings } = useUISettings();
 const { t } = useI18n();
+const { uiSettings, updateUISettings } = useUISettings();
 
 const onBasicFilterChange = (value, type) => {
   emit('basicFilterChange', value, type);
@@ -68,7 +68,7 @@ const statusText = computed(() => {
 
 <template>
   <div
-    class="flex items-center justify-between gap-2 px-3 h-12"
+    class="flex items-center justify-between gap-2 px-3 h-[3.25rem]"
     :class="{
       'border-b border-n-strong': hasAppliedFiltersOrActiveFolders,
     }"

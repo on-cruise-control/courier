@@ -26,7 +26,7 @@ class UserSessions::RecordActivityService
   attr_reader :account_user, :timestamp
 
   def session_for_day
-    UserSession.find_or_initialize_by(
+    UserDailySession.find_or_initialize_by(
       account_id: account_user.account_id,
       user_id: account_user.user_id,
       session_date: timestamp.to_date

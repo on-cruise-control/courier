@@ -78,17 +78,11 @@ const runSDK = ({ baseUrl, websiteToken }) => {
     widgetStyle: getWidgetStyle(chatwootSettings.widgetStyle) || 'standard',
     resetTriggered: false,
     darkMode: getDarkMode(chatwootSettings.darkMode),
-    avatarUrl:
-      chatwootSettings.avatarUrl || chatwootSettings.avatar_url || '',
-    welcomeTitle:
-      chatwootSettings.welcomeTitle || chatwootSettings.welcome_title || '',
-    welcomeDescription:
-      chatwootSettings.welcomeDescription ||
-      chatwootSettings.welcome_tagline ||
-      '',
+    welcomeTitle: chatwootSettings.welcomeTitle || '',
+    welcomeDescription: chatwootSettings.welcomeDescription || '',
     availableMessage: chatwootSettings.availableMessage || '',
     unavailableMessage: chatwootSettings.unavailableMessage || '',
-    enableFileUpload: chatwootSettings.enableFileUpload ?? true,
+    enableFileUpload: chatwootSettings.enableFileUpload,
     enableEmojiPicker: chatwootSettings.enableEmojiPicker ?? true,
     enableEndConversation: chatwootSettings.enableEndConversation ?? true,
 

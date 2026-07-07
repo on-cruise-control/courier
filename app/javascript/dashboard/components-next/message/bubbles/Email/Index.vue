@@ -1,7 +1,7 @@
 <script setup>
 import { computed, useTemplateRef, ref, onMounted } from 'vue';
 import { Letter } from 'vue-letter';
-import { sanitizeTextForRender } from 'shared/helpers/HTMLSanitizer';
+import { sanitizeTextForRender } from '@chatwoot/utils';
 import { allowedCssProperties } from 'lettersanitizer';
 
 import Icon from 'next/icon/Icon.vue';
@@ -225,5 +225,11 @@ const handleSeeOriginal = () => {
       display: inline-block;
     }
   }
+}
+
+// Email clients (Gmail, Outlook) hardcode dir="ltr" on wrapper elements.
+// In RTL apps this forces email content LTR regardless of actual text.
+[dir='rtl'] .letter-render [dir='ltr'] {
+  direction: inherit;
 }
 </style>

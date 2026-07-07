@@ -1,9 +1,9 @@
 <script>
 import { mapGetters } from 'vuex';
-import AddAccountModal from './components/app/AddAccountModal.vue';
 import LoadingState from './components/widgets/LoadingState.vue';
 import NetworkNotification from './components/NetworkNotification.vue';
 import UpdateBanner from './components/app/UpdateBanner.vue';
+import StatusBanner from './components/app/StatusBanner.vue';
 import PaymentPendingBanner from './components/app/PaymentPendingBanner.vue';
 import PendingEmailVerificationBanner from './components/app/PendingEmailVerificationBanner.vue';
 import SuspendedAccountBanner from './components/app/SuspendedAccountBanner.vue';
@@ -29,6 +29,7 @@ export default {
     LoadingState,
     NetworkNotification,
     UpdateBanner,
+    StatusBanner,
     PaymentPendingBanner,
     WootSnackbarBox,
     PendingEmailVerificationBanner,
@@ -101,15 +102,18 @@ export default {
       mql.onchange = e => setColorTheme(e.matches);
     },
     setLocale(locale) {
-      this.$root.$i18n.locale = locale;
+      if (locale) {
+        this.$root.$i18n.locale = locale;
+      }
     },
     async initializeAccount() {
       await this.$store.dispatch('accounts/get');
       this.$store.dispatch('setActiveAccount', {
         accountId: this.currentAccountId,
       });
+      const account = this.getAccount(this.currentAccountId);
       const { locale, latest_chatwoot_version: latestChatwootVersion } =
-        this.getAccount(this.currentAccountId);
+        account;
       const { pubsub_token: pubsubToken } = this.currentUser || {};
       // If user locale is set, use it; otherwise use account locale
       this.setLocale(this.uiSettings?.locale || locale);
@@ -134,14 +138,14 @@ export default {
   <div
     v-if="!authUIFlags.isFetching && !accountUIFlags.isFetchingItem"
     id="app"
-    class="flex flex-col w-full h-screen min-h-0"
+    class="flex flex-col w-full h-screen min-h-0 bg-n-background"
     :dir="isRTL ? 'rtl' : 'ltr'"
   >
     <UpdateBanner :latest-chatwoot-version="latestChatwootVersion" />
+    <StatusBanner />
     <template v-if="currentAccountId">
       <PendingEmailVerificationBanner v-if="hideOnOnboardingView" />
       <PaymentPendingBanner v-if="hideOnOnboardingView" />
-      <SuspendedAccountBanner v-if="hideOnOnboardingView" />
     </template>
     <router-view v-slot="{ Component }">
       <transition name="fade" mode="out-in">
@@ -172,10 +176,4 @@ export default {
 .v-popper--theme-tooltip .v-popper__arrow-container {
   display: none;
 }
-
-.multiselect__input {
-  margin-bottom: 0px !important;
-}
 </style>
-
-<style src="vue-multiselect/dist/vue-multiselect.css"></style>

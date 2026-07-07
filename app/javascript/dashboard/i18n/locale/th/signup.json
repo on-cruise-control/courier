@@ -1,6 +1,7 @@
 {
   "REGISTER": {
     "TRY_WOOT": "Create an account",
+    "GET_STARTED": "Get started with Chatwoot",
     "TITLE": "สร้างบัญชี",
     "TESTIMONIAL_HEADER": "All it takes is one step to move forward",
     "TESTIMONIAL_CONTENT": "You're one step away from engaging your customers, retaining them and finding new ones.",
@@ -24,21 +25,20 @@
       "ERROR": "Please enter a valid email address."
     },
     "PASSWORD": {
-      "LABEL": "รหัสผ่าน",
-      "PLACEHOLDER": "รหัสผ่าน",
-      "ERROR": "รหัสผ่านสั้นเกินไป",
-      "IS_INVALID_PASSWORD": "รหัสผ่านต้องมีตัวอักษรตัวใหญ่อย่างน้อย 1 ตัว ตัวอักษรตัวเล็ก 1 ตัว ตัวเลข 1 ตัว และอักขระพิเศษ 1 ตัว"
-    },
-    "DEALERSHIP": {
-      "LABEL": "รหัสตัวแทนจำหน่าย",
-      "PLACEHOLDER": "กรุณากรอกรหัสตัวแทนจำหน่าย",
-      "ERROR": "รหัสตัวแทนจำหน่ายเป็นข้อมูลที่จำเป็น",
+      "LABEL": "หรัสผ่าน",
+      "PLACEHOLDER": "หรัสผ่าน",
+      "ERROR": "หรัสผ่านนั้นสั้นเกินไป.",
       "IS_INVALID_PASSWORD": "รหัสผ่านต้องมีอย่างน้อย 1 ตัวอักษรภาษาอังกฤษพิมพ์เล็ก, 1 ตัวอักษรภาษาอังกฤษพิมพ์ใหญ่, 1 ตัวเลข และอักขระพิเศษ 1 ตัว.",
       "REQUIREMENTS_LENGTH": "At least 6 characters long",
       "REQUIREMENTS_UPPERCASE": "At least one uppercase letter",
       "REQUIREMENTS_LOWERCASE": "At least one lowercase letter",
       "REQUIREMENTS_NUMBER": "At least one number",
       "REQUIREMENTS_SPECIAL": "At least one special character"
+    },
+    "DEALERSHIP": {
+      "LABEL": "รหัสตัวแทนจำหน่าย",
+      "PLACEHOLDER": "กรุณากรอกรหัสตัวแทนจำหน่าย",
+      "ERROR": "รหัสตัวแทนจำหน่ายเป็นข้อมูลที่จำเป็น"
     },
     "CONFIRM_PASSWORD": {
       "LABEL": "Confirm password",
@@ -50,6 +50,13 @@
       "ERROR_MESSAGE": "Could not connect to Woot server. Please try again."
     },
     "SUBMIT": "Create account",
-    "HAVE_AN_ACCOUNT": "มีบัญชีอยู่แล้ว?"
+    "HAVE_AN_ACCOUNT": "มีบัญชีอยู่แล้ว?",
+    "VERIFY_EMAIL": {
+      "TITLE": "Check your inbox",
+      "DESCRIPTION": "We sent a verification link to {email}. Click the link to verify your email and get started.",
+      "RESEND": "Resend verification email",
+      "RESEND_SUCCESS": "Verification email sent. Please check your inbox.",
+      "RESEND_ERROR": "Could not send verification email. Please try again."
+    }
   }
 }
