@@ -61,7 +61,7 @@ class Messages::Messenger::MessageBuilder
   end
 
   def media_file_type?(file_type)
-    %i[image video audio].include?(file_type.to_sym)
+    %i[image video audio ig_story].include?(file_type.to_sym)
   end
 
   def valid_media_content_type?(content_type)

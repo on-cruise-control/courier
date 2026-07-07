@@ -184,7 +184,8 @@ class Messages::Instagram::BaseMessageBuilder < Messages::Messenger::MessageBuil
       sender: @outgoing_echo ? nil : contact,
       content_attributes: {
         in_reply_to_external_id: message_reply_attributes
-      }
+      },
+      additional_attributes: { 'delivery_status': 'sent' }
     }
 
     params[:content_attributes][:external_echo] = true if @outgoing_echo
