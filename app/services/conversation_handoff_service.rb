@@ -11,13 +11,15 @@ class ConversationHandoffService
     return unless should_send_notification?
 
     label = label_for_reason(handoff_reason)
+    return unless label
     ensure_label_exists(label)
     update_handoff_state(label)
     schedule_label_change
 
     case handoff_reason
-    when 'frustrated_handoff'
-      if @conversation.account.escalation_emails.present?
+
+    when 'external_escalation'
+     if @conversation.account.escalation_emails.present?
         EscalationNotificationJob.perform_later(@conversation.id, @conversation.account.escalation_emails, customer_data , message)
       else
         Rails.logger.warn("Escalation email not configured for account #{@conversation.account.id}")
@@ -33,9 +35,17 @@ class ConversationHandoffService
 
   private
 
-  def label_for_reason(handoff_reason)
-    handoff_reason == 'frustrated_handoff' ? ESCALATION_LABEL : HANDOFF_LABEL
+ def label_for_reason(handoff_reason)
+
+   case handoff_reason
+  when 'external_escalation'
+    ESCALATION_LABEL
+  when 'vehicle_parts'
+    HANDOFF_LABEL
+  else
+    nil
   end
+end
 
   def should_send_notification?
     return true if @conversation.last_handoff_at.nil?

@@ -44,7 +44,7 @@ class ActionService
     return @conversation.update!(assignee_id: nil) if agent_ids[0] == 'nil'
 
     agent_ids = [last_responding_agent_id] if agent_ids[0] == 'last_responding_agent'
-    return unless agent_belongs_to_inbox?(agent_ids)
+    return unless agent_belongs_to_account?(agent_ids)
 
     @agent = @account.users.find_by(id: agent_ids)
     return unless @agent.present? && @agent.confirmed?
@@ -99,11 +99,8 @@ class ActionService
     @conversation.messages.outgoing.where(sender_type: 'User', private: false).last&.sender_id
   end
 
-  def agent_belongs_to_inbox?(agent_ids)
-    member_ids = @conversation.inbox.members.pluck(:user_id)
-    assignable_agent_ids = member_ids + @account.administrators.ids
-
-    assignable_agent_ids.include?(agent_ids[0])
+  def agent_belongs_to_account?(agent_ids)
+    @account.users.exists?(id: agent_ids[0])
   end
 
   def team_belongs_to_account?(team_ids)

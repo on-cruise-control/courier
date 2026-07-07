@@ -128,6 +128,7 @@ export default {
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
+  overscroll-behavior: none;
   color-scheme: light dark;
 
   &.light-scheme {

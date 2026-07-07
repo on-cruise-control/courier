@@ -10,13 +10,13 @@ class Conversations::PermissionFilterService
   def perform
     return conversations if user_role == 'administrator'
 
-    accessible_conversations
+    conversations
   end
 
   private
 
   def accessible_conversations
-    conversations.where(inbox: user.inboxes.where(account_id: account.id))
+    conversations
   end
 
   def account_user
