@@ -60,8 +60,22 @@ class ContactInboxWithContactBuilder
   end
 
   def contact_name
-    name = contact_attributes[:name] || ::Haikunator.haikunate(1000)
+    name = contact_attributes[:name] || generate_default_name
     name.truncate(ApplicationRecord::MAX_STRING_COLUMN_LENGTH, omission: '')
+  end
+
+  def generate_default_name
+    return ::Haikunator.haikunate(1000) unless website_widget?
+
+    "Cruise Control #{next_widget_contact_number}"
+  end
+
+  def website_widget?
+    inbox.channel_type == 'Channel::WebWidget'
+  end
+
+  def next_widget_contact_number
+    ActiveRecord::Base.connection.select_value("SELECT nextval('widget_contact_name_seq')")
   end
 
   def find_contact
