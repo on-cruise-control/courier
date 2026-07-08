@@ -6,7 +6,7 @@ import { useMessageContext } from './provider.js';
 import { hasOneDayPassed } from 'shared/helpers/timeHelper';
 import { ORIENTATION, MESSAGE_STATUS } from './constants';
 
-defineProps({
+const { error } = defineProps({
   error: { type: String, required: true },
 });
 
@@ -21,6 +21,9 @@ const canRetry = computed(() => {
   const hasContent = content.value !== null;
   const hasAttachments = attachments.value && attachments.value.length > 0;
   return !hasOneDayPassed(createdAt.value) && (hasContent || hasAttachments);
+});
+const displayError = computed(() => {
+  return error.replace(/^\s*\(?#?\d+\)?\s*-?\s*/, '');
 });
 </script>
 
@@ -43,7 +46,7 @@ const canRetry = computed(() => {
           'ltr:right-0 rtl:left-0': orientation === ORIENTATION.RIGHT,
         }"
       >
-        {{ error }}
+        {{ displayError }}
       </div>
     </div>
     <button
