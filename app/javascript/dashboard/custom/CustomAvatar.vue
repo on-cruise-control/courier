@@ -218,7 +218,7 @@ watch(
       role="img"
       class="relative inline-flex items-center justify-center object-cover overflow-hidden font-medium"
       :class="[
-        roundedFull ? 'rounded-full' : 'rounded-xl',
+        roundedFull ? 'rounded-full' : 'rounded-lg',
         {
           'dark:!bg-[var(--dark-bg)] dark:!text-[var(--dark-text)]':
             !showDefaultAvatar && (!src || !isImageValid),

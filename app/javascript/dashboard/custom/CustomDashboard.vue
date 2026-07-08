@@ -20,7 +20,7 @@ const CommandBar = defineAsyncComponent(
 );
 
 const FloatingCallWidget = defineAsyncComponent(
-  () => import('dashboard/components/widgets/FloatingCallWidget.vue')
+  () => import('dashboard/components-next/call/FloatingCallWidget.vue')
 );
 
 import CopilotLauncher from 'dashboard/components-next/copilot/CopilotLauncher.vue';
@@ -170,7 +170,7 @@ export default {
       @active-group-change="onSidebarActiveGroupChange"
     />
 
-    <main class="flex flex-1 h-full w-full min-h-0 px-0 overflow-hidden custom-dashboard-main">
+    <main class="flex flex-1 h-full w-full min-h-0 px-0 overflow-hidden bg-n-surface-1 custom-dashboard-main">
       <UpgradePage
         v-show="showUpgradePage"
         ref="upgradePageRef"
@@ -190,7 +190,7 @@ export default {
           @toggle="toggleMobileSidebar"
         />
         <CopilotContainer />
-        <ConversationSummaryContainer />
+        <ConversationSummaryContainer custom-ui />
         <FloatingCallWidget v-if="hasActiveCall || hasIncomingCall" />
       </template>
       <AddAccountModal

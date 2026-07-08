@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useAlert } from 'dashboard/composables';
 import { useLoadWithRetry } from 'dashboard/composables/loadWithRetry';
@@ -30,6 +30,15 @@ onMounted(() => {
     loadWithRetry(attachment.value.dataUrl);
   }
 });
+
+watch(
+  () => attachment.value?.dataUrl,
+  (newUrl, oldUrl) => {
+    if (newUrl && newUrl !== oldUrl) {
+      loadWithRetry(newUrl);
+    }
+  }
+);
 
 const downloadAttachment = async () => {
   const { fileType, dataUrl, extension } = attachment.value;

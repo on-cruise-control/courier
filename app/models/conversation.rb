@@ -6,15 +6,20 @@
 #  additional_attributes                  :jsonb
 #  agent_last_seen_at                     :datetime
 #  assignee_last_seen_at                  :datetime
+#  booking_follow_up_jid                  :string
 #  cached_label_list                      :text
+#  comment_sentiment                      :string
 #  contact_last_seen_at                   :datetime
 #  conversation_summary_last_generated_at :datetime
 #  custom_attributes                      :jsonb
 #  first_reply_created_at                 :datetime
 #  follow_up_jid                          :string
+#  handoff_attended_at                    :datetime
 #  identifier                             :string
+#  is_spam                                :boolean          default(FALSE)
 #  last_activity_at                       :datetime         not null
 #  last_handoff_at                        :datetime
+#  mark_as_not_spam                       :boolean          default(FALSE)
 #  priority                               :integer
 #  snoozed_until                          :datetime
 #  status                                 :integer          default("open"), not null
@@ -26,11 +31,13 @@
 #  created_at                             :datetime         not null
 #  updated_at                             :datetime         not null
 #  account_id                             :integer          not null
+#  assignee_agent_bot_id                  :bigint
 #  assignee_id                            :integer
 #  campaign_id                            :bigint
 #  contact_id                             :bigint
 #  contact_inbox_id                       :bigint
 #  display_id                             :integer          not null
+#  handoff_attended_by_id                 :integer
 #  inbox_id                               :integer          not null
 #  sla_policy_id                          :bigint
 #  team_id                                :bigint
@@ -40,11 +47,13 @@
 #  conv_acid_inbid_stat_asgnid_idx                    (account_id,inbox_id,status,assignee_id)
 #  index_conversations_on_account_id                  (account_id)
 #  index_conversations_on_account_id_and_display_id   (account_id,display_id) UNIQUE
+#  index_conversations_on_account_id_and_is_spam      (account_id,is_spam)
 #  index_conversations_on_assignee_id_and_account_id  (assignee_id,account_id)
 #  index_conversations_on_campaign_id                 (campaign_id)
 #  index_conversations_on_contact_id                  (contact_id)
 #  index_conversations_on_contact_inbox_id            (contact_inbox_id)
 #  index_conversations_on_first_reply_created_at      (first_reply_created_at)
+#  index_conversations_on_handoff_attended_by_id      (handoff_attended_by_id)
 #  index_conversations_on_id_and_account_id           (account_id,id)
 #  index_conversations_on_identifier_and_account_id   (identifier,account_id)
 #  index_conversations_on_inbox_id                    (inbox_id)
@@ -87,6 +96,9 @@ class Conversation < ApplicationRecord
   scope :unassigned, -> { where(assignee_id: nil) }
   scope :assigned, -> { where.not(assignee_id: nil) }
   scope :assigned_to, ->(agent) { where(assignee_id: agent.id) }
+  scope :sort_on_unread, lambda { |_direction|
+    order(unread_messages_count_arel.desc).sort_on_last_activity_at('desc')
+  }
   scope :unattended, -> { where(first_reply_created_at: nil).or(where.not(waiting_since: nil)) }
   scope :resolvable_not_waiting, lambda { |auto_resolve_after|
     return none if auto_resolve_after.to_i.zero?
@@ -131,6 +143,8 @@ class Conversation < ApplicationRecord
   after_create_commit :notify_conversation_creation
   after_create_commit :load_attributes_created_by_db_triggers
   after_update :cancel_follow_up_on_assignment
+  before_destroy :set_unread_count_deletion_data
+  after_destroy_commit :notify_conversation_deletion
 
   delegate :auto_resolve_after, to: :account
 
@@ -153,7 +167,7 @@ class Conversation < ApplicationRecord
   end
 
   def last_incoming_message
-    messages&.incoming&.last
+    messages.where(account_id: account_id)&.incoming&.last
   end
 
   def toggle_status
@@ -169,12 +183,17 @@ class Conversation < ApplicationRecord
   end
 
   def bot_handoff!
+    update(waiting_since: Time.current) if waiting_since.blank?
     open!
     dispatcher_dispatch(CONVERSATION_BOT_HANDOFF)
   end
 
   def unread_messages
     agent_last_seen_at.present? ? messages.created_since(agent_last_seen_at) : messages
+  end
+
+  def assignee_unread_messages
+    assignee_last_seen_at.present? ? messages.created_since(assignee_last_seen_at) : messages
   end
 
   def unread_incoming_messages
@@ -207,6 +226,26 @@ class Conversation < ApplicationRecord
 
   def tweet?
     inbox.inbox_type == 'Twitter' && additional_attributes['type'] == 'tweet'
+  end
+
+  def self.unread_messages_count_arel
+    messages = Message.arel_table
+    conversations = arel_table
+    unread_messages = messages
+                      .project(messages[:id].count)
+                      .where(unread_messages_condition(messages, conversations))
+
+    Arel::Nodes::Grouping.new(unread_messages.ast)
+  end
+
+  def self.unread_messages_condition(messages, conversations)
+    messages[:conversation_id].eq(conversations[:id])
+                              .and(messages[:account_id].eq(conversations[:account_id]))
+                              .and(messages[:message_type].eq(Message.message_types[:incoming]))
+                              .and(
+                                conversations[:agent_last_seen_at].eq(nil)
+                                  .or(messages[:created_at].gt(conversations[:agent_last_seen_at]))
+                              )
   end
 
   def recent_messages
@@ -262,6 +301,15 @@ class Conversation < ApplicationRecord
     # rubocop:enable Rails/SkipsModelValidations
   end
 
+  def handle_resolved_status_change
+    # When conversation is resolved, clear waiting_since using update_column to avoid callbacks
+    return unless saved_change_to_status? && status == 'resolved'
+
+    # rubocop:disable Rails/SkipsModelValidations
+    update_column(:waiting_since, nil)
+    # rubocop:enable Rails/SkipsModelValidations
+  end
+
   def ensure_snooze_until_reset
     self.snoozed_until = nil unless snoozed?
   end
@@ -296,6 +344,12 @@ class Conversation < ApplicationRecord
 
   def notify_conversation_creation
     dispatcher_dispatch(CONVERSATION_CREATED)
+  end
+
+  def notify_conversation_deletion
+    return if @unread_count_deletion_data.blank?
+
+    Rails.configuration.dispatcher.dispatch(CONVERSATION_DELETED, Time.zone.now, conversation_data: @unread_count_deletion_data)
   end
 
   def notify_conversation_updation
@@ -341,6 +395,17 @@ class Conversation < ApplicationRecord
     Rails.configuration.dispatcher.dispatch(event_name, Time.zone.now, conversation: self, notifiable_assignee_change: notifiable_assignee_change?,
                                                                        changed_attributes: changed_attributes,
                                                                        performed_by: Current.executed_by)
+  end
+
+  def set_unread_count_deletion_data
+    @unread_count_deletion_data = {
+      id: id,
+      account_id: account_id,
+      inbox_id: inbox_id,
+      assignee_id: assignee_id,
+      team_id: team_id,
+      cached_label_list: cached_label_list
+    }
   end
 
   def conversation_status_changed_to_open?

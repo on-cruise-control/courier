@@ -38,6 +38,14 @@ export const isOnSpamView = ({ route: { name: routeName } }) => {
   return SPAM_ROUTES.includes(routeName);
 };
 
+export const isOnParticipatingView = ({ route: { name: routeName } }) => {
+  const PARTICIPATING_ROUTES = [
+    'conversation_participating',
+    'conversation_through_participating',
+  ];
+  return PARTICIPATING_ROUTES.includes(routeName);
+};
+
 export const isOnFoldersView = ({ route: { name: routeName } }) => {
   const FOLDER_ROUTES = [
     'folder_conversations',

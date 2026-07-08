@@ -46,8 +46,8 @@ class Integrations::Slack::ChannelBuilder
     while conversations_list.response_metadata.next_cursor.present?
       conversations_list = slack_client.conversations_list(
         cursor: conversations_list.response_metadata.next_cursor,
-        exclude_archived: true,
         types: channel_type,
+        exclude_archived: true,
         limit: limit
       )
       channel_list.concat(conversations_list.channels)
@@ -63,8 +63,8 @@ class Integrations::Slack::ChannelBuilder
     channel = find_channel(reference_id)
     return if channel.blank?
 
-    slack_client.conversations_join(channel: channel['id']) if channel['is_private'] == false
-    @hook.update!(reference_id: channel['id'], settings: { channel_name: channel['name'] }, status: 'enabled')
+    slack_client.conversations_join(channel: channel[:id]) if channel[:is_private] == false
+    @hook.update!(reference_id: channel[:id], settings: { channel_name: channel[:name] }, status: 'enabled')
     @hook
   end
 end

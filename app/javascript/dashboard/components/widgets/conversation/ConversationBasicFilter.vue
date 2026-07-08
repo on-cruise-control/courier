@@ -79,12 +79,20 @@ const chatSortOptions = computed(() => [
     value: 'created_at_asc',
   },
   {
+    label: t('CHAT_LIST.SORT_ORDER_ITEMS.unread.TEXT'),
+    value: 'unread',
+  },
+  {
     label: t('CHAT_LIST.SORT_ORDER_ITEMS.priority_desc.TEXT'),
     value: 'priority_desc',
   },
   {
     label: t('CHAT_LIST.SORT_ORDER_ITEMS.priority_asc.TEXT'),
     value: 'priority_asc',
+  },
+  {
+    label: t('CHAT_LIST.SORT_ORDER_ITEMS.priority_desc_created_at_asc.TEXT'),
+    value: 'priority_desc_created_at_asc',
   },
   {
     label: t('CHAT_LIST.SORT_ORDER_ITEMS.waiting_since_asc.TEXT'),
@@ -143,7 +151,11 @@ const handleSortChange = value => {
     <div
       v-if="showActionsDropdown"
       v-on-click-outside="() => toggleDropdown()"
-      class="conversation-basic-filter-menu mt-1 bg-n-alpha-3 backdrop-blur-[100px] border border-n-gray-4 w-72 rounded-xl p-4 absolute z-40 top-full"
+      class="mt-1 bg-n-alpha-3 backdrop-blur-[100px] border border-n-weak w-72 rounded-xl p-4 absolute z-40 top-full"
+      :class="{
+        'ltr:left-0 rtl:right-0': !isOnExpandedLayout,
+        'ltr:right-0 rtl:left-0': isOnExpandedLayout,
+      }"
     >
       <div class="flex items-center justify-between last:mt-4 gap-2">
         <span class="text-sm truncate text-n-slate-12">
@@ -162,7 +174,6 @@ const handleSortChange = value => {
           {{ $t('CHAT_LIST.CHAT_SORT.ORDER_BY') }}
         </span>
         <SelectMenu
-          class="order-by-select-menu"
           :model-value="chatSortFilter"
           :options="chatSortOptions"
           :label="activeChatSortLabel"

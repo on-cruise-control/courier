@@ -1,6 +1,7 @@
 {
   "REGISTER": {
     "TRY_WOOT": "Create an account",
+    "GET_STARTED": "Get started with Chatwoot",
     "TITLE": "Register",
     "TESTIMONIAL_HEADER": "All it takes is one step to move forward",
     "TESTIMONIAL_CONTENT": "You're one step away from engaging your customers, retaining them and finding new ones.",
@@ -24,21 +25,20 @@
       "ERROR": "Please enter a valid email address"
     },
     "PASSWORD": {
-      "LABEL": "პაროლი",
-      "PLACEHOLDER": "პაროლი",
-      "ERROR": "პაროლი ძალიან მოკლეა",
-      "IS_INVALID_PASSWORD": "პაროლი უნდა შეიცავდეს მინიმუმ 1 დიდ ასოს, 1 პატარა ასოს, 1 ციფრს და 1 სპეციალურ სიმბოლოს"
-    },
-    "DEALERSHIP": {
-      "LABEL": "დილერის ID",
-      "PLACEHOLDER": "შეიყვანეთ თქვენი დილერის ID",
-      "ERROR": "დილერის ID აუცილებელია",
+      "LABEL": "Password",
+      "PLACEHOLDER": "Password",
+      "ERROR": "Password is too short",
       "IS_INVALID_PASSWORD": "Password should contain atleast 1 uppercase letter, 1 lowercase letter, 1 number and 1 special character",
       "REQUIREMENTS_LENGTH": "მინიმუმ 6 სიმბოლო",
       "REQUIREMENTS_UPPERCASE": "მინიმუმ ერთი დიდი ასო",
       "REQUIREMENTS_LOWERCASE": "მინიმუმ ერთი პატარა ასო",
       "REQUIREMENTS_NUMBER": "მინიმუმ ერთი რიცხვი",
       "REQUIREMENTS_SPECIAL": "მინიმუმ ერთი სპეციალური სიმბოლო"
+    },
+    "DEALERSHIP": {
+      "LABEL": "დილერის ID",
+      "PLACEHOLDER": "შეიყვანეთ თქვენი დილერის ID",
+      "ERROR": "დილერის ID აუცილებელია"
     },
     "CONFIRM_PASSWORD": {
       "LABEL": "Confirm Password",
@@ -50,6 +50,13 @@
       "ERROR_MESSAGE": "Could not connect to Woot Server, Please try again later"
     },
     "SUBMIT": "Create account",
-    "HAVE_AN_ACCOUNT": "Already have an account?"
+    "HAVE_AN_ACCOUNT": "Already have an account?",
+    "VERIFY_EMAIL": {
+      "TITLE": "Check your inbox",
+      "DESCRIPTION": "We sent a verification link to {email}. Click the link to verify your email and get started.",
+      "RESEND": "Resend verification email",
+      "RESEND_SUCCESS": "Verification email sent. Please check your inbox.",
+      "RESEND_ERROR": "Could not send verification email. Please try again."
+    }
   }
 }

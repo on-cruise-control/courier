@@ -1,12 +1,12 @@
 import { mapGetters } from 'vuex';
 import { useAlert } from 'dashboard/composables';
+import { checkFileSizeLimit } from 'shared/helpers/FileHelper';
+import { getMaxUploadSizeByChannel } from '@chatwoot/utils';
+import { DirectUpload } from 'activestorage';
 import {
-  checkFileSizeLimit,
-  getMaxUploadSizeByChannel,
   DEFAULT_MAXIMUM_FILE_UPLOAD_SIZE,
   resolveMaximumFileUploadSize,
 } from 'shared/helpers/FileHelper';
-import { DirectUpload } from 'activestorage';
 import { INBOX_TYPES } from 'dashboard/helper/inbox';
 
 export default {

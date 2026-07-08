@@ -12,13 +12,18 @@ const { error } = defineProps({
 
 const emit = defineEmits(['retry']);
 
-const { orientation, status, createdAt } = useMessageContext();
+const { orientation, status, createdAt, content, attachments } =
+  useMessageContext();
 
 const { t } = useI18n();
 
-const canRetry = computed(() => !hasOneDayPassed(createdAt.value));
+const canRetry = computed(() => {
+  const hasContent = content.value !== null;
+  const hasAttachments = attachments.value && attachments.value.length > 0;
+  return !hasOneDayPassed(createdAt.value) && (hasContent || hasAttachments);
+});
 const displayError = computed(() => {
-return error.replace(/^\s*\(?#?\d+\)?\s*-?\s*/, '');
+  return error.replace(/^\s*\(?#?\d+\)?\s*-?\s*/, '');
 });
 </script>
 

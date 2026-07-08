@@ -82,8 +82,12 @@ export default {
         return this.channelConfig.avatarName || this.channelConfig.websiteName;
       }
 
-      if (this.message.sender) {
-        return this.message.sender.available_name || this.message.sender.name;
+      if (this.message.sender?.name) {
+        return this.message.sender.name;
+      }
+
+      if (this.message.additional_attributes?.sender_name) {
+        return this.message.additional_attributes.sender_name;
       }
 
       return this.$t('UNREAD_VIEW.BOT');
@@ -97,9 +101,13 @@ export default {
         return displayImage;
       }
 
-      return this.message.sender
-        ? this.message.sender.avatar_url
-        : displayImage;
+      if (this.message.sender) {
+        return this.message.sender.avatar_url;
+      }
+
+      return (
+        this.message.additional_attributes?.sender_avatar_url || displayImage
+      );
     },
     hasRecordedResponse() {
       return (

@@ -40,7 +40,6 @@ const emailProviderList = computed(() => {
       isEnabled: true,
       key: 'other_provider',
       icon: 'i-woot-mail',
-      src: EMAIL_CHANNEL_IMAGE,
     },
   ].filter(providerConfig => {
     if (isAChatwootInstance.value) {
@@ -69,7 +68,6 @@ function onClick(emailProvider) {
         v-for="emailProvider in emailProviderList"
         :key="emailProvider.key"
         :title="emailProvider.title"
-        :src="emailProvider.src || EMAIL_CHANNEL_IMAGE"
         :description="emailProvider.description"
         :icon="emailProvider.icon"
         :disabled="!emailProvider.isEnabled"

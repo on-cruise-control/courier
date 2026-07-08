@@ -1,6 +1,7 @@
 <script setup>
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import MessageMeta from '../MessageMeta.vue';
+import Icon from 'next/icon/Icon.vue';
 import { useMessageContext } from '../provider.js';
 import { ORIENTATION } from '../constants';
 
@@ -12,6 +13,12 @@ const items = computed(() => contentAttributes.value?.items ?? []);
 const metaClass = computed(() =>
   orientation.value === ORIENTATION.RIGHT ? 'justify-end' : 'justify-start'
 );
+
+const imageErrors = ref({});
+
+function onImageError(title) {
+  imageErrors.value = { ...imageErrors.value, [title]: true };
+}
 
 function onWheelScroll(e) {
   const el = e.currentTarget;
@@ -36,10 +43,18 @@ function onWheelScroll(e) {
         :key="item.title"
         class="w-44 flex-none rounded-lg overflow-hidden bg-white dark:bg-n-solid-3 border border-n-slate-3 dark:border-n-solid-4 shadow-sm"
       >
+        <div
+          v-if="imageErrors[item.title]"
+          class="w-full h-28 flex items-center justify-center bg-n-alpha-1"
+        >
+          <Icon icon="i-lucide-image-off" class="text-n-slate-10 size-6" />
+        </div>
         <img
+          v-else
           :src="item.mediaUrl"
           :alt="item.title"
           class="w-full h-28 object-cover"
+          @error="onImageError(item.title)"
         />
         <div class="p-2">
           <p class="text-xs font-medium text-n-slate-12 leading-snug line-clamp-2 mb-1">

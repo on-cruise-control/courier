@@ -1,7 +1,7 @@
 <script>
 import V4Button from 'dashboard/components-next/button/Button.vue';
 import { useAlert, useTrack } from 'dashboard/composables';
-import ReportFilterSelector from 'dashboard/routes/dashboard/settings/reports/components/FilterSelector.vue';
+import ReportFilters from 'dashboard/routes/dashboard/settings/reports/components/ReportFilters.vue';
 import { GROUP_BY_FILTER } from 'dashboard/routes/dashboard/settings/reports/constants';
 import { REPORTS_EVENTS } from 'dashboard/helper/AnalyticsHelper/events';
 import { generateFileName } from 'dashboard/helper/downloadHelper';
@@ -22,7 +22,7 @@ export default {
   name: 'CustomConversationReports',
   components: {
     ReportHeader,
-    ReportFilterSelector,
+    ReportFilters,
     CustomReportContainer,
     V4Button,
   },
@@ -109,16 +109,16 @@ export default {
 <template>
   <ReportHeader :header-title="$t('REPORT.HEADER')">
     <V4Button
-      :label="$t('REPORT.DOWNLOAD_AGENT_REPORTS')"
+      :label="$t('AGENT_REPORTS.DOWNLOAD_AGENT_REPORTS')"
       icon="i-ph-download-simple"
       size="sm"
       @click="downloadAgentReports"
     />
   </ReportHeader>
   <div class="flex flex-col gap-3">
-    <ReportFilterSelector
-      :show-agents-filter="false"
-      show-group-by-filter
+    <ReportFilters
+      :show-entity-filter="false"
+      show-group-by
       @filter-change="onFilterChange"
     />
     <CustomReportContainer :group-by="groupBy" />

@@ -5,6 +5,7 @@ import SamlLogin from './login/CustomSaml.vue';
 import Signup from './auth/signup/Index.vue';
 import ResetPassword from './auth/reset/password/CustomResetPassword.vue';
 import Confirmation from './auth/confirmation/Index.vue';
+import VerifyEmail from './auth/verify-email/Index.vue';
 import PasswordEdit from './auth/password/CustomPasswordEdit.vue';
 
 export default [
@@ -30,7 +31,6 @@ export default [
     props: route => ({
       authError: route.query.error,
       target: route.query.target,
-      redirectUrl: route.query.redirect_url,
     }),
   },
   {
@@ -48,6 +48,15 @@ export default [
       config: route.query.config,
       confirmationToken: route.query.confirmation_token,
       redirectUrl: route.query.route_url,
+    }),
+  },
+  {
+    path: frontendURL('auth/verify-email'),
+    name: 'auth_verify_email',
+    component: VerifyEmail,
+    meta: { ignoreSession: true },
+    props: () => ({
+      email: window.history.state?.email || '',
     }),
   },
   {

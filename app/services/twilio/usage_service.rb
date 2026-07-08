@@ -1,4 +1,24 @@
+require 'net/http'
+require 'uri'
+require 'json'
+
 class Twilio::UsageService
+  TwilioUsageRecord = Struct.new(:category, :description, :count, :usage, :usage_unit,
+                                 :price, :price_unit, :start_date, :end_date, keyword_init: true) do
+    def self.from_hash(h)
+      new(
+        category: h['category'],
+        description: h['description'],
+        count: h['count'],
+        usage: h['usage'],
+        usage_unit: h['usage_unit'],
+        price: h['price'],
+        price_unit: h['price_unit'],
+        start_date: h['start_date'],
+        end_date: h['end_date']
+      )
+    end
+  end
   SURCHARGE_PERCENT = 0.05
 
   CATEGORY_METADATA = {
@@ -142,7 +162,7 @@ class Twilio::UsageService
     client = build_client(channel)
     records = fetch_records(client, period)
     multiple_records_response(channel, records, api_version)
-  rescue Twilio::REST::RestError => e
+  rescue StandardError => e
     error_response(e.message)
   end
 
@@ -163,27 +183,35 @@ class Twilio::UsageService
   end
 
   def build_client(channel)
-    Twilio::REST::Client.new(channel.account_sid, channel.auth_token)
+    if channel.api_key_sid.present?
+      { username: channel.api_key_sid, password: channel.auth_token, account_sid: channel.account_sid }
+    else
+      { username: channel.account_sid, password: channel.auth_token, account_sid: channel.account_sid }
+    end
   end
 
   def fetch_records(client, period)
-    params = {}
-    case period.to_sym
-    when :this_month
-      client.usage.records.this_month.list(**params)
-    when :last_month
-      client.usage.records.last_month.list(**params)
-    when :today
-      params[:start_date] = Date.current.to_s
-      params[:end_date] = Date.current.to_s
-      client.usage.records.list(**params)
-    when :yesterday
-      params[:start_date] = Date.yesterday.to_s
-      params[:end_date] = Date.yesterday.to_s
-      client.usage.records.list(**params)
-    else
-      client.usage.records.list(**params)
-    end
+    account_sid = client[:account_sid]
+    base_path = "/2010-04-01/Accounts/#{account_sid}/Usage/Records"
+
+    path = case period.to_sym
+           when :this_month then "#{base_path}/ThisMonth.json?PageSize=1000"
+           when :last_month then "#{base_path}/LastMonth.json?PageSize=1000"
+           when :today then "#{base_path}.json?PageSize=1000&StartDate=#{Date.current}&EndDate=#{Date.current}"
+           when :yesterday then "#{base_path}.json?PageSize=1000&StartDate=#{Date.yesterday}&EndDate=#{Date.yesterday}"
+           else "#{base_path}.json?PageSize=1000"
+           end
+
+    uri = URI("https://api.twilio.com#{path}")
+    request = Net::HTTP::Get.new(uri)
+    request.basic_auth(client[:username], client[:password])
+
+    response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true) { |http| http.request(request) }
+
+    raise StandardError, "Twilio API error: #{response.code} #{response.body}" unless response.is_a?(Net::HTTPSuccess)
+
+    parsed = JSON.parse(response.body)
+    (parsed['usage_records'] || []).map { |r| TwilioUsageRecord.from_hash(r) }
   end
 
   def multiple_records_response(channel, records, api_version)

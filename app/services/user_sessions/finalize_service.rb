@@ -24,6 +24,6 @@ class UserSessions::FinalizeService
   attr_reader :end_timestamp
 
   def latest_session
-    UserSession.where(account_id: account_user.account_id, user_id: account_user.user_id).order(session_date: :desc, created_at: :desc).first
+    UserDailySession.where(account_id: account_user.account_id, user_id: account_user.user_id).order(session_date: :desc, created_at: :desc).first
   end
 end

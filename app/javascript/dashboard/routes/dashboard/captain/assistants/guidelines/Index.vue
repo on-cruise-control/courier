@@ -10,7 +10,6 @@ import { useUISettings } from 'dashboard/composables/useUISettings';
 import Input from 'dashboard/components-next/input/Input.vue';
 import Button from 'dashboard/components-next/button/Button.vue';
 
-import SettingsPageLayout from 'dashboard/components-next/captain/SettingsPageLayout.vue';
 import PageLayout from 'dashboard/components-next/captain/PageLayout.vue';
 import SettingsHeader from 'dashboard/components-next/captain/pageComponents/settings/SettingsHeader.vue';
 import SuggestedRules from 'dashboard/components-next/captain/assistant/SuggestedRules.vue';
@@ -34,17 +33,6 @@ const assistant = computed(() =>
 const searchQuery = ref('');
 const newInlineRule = ref('');
 const newDialogRule = ref('');
-
-const breadcrumbItems = computed(() => {
-  return [
-    {
-      label: t('CAPTAIN.ASSISTANTS.SETTINGS.BREADCRUMB.ASSISTANT'),
-      routeName: 'captain_assistants_index',
-    },
-    { label: assistant.value?.name, routeName: 'captain_assistants_edit' },
-    { label: t('CAPTAIN.ASSISTANTS.RESPONSE_GUIDELINES.TITLE') },
-  ];
-});
 
 const guidelinesContent = computed(
   () => assistant.value?.response_guidelines || []
@@ -194,7 +182,6 @@ const addAllExample = async () => {
 <template>
   <PageLayout
     :header-title="$t('CAPTAIN.ASSISTANTS.RESPONSE_GUIDELINES.TITLE')"
-    :breadcrumb-items="breadcrumbItems"
     :is-fetching="isFetching"
     :back-url="backUrl"
     :show-know-more="false"

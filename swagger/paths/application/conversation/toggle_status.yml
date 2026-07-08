@@ -39,7 +39,6 @@ responses:
     content:
       application/json:
         schema:
-          $ref: '#/components/schemas/conversation_status_toggle'
           type: object
           properties:
             meta:

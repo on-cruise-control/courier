@@ -114,6 +114,7 @@ export default {
       window.chatwootWebChannel;
     this.setLocale(locale);
     this.setWidgetColor(widgetColor);
+    this.setWidgetColorVariable(widgetColor);
     if (widgetPosition) {
       this.setAppConfig({ position: widgetPosition });
     }
@@ -231,6 +232,14 @@ export default {
         IFrameHelper.sendMessage('has-conversations', {
           hasConversations: conversationSize > 0,
         });
+      }
+    },
+    setWidgetColorVariable(widgetColor) {
+      if (widgetColor) {
+        document.documentElement.style.setProperty(
+          '--widget-color',
+          widgetColor
+        );
       }
     },
     scrollConversationToBottom() {

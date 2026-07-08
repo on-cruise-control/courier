@@ -2,11 +2,11 @@ class Internal::ExpireStaleAccountUserSessionsJob < ApplicationJob
   queue_as :scheduled_jobs
 
   def perform
-    AccountUser.includes(:user_sessions).find_each(batch_size: 100) do |account_user|
-      latest_session = account_user.user_sessions.max_by { |session| [session.session_date, session.created_at] }
+    AccountUser.includes(:user_daily_sessions).find_each(batch_size: 100) do |account_user|
+      latest_session = account_user.user_daily_sessions.max_by { |session| [session.session_date, session.created_at] }
       next unless stale_session?(account_user, latest_session)
 
-      UserSessions::FinalizeService.new(account_user: account_user).perform
+      UserDailySessions::FinalizeService.new(account_user: account_user).perform
     end
   end
 

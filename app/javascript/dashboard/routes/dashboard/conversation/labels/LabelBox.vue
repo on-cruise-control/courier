@@ -142,8 +142,8 @@ export default {
             :account-labels="accountLabels"
             :selected-labels="savedLabels"
             :allow-creation="isAdmin"
-            @add="openConfirmAddLabelDialog"
-            @remove="openConfirmDeleteLabelDialog"
+            @add="addLabelToConversation"
+            @remove="removeLabelFromConversation"
           />
         </div>
       </div>

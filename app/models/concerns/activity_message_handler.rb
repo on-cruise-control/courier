@@ -1,6 +1,7 @@
 module ActivityMessageHandler
   extend ActiveSupport::Concern
 
+  include AssigneeActivityMessageHandler
   include PriorityActivityMessageHandler
   include LabelActivityMessageHandler
   include SlaActivityMessageHandler
