@@ -175,11 +175,17 @@ export default {
       return this.isATwilioWhatsAppChannel && !this.isPrivate;
     },
 
+    isInstagramDM() {
+      return this.conversationType === 'instagram_direct_message' || this.isAnInstagramChannel;
+    },
+
     isPrivate() {
       if (
         this.currentChat.can_reply ||
         this.isAWhatsAppChannel ||
-        this.isAPIInbox
+        this.isAPIInbox ||
+        this.isInstagramDM ||
+        this.isAFacebookInbox
       ) {
         return this.isOnPrivateNote;
       }
@@ -203,7 +209,7 @@ export default {
     isReplyRestricted() {
       return (
         !this.currentChat?.can_reply &&
-        !(this.isAWhatsAppChannel || this.isAPIInbox)
+        !(this.isAWhatsAppChannel || this.isAPIInbox|| this.isInstagramDM || this.isAFacebookInbox)
       );
     },
     inboxId() {
@@ -463,9 +469,13 @@ export default {
         this.copilot.reset();
       }
 
-
-
-      if (canReply || this.isAWhatsAppChannel || this.isAPIInbox) {
+      if (
+        canReply ||
+        this.isAWhatsAppChannel ||
+        this.isAPIInbox ||
+        this.isInstagramDM ||
+        this.isAFacebookInbox
+      ) {
         this.replyType = REPLY_EDITOR_MODES.REPLY;
       } else {
         this.replyType = REPLY_EDITOR_MODES.NOTE;
@@ -932,7 +942,7 @@ export default {
       this.$store.dispatch('draftMessages/setReplyEditorMode', {
         mode,
       });
-      if (canReply || this.isAWhatsAppChannel || this.isAPIInbox)
+      if (canReply || this.isAWhatsAppChannel || this.isAPIInbox || this.isInstagramDM || this.isAFacebookInbox)
         this.replyType = mode;
       if (this.isRecordingAudio) {
         this.toggleAudioRecorder();
