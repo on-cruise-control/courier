@@ -9,7 +9,7 @@ class AdministratorNotifications::ConversationHandoffMailer < AdministratorNotif
     @customer_data = customer_data || {}
     ensure_current_account(@account)
 
-    subject = "[Action required] High-priority conversation requires attention"
+    subject = '[Parts] High-priority conversation requires attention'
 
     send_notification(
       subject,

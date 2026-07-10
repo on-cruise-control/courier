@@ -5,16 +5,20 @@ class AgentNotifications::BookingMailer < ApplicationMailer
     ensure_current_account(@account)
 
     # Ensure summary is refreshed before sending the email
-    Conversations::SummaryService.new(conversation: @conversation, force_refresh: true).perform rescue nil
+    begin
+      Conversations::SummaryService.new(conversation: @conversation, force_refresh: true).perform
+    rescue StandardError
+      nil
+    end
     @conversation.reload
-    
+
     # If account is suspended, send to SuperAdmins only
     recipients = if @account.suspended?
                    super_admin_emails(@account)
                  else
                    emails
                  end
-    
+
     return if recipients.blank?
 
     @booking_date = booking_date
@@ -24,7 +28,7 @@ class AgentNotifications::BookingMailer < ApplicationMailer
     @text_number = text_number
     @platform_name = @conversation&.inbox&.platform_name
     @instagram_profile_url = instagram_profile_url(@conversation)
-    subject = 'New booking scheduled 📆'
+    subject = '[Sales] New booking scheduled 📆'
 
     mail(to: recipients, subject: subject)
   end

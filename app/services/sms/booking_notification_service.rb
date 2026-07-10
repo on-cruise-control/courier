@@ -66,7 +66,7 @@ class Sms::BookingNotificationService
       📆 New Booking Scheduled
 
       Dealership: #{account_name}
-      #{"Platform: #{platform_name}" if platform_name.present?}
+      #{"Platform: #{platform_name}(DM)" if platform_name.present?}
       #{"Name: #{customer_name}" if customer_name.present?}
 
       Booking Date: #{@booking_date}
@@ -81,7 +81,7 @@ class Sms::BookingNotificationService
     body += "\nSummary: #{summary}\n" if summary.present?
 
     body += "\nView conversation: #{conversation_url}\n"
-    
+
     body.strip
   end
 

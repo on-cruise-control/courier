@@ -58,14 +58,14 @@ class Sms::HandoffNotificationService
     customer_name = @customer_data&.dig('name').presence || @conversation.contact&.name
 
     body = <<~SMS
-      🔔 Conversation Handoff Alert
+      🔔 Conversation Vehicle Parts Alert
 
       Dealership: #{account_name}
       #{"Platform: #{platform_name} (DM)" if platform_name.present?}
       #{"Name: #{customer_name}" if customer_name.present?}
 
 
-      Cruise Control is initiating a client handoff. Please take over this conversation manually.
+      The customer has requested vehicle parts. Please contact them as soon as possible to verify their requirements and proceed accordingly.
     SMS
 
     summary = conversation_summary
