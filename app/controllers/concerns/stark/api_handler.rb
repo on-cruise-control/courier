@@ -158,6 +158,7 @@ module Stark
         'content' => data['answer'],
         'action' => nil,
         'stop_follow_up' => data['stop_follow_up'],
+        'should_send_reply' => data['should_send_reply'],
         'attachments' => data['attachments'] || [],
         'metadata' => data['metadata'] || {},
         'is_spam' => data['is_spam'],
