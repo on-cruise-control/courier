@@ -97,6 +97,10 @@ const state = {
     data: null,
     isFetching: false,
   },
+  walletBalance: {
+    data: null,
+    isFetching: false,
+  },
 };
 
 const getters = {
@@ -150,6 +154,12 @@ const getters = {
   },
   isFetchingTwilioUsage(_state) {
     return _state.twilioUsage.isFetching;
+  },
+  getWalletBalance(_state) {
+    return _state.walletBalance.data;
+  },
+  isFetchingWalletBalance(_state) {
+    return _state.walletBalance.isFetching;
   },
 };
 
@@ -455,6 +465,19 @@ export const actions = {
         commit(types.default.SET_TWILIO_USAGE, { data: null, isFetching: false });
       });
   },
+  fetchWalletBalance({ commit }) {
+    commit(types.default.SET_WALLET_BALANCE, { data: null, isFetching: true });
+    return Report.getWalletBalance()
+      .then(response => {
+        commit(types.default.SET_WALLET_BALANCE, {
+          data: response.data,
+          isFetching: false,
+        });
+      })
+      .catch(() => {
+        commit(types.default.SET_WALLET_BALANCE, { data: null, isFetching: false });
+      });
+  },
 };
 
 const mutations = {
@@ -526,6 +549,10 @@ const mutations = {
   [types.default.SET_TWILIO_USAGE](_state, { data, isFetching }) {
     _state.twilioUsage.data = data;
     _state.twilioUsage.isFetching = isFetching;
+  },
+  [types.default.SET_WALLET_BALANCE](_state, { data, isFetching }) {
+    _state.walletBalance.data = data;
+    _state.walletBalance.isFetching = isFetching;
   },
 };
 

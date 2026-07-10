@@ -16,7 +16,8 @@ module Stark
         return
       end
 
-      if response['content'].present? || (response['attachments'].is_a?(Array) && response['attachments'].any?)
+      has_content = response['content'].present? || (response['attachments'].is_a?(Array) && response['attachments'].any?)
+      if response['should_send_reply'] != false && has_content
         create_bot_response_message(current_conversation, response['content'], response['attachments'], response['metadata'])
       end
       process_action(event_data[:message], response['action']) if response['action'].present?

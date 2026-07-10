@@ -137,6 +137,10 @@ class ReportsAPI extends ApiClient {
       },
     });
   }
+
+  getWalletBalance() {
+    return axios.get(`${this.url}/wallet_balance`);
+  }
 }
 
 export default new ReportsAPI();
