@@ -7,6 +7,7 @@ class Sms::TeamReachedOutNotificationService
 
   def perform
     return unless sms_config_enabled?
+
     recipients = recipients_with_phone_numbers
     return if recipients.blank?
 
@@ -54,7 +55,7 @@ class Sms::TeamReachedOutNotificationService
       Follow-Up Required: Team Has Not Reached Out
 
       Dealership: #{account_name}
-      #{"Platform: #{platform_name}" if platform_name.present?}
+      #{"Platform: #{platform_name}(DM)" if platform_name.present?}
       #{"Name: #{customer_name}" if customer_name.present?}
 
       Our system has detected that the team has not yet reached out to this customer. Please follow up as soon as possible.

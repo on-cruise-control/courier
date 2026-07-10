@@ -1,19 +1,19 @@
 class AgentNotifications::EscalationMailer < ApplicationMailer
-  def escalation_notification(emails:, conversation:, customer_data: nil , message: nil)
+  def escalation_notification(emails:, conversation:, customer_data: nil, message: nil)
     @conversation = conversation
     @account = conversation.account
     @dealership_name = conversation.account.name
     @customer_data = customer_data || {}
     @last_incoming_message = message
     ensure_current_account(@account)
-    
+
     # If account is suspended, send to SuperAdmins only
     recipients = if @account.suspended?
                    super_admin_emails(@account)
                  else
                    emails
                  end
-    
+
     return if recipients.blank?
 
     @summary = @conversation.summary
@@ -22,8 +22,8 @@ class AgentNotifications::EscalationMailer < ApplicationMailer
     @customer_phone = @customer_data['phone'].presence
     @platform_name = @conversation.inbox.platform_name
     @action_url = conversation_url(@conversation)
-    
-    subject = '🚨 Urgent Escalation: Customer Experience Issue – Immediate Attention Required'
+
+    subject = '[Escalation] 🚨 Urgent Escalation: Customer Experience Issue – Immediate Attention Required'
 
     mail(to: recipients, subject: subject)
   end
@@ -55,7 +55,7 @@ class AgentNotifications::EscalationMailer < ApplicationMailer
     @platform_name = @conversation.inbox.platform_name
     @action_url = conversation_url(@conversation)
 
-    subject = 'Negative Comment Detected – High-Priority Follow-Up Required'
+    subject = '[Escalation] Negative Comment Detected – High-Priority Follow-Up Required'
 
     mail(to: recipients, subject: subject)
   end
@@ -63,6 +63,7 @@ class AgentNotifications::EscalationMailer < ApplicationMailer
   private
 
   def conversation_url(conversation)
-    "#{ENV.fetch('FRONTEND_URL', nil)}/app/accounts/#{conversation.account_id}/inbox/#{conversation.inbox_id}/conversations/#{conversation.display_id}"
+    "#{ENV.fetch('FRONTEND_URL',
+                 nil)}/app/accounts/#{conversation.account_id}/inbox/#{conversation.inbox_id}/conversations/#{conversation.display_id}"
   end
 end
