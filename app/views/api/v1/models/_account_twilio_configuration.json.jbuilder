@@ -1,0 +1,7 @@
+json.id account_twilio_configuration.id
+json.account_id account_twilio_configuration.account_id
+json.account_sid account_twilio_configuration.account_sid
+json.phone_number account_twilio_configuration.phone_number
+json.auth_token account_twilio_configuration.auth_token
+json.created_at account_twilio_configuration.created_at
+json.updated_at account_twilio_configuration.updated_at
