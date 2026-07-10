@@ -19,6 +19,7 @@ import SectionLayout from './components/SectionLayout.vue';
 import BookingEmails from './components/BookingEmails.vue';
 import VehiclePartsEmails from './components/VehiclePartsEmails.vue';
 import EscalationEmails from './components/EscalationEmails.vue';
+import TwilioConfiguration from './components/TwilioConfiguration.vue';
 
 export default {
   components: {
@@ -34,6 +35,7 @@ export default {
     BookingEmails,
     VehiclePartsEmails,
     EscalationEmails,
+    TwilioConfiguration,
   },
   setup() {
     const { updateUISettings, uiSettings } = useUISettings();
@@ -254,6 +256,7 @@ export default {
       <woot-loading-state v-if="uiFlags.isFetchingItem" />
     </div>
     <AudioTranscription v-if="showAudioTranscriptionConfig" />
+    <TwilioConfiguration />
     <BookingEmails />
     <VehiclePartsEmails />
     <EscalationEmails />

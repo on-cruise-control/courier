@@ -1,4 +1,6 @@
 class Sms::HandoffNotificationService
+  include Sms::Concerns::TwilioConfigurable
+
   def initialize(conversation, emails:, customer_data: nil)
     @conversation = conversation
     @account = conversation.account
@@ -19,24 +21,6 @@ class Sms::HandoffNotificationService
   end
 
   private
-
-  def sms_config_enabled?
-    twilio_account_sid.present? &&
-      twilio_auth_token.present? &&
-      organization_phone_number.present?
-  end
-
-  def twilio_account_sid
-    @twilio_account_sid ||= GlobalConfig.get_value('TWILIO_ACCOUNT_SID')
-  end
-
-  def twilio_auth_token
-    @twilio_auth_token ||= GlobalConfig.get_value('TWILIO_AUTH_TOKEN')
-  end
-
-  def organization_phone_number
-    @organization_phone_number ||= GlobalConfig.get_value('TWILIO_ORGANIZATION_PHONE_NUMBER')
-  end
 
   def conversation_summary
     Conversations::SummaryService.new(conversation: @conversation).perform

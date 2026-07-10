@@ -166,6 +166,40 @@
           "ERROR": "Failed to update vehicle parts emails"
         }
       },
+      "TWILIO_CONFIGURATION": {
+        "TITLE": "SMS Notification Settings",
+        "NOTE": "Configure your Twilio credentials to send SMS notifications (booking, escalation, handoff alerts) from your own Twilio number.",
+        "ACCOUNT_SID": {
+          "LABEL": "Twilio Account SID",
+          "PLACEHOLDER": "Enter your Twilio Account SID",
+          "ERROR": "Account SID is required"
+        },
+        "AUTH_TOKEN": {
+          "LABEL": "Twilio Auth Token",
+          "PLACEHOLDER": "Enter your Twilio auth token",
+          "ERROR": "Auth token is required"
+        },
+        "PHONE_NUMBER": {
+          "LABEL": "Twilio Phone Number",
+          "PLACEHOLDER": "+14155552671",
+          "HELP": "",
+          "ERROR": "Enter a valid phone number with 10-13 digits"
+        },
+        "SUBMIT_BUTTON": "Save Twilio Settings",
+        "DELETE": {
+          "BUTTON": "Remove",
+          "CANCEL": "Cancel",
+          "CONFIRM_TITLE": "Remove Twilio Configuration",
+          "CONFIRM": "Are you sure you want to remove the Twilio configuration? SMS notifications will stop sending until you add new credentials.",
+          "SUCCESS": "Twilio configuration removed successfully",
+          "ERROR": "Failed to remove Twilio configuration"
+        },
+        "API": {
+          "SUCCESS": "Twilio settings updated successfully",
+          "ERROR": "Failed to update Twilio settings",
+          "ERROR_LOADING": "Failed to load Twilio settings"
+        }
+      },
       "FEATURES": {
         "INBOUND_EMAIL_ENABLED": "Conversation continuity with emails is enabled for your account.",
         "CUSTOM_EMAIL_DOMAIN_ENABLED": "You can receive emails in your custom domain now."
