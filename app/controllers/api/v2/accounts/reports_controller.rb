@@ -97,6 +97,19 @@ class Api::V2::Accounts::ReportsController < Api::V1::Accounts::BaseController
     end
   end
 
+  def wallet_balance
+    balance_data = Dealership::WalletBalanceService.new(
+      Current.account.dealership_id,
+      current_month_usage: current_month_usage_amount
+    ).fetch_balance
+
+    if balance_data
+      render json: balance_data
+    else
+      render json: { error: 'Unable to fetch wallet balance' }, status: :unprocessable_entity
+    end
+  end
+
   def inbox_label_matrix
     builder = V2::Reports::InboxLabelMatrixBuilder.new(
       account: Current.account,
@@ -353,6 +366,14 @@ class Api::V2::Accounts::ReportsController < Api::V1::Accounts::BaseController
 
   def check_authorization
     authorize :report, :view?
+  end
+
+  def current_month_usage_amount
+    usage_result = ::Twilio::UsageService.new(Current.account).usage(period: :this_month, api_version: 'v2')
+    return 0 unless usage_result[:success]
+
+    grand_total = usage_result[:summary_categories]&.find { |category| category[:category] == 'grand-total' }
+    grand_total ? grand_total[:price].round(2) : 0
   end
 
   def common_params

@@ -21,6 +21,7 @@
 #  last_handoff_at                        :datetime
 #  mark_as_not_spam                       :boolean          default(FALSE)
 #  priority                               :integer
+#  should_send_reply                      :boolean          default(TRUE)
 #  snoozed_until                          :datetime
 #  status                                 :integer          default("open"), not null
 #  stop_follow_up                         :boolean          default(FALSE)
@@ -360,7 +361,7 @@ class Conversation < ApplicationRecord
 
   def list_of_keys
     %w[team_id assignee_id assignee_agent_bot_id status snoozed_until custom_attributes label_list waiting_since
-       first_reply_created_at priority is_spam comment_sentiment]
+       first_reply_created_at priority is_spam comment_sentiment stop_follow_up should_send_reply]
   end
 
   def allowed_keys?

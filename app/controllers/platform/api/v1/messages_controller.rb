@@ -56,7 +56,8 @@ class Platform::Api::V1::MessagesController < PlatformController
       phone: params[:phone],
       email: params[:email],
       whatsapp_number: params[:whatsapp_number],
-      text_number: params[:text_number]
+      text_number: params[:text_number],
+      summary: params[:summary]
     ).deliver_now
 
     Rails.logger.info("Booking email sent to #{emails.size} recipients for conversation ##{conversation.id}")
@@ -67,7 +68,8 @@ class Platform::Api::V1::MessagesController < PlatformController
       phone: params[:phone],
       email: params[:email],
       whatsapp_number: params[:whatsapp_number],
-      text_number: params[:text_number]
+      text_number: params[:text_number],
+      summary: params[:summary]
     ).perform
 
     render json: {

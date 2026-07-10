@@ -689,6 +689,11 @@
       "COST": "Cost",
       "NO_USAGE": "No usage recorded for this period."
     },
-    "PERIOD_DATE_RANGE": " {startDate} to {endDate} "
+    "PERIOD_DATE_RANGE": " {startDate} to {endDate} ",
+    "WALLET_BALANCE": {
+      "TITLE": "Wallet",
+      "DESCRIPTION": "Wallet balance after this month's usage.",
+      "LOADING": "Fetching wallet balance..."
+    }
   }
 }

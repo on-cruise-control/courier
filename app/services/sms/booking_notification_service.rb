@@ -1,5 +1,5 @@
 class Sms::BookingNotificationService
-  def initialize(conversation:, booking_date:, phone:, email:, whatsapp_number: nil, text_number: nil)
+  def initialize(conversation:, booking_date:, phone:, email:, whatsapp_number: nil, text_number: nil, summary: nil)
     @conversation = conversation
     @account = conversation.account
     @booking_date = booking_date
@@ -7,6 +7,7 @@ class Sms::BookingNotificationService
     @customer_email = email
     @whatsapp_number = whatsapp_number
     @text_number = text_number
+    @summary_override = summary
   end
 
   def perform
@@ -42,6 +43,8 @@ class Sms::BookingNotificationService
   end
 
   def conversation_summary
+    return @summary_override if @summary_override.present?
+
     Conversations::SummaryService.new(conversation: @conversation).perform
     @conversation.summary
   end
