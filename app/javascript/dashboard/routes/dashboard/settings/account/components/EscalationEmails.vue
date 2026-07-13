@@ -79,6 +79,7 @@ const hasEscalationEmails = computed(() => escalationEmails.value.length > 0);
   <SectionLayout
     :title="t('GENERAL_SETTINGS.FORM.ESCALATION_EMAILS.TITLE')"
     :description="t('GENERAL_SETTINGS.FORM.ESCALATION_EMAILS.NOTE')"
+    with-border
   >
     <div class="space-y-4">
       <WithLabel

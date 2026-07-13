@@ -2,6 +2,7 @@ class ConversationHandoffService
   HANDOFF_COOLDOWN_MINUTES = 240 # 4 hours in minutes
   HANDOFF_LABEL = 'handoff'
   ESCALATION_LABEL = 'escalation'
+  VALID_HANDOFF_REASONS = ['external_escalation', 'vehicle_parts', 'service_inquiry'].freeze
 
   def initialize(conversation)
     @conversation = conversation
@@ -9,12 +10,14 @@ class ConversationHandoffService
 
   def process_handoff(customer_data = nil, handoff_reason = nil , message = nil)
     return unless should_send_notification?
+    return unless VALID_HANDOFF_REASONS.include?(handoff_reason)
 
     label = label_for_reason(handoff_reason)
-    return unless label
-    ensure_label_exists(label)
-    update_handoff_state(label)
-    schedule_label_change
+    if label
+      ensure_label_exists(label)
+      update_handoff_state(label)
+      schedule_label_change
+    end
 
     case handoff_reason
 
@@ -29,6 +32,12 @@ class ConversationHandoffService
         ConversationHandoff::SendHandoffNotificationsJob.perform_later(@conversation, customer_data, @conversation.account.vehicle_parts_emails)
       else
         Rails.logger.warn("Vehicle parts email not configured for account #{@conversation.account.id}")
+      end
+    when 'service_inquiry'
+      if @conversation.account.service_emails.present?
+        ConversationHandoff::SendServiceNotificationsJob.perform_later(@conversation, customer_data, @conversation.account.service_emails)
+      else
+        Rails.logger.warn("Service email not configured for account #{@conversation.account.id}")
       end
     end
   end
