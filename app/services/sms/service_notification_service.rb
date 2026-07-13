@@ -1,4 +1,4 @@
-class Sms::HandoffNotificationService
+class Sms::ServiceNotificationService
   include Sms::Concerns::TwilioConfigurable
 
   def initialize(conversation, emails:, customer_data: nil)
@@ -17,7 +17,7 @@ class Sms::HandoffNotificationService
     message_body = build_message_body
     send_sms_to_recipients(recipients, message_body)
   rescue StandardError => e
-    Rails.logger.error("Failed to send handoff SMS notifications: #{e.message}")
+    Rails.logger.error("Failed to send service SMS notifications: #{e.message}")
   end
 
   private
@@ -48,7 +48,7 @@ class Sms::HandoffNotificationService
     customer_sms = nil if customer_sms == '(N/A)'
 
     body = <<~SMS
-      🔔 Conversation Vehicle Parts Alert
+      🔔 Conversation Service Alert
 
       Dealership: #{account_name}
       #{"Platform: #{platform_name} (DM)" if platform_name.present?}
@@ -58,11 +58,12 @@ class Sms::HandoffNotificationService
       #{"SMS Number: #{customer_sms}" if customer_sms.present?}
 
 
-      The customer has requested vehicle parts. Please contact them as soon as possible to verify their requirements and proceed accordingly.
+      The customer has a service inquiry. Please contact them as soon as possible to verify their requirements and proceed accordingly.
     SMS
 
     summary = conversation_summary
     body += "\nSummary: #{summary}\n" if summary.present?
+    body += "\nNote: If the customer has not finalized the scheduling form, we recommend reaching out to them directly.\n"
     body += "\nView conversation: #{conversation_url}\n"
 
     body.strip
