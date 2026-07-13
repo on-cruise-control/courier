@@ -12,8 +12,8 @@ class V2::Reports::InboxSummaryBuilder < V2::Reports::BaseSummaryBuilder
               :avg_resolution_time, :avg_first_response_time, :avg_reply_time
 
   def load_data
+    super
     @conversations_count = fetch_conversations_count
-    load_reporting_events_data
   end
 
   def fetch_conversations_count

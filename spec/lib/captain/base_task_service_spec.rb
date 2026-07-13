@@ -3,7 +3,7 @@ require 'rails_helper'
 RSpec.describe Captain::BaseTaskService do
   let(:account) { create(:account) }
   let(:inbox) { create(:inbox, account: account) }
-  let(:conversation) { create(:conversation, account: account, inbox: inbox) }
+  let!(:conversation) { create(:conversation, account: account, inbox: inbox).reload }
 
   # Create a concrete test service class since BaseTaskService is abstract
   let(:test_service_class) do
@@ -84,14 +84,14 @@ RSpec.describe Captain::BaseTaskService do
 
     it 'excludes private messages' do
       messages = service.send(:conversation_messages)
-      contents = messages.pluck(:content)
+      contents = messages.map { |m| m[:content] }
       expect(contents).not_to include('Private')
     end
 
     it 'respects token limit' do
       # Create messages that collectively exceed token limit
-      # Message validation max is 150000, so create multiple large messages
-      10.times do |i|
+      # Each message is 100,000 chars, so 5 messages = 500,000 chars > 400,000 limit
+      5.times do |i|
         create(:message, conversation: conversation, message_type: :incoming,
                          content: 'a' * 100_000, created_at: i.minutes.ago)
       end
@@ -99,15 +99,29 @@ RSpec.describe Captain::BaseTaskService do
       messages = service.send(:conversation_messages)
       total_length = messages.sum { |m| m[:content].length }
       expect(total_length).to be <= Captain::BaseTaskService::TOKEN_LIMIT
+      expect(messages.length).to be < 5 # Should not include all messages
     end
 
     it 'respects start_from offset for token counting' do
+      # Create a fresh conversation with no prior messages
+      fresh_conversation = create(:conversation, account: account, inbox: inbox)
+      fresh_service = test_service_class.new(account: account, conversation_display_id: fresh_conversation.display_id)
+
       # With a start_from offset, fewer messages should fit
-      start_from = Captain::BaseTaskService::TOKEN_LIMIT - 100
-      messages = service.send(:conversation_messages, start_from: start_from)
+      # Create messages that total more than 100 chars
+      2.times do |i|
+        create(:message, conversation: fresh_conversation, message_type: :incoming,
+                         content: 'a' * 60, created_at: i.minutes.ago)
+      end
+
+      # With start_from=350000, only 1 message of 60 chars should fit (350000+60=350060 <= 400000)
+      # 2 messages would be 350120 which also fits, so use a higher start_from
+      start_from = 399_940
+      messages = fresh_service.send(:conversation_messages, start_from: start_from)
 
       total_length = messages.sum { |m| m[:content].length }
-      expect(total_length).to be <= 100
+      expect(total_length).to be <= 60
+      expect(messages.length).to eq 1 # Should only include 1 message due to start_from offset
     end
   end
 

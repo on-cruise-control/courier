@@ -17,6 +17,7 @@ RSpec.describe Api::V2::Accounts::ReportsController, type: :request do
           time = base_time + (i * 4).hours
           travel_to time do
             conversation = create(:conversation, account: account, inbox: inbox, assignee: agent)
+            conversation = Conversation.find(conversation.id)
             create(:message, account: account, conversation: conversation, message_type: :outgoing)
           end
         end
@@ -329,6 +330,8 @@ RSpec.describe Api::V2::Accounts::ReportsController, type: :request do
         conv_agent2 = create(:conversation, account: account, inbox: inbox2, assignee: agent2)
         conv_team = create(:conversation, account: account, inbox: inbox, team: team)
 
+        [conv_agent, conv_agent2, conv_team].each(&:reload)
+
         create_list(:message, 3, account: account, conversation: conv_agent, inbox: inbox, message_type: :outgoing, sender: agent)
         create_list(:message, 2, account: account, conversation: conv_agent2, inbox: inbox2, message_type: :outgoing, sender: agent2)
         create_list(:message, 4, account: account, conversation: conv_team, inbox: inbox, message_type: :outgoing)
@@ -408,6 +411,7 @@ RSpec.describe Api::V2::Accounts::ReportsController, type: :request do
       it 'excludes bot messages when grouped by agent' do
         bot = create(:agent_bot)
         bot_conversation = create(:conversation, account: account, inbox: inbox)
+        bot_conversation.reload
         create(:message, account: account, conversation: bot_conversation, inbox: inbox,
                          message_type: :outgoing, sender: bot)
 

@@ -14,7 +14,8 @@ RSpec.describe AccountBuilder do
       email: email,
       user_full_name: user_full_name,
       user_password: user_password,
-      confirmed: true
+      confirmed: true,
+      dealership_id: 'test_dealership_123'
     )
   end
 

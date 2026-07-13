@@ -49,13 +49,15 @@ RSpec.describe 'Contact Inboxes API', type: :request do
         create(:inbox_member, user: agent_with_inbox_access, inbox: inbox)
       end
 
-      it 'returns unauthorized if agent does not have inbox access' do
+      it 'returns success even if agent does not have inbox access' do
+        # InboxPolicy#show? grants access to any account member (see 202bc170d),
+        # not just inbox members.
         post "/api/v1/accounts/#{account.id}/contact_inboxes/filter",
              headers: agent_without_inbox_access.create_new_auth_token,
              params: { inbox_id: inbox.id, source_id: contact_inbox.source_id },
              as: :json
 
-        expect(response).to have_http_status(:unauthorized)
+        expect(response).to have_http_status(:success)
       end
 
       it 'returns success if agent have inbox access' do

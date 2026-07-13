@@ -384,11 +384,17 @@ RSpec.describe ReplyMailbox do
     let!(:channel_email) { create(:channel_email, email: 'sojan@chatwoot.com', account: account) }
     let(:notification_mail) { create_inbound_email_from_fixture('notification.eml') }
     let(:described_subject) { described_class.receive notification_mail }
-    let(:conversation) { Conversation.where(inbox_id: channel_email.inbox).last }
+
+    before do
+      allow(Mailbox::ConversationFinder)
+        .to receive(:new)
+        .and_return(instance_double(Mailbox::ConversationFinder, find: nil))
+    end
 
     it 'shouldnt create a conversation in the channel' do
       described_subject
-      expect(conversation.present?).to be(false)
+
+      expect(channel_email.inbox.conversations.count).to eq(0)
     end
   end
 

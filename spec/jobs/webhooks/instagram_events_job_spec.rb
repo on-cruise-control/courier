@@ -5,6 +5,7 @@ describe Webhooks::InstagramEventsJob do
 
   before do
     stub_request(:post, /graph\.facebook\.com/)
+    stub_request(:post, %r{graph\.instagram\.com/.*/subscribed_apps})
     stub_request(:get, 'https://www.example.com/test.jpeg')
       .to_return(status: 200, body: '', headers: {})
     stub_request(:get, 'https://lookaside.fbsbx.com/ig_messaging_cdn/?asset_id=17949487764033669&signature=test')
@@ -28,6 +29,47 @@ describe Webhooks::InstagramEventsJob do
       let!(:instagram_messenger_channel) { create(:channel_instagram_fb_page, account: account, instagram_id: 'chatwoot-app-user-id-1') }
       let!(:instagram_messenger_inbox) { create(:inbox, channel: instagram_messenger_channel, account: account, greeting_enabled: false) }
       let(:fb_object) { double }
+
+      before do
+        stub_request(:get, %r{https://graph\.instagram\.com/v22\.0/.*\?.*})
+          .to_return(
+            status: 200,
+            body: proc { |request|
+              uri = URI.parse(request.uri.to_s)
+              path_parts = uri.path.split('/').reject(&:blank?)
+              id_from_path = path_parts.last
+              query_params = URI.decode_www_form(uri.query || '').to_h
+
+              if query_params['fields']&.include?('story')
+                {
+                  story: {
+                    mention: {
+                      link: 'https://www.example.com/test.jpeg',
+                      id: '17920786367196703'
+                    }
+                  },
+                  from: {
+                    username: 'Sender-id-1',
+                    id: 'Sender-id-1'
+                  },
+                  id: id_from_path
+                }.to_json
+              else
+                {
+                  name: 'Jane',
+                  username: 'some_user_name',
+                  profile_pic: 'https://chatwoot-assets.local/sample.png',
+                  id: id_from_path,
+                  follower_count: 100,
+                  is_user_follow_business: true,
+                  is_business_follow_user: true,
+                  is_verified_user: false
+                }.to_json
+              end
+            },
+            headers: { 'Content-Type' => 'application/json' }
+          )
+      end
 
       it 'creates incoming message in the instagram inbox' do
         dm_event = build(:instagram_message_create_event).with_indifferent_access
@@ -83,7 +125,7 @@ describe Webhooks::InstagramEventsJob do
 
         expect(instagram_messenger_inbox.messages.count).to be 1
 
-        instagram_webhook.perform_now(message_events[:unsend][:entry])
+        instagram_webhook.perform_now(unsend_event[:entry])
 
         expect(instagram_messenger_inbox.messages.last.content).to eq 'This message was deleted'
         expect(instagram_messenger_inbox.messages.last.deleted).to be true
@@ -132,7 +174,8 @@ describe Webhooks::InstagramEventsJob do
         expect(instagram_messenger_inbox.messages.last.attachments.count).to be 1
 
         attachment = instagram_messenger_inbox.messages.last.attachments.last
-        expect(attachment.push_event_data[:data_url]).to eq(attachment.external_url)
+        expect(attachment.push_event_data[:data_url]).to be_present
+        expect(attachment.external_url).to eq 'https://www.example.com/test.jpeg'
       end
 
       it 'creates incoming message with ig_story attachment in the instagram inbox' do

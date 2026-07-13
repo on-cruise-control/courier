@@ -36,6 +36,8 @@ describe '/app/login', type: :request do
         get '/app/login'
         expect(response).to have_http_status(:not_found)
       end
+    ensure
+
       Rails.application.reload_routes!
     end
   end

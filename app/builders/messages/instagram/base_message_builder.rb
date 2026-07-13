@@ -92,6 +92,9 @@ class Messages::Instagram::BaseMessageBuilder < Messages::Messenger::MessageBuil
   end
 
   def build_message
+    # Ensure conversation is resolved first (respects lock_to_single_conversation config)
+    existing_conversation = conversation
+
     # Find or reuse existing instagram_dm conversation for template DMs
     contact_id = contact.id
     inbox_id = @inbox.id
@@ -103,7 +106,7 @@ class Messages::Instagram::BaseMessageBuilder < Messages::Messenger::MessageBuil
       account_id: account_id
     ).where("conversations.additional_attributes->>'type' = ?", 'instagram_dm').last
 
-    @conversation = template_dm_conversation || build_conversation
+    @conversation = template_dm_conversation || existing_conversation || build_conversation
 
     # Duplicate webhook events may be sent for the same message
     # when a user is connected to the Instagram account through both Messenger and Instagram login.
@@ -202,21 +205,21 @@ class Messages::Instagram::BaseMessageBuilder < Messages::Messenger::MessageBuil
 
   def recent_duplicate_echo?
     content = @messaging.dig(:message, :text)
-  
+
     if content.present?
       # Text case
       return conversation.messages.outgoing
-        .where(content: content)
-        .where('created_at >= ?', 2.minutes.ago)
-        .exists?
+                         .where(content: content)
+                         .where('created_at >= ?', 2.minutes.ago)
+                         .exists?
     end
 
     # Image case
 
-   conversation.messages.outgoing
-      .where(source_id: nil)
-      .where(content: nil)
-      .where('created_at >= ?', 1.minute.ago).exists?
+    conversation.messages.outgoing
+                .where(source_id: nil)
+                .where(content: nil)
+                .where('created_at >= ?', 1.minute.ago).exists?
   end
 
   def find_message_by_source_id(source_id)

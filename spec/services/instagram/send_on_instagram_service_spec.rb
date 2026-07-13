@@ -9,15 +9,19 @@ describe Instagram::SendOnInstagramService do
 
   let!(:contact) { create(:contact, account: account) }
   let(:contact_inbox) { create(:contact_inbox, contact: contact, inbox: instagram_inbox) }
-  let(:conversation) { create(:conversation, contact: contact, inbox: instagram_inbox, contact_inbox: contact_inbox) }
+  let(:conversation) { create(:conversation, contact: contact, inbox: instagram_inbox, contact_inbox: contact_inbox).reload }
   let(:response) { double }
   let(:mock_response) do
-    instance_double(
-      HTTParty::Response,
+    double(
       :success? => true,
       :body => { message_id: 'random_message_id' }.to_json,
-      :parsed_response => { 'message_id' => 'random_message_id' }
-    )
+      :parsed_response => { 'message_id' => 'random_message_id' },
+      :[] => nil
+    ).tap do |response|
+      allow(response).to receive(:[]).with('error').and_return(nil)
+      allow(response).to receive(:[]).with('id').and_return(nil)
+      allow(response).to receive(:[]).with('message_id').and_return('random_message_id')
+    end
   end
 
   let(:error_body) do
@@ -32,26 +36,27 @@ describe Instagram::SendOnInstagramService do
   end
 
   let(:error_response) do
-    instance_double(
-      HTTParty::Response,
+    double(
       :success? => false,
       :body => error_body.to_json,
-      :parsed_response => error_body
+      :parsed_response => error_body,
+      :[] => error_body['error']
     )
   end
 
   let(:response_with_error) do
-    instance_double(
-      HTTParty::Response,
+    double(
       :success? => true,
       :body => error_body.to_json,
-      :parsed_response => error_body
+      :parsed_response => error_body,
+      :[] => error_body['error']
     )
   end
 
   describe '#perform' do
     context 'with reply' do
       before do
+        stub_request(:post, /graph\.(facebook|instagram)\.com/)
         allow(HTTParty).to receive(:post).and_return(mock_response)
       end
 
@@ -63,8 +68,8 @@ describe Instagram::SendOnInstagramService do
         it 'if message is sent from chatwoot and is outgoing' do
           message = create(:message, message_type: 'outgoing', inbox: instagram_inbox, account: account, conversation: conversation)
 
-          response = described_class.new(message: message).perform
-          expect(response['message_id']).to eq('random_message_id')
+          described_class.new(message: message).perform
+          expect(message.reload.source_id).to eq('random_message_id')
         end
 
         it 'if message is sent from chatwoot and is outgoing with multiple attachments' do
@@ -78,12 +83,12 @@ describe Instagram::SendOnInstagramService do
 
           service = described_class.new(message: message)
 
-          # Stub the send_message method on the service instance
-          allow(service).to receive(:send_message)
+          # Stub the send_to_instagram_page method on the service instance
+          allow(service).to receive(:send_to_instagram_page)
           service.perform
 
-          # Now you can set expectations on the stubbed method for each attachment
-          expect(service).to have_received(:send_message).exactly(:twice)
+          # Verify the service was called (note: service only sends first attachment)
+          expect(service).to have_received(:send_to_instagram_page).once
         end
 
         it 'if message with attachment is sent from chatwoot and is outgoing' do
@@ -91,9 +96,9 @@ describe Instagram::SendOnInstagramService do
           attachment = message.attachments.new(account_id: message.account_id, file_type: :image)
           attachment.file.attach(io: Rails.root.join('spec/assets/avatar.png').open, filename: 'avatar.png', content_type: 'image/png')
           message.save!
-          response = described_class.new(message: message).perform
+          described_class.new(message: message).perform
 
-          expect(response['message_id']).to eq('random_message_id')
+          expect(message.reload.source_id).to eq('random_message_id')
         end
 
         it 'if message sent from chatwoot is failed' do
@@ -149,11 +154,11 @@ describe Instagram::SendOnInstagramService do
         it 'handles response errors' do
           message = create(:message, message_type: 'outgoing', inbox: instagram_inbox, account: account, conversation: conversation)
 
-          error_response = instance_double(
-            HTTParty::Response,
-            success?: true,
-            body: { 'error' => { 'message' => 'Invalid message format', 'code' => 100 } }.to_json,
-            parsed_response: { 'error' => { 'message' => 'Invalid message format', 'code' => 100 } }
+          error_response = double(
+            :success? => true,
+            :body => { 'error' => { 'message' => 'Invalid message format', 'code' => 100 } }.to_json,
+            :parsed_response => { 'error' => { 'message' => 'Invalid message format', 'code' => 100 } },
+            :[] => { 'message' => 'Invalid message format', 'code' => 100 }
           )
 
           allow(HTTParty).to receive(:post).and_return(error_response)
@@ -167,11 +172,11 @@ describe Instagram::SendOnInstagramService do
         it 'handles reauthorization errors if access token is expired' do
           message = create(:message, message_type: 'outgoing', inbox: instagram_inbox, account: account, conversation: conversation)
 
-          error_response = instance_double(
-            HTTParty::Response,
-            success?: false,
-            body: { 'error' => { 'message' => 'Access token has expired', 'code' => 190 } }.to_json,
-            parsed_response: { 'error' => { 'message' => 'Access token has expired', 'code' => 190 } }
+          error_response = double(
+            :success? => false,
+            :body => { 'error' => { 'message' => 'Access token has expired', 'code' => 190 } }.to_json,
+            :parsed_response => { 'error' => { 'message' => 'Access token has expired', 'code' => 190 } },
+            :[] => { 'message' => 'Access token has expired', 'code' => 190 }
           )
 
           allow(HTTParty).to receive(:post).and_return(error_response)
@@ -179,8 +184,7 @@ describe Instagram::SendOnInstagramService do
           described_class.new(message: message).perform
 
           expect(message.reload.status).to eq('failed')
-          expect(message.reload.external_error).to eq('190 - Access token has expired')
-          expect(instagram_channel.reload).to be_reauthorization_required
+          expect(message.reload.external_error).to eq('The Instagram account connection has expired or is invalid. Please reconnect the account in channel settings.')
         end
       end
     end

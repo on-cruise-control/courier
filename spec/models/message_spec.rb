@@ -143,6 +143,7 @@ RSpec.describe Message do
           last_activity_at: message.conversation.last_activity_at.to_i,
           unread_count: message.conversation.unread_incoming_messages.count
         },
+        metadata: message.metadata,
         sentiment: {},
         sender: message.sender.push_event_data,
         echo_id: 'random-echo_id'
@@ -413,7 +414,6 @@ RSpec.describe Message do
       conversation = create(:conversation, inbox: inbox)
       message = create(:message, conversation: conversation, content_type: 'input_csat', content: 'Rate your experience')
 
-
       expect(message.webhook_data[:content]).to include('survey/responses/')
     end
   end
@@ -569,6 +569,9 @@ RSpec.describe Message do
         from: { username: 'Sender-id-1', id: 'Sender-id-1' },
         id: 'instagram-message-id-1234'
       }.to_json, headers: {})
+
+      # stubbing the subscribe request made by Channel::Instagram during channel creation
+      stub_request(:post, %r{https://graph.instagram.com/.*/subscribed_apps}).to_return(status: 200, body: { success: true }.to_json, headers: {})
     end
 
     it 'keeps the attachment for deleted stories' do

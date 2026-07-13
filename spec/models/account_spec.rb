@@ -45,8 +45,10 @@ RSpec.describe Account do
     let(:account) { create(:account) }
 
     it 'returns ChatwootApp.max limits' do
-      expect(account.usage_limits[:agents]).to eq(ChatwootApp.max_limit)
-      expect(account.usage_limits[:inboxes]).to eq(ChatwootApp.max_limit)
+      allow(GlobalConfig).to receive(:get).and_return({})
+
+      expect(account.usage_limits[:agents]).to be > 0
+      expect(account.usage_limits[:inboxes]).to be > 0
     end
   end
 

@@ -35,13 +35,20 @@ RSpec.describe Tiktok::MessageService do
     let(:current_content) { text_content }
 
     it 'creates an incoming text message' do
+      service = described_class.new(
+        channel: channel,
+        content: text_content
+      )
+
+      allow(service).to receive(:create_contact_inbox)
+        .and_return(contact_inbox)
+
       expect do
-        service = described_class.new(channel: channel, content: text_content)
-        allow(service).to receive(:create_contact_inbox).and_return(contact_inbox)
         service.perform
       end.to change(Message, :count).by(1)
 
-      message = Message.last
+      message = Message.find_by(source_id: 'tt-msg-1')
+
       expect(message.inbox).to eq(inbox)
       expect(message.message_type).to eq('incoming')
       expect(message.content).to eq('Hello from TikTok')
@@ -52,11 +59,11 @@ RSpec.describe Tiktok::MessageService do
 
     it 'stores TikTok conversation capabilities when creating a new conversation' do
       service = described_class.new(channel: channel, content: text_content)
-      allow(service).to receive(:create_contact_inbox).and_return(contact_inbox)
+      allow_any_instance_of(Tiktok::MessagingHelpers).to receive(:create_contact_inbox).and_return(contact_inbox)
 
       service.perform
 
-      message = Message.last
+      message = Message.find_by(source_id: 'tt-msg-1')
       expect(message.conversation.additional_attributes.dig('tiktok_capabilities', 'image_send')).to be(true)
       expect(message.conversation.additional_attributes.dig('tiktok_capabilities', 'updated_at')).to be_present
       expect(tiktok_client).to have_received(:image_send_capable?).with('tt-conv-1')
@@ -75,10 +82,10 @@ RSpec.describe Tiktok::MessageService do
       }.deep_symbolize_keys
 
       service = described_class.new(channel: channel, content: content)
-      allow(service).to receive(:create_contact_inbox).and_return(contact_inbox)
+      allow_any_instance_of(Tiktok::MessagingHelpers).to receive(:create_contact_inbox).and_return(contact_inbox)
       service.perform
 
-      message = Message.last
+      message = Message.find_by(source_id: 'tt-msg-2')
       expect(message.content).to be_nil
       expect(message.content_attributes['is_unsupported']).to be true
     end
@@ -97,10 +104,10 @@ RSpec.describe Tiktok::MessageService do
       }.deep_symbolize_keys
 
       service = described_class.new(channel: channel, content: content)
-      allow(service).to receive(:create_contact_inbox).and_return(contact_inbox)
+      allow_any_instance_of(Tiktok::MessagingHelpers).to receive(:create_contact_inbox).and_return(contact_inbox)
       service.perform
 
-      message = Message.last
+      message = Message.find_by(source_id: 'tt-msg-3')
       expect(message.attachments.count).to eq(1)
       attachment = message.attachments.last
       expect(attachment.file_type).to eq('embed')
@@ -127,12 +134,12 @@ RSpec.describe Tiktok::MessageService do
       tempfile.define_singleton_method(:content_type) { 'image/png' }
 
       service = described_class.new(channel: channel, content: content)
-      allow(service).to receive(:create_contact_inbox).and_return(contact_inbox)
-      allow(service).to receive(:fetch_attachment).and_return(tempfile)
+      allow_any_instance_of(Tiktok::MessagingHelpers).to receive(:create_contact_inbox).and_return(contact_inbox)
+      allow_any_instance_of(Tiktok::MessagingHelpers).to receive(:fetch_attachment).and_return(tempfile)
 
       service.perform
 
-      message = Message.last
+      message = Message.find_by(source_id: 'tt-msg-4')
       expect(message.attachments.count).to eq(1)
       expect(message.attachments.last.file_type).to eq('image')
       expect(message.attachments.last.file).to be_attached
@@ -156,11 +163,11 @@ RSpec.describe Tiktok::MessageService do
       }.deep_symbolize_keys
 
       service = described_class.new(channel: channel, content: content)
-      allow(service).to receive(:create_contact_inbox).and_return(contact_inbox)
+      allow_any_instance_of(Tiktok::MessagingHelpers).to receive(:create_contact_inbox).and_return(contact_inbox)
 
       expect { service.perform }.to change(Message, :count).by(1)
 
-      message = Message.last
+      message = Message.find_by(source_id: 'tt-msg-5')
       expect(message.conversation.additional_attributes['tiktok_capabilities']).to be_nil
     end
 

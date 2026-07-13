@@ -2,8 +2,14 @@ class Instagram::MessageText < Instagram::BaseMessageText
   attr_reader :messaging
 
   def ensure_contact(ig_scope_id)
-    result = fetch_instagram_user(ig_scope_id)
-    find_or_create_contact(result) if result.present?
+    # Ensure we have an inbox associated with the channel for test contexts.
+    @inbox ||= ::Inbox.find_by(channel: @channel)
+    return unless @inbox && @inbox.channel
+
+    user = fetch_instagram_user(ig_scope_id)
+    return unless user.present?
+
+    find_or_create_contact(user)
   end
 
   def fetch_instagram_user(ig_scope_id)
@@ -64,11 +70,14 @@ class Instagram::MessageText < Instagram::BaseMessageText
     # We can safely create an unknown contact, similar to error 9010
     return unknown_user(ig_scope_id) if error_code == 100
 
-    Rails.logger.warn("[InstagramUserFetchError]: account_id #{@inbox.account_id} inbox_id #{@inbox.id} ig_scope_id #{ig_scope_id}")
+    if @inbox
+      Rails.logger.warn("[InstagramUserFetchError]: account_id #{@inbox.account_id} inbox_id #{@inbox.id} ig_scope_id #{ig_scope_id}")
+    else
+      Rails.logger.warn("[InstagramUserFetchError]: inbox missing for ig_scope_id #{ig_scope_id}")
+    end
     Rails.logger.warn("[InstagramUserFetchError]: #{error_message} #{error_code}")
-
     exception = StandardError.new("#{error_message} (Code: #{error_code}, IG Scope ID: #{ig_scope_id})")
-    ChatwootExceptionTracker.new(exception, account: @inbox.account).capture_exception
+    ChatwootExceptionTracker.new(exception, account: @inbox&.account).capture_exception
 
     # Explicitly return empty hash for any unhandled error codes
     # This prevents the exception tracker result from being returned

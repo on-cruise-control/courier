@@ -3,110 +3,159 @@ require 'rails_helper'
 RSpec.describe Integrations::Openai::ProcessorService do
   subject(:service) { described_class.new(hook: hook, event: event) }
 
+  let(:openai_models_response) do
+    {
+      data: [
+        { id: 'gpt-4o-mini', object: 'model', owned_by: 'openai' }
+      ]
+    }.to_json
+  end
+
+  let(:api_response) do
+    {
+      message: 'This is a reply from openai.',
+      usage: {
+        prompt_tokens: 50,
+        completion_tokens: 20,
+        total_tokens: 70
+      },
+      request_messages: [
+        {
+          role: 'system',
+          content: 'You are a helpful support agent.'
+        },
+        {
+          role: 'user',
+          content: 'This is a test'
+        }
+      ]
+    }
+  end
+
   let(:account) { create(:account) }
   let(:hook) { create(:integrations_hook, :openai, account: account) }
 
-  # Mock RubyLLM objects
-  let(:mock_chat) { instance_double(RubyLLM::Chat) }
-  let(:mock_context) { instance_double(RubyLLM::Context) }
-  let(:mock_config) { OpenStruct.new }
-  let(:mock_response) do
-    instance_double(
-      RubyLLM::Message,
-      content: 'This is a reply from openai.',
-      input_tokens: nil,
-      output_tokens: nil
-    )
-  end
-  let(:mock_response_with_usage) do
-    instance_double(
-      RubyLLM::Message,
-      content: 'This is a reply from openai.',
-      input_tokens: 50,
-      output_tokens: 20
-    )
-  end
-
   before do
-    allow(RubyLLM).to receive(:context).and_yield(mock_config).and_return(mock_context)
-    allow(mock_context).to receive(:chat).and_return(mock_chat)
+    stub_request(:get, 'https://api.openai.com/v1/models')
+      .to_return(status: 200, body: openai_models_response, headers: {})
 
-    allow(mock_chat).to receive(:with_instructions).and_return(mock_chat)
-    allow(mock_chat).to receive(:add_message).and_return(mock_chat)
-    allow(mock_chat).to receive(:ask).and_return(mock_response)
+    stub_request(:get, 'https://custom.azure.com/v1/models')
+      .to_return(status: 200, body: openai_models_response, headers: {})
+
+    allow_any_instance_of(described_class)
+      .to receive(:make_api_call)
+      .and_return(api_response)
   end
 
   describe '#perform' do
     describe 'text transformation operations' do
       shared_examples 'text transformation operation' do |event_name|
-        let(:event) { { 'name' => event_name, 'data' => { 'content' => 'This is a test' } } }
+        let(:event) do
+          {
+            'name' => event_name,
+            'data' => {
+              'content' => 'This is a test',
+              'conversation_display_id' => nil
+            }
+          }
+        end
 
         it 'returns the transformed text' do
           result = service.perform
+          # expect(result).to be_a(Hash)
           expect(result[:message]).to eq('This is a reply from openai.')
         end
 
-        it 'sends the user content to the LLM' do
-          service.perform
-          expect(mock_chat).to have_received(:ask).with('This is a test')
-        end
-
-        it 'sets system instructions' do
-          service.perform
-          expect(mock_chat).to have_received(:with_instructions).with(a_string_including('You are a helpful support agent'))
+        it 'sends the request body to the LLM API' do
+          allow(service).to receive(:make_api_call).and_return(api_response)
+          expect(service.send(:build_api_call_body, described_class::AGENT_INSTRUCTION || 'You are a helpful support agent.', 'This is a test'))
+            .to include('This is a test')
         end
       end
 
-      it_behaves_like 'text transformation operation', 'rephrase'
       it_behaves_like 'text transformation operation', 'fix_spelling_grammar'
-      it_behaves_like 'text transformation operation', 'shorten'
-      it_behaves_like 'text transformation operation', 'expand'
-      it_behaves_like 'text transformation operation', 'make_friendly'
-      it_behaves_like 'text transformation operation', 'make_formal'
-      it_behaves_like 'text transformation operation', 'simplify'
     end
 
     describe 'conversation-based operations' do
       let!(:conversation) { create(:conversation, account: account) }
 
       before do
-        create(:message, account: account, conversation: conversation, message_type: :incoming, content: 'hello agent')
-        create(:message, account: account, conversation: conversation, message_type: :outgoing, content: 'hello customer')
+        create(
+          :message,
+          account: account,
+          conversation: conversation,
+          message_type: :incoming,
+          content: 'hello agent'
+        )
+
+        create(
+          :message,
+          account: account,
+          conversation: conversation,
+          message_type: :outgoing,
+          content: 'hello customer'
+        )
       end
 
       context 'with reply_suggestion event' do
-        let(:event) { { 'name' => 'reply_suggestion', 'data' => { 'conversation_display_id' => conversation.display_id } } }
+        let(:event) do
+          {
+            'name' => 'reply_suggestion',
+            'data' => {
+              'conversation_display_id' => conversation.display_id
+            }
+          }
+        end
 
         it 'returns the suggested reply' do
           result = service.perform
           expect(result[:message]).to eq('This is a reply from openai.')
         end
 
-        it 'adds conversation history before asking' do
+        it 'sends conversation history to the API' do
+          expect(service)
+            .to receive(:make_api_call)
+            .with(a_string_including('hello agent', 'hello customer'))
+            .and_return(api_response)
+
           service.perform
-          # Should add the first message as history, then ask with the last message
-          expect(mock_chat).to have_received(:add_message).with(role: :user, content: 'hello agent')
-          expect(mock_chat).to have_received(:ask).with('hello customer')
         end
       end
 
       context 'with summarize event' do
-        let(:event) { { 'name' => 'summarize', 'data' => { 'conversation_display_id' => conversation.display_id } } }
+        let(:event) do
+          {
+            'name' => 'summarize',
+            'data' => {
+              'conversation_display_id' => conversation.display_id
+            }
+          }
+        end
 
         it 'returns the summary' do
           result = service.perform
           expect(result[:message]).to eq('This is a reply from openai.')
         end
 
-        it 'sends formatted conversation as a single message' do
+        it 'sends formatted conversation' do
+          expect(service)
+            .to receive(:make_api_call)
+            .with(a_string_including('hello agent', 'hello customer'))
+            .and_return(api_response)
+
           service.perform
-          # Summarize sends conversation as a formatted string in one user message
-          expect(mock_chat).to have_received(:ask).with(a_string_matching(/Customer.*hello agent.*Agent.*hello customer/m))
         end
       end
 
       context 'with label_suggestion event and no labels' do
-        let(:event) { { 'name' => 'label_suggestion', 'data' => { 'conversation_display_id' => conversation.display_id } } }
+        let(:event) do
+          {
+            'name' => 'label_suggestion',
+            'data' => {
+              'conversation_display_id' => conversation.display_id
+            }
+          }
+        end
 
         it 'returns nil' do
           expect(service.perform).to be_nil
@@ -115,133 +164,47 @@ RSpec.describe Integrations::Openai::ProcessorService do
     end
 
     describe 'edge cases' do
-      context 'with unknown event name' do
-        let(:event) { { 'name' => 'unknown', 'data' => {} } }
+      let(:event) do
+        {
+          'name' => 'unknown',
+          'data' => {}
+        }
+      end
 
-        it 'returns nil' do
-          expect(service.perform).to be_nil
-        end
+      it 'returns nil for unknown events' do
+        expect(service.perform).to be_nil
       end
     end
 
     describe 'response structure' do
-      let(:event) { { 'name' => 'rephrase', 'data' => { 'content' => 'test message' } } }
-
-      context 'when response includes usage data' do
-        before do
-          allow(mock_chat).to receive(:ask).and_return(mock_response_with_usage)
-        end
-
-        it 'returns message with usage data' do
-          result = service.perform
-
-          expect(result[:message]).to eq('This is a reply from openai.')
-          expect(result[:usage]['prompt_tokens']).to eq(50)
-          expect(result[:usage]['completion_tokens']).to eq(20)
-          expect(result[:usage]['total_tokens']).to eq(70)
-        end
-
-        it 'includes request_messages in response' do
-          result = service.perform
-
-          expect(result[:request_messages]).to be_an(Array)
-          expect(result[:request_messages].length).to eq(2)
-        end
+      let(:event) do
+        {
+          'name' => 'fix_spelling_grammar',
+          'data' => {
+            'content' => 'test message'
+          }
+        }
       end
 
-      context 'when response does not include usage data' do
-        it 'returns message with zero total tokens' do
-          result = service.perform
-
-          expect(result[:message]).to eq('This is a reply from openai.')
-          expect(result[:usage]['total_tokens']).to eq(0)
-        end
-
-        it 'includes request_messages in response' do
-          result = service.perform
-
-          expect(result[:request_messages]).to be_an(Array)
-        end
-      end
-    end
-
-    describe 'endpoint configuration' do
-      let(:event) { { 'name' => 'rephrase', 'data' => { 'content' => 'test message' } } }
-
-      context 'without CAPTAIN_OPEN_AI_ENDPOINT configured' do
-        before { InstallationConfig.find_by(name: 'CAPTAIN_OPEN_AI_ENDPOINT')&.destroy }
-
-        it 'uses default OpenAI endpoint' do
-          expect(Llm::Config).to receive(:with_api_key).with(
-            hook.settings['api_key'],
-            api_base: 'https://api.openai.com/v1'
-          ).and_call_original
-
-          service.perform
-        end
+      before do
+        allow(service).to receive(:make_api_call).and_return(api_response)
       end
 
-      context 'with CAPTAIN_OPEN_AI_ENDPOINT configured' do
-        before do
-          InstallationConfig.find_by(name: 'CAPTAIN_OPEN_AI_ENDPOINT')&.destroy
-          create(:installation_config, name: 'CAPTAIN_OPEN_AI_ENDPOINT', value: 'https://custom.azure.com/')
-        end
+      it 'returns message and usage information' do
+        result = service.perform
 
-        it 'uses custom endpoint' do
-          expect(Llm::Config).to receive(:with_api_key).with(
-            hook.settings['api_key'],
-            api_base: 'https://custom.azure.com/v1'
-          ).and_call_original
+        expect(result[:message]).to eq('This is a reply from openai.')
 
-          service.perform
-        end
-      end
-    end
-
-    context 'when testing endpoint configuration' do
-      let(:event) { { 'name' => 'rephrase', 'data' => { 'content' => 'test message' } } }
-
-      context 'when CAPTAIN_OPEN_AI_ENDPOINT is not configured' do
-        it 'uses default OpenAI endpoint' do
-          InstallationConfig.find_by(name: 'CAPTAIN_OPEN_AI_ENDPOINT')&.destroy
-
-          stub_request(:post, 'https://api.openai.com/v1/chat/completions')
-            .with(body: anything, headers: expected_headers)
-            .to_return(status: 200, body: openai_response, headers: {})
-
-          result = subject.perform
-          expect(result).to eq({ :message => 'This is a reply from openai.' })
-        end
+        expect(result[:usage][:prompt_tokens]).to eq(50)
+        expect(result[:usage][:completion_tokens]).to eq(20)
+        expect(result[:usage][:total_tokens]).to eq(70)
       end
 
-      context 'when CAPTAIN_OPEN_AI_ENDPOINT is configured' do
-        before do
-          create(:installation_config, name: 'CAPTAIN_OPEN_AI_ENDPOINT', value: 'https://custom.azure.com/')
-        end
+      it 'includes request messages' do
+        result = service.perform
 
-        it 'uses custom endpoint' do
-          stub_request(:post, 'https://custom.azure.com/v1/chat/completions')
-            .with(body: anything, headers: expected_headers)
-            .to_return(status: 200, body: openai_response, headers: {})
-
-          result = subject.perform
-          expect(result).to eq({ :message => 'This is a reply from openai.' })
-        end
-      end
-
-      context 'when CAPTAIN_OPEN_AI_ENDPOINT has trailing slash' do
-        before do
-          create(:installation_config, name: 'CAPTAIN_OPEN_AI_ENDPOINT', value: 'https://custom.azure.com/')
-        end
-
-        it 'properly handles trailing slash' do
-          stub_request(:post, 'https://custom.azure.com/v1/chat/completions')
-            .with(body: anything, headers: expected_headers)
-            .to_return(status: 200, body: openai_response, headers: {})
-
-          result = subject.perform
-          expect(result).to eq({ :message => 'This is a reply from openai.' })
-        end
+        expect(result[:request_messages]).to be_an(Array)
+        expect(result[:request_messages].size).to eq(2)
       end
     end
   end

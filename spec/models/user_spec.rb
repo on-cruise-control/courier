@@ -56,15 +56,18 @@ RSpec.describe User do
     end
 
     it 'return value if CHATWOOT_INBOX_HMAC_KEY is set' do
-      ConfigLoader.new.process
-      i = InstallationConfig.find_by(name: 'CHATWOOT_INBOX_HMAC_KEY')
-      i.value = 'random_secret_key'
-      i.save!
+      config = InstallationConfig.find_or_initialize_by(name: 'CHATWOOT_INBOX_HMAC_KEY')
+      old_value = config.value
+
+      config.update!(value: 'random_secret_key')
       GlobalConfig.clear_cache
 
       expected_hmac_identifier = OpenSSL::HMAC.hexdigest('sha256', 'random_secret_key', user.email)
 
       expect(user.hmac_identifier).to eq expected_hmac_identifier
+    ensure
+      config.update!(value: old_value)
+      GlobalConfig.clear_cache
     end
   end
 

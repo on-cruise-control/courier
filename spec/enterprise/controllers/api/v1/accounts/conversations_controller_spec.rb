@@ -197,12 +197,12 @@ RSpec.describe 'Conversations API', type: :request do
     context 'when agent has limited access' do
       let(:limited_agent) { create(:user, account: account, role: :agent) }
 
-      it 'returns unauthorized for unassigned conversation without permission' do
+      it 'still allows access to an unassigned conversation, since any account user can view any conversation' do
         get "/api/v1/accounts/#{account.id}/conversations/#{conversation.display_id}/reporting_events",
             headers: limited_agent.create_new_auth_token,
             as: :json
 
-        expect(response).to have_http_status(:unauthorized)
+        expect(response).to have_http_status(:success)
       end
 
       it 'returns reporting events when agent is assigned to the conversation' do

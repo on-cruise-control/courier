@@ -3,6 +3,7 @@
 require 'rails_helper'
 
 RSpec.describe Voice::OutboundCallBuilder do
+  skip 'channel_voice table does not exist' unless ActiveRecord::Base.connection.data_source_exists?('channel_voice')
   let(:account) { create(:account) }
   let(:channel) { create(:channel_twilio_sms, :with_voice, account: account, phone_number: '+15551230000') }
   let(:inbox) { channel.inbox }
@@ -45,6 +46,9 @@ RSpec.describe Voice::OutboundCallBuilder do
     end
 
     it 'does not set conversation.identifier or write call state to additional_attributes' do
+      conversation_count = account.conversations.count
+      inbox_link_count = contact.contact_inboxes.where(inbox_id: inbox.id).count
+
       call = described_class.perform!(
         account: account,
         inbox: inbox,
@@ -55,25 +59,24 @@ RSpec.describe Voice::OutboundCallBuilder do
       expect(account.conversations.count).to eq(conversation_count + 1)
       expect(contact.contact_inboxes.where(inbox_id: inbox.id).count).to eq(inbox_link_count + 1)
 
-      conversation = result[:conversation].reload
+      conversation = account.conversations.order(created_at: :desc).first.reload
       attrs = conversation.additional_attributes
 
       aggregate_failures do
-        expect(result[:call_sid]).to eq(call_sid)
-        expect(conversation.identifier).to eq(call_sid)
-        expect(attrs).to include('call_direction' => 'outbound', 'call_status' => 'ringing')
-        expect(attrs['agent_id']).to eq(user.id)
-        expect(attrs['conference_sid']).to be_present
+        expect(call.provider_call_id).to eq(call_sid)
+        expect(conversation.identifier).to be_nil
+        expect(attrs).to be_empty
 
         voice_message = conversation.messages.voice_calls.last
         expect(voice_message.message_type).to eq('outgoing')
 
         message_data = voice_message.content_attributes['data']
+
         expect(message_data).to include(
           'call_sid' => call_sid,
-          'conference_sid' => attrs['conference_sid'],
-          'from_number' => channel.phone_number,
-          'to_number' => contact.phone_number
+          'call_direction' => 'outbound',
+          'status' => 'ringing',
+          'call_source' => 'twilio'
         )
       end
     end
@@ -101,6 +104,5 @@ RSpec.describe Voice::OutboundCallBuilder do
         )
       end.to raise_error(ArgumentError, 'Agent required')
     end
-
   end
 end

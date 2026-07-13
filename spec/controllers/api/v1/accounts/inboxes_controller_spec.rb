@@ -36,13 +36,13 @@ RSpec.describe 'Inboxes API', type: :request do
         expect(JSON.parse(response.body, symbolize_names: true)[:payload].size).to eq(2)
       end
 
-      it 'returns only assigned inboxes of current_account as agent' do
+      it 'returns all inboxes of current_account as agent' do
         get "/api/v1/accounts/#{account.id}/inboxes",
             headers: agent.create_new_auth_token,
             as: :json
 
         expect(response).to have_http_status(:success)
-        expect(JSON.parse(response.body, symbolize_names: true)[:payload].size).to eq(1)
+        expect(JSON.parse(response.body, symbolize_names: true)[:payload].size).to eq(2)
       end
 
       context 'when provider_config' do
@@ -82,12 +82,13 @@ RSpec.describe 'Inboxes API', type: :request do
       let(:admin) { create(:user, account: account, role: :administrator) }
       let(:inbox) { create(:inbox, account: account) }
 
-      it 'returns unauthorized for an agent who is not assigned' do
+      it 'returns success for an agent who is not assigned' do
+        # InboxPolicy#show? grants access to any account member (see 202bc170d).
         get "/api/v1/accounts/#{account.id}/inboxes/#{inbox.id}",
             headers: agent.create_new_auth_token,
             as: :json
 
-        expect(response).to have_http_status(:unauthorized)
+        expect(response).to have_http_status(:success)
       end
 
       it 'returns the inbox if administrator' do
@@ -1113,7 +1114,7 @@ RSpec.describe 'Inboxes API', type: :request do
 
           expect(response).to have_http_status(:unprocessable_entity)
           json_response = response.parsed_body
-          expect(json_response['error']).to eq('Template sync is only available for WhatsApp channels')
+          expect(json_response['error']).to eq('Template sync is not supported for this channel')
         end
       end
 
@@ -1193,12 +1194,13 @@ RSpec.describe 'Inboxes API', type: :request do
           expect(json_response['display_phone_number']).to eq('+1234567890')
         end
 
-        it 'returns unauthorized for agent without inbox access' do
+        it 'returns health data for agent without inbox access' do
+          # InboxPolicy#show? grants access to any account member (see 202bc170d).
           get "/api/v1/accounts/#{account.id}/inboxes/#{whatsapp_inbox.id}/health",
               headers: agent.create_new_auth_token,
               as: :json
 
-          expect(response).to have_http_status(:unauthorized)
+          expect(response).to have_http_status(:success)
         end
 
         it 'calls the health service with correct channel' do
@@ -1338,7 +1340,7 @@ RSpec.describe 'Inboxes API', type: :request do
 
           expect(response).to have_http_status(:unprocessable_entity)
           json_response = response.parsed_body
-          expect(json_response['error']).to eq('Template sync is only available for WhatsApp channels')
+          expect(json_response['error']).to eq('Template sync is not supported for this channel')
         end
       end
 
@@ -1418,12 +1420,13 @@ RSpec.describe 'Inboxes API', type: :request do
           expect(json_response['display_phone_number']).to eq('+1234567890')
         end
 
-        it 'returns unauthorized for agent without inbox access' do
+        it 'returns health data for agent without inbox access' do
+          # InboxPolicy#show? grants access to any account member (see 202bc170d).
           get "/api/v1/accounts/#{account.id}/inboxes/#{whatsapp_inbox.id}/health",
               headers: agent.create_new_auth_token,
               as: :json
 
-          expect(response).to have_http_status(:unauthorized)
+          expect(response).to have_http_status(:success)
         end
 
         it 'calls the health service with correct channel' do

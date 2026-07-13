@@ -28,12 +28,20 @@ RSpec.describe 'Dyte Integration API', type: :request do
     end
 
     context 'when the agent does not have access to the inbox' do
-      it 'returns unauthorized' do
+      it 'still creates a meeting' do
+        # ConversationPolicy#show? grants access to any account member (see 202bc170d).
+        stub_request(:post, 'https://api.dyte.io/v2/meetings')
+          .to_return(
+            status: 200,
+            body: { success: true, data: { id: 'meeting_id' } }.to_json,
+            headers: headers
+          )
+
         post create_a_meeting_api_v1_account_integrations_dyte_url(account),
              params: { conversation_id: conversation.display_id },
              headers: unauthorized_agent.create_new_auth_token,
              as: :json
-        expect(response).to have_http_status(:unauthorized)
+        expect(response).to have_http_status(:success)
       end
     end
 
@@ -91,12 +99,12 @@ RSpec.describe 'Dyte Integration API', type: :request do
     end
 
     context 'when the agent does not have access to the inbox' do
-      it 'returns unauthorized' do
+      it 'returns error since the message is not of integrations type' do
         post add_participant_to_meeting_api_v1_account_integrations_dyte_url(account),
              params: { message_id: message.id },
              headers: unauthorized_agent.create_new_auth_token,
              as: :json
-        expect(response).to have_http_status(:unauthorized)
+        expect(response).to have_http_status(:unprocessable_entity)
       end
     end
 

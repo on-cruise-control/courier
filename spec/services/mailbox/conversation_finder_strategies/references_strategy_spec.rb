@@ -35,6 +35,7 @@ RSpec.describe Mailbox::ConversationFinderStrategies::ReferencesStrategy do
 
     context 'when references matches message source_id' do
       let(:message) do
+        conversation.reload
         conversation.messages.create!(
           source_id: 'original-message-id@example.com',
           account_id: account.id,

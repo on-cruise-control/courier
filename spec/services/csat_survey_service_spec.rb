@@ -124,6 +124,11 @@ describe CsatSurveyService do
       let(:mock_provider_service) { instance_double(Whatsapp::Providers::WhatsappCloudService) }
 
       before do
+        # Prevent Message#schedule_follow_up_job from running during factory creation/saves.
+        # This service path creates/saves Message records as a side-effect of template sending.
+        # Without stubbing, it can interrupt persistence flow or raise in newer Rails locking behavior.
+        allow_any_instance_of(Message).to receive(:schedule_follow_up_job).and_return(nil)
+
         allow(Whatsapp::Providers::WhatsappCloudService).to receive(:new).and_return(mock_provider_service)
         allow(whatsapp_conversation).to receive(:can_reply?).and_return(true)
       end

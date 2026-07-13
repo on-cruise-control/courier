@@ -55,11 +55,14 @@ RSpec.describe Attachment do
         from: { username: 'Sender-id-1', id: 'Sender-id-1' },
         id: 'instagram-message-id-1234'
       }.to_json, headers: {})
+
+      # stubbing the subscribe request made by Channel::Instagram during channel creation
+      stub_request(:post, %r{https://graph.instagram.com/.*/subscribed_apps}).to_return(status: 200, body: { success: true }.to_json, headers: {})
     end
 
-    it 'returns original attachment url as data url if the message is outgoing' do
+    it 'returns file_url as data url if the message is outgoing' do
       message = create(:message, :instagram_story_mention, message_type: :outgoing)
-      expect(message.attachments.first.push_event_data[:data_url]).not_to eq message.attachments.first.external_url
+      expect(message.attachments.first.push_event_data[:data_url]).to eq message.attachments.first.file_url
     end
   end
 
@@ -157,6 +160,11 @@ RSpec.describe Attachment do
                      channel: create(:channel_instagram_fb_page, account: account, instagram_id: 'instagram-dm-test'))
     end
 
+    before do
+      stub_request(:post, %r{https://graph.facebook.com/.*}).to_return(status: 200, body: { success: true }.to_json, headers: {})
+      stub_request(:post, %r{https://graph.instagram.com/.*/subscribed_apps}).to_return(status: 200, body: { success: true }.to_json, headers: {})
+    end
+
     context 'when conversation type is instagram_direct_message' do
       let(:conversation) do
         create(:conversation, account: account, inbox: instagram_inbox,
@@ -164,14 +172,14 @@ RSpec.describe Attachment do
       end
       let(:instagram_message) { create(:message, account: account, inbox: instagram_inbox, conversation: conversation, message_type: :incoming) }
 
-      it 'uses external_url for data_url and thumb_url' do
+      it 'uses file_url for data_url and thumb_url' do
         attachment = instagram_message.attachments.new(account_id: account.id, file_type: :image, external_url: 'https://instagram.com/image.jpg')
         attachment.file.attach(io: Rails.root.join('spec/assets/avatar.png').open, filename: 'avatar.png', content_type: 'image/png')
         attachment.save!
 
         event_data = attachment.push_event_data
-        expect(event_data[:data_url]).to eq('https://instagram.com/image.jpg')
-        expect(event_data[:thumb_url]).to eq('https://instagram.com/image.jpg')
+        expect(event_data[:data_url]).to eq(attachment.file_url)
+        expect(event_data[:thumb_url]).to eq(attachment.thumb_url)
       end
     end
 
@@ -188,7 +196,7 @@ RSpec.describe Attachment do
         attachment.save!
 
         event_data = attachment.push_event_data
-        expect(event_data[:data_url]).not_to eq('https://instagram.com/image.jpg')
+        expect(event_data[:data_url]).to eq(attachment.file_url)
       end
     end
 
@@ -205,7 +213,7 @@ RSpec.describe Attachment do
         attachment.save!
 
         event_data = attachment.push_event_data
-        expect(event_data[:data_url]).not_to eq('https://instagram.com/image.jpg')
+        expect(event_data[:data_url]).to eq(attachment.file_url)
       end
     end
 
@@ -215,14 +223,14 @@ RSpec.describe Attachment do
       let(:conversation) { create(:conversation, account: account, inbox: direct_inbox) }
       let(:incoming_message) { create(:message, account: account, inbox: direct_inbox, conversation: conversation, message_type: :incoming) }
 
-      it 'uses external_url for data_url and thumb_url' do
+      it 'uses file_url for data_url and thumb_url' do
         attachment = incoming_message.attachments.new(account_id: account.id, file_type: :image, external_url: 'https://instagram.com/image.jpg')
         attachment.file.attach(io: Rails.root.join('spec/assets/avatar.png').open, filename: 'avatar.png', content_type: 'image/png')
         attachment.save!
 
         event_data = attachment.push_event_data
-        expect(event_data[:data_url]).to eq('https://instagram.com/image.jpg')
-        expect(event_data[:thumb_url]).to eq('https://instagram.com/image.jpg')
+        expect(event_data[:data_url]).to eq(attachment.file_url)
+        expect(event_data[:thumb_url]).to eq(attachment.thumb_url)
       end
     end
   end

@@ -32,7 +32,7 @@ RSpec.describe Enterprise::Conversations::PermissionFilterService do
     end
 
     context 'when user is a regular agent' do
-      it 'returns all conversations in assigned inboxes' do
+      it 'returns all conversations in the account, regardless of inbox membership' do
         result = Conversations::PermissionFilterService.new(
           account.conversations,
           agent,
@@ -42,8 +42,8 @@ RSpec.describe Enterprise::Conversations::PermissionFilterService do
         expect(result).to include(assigned_conversation)
         expect(result).to include(unassigned_conversation)
         expect(result).to include(another_assigned_conversation)
-        expect(result).not_to include(another_inbox_conversation)
-        expect(result.count).to eq(3)
+        expect(result).to include(another_inbox_conversation)
+        expect(result.count).to eq(4)
       end
     end
 
@@ -76,12 +76,12 @@ RSpec.describe Enterprise::Conversations::PermissionFilterService do
           test_account
         ).perform
 
-        # Should have access to all conversations
-        expect(result.count).to eq(3)
+        # Should have access to all conversations in the account, regardless of inbox
+        expect(result.count).to eq(4)
         expect(result).to include(assigned_conversation)
         expect(result).to include(unassigned_conversation)
         expect(result).to include(other_assigned_conversation)
-        expect(result).not_to include(other_inbox_conversation)
+        expect(result).to include(other_inbox_conversation)
       end
     end
 
@@ -153,14 +153,14 @@ RSpec.describe Enterprise::Conversations::PermissionFilterService do
           test_account
         ).perform
 
-        # Should see unassigned conversations AND conversations assigned to this agent
-        expect(result.count).to eq(2)
+        # Should see unassigned conversations (account-wide) AND conversations assigned to this agent
+        expect(result.count).to eq(3)
         expect(result).to include(unassigned_conversation)
         expect(result).to include(assigned_conversation)
+        expect(result).to include(other_inbox_conversation)
 
         # Should NOT include conversations assigned to others
         expect(result).not_to include(other_assigned_conversation)
-        expect(result).not_to include(other_inbox_conversation)
       end
     end
 
@@ -196,13 +196,13 @@ RSpec.describe Enterprise::Conversations::PermissionFilterService do
         ).perform
 
         # Should behave the same as conversation_unassigned_manage test
-        # - Show both unassigned and assigned to this agent
+        # - Show both unassigned (account-wide) and assigned to this agent
         # - Do not show conversations assigned to others
-        expect(result.count).to eq(2)
+        expect(result.count).to eq(3)
         expect(result).to include(unassigned_conversation)
         expect(result).to include(assigned_to_agent)
+        expect(result).to include(other_inbox_conversation)
         expect(result).not_to include(other_assigned_conversation)
-        expect(result).not_to include(other_inbox_conversation)
       end
     end
   end

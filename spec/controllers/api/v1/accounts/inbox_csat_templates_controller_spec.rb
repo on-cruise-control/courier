@@ -110,14 +110,15 @@ RSpec.describe Api::V1::Accounts::InboxCsatTemplatesController, type: :request d
         expect(response.parsed_body['error']).to eq('API connection failed')
       end
 
-      it 'returns unauthorized when agent is not assigned to inbox' do
+      it 'allows access even when agent is not assigned to inbox' do
+        # InboxPolicy#show? grants access to any account member (see 202bc170d).
         other_agent = create(:user, account: account, role: :agent)
 
         get "/api/v1/accounts/#{account.id}/inboxes/#{whatsapp_inbox.id}/csat_template",
             headers: other_agent.create_new_auth_token,
             as: :json
 
-        expect(response).to have_http_status(:unauthorized)
+        expect(response).to have_http_status(:success)
       end
 
       it 'allows access when agent is assigned to inbox' do
@@ -354,15 +355,23 @@ RSpec.describe Api::V1::Accounts::InboxCsatTemplatesController, type: :request d
         expect(response).to have_http_status(:created)
       end
 
-      it 'returns unauthorized when agent is not assigned to inbox' do
+      it 'allows access even when agent is not assigned to inbox' do
+        # InboxPolicy#show? grants access to any account member (see 202bc170d), so the
+        # request now reaches the template creation service and needs it stubbed too.
         other_agent = create(:user, account: account, role: :agent)
+        allow(mock_service).to receive(:get_template_status).and_return({ success: false })
+        allow(mock_service).to receive(:create_template).and_return({
+                                                                      success: true,
+                                                                      template_name: 'customer_satisfaction_survey',
+                                                                      template_id: '555555555'
+                                                                    })
 
         post "/api/v1/accounts/#{account.id}/inboxes/#{whatsapp_inbox.id}/csat_template",
              headers: other_agent.create_new_auth_token,
              params: valid_template_params,
              as: :json
 
-        expect(response).to have_http_status(:unauthorized)
+        expect(response).to have_http_status(:created)
       end
 
       it 'allows access when agent is assigned to inbox' do
@@ -445,15 +454,21 @@ RSpec.describe Api::V1::Accounts::InboxCsatTemplatesController, type: :request d
         expect(response.parsed_body['error']).to eq('Message is required')
       end
 
-      it 'returns unauthorized when agent is not assigned to inbox' do
+      it 'allows access even when agent is not assigned to inbox' do
+        # InboxPolicy#show? grants access to any account member (see 202bc170d), so the
+        # request now reaches the analysis service and needs it stubbed too.
         other_agent = create(:user, account: account, role: :agent)
+        allow(analysis_service).to receive(:perform).and_return({
+                                                                  classification: 'LIKELY_UTILITY',
+                                                                  optimized_message: 'Your support request has been closed.'
+                                                                })
 
         post "/api/v1/accounts/#{account.id}/inboxes/#{whatsapp_inbox.id}/csat_template/analyze",
              headers: other_agent.create_new_auth_token,
              params: valid_template_params,
              as: :json
 
-        expect(response).to have_http_status(:unauthorized)
+        expect(response).to have_http_status(:success)
       end
 
       it 'allows access when agent is assigned to inbox' do

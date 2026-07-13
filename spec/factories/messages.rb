@@ -11,7 +11,7 @@ FactoryBot.define do
     trait :instagram_story_mention do
       content_attributes { { image_type: 'story_mention' } }
       after(:build) do |message|
-        unless message.inbox.instagram?
+        unless message.inbox&.instagram?
           message.inbox = create(:inbox, account: message.account,
                                          channel: create(:channel_instagram_fb_page, account: message.account, instagram_id: 'instagram-123'))
         end

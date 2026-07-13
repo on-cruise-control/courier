@@ -33,6 +33,7 @@ RSpec.describe Mailbox::ConversationFinderStrategies::InReplyToStrategy do
 
     context 'when in_reply_to matches message source_id' do
       let(:message) do
+        conversation.reload
         conversation.messages.create!(
           source_id: 'original-message-id@example.com',
           account_id: account.id,
@@ -55,6 +56,7 @@ RSpec.describe Mailbox::ConversationFinderStrategies::InReplyToStrategy do
 
     context 'when in_reply_to has multiple values' do
       let(:message) do
+        conversation.reload
         conversation.messages.create!(
           source_id: 'message-123@example.com',
           account_id: account.id,

@@ -10,8 +10,13 @@ RSpec.describe AgentBots::WebhookJob do
   let(:webhook_type) { :agent_bot_webhook }
   let(:retryable_error) { Webhooks::Trigger::RetryableError.new(status: 500, message: '500 Internal Server Error') }
 
-  before do
+  around do |example|
+    original_adapter = ActiveJob::Base.queue_adapter
     ActiveJob::Base.queue_adapter = :test
+
+    example.run
+  ensure
+    ActiveJob::Base.queue_adapter = original_adapter
   end
 
   after do

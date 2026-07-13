@@ -7,7 +7,7 @@ RSpec.describe DeleteObjectJob, type: :job do
       let!(:inbox) { create(:inbox, account: account) }
 
       before do
-        create_list(:conversation, 3, account: account, inbox: inbox)
+        create_list(:conversation, 3, account: account, inbox: inbox).each(&:reload)
         ReportingEvent.create!(account: account, inbox: inbox, name: 'inbox_metric', value: 1.0)
       end
 
@@ -40,8 +40,8 @@ RSpec.describe DeleteObjectJob, type: :job do
       let!(:inbox2) { create(:inbox, account: account) }
 
       before do
-        create_list(:conversation, 2, account: account, inbox: inbox1)
-        create_list(:conversation, 1, account: account, inbox: inbox2)
+        create_list(:conversation, 2, account: account, inbox: inbox1).each(&:reload)
+        create_list(:conversation, 1, account: account, inbox: inbox2).each(&:reload)
         ReportingEvent.create!(account: account, name: 'acct_metric', value: 2.5)
         ReportingEvent.create!(account: account, inbox: inbox1, name: 'acct_inbox_metric', value: 3.5)
       end

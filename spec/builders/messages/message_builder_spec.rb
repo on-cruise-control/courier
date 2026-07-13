@@ -15,6 +15,13 @@ describe Messages::MessageBuilder do
                                      })
   end
 
+  before do
+    # Stub callbacks that cause issues in test environment
+    allow_any_instance_of(Message).to receive(:schedule_follow_up_job)
+    allow_any_instance_of(Channel::Email).to receive(:notify_if_reauthorization_required)
+    allow(SlackNotifierService).to receive(:call)
+  end
+
   describe '#perform' do
     it 'creates a message' do
       message = message_builder
@@ -210,7 +217,6 @@ describe Messages::MessageBuilder do
       end
 
       context 'when custom email content is provided' do
-
         it 'creates message with custom HTML email content' do
           params = ActionController::Parameters.new({
                                                       content: 'Regular message content',

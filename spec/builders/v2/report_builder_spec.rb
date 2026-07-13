@@ -3,12 +3,17 @@ require 'rails_helper'
 describe V2::ReportBuilder do
   include ActiveJob::TestHelper
   let_it_be(:account) { create(:account) }
-  let_it_be(:label_1) { create(:label, title: 'Label_1', account: account) }
-  let_it_be(:label_2) { create(:label, title: 'Label_2', account: account) }
+
+  let_it_be(:label_1) { create(:label, title: "Label_1_#{SecureRandom.hex(4)}", account: account) }
+  let_it_be(:label_2) { create(:label, title: "Label_2_#{SecureRandom.hex(4)}", account: account) }
 
   describe '#timeseries' do
     # Use before_all to share expensive setup across all tests in this describe block
     # This runs once instead of 21 times, dramatically speeding up the suite
+    before do
+      allow_any_instance_of(Message).to receive(:schedule_follow_up_job)
+    end
+
     before_all do
       travel_to(Time.zone.today) do
         user = create(:user, account: account)
@@ -22,34 +27,65 @@ describe V2::ReportBuilder do
 
         perform_enqueued_jobs do
           10.times do
-            conversation = create(:conversation, account: account,
-                                                 inbox: inbox, assignee: user,
-                                                 created_at: Time.zone.today)
-            create_list(:message, 5, message_type: 'outgoing',
-                                     account: account, inbox: inbox,
-                                     conversation: conversation, created_at: Time.zone.today + 2.hours)
-            create_list(:message, 2, message_type: 'incoming',
-                                     account: account, inbox: inbox,
-                                     conversation: conversation,
-                                     created_at: Time.zone.today + 3.hours)
-            conversation.update_labels('label_1')
+            conversation = create(
+              :conversation,
+              account: account,
+              inbox: inbox,
+              assignee: user,
+              created_at: Time.zone.today
+            )
+
+            create_list(
+              :message, 5,
+              message_type: 'outgoing',
+              account: account,
+              inbox: inbox,
+              conversation: conversation,
+              created_at: Time.zone.today + 2.hours
+            )
+
+            create_list(
+              :message, 2,
+              message_type: 'incoming',
+              account: account,
+              inbox: inbox,
+              conversation: conversation,
+              created_at: Time.zone.today + 3.hours
+            )
+
+            conversation.update_labels(label_1.title)
             conversation.label_list
             conversation.save!
           end
 
           5.times do
-            conversation = create(:conversation, account: account,
-                                                 inbox: inbox, assignee: user,
-                                                 created_at: (Time.zone.today - 2.days))
-            create_list(:message, 3, message_type: 'outgoing',
-                                     account: account, inbox: inbox,
-                                     conversation: conversation,
-                                     created_at: (Time.zone.today - 2.days))
-            create_list(:message, 1, message_type: 'incoming',
-                                     account: account, inbox: inbox,
-                                     conversation: conversation,
-                                     created_at: (Time.zone.today - 2.days))
-            conversation.update_labels('label_2')
+            conversation = create(
+              :conversation,
+              account: account,
+              inbox: inbox,
+              assignee: user,
+              created_at: Time.zone.today - 2.days
+            )
+
+            create_list(
+              :message, 3,
+              message_type: 'outgoing',
+              account: account,
+              inbox: inbox,
+              conversation: conversation,
+              created_at: Time.zone.today - 2.days
+            )
+
+            create_list(
+              :message, 1,
+              message_type: 'incoming',
+              account: account,
+              inbox: inbox,
+              conversation: conversation,
+              created_at: Time.zone.today - 2.days
+            )
+
+            conversation.update_labels(label_2.title)
             conversation.label_list
             conversation.save!
           end

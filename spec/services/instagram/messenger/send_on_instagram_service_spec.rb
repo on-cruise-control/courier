@@ -4,16 +4,16 @@ describe Instagram::Messenger::SendOnInstagramService do
   subject(:send_reply_service) { described_class.new(message: message) }
 
   before do
-    stub_request(:post, /graph\.facebook\.com/)
+    stub_request(:post, /graph\.(facebook|instagram)\.com/)
     create(:message, message_type: :incoming, inbox: instagram_messenger_inbox, account: account, conversation: conversation)
   end
 
   let!(:account) { create(:account) }
-  let!(:instagram_channel) { create(:channel_instagram_fb_page, account: account, instagram_id: 'chatwoot-app-user-id-1') }
+  let!(:instagram_channel) { create(:channel_facebook_page, account: account, page_id: 'chatwoot-app-user-id-1') }
   let!(:instagram_messenger_inbox) { create(:inbox, channel: instagram_channel, account: account, greeting_enabled: false) }
   let!(:contact) { create(:contact, account: account) }
   let(:contact_inbox) { create(:contact_inbox, contact: contact, inbox: instagram_messenger_inbox) }
-  let(:conversation) { create(:conversation, contact: contact, inbox: instagram_messenger_inbox, contact_inbox: contact_inbox) }
+  let(:conversation) { create(:conversation, contact: contact, inbox: instagram_messenger_inbox, contact_inbox: contact_inbox).reload }
   let(:response) { double }
   let(:mock_response) do
     instance_double(

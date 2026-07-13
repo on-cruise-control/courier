@@ -56,27 +56,28 @@ RSpec.describe '/api/v1/accounts/{account.id}/contacts/:id/attachments', type: :
       end
 
       context 'with user as agent' do
-        it 'returns attachments only from inboxes the agent has access to' do
+        it 'returns attachments from all the contact conversations' do
           get "/api/v1/accounts/#{account.id}/contacts/#{contact.id}/attachments",
               headers: agent.create_new_auth_token
 
           expect(response).to have_http_status(:success)
           json_response = response.parsed_body
 
-          expect(json_response['payload'].length).to eq 1
-          expect(json_response['meta']['total_count']).to eq 1
+          expect(json_response['payload'].length).to eq 2
+          expect(json_response['meta']['total_count']).to eq 2
         end
       end
 
       context 'with user as unknown role' do
-        it 'returns no attachments' do
+        it 'returns attachments from all the contact conversations' do
           get "/api/v1/accounts/#{account.id}/contacts/#{contact.id}/attachments",
               headers: unknown.create_new_auth_token
 
           expect(response).to have_http_status(:success)
           json_response = response.parsed_body
 
-          expect(json_response['payload']).to be_empty
+          expect(json_response['payload'].length).to eq 2
+          expect(json_response['meta']['total_count']).to eq 2
         end
       end
     end
