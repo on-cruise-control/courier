@@ -3,11 +3,11 @@
     <p>Hello Team</p>
 
     <p style="margin-bottom: 20px;">
-      The customer has requested vehicle parts. Please contact them as soon as possible to verify their requirements and proceed accordingly.    
+      The customer has a service inquiry. Please contact them as soon as possible to verify their requirements and proceed accordingly.
     </p>
 
     <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 20px;">
-      
+
       {% if account.name %}
       <tr>
         <td style="padding: 5px 0;"><strong>Dealership Name:</strong> {{ account.name }}</td>
@@ -60,6 +60,10 @@
         {{ conversation.summary | newline_to_br }}
       </div>
     {% endif %}
+
+    <p style="margin-bottom: 20px;">
+      <strong>Note:</strong> If the customer has not finalized the scheduling form, we recommend reaching out to them directly.
+    </p>
 
     <table cellpadding="0" cellspacing="0" border="0" style="margin-top: 20px;">
       <tr>
