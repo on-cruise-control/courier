@@ -7,8 +7,10 @@ RSpec.describe 'Webhooks::FacebookController', type: :request do
 
   describe 'GET /webhooks/facebook' do
     it 'returns ok when valid params are not present' do
-      get '/webhooks/facebook'
-      expect(response).to have_http_status(:ok)
+      with_modified_env FB_VERIFY_TOKEN: '123456' do
+        get '/webhooks/facebook'
+        expect(response).to have_http_status(:ok)
+      end
     end
 
     it 'returns challenge when valid params' do

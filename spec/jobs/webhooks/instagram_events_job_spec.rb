@@ -9,9 +9,9 @@ describe Webhooks::InstagramEventsJob do
     stub_request(:get, 'https://www.example.com/test.jpeg')
       .to_return(status: 200, body: '', headers: {})
     stub_request(:get, 'https://lookaside.fbsbx.com/ig_messaging_cdn/?asset_id=17949487764033669&signature=test')
-      .to_return(status: 200, body: '', headers: {})
+      .to_return(status: 200, body: '', headers: { 'Content-Type' => 'image/jpeg' })
     stub_request(:get, 'https://lookaside.fbsbx.com/ig_messaging_cdn/?asset_id=18091626484740369&signature=test')
-      .to_return(status: 200, body: '', headers: {})
+      .to_return(status: 200, body: '', headers: { 'Content-Type' => 'image/jpeg' })
   end
 
   let!(:account) { create(:account) }

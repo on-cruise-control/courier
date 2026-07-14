@@ -41,7 +41,7 @@ describe Bookings::BookingService do
       end
 
       before do
-        allow_any_instance_of(Bookings::BookingService).to receive(:make_index_request).and_return(mock_response)
+        allow(Bookings::BookingService).to receive(:get).and_return(mock_response)
       end
 
       it 'logs the error and returns empty result set with error message' do

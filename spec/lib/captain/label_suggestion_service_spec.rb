@@ -22,7 +22,6 @@ RSpec.describe Captain::LabelSuggestionService do
     allow(account).to receive(:feature_enabled?).and_call_original
     allow(account).to receive(:feature_enabled?).with('captain_tasks').and_return(true)
     # Stub enterprise module checks to bypass quota/usage tracking
-    allow(service).to receive(:responses_available?).and_return(true)
     allow(service).to receive(:counts_toward_usage?).and_return(false)
     allow(Redis::Alfred).to receive(:setex).and_return(true)
   end
