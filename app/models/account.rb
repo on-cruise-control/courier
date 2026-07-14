@@ -14,6 +14,7 @@
 #  limits                :jsonb
 #  locale                :integer          default("en")
 #  name                  :string           not null
+#  service_emails        :jsonb
 #  settings              :jsonb
 #  status                :integer          default("active")
 #  support_email         :string(100)
@@ -69,6 +70,7 @@ class Account < ApplicationRecord
   validates :domain, length: { maximum: 100 }
   validate :validate_escalation_emails
   validate :validate_vehicle_parts_emails
+  validate :validate_service_emails
   validates_with JsonSchemaValidator,
                  schema: SETTINGS_PARAMS_SCHEMA,
                  attribute_resolver: ->(record) { record.settings }
@@ -209,6 +211,10 @@ class Account < ApplicationRecord
     super || []
   end
 
+  def service_emails
+    super || []
+  end
+
   def onboarding_step
     step = custom_attributes['onboarding_step']
     return nil if step.blank?
@@ -309,6 +315,21 @@ class Account < ApplicationRecord
     vehicle_parts_emails.each do |email|
       unless email =~ Devise.email_regexp
         errors.add(:vehicle_parts_emails, "#{email} is not a valid email")
+      end
+    end
+  end
+
+  def validate_service_emails
+    return if service_emails.blank?
+
+    unless service_emails.is_a?(Array)
+      errors.add(:service_emails, 'must be an array')
+      return
+    end
+
+    service_emails.each do |email|
+      unless email =~ Devise.email_regexp
+        errors.add(:service_emails, "#{email} is not a valid email")
       end
     end
   end

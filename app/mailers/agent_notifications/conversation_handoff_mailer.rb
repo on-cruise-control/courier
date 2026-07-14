@@ -42,7 +42,9 @@ class AgentNotifications::ConversationHandoffMailer < ApplicationMailer
     super.merge({
                   stark_customer_name: @customer_data['name'],
                   stark_customer_phone: @customer_data['phone'],
-                  stark_customer_email: @customer_data['email']
+                  stark_customer_email: @customer_data['email'],
+                  stark_customer_whatsapp: @customer_data['whatsapp_number'],
+                  stark_customer_sms: @customer_data['sms_number']
                 })
   end
 end

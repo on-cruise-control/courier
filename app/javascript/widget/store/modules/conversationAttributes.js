@@ -8,6 +8,7 @@ import { getConversationAPI } from '../../api/conversation';
 const state = {
   id: '',
   status: '',
+  shouldSendReply: true,
 };
 
 export const getters = {
@@ -37,16 +38,19 @@ export const mutations = {
   [SET_CONVERSATION_ATTRIBUTES]($state, data) {
     $state.id = data.id;
     $state.status = data.status;
+    $state.shouldSendReply = data.should_send_reply ?? true;
   },
   [UPDATE_CONVERSATION_ATTRIBUTES]($state, data) {
     if (data.id === $state.id) {
       $state.id = data.id;
       $state.status = data.status;
+      $state.shouldSendReply = data.should_send_reply ?? true;
     }
   },
   [CLEAR_CONVERSATION_ATTRIBUTES]($state) {
     $state.id = '';
     $state.status = '';
+    $state.shouldSendReply = true;
   },
 };
 

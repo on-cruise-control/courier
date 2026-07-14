@@ -20,7 +20,15 @@ export default {
     ...mapGetters({
       twilioUsage: 'getTwilioUsage',
       isFetching: 'isFetchingTwilioUsage',
+      walletBalance: 'getWalletBalance',
+      isFetchingWalletBalance: 'isFetchingWalletBalance',
     }),
+    availableBalance() {
+      return this.walletBalance?.available_balance;
+    },
+    isBalanceNegative() {
+      return (this.availableBalance || 0) < 0;
+    },
     totalUsage() {
       return this.twilioUsage?.total_usage || {};
     },
@@ -55,6 +63,7 @@ export default {
   },
   mounted() {
     this.fetchAllData();
+    this.$store.dispatch('fetchWalletBalance');
   },
   methods: {
     fetchAllData() {
@@ -127,7 +136,26 @@ export default {
           </div>
         </div>
       </div>
-      <div v-if="twilioUsage && !isFetching" class="hidden lg:block">
+      <div v-if="isFetchingWalletBalance" class="flex items-center gap-2 px-4 py-1.5 bg-n-solid-2 border border-n-weak rounded-lg shadow-sm">
+        <Icon icon="i-lucide-loader-2" class="text-n-slate-9 animate-spin" />
+        <span class="text-xs text-n-slate-9">{{ $t('TWILIO_REPORTS.WALLET_BALANCE.LOADING') }}</span>
+      </div>
+      <div
+        v-else-if="walletBalance"
+        class="flex items-center justify-between gap-8 pl-4 pr-5 py-3.5 rounded-2xl bg-n-slate-2 border border-n-weak shadow-md min-w-[220px]"
+      >
+        <span class="flex items-center gap-3 text-xs font-bold uppercase tracking-wider text-n-slate-11 whitespace-nowrap">
+          <span class="flex-shrink-0 flex items-center justify-center w-9 h-9 rounded-xl bg-n-blue-9 text-white shadow-sm">
+            <Icon icon="i-lucide-wallet" class="text-xl" />
+          </span>
+          {{ $t('TWILIO_REPORTS.WALLET_BALANCE.TITLE') }}
+        </span>
+        <span
+          class="text-2xl font-extrabold tabular-nums"
+          :class="isBalanceNegative ? 'text-n-ruby-9' : 'text-n-slate-12'"
+        >
+          {{ formatCurrency(availableBalance) }}
+        </span>
       </div>
     </div>
 

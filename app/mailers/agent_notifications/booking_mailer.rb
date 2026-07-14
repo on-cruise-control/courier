@@ -1,16 +1,16 @@
 class AgentNotifications::BookingMailer < ApplicationMailer
-  def booking_notification(emails:, conversation:, booking_date:, phone:, email:, whatsapp_number: nil, text_number: nil)
+  def booking_notification(emails:, conversation:, booking_date:, phone:, email:, whatsapp_number: nil, text_number: nil, summary: nil)
     @conversation = conversation
     @account = conversation.account
     ensure_current_account(@account)
 
-    # Ensure summary is refreshed before sending the email
-    begin
-      Conversations::SummaryService.new(conversation: @conversation, force_refresh: true).perform
-    rescue StandardError
-      nil
+    if summary.present?
+      @summary = summary
+    else
+      Conversations::SummaryService.new(conversation: @conversation, force_refresh: true).perform rescue nil
+      @conversation.reload
+      @summary = @conversation.summary
     end
-    @conversation.reload
 
     # If account is suspended, send to SuperAdmins only
     recipients = if @account.suspended?

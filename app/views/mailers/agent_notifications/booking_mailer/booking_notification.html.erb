@@ -48,10 +48,10 @@
   </table>
   
   <div style="margin-bottom: 24px;">
-    <% if @conversation.summary.present? %>
+    <% if @summary.present? %>
       <p style="font-size: 16px; margin-bottom: 12px;"><strong>Conversation Summary</strong></p>
       <div style="background-color: #f3f4f6; color: #000000; border-radius: 8px; padding: 16px; font-size: 14px; line-height: 1.6;">
-        <%= simple_format(@conversation.summary) %>
+        <%= simple_format(@summary) %>
       </div>
     <% end %>
   </div>

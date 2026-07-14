@@ -1,5 +1,5 @@
-class AdministratorNotifications::ConversationHandoffMailer < AdministratorNotifications::BaseMailer
-  def notify_handoff(conversation, customer_data = nil, to: nil)
+class AdministratorNotifications::ConversationServiceMailer < AdministratorNotifications::BaseMailer
+  def notify_service(conversation, customer_data = nil, to: nil)
     return unless smtp_config_set_or_development?
 
     @conversation   = conversation
@@ -9,7 +9,7 @@ class AdministratorNotifications::ConversationHandoffMailer < AdministratorNotif
     @customer_data = customer_data || {}
     ensure_current_account(@account)
 
-    subject = '[Parts] High-priority conversation requires attention'
+    subject = '[Service] High-priority conversation requires attention'
 
     send_notification(
       subject,

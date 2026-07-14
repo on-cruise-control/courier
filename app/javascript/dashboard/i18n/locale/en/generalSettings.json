@@ -166,6 +166,22 @@
           "ERROR": "Failed to update vehicle parts emails"
         }
       },
+      "SERVICE_EMAILS": {
+        "TITLE": "Service Notification Emails",
+        "NOTE": "Add emails to receive service inquiry alerts. Recommended: Service Manager and Service Advisor.",
+        "LABEL": "Add email address",
+        "HELP": "Enter an email address and click Add. You can add multiple email addresses.",
+        "PLACEHOLDER": "email{'@'}example.com",
+        "ADD_BUTTON": "Add",
+        "CONFIGURED_EMAILS": "Configured Email Addresses",
+        "EMPTY_STATE": "⚠️ No service notification emails configured. Add at least one email address to receive service notifications.",
+        "INVALID_EMAIL": "Please enter a valid email address",
+        "DUPLICATE_EMAIL": "This email address is already added",
+        "API": {
+          "SUCCESS": "Service emails updated successfully",
+          "ERROR": "Failed to update service emails"
+        }
+      },
       "TWILIO_CONFIGURATION": {
         "TITLE": "SMS Notification Settings",
         "NOTE": "Configure your Twilio credentials to send SMS notifications (booking, escalation, handoff alerts) from your own Twilio number.",

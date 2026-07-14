@@ -19,6 +19,7 @@ import SectionLayout from './components/SectionLayout.vue';
 import BookingEmails from './components/BookingEmails.vue';
 import VehiclePartsEmails from './components/VehiclePartsEmails.vue';
 import EscalationEmails from './components/EscalationEmails.vue';
+import ServiceEmails from './components/ServiceEmails.vue';
 import TwilioConfiguration from './components/TwilioConfiguration.vue';
 
 export default {
@@ -35,6 +36,7 @@ export default {
     BookingEmails,
     VehiclePartsEmails,
     EscalationEmails,
+    ServiceEmails,
     TwilioConfiguration,
   },
   setup() {
@@ -260,6 +262,7 @@ export default {
     <BookingEmails />
     <VehiclePartsEmails />
     <EscalationEmails />
+    <ServiceEmails />
     <AccountId />
     <div v-if="!uiFlags.isFetchingItem && isOnChatwootCloud">
       <AccountDelete />

@@ -96,7 +96,10 @@ class Integrations::Stark::ProcessorService < Integrations::BotProcessorService
     response = get_stark_response(current_conversation, event_data[:message].content, event_data[:message])
     return if response.nil? # Response is nil if there was an error (already handled by StarkRetryable)
 
-    current_conversation.update_column(:stop_follow_up, response['stop_follow_up'])
+    current_conversation.update!(
+      stop_follow_up: response['stop_follow_up'],
+      should_send_reply: response['should_send_reply'].nil? ? true : response['should_send_reply']
+    )
     schedule_booking_follow_up if response['is_booking_created']
     handle_response(response)
   end

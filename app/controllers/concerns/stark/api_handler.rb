@@ -50,7 +50,6 @@ module Stark
         headers: build_request_headers,
         timeout: 60
       )
-
       parse_response_body(response)
     end
 
@@ -136,11 +135,15 @@ module Stark
                                extract_customer_name(conversation.contact, platform))&.titleize
       handoff_customer_phone = customer_data['phone'].presence || '(N/A)'
       handoff_customer_email = customer_data['email'].presence || '(N/A)'
+      handoff_customer_whatsapp = customer_data['whatsapp_number'].presence || '(N/A)'
+      handoff_customer_sms = customer_data['sms_number'].presence || '(N/A)'
 
       refined_customer_data = {
         'name' => handoff_customer_name,
         'phone' => handoff_customer_phone,
-        'email' => handoff_customer_email
+        'email' => handoff_customer_email,
+        'whatsapp_number' => handoff_customer_whatsapp,
+        'sms_number' => handoff_customer_sms
       }
 
       if data['human_redirect']
@@ -158,6 +161,7 @@ module Stark
         'content' => data['answer'],
         'action' => nil,
         'stop_follow_up' => data['stop_follow_up'],
+        'should_send_reply' => data['should_send_reply'],
         'attachments' => data['attachments'] || [],
         'metadata' => data['metadata'] || {},
         'is_spam' => data['is_spam'],
