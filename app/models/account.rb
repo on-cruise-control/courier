@@ -327,6 +327,19 @@ class Account < ApplicationRecord
       errors.add(:service_emails, "#{email} is not a valid email") unless email&.match?(Devise.email_regexp)
     end
   end
+
+  def validate_service_emails
+    return if service_emails.blank?
+
+    unless service_emails.is_a?(Array)
+      errors.add(:service_emails, 'must be an array')
+      return
+    end
+
+    service_emails.each do |email|
+      errors.add(:service_emails, "#{email} is not a valid email") unless email&.match?(Devise.email_regexp)
+    end
+  end
 end
 
 Account.prepend_mod_with('Account')
