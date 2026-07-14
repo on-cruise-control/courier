@@ -694,6 +694,11 @@
       "TITLE": "Wallet",
       "DESCRIPTION": "Wallet balance after this month's usage.",
       "LOADING": "Fetching wallet balance..."
+    },
+    "SUMMARY": {
+      "TOTAL_PRICE": "Total Price",
+      "GATEWAY_CHARGES": "Gateway Charges",
+      "GRAND_TOTAL": "Grand Total"
     }
   }
 }
