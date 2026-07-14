@@ -40,6 +40,7 @@ jobs:
               software-properties-common \
               ca-certificates \
               imagemagick \
+              libmagickwand-dev \
               libxml2-dev \
               libxslt1-dev \
               file \
@@ -136,6 +137,7 @@ jobs:
               software-properties-common \
               ca-certificates \
               imagemagick \
+              libmagickwand-dev \
               libxml2-dev \
               libxslt1-dev \
               file \
@@ -239,6 +241,7 @@ jobs:
               software-properties-common \
               ca-certificates \
               imagemagick \
+              libmagickwand-dev \
               libxml2-dev \
               libxslt1-dev \
               file \
