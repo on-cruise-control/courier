@@ -292,6 +292,7 @@ jobs:
             sed -i -e '/POSTGRES_HOST/ s/=.*/=localhost/' .env
             sed -i -e '/POSTGRES_USERNAME/ s/=.*/=chatwoot/' .env
             sed -i -e "/POSTGRES_PASSWORD/ s/=.*/=$pg_pass/" .env
+            echo -en "\nSECRET_KEY_BASE=test_secret_key_base_for_circleci" >> ".env"
             echo -en "\nINSTALLATION_ENV=circleci" >> ".env"
             echo -en "\nOPENSEARCH_URL=http://localhost:9200" >> ".env"
 
