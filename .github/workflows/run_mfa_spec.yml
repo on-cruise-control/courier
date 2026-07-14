@@ -52,7 +52,11 @@ jobs:
       - uses: ruby/setup-ruby@v1
         with:
           bundler-cache: true
-
+      - name: Debug Rails environment
+        run: |
+        echo "RAILS_ENV=$RAILS_ENV"
+        echo "SECRET_KEY_BASE set? ${SECRET_KEY_BASE:+YES}"
+        
       - name: Create database
         run: bundle exec rake db:create
 
