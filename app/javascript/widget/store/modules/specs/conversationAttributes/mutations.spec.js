@@ -8,7 +8,7 @@ describe('#mutations', () => {
         id: 1,
         status: 'open',
       });
-      expect(state).toEqual({ id: 1, status: 'open' });
+      expect(state).toEqual({ id: 1, status: 'open', shouldSendReply: true });
     });
   });
 
@@ -19,7 +19,7 @@ describe('#mutations', () => {
         id: 1,
         status: 'open',
       });
-      expect(state).toEqual({ id: 1, status: 'open' });
+      expect(state).toEqual({ id: 1, status: 'open', shouldSendReply: true });
     });
     it('doesnot update status if it is not the same conversation', () => {
       const state = { id: 1, status: 'pending' };
@@ -38,7 +38,7 @@ describe('#mutations', () => {
         id: 1,
         status: 'open',
       });
-      expect(state).toEqual({ id: '', status: '' });
+      expect(state).toEqual({ id: '', status: '', shouldSendReply: true });
     });
   });
 });

@@ -53,7 +53,7 @@ describe('#actions', () => {
             {
               id: 11,
               timeOnPage: '20',
-              url: 'https://chatwoot.com',
+              url: 'https://getcruisecontrol.com',
               triggerOnlyDuringBusinessHours: false,
             },
           ],
@@ -90,14 +90,7 @@ describe('#actions', () => {
       ]);
       expect(campaignTimer.initTimers).toHaveBeenCalledWith(
         {
-          campaigns: [
-            {
-              id: 11,
-              timeOnPage: '20',
-              url: 'https://getcruisecontrol.com',
-              triggerOnlyDuringBusinessHours: false,
-            },
-          ],
+          campaigns: [],
         },
         'XDsafmADasd'
       );

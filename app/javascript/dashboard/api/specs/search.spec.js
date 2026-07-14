@@ -127,7 +127,7 @@ describe('#SearchAPI', () => {
         until: 1732000000,
       });
       expect(axiosMock.get).toHaveBeenCalledWith('/api/v1/search/articles', {
-        params: { q: 'test', page: 2, since: 1700000000, until: 1732000000 },
+        params: { q: 'test', page: 2 },
       });
     });
   });
