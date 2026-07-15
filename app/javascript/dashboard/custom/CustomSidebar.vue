@@ -324,7 +324,7 @@ const menuItems = computed(() => {
       label: t('SIDEBAR.HELP_CENTER.TITLE'),
       icon: 'i-lucide-book-open-text',
       children: [
-        { type: 'link', label: t('SIDEBAR.HELP_CENTER.ARTICLES'), icon: 'i-lucide-file-text', to: accountScopedRoute('portals_index', { navigationPath: 'portals_articles_index' }), activeOn: ['portals_articles_new', 'portals_articles_edit'] },
+        { type: 'link', label: t('SIDEBAR.HELP_CENTER.ARTICLES'), icon: 'i-lucide-file-text', to: accountScopedRoute('portals_index', { navigationPath: 'portals_articles_index' }), activeOn: ['portals_articles_new', 'portals_articles_edit', 'portals_new'] },
         { type: 'link', label: t('SIDEBAR.HELP_CENTER.CATEGORIES'), icon: 'i-lucide-boxes', to: accountScopedRoute('portals_index', { navigationPath: 'portals_categories_index' }), activeOn: ['portals_categories_articles_index', 'portals_categories_articles_new', 'portals_categories_articles_edit'] },
         { type: 'link', label: t('SIDEBAR.HELP_CENTER.LOCALES'), icon: 'i-lucide-languages', to: accountScopedRoute('portals_index', { navigationPath: 'portals_locales_index' }) },
         { type: 'link', label: t('SIDEBAR.HELP_CENTER.SETTINGS'), icon: 'i-lucide-settings', to: accountScopedRoute('portals_index', { navigationPath: 'portals_settings_index' }) },
@@ -556,7 +556,6 @@ const toggleGroup = item => {
   }
 };
 
-const beakTop = ref(0);
 const beakGroup = ref(null);
 
 const navigateItem = item => {
@@ -581,7 +580,7 @@ const onChildClick = () => {
   if (props.isSmallScreen) emit('closeMobileSidebar');
 };
 
-const onCollapsedGroupClick = (item, event) => {
+const onCollapsedGroupClick = item => {
   const defaultChild = item.children?.find(child => child.type === 'link');
   if (defaultChild?.to) {
     router.push(defaultChild.to);
@@ -590,13 +589,6 @@ const onCollapsedGroupClick = (item, event) => {
   activeGroup.value = null;
   activeChildren.value = [];
   beakGroup.value = item.name;
-  const btn = event?.currentTarget;
-  const aside = btn?.closest('aside');
-  if (btn && aside) {
-    const btnRect = btn.getBoundingClientRect();
-    const asideRect = aside.getBoundingClientRect();
-    beakTop.value = Math.round(btnRect.top - asideRect.top + btn.offsetHeight / 2);
-  }
 };
 
 // Sidebar resize (main icon sidebar)
@@ -696,7 +688,7 @@ const onResizeEnd = () => {
   }
 };
 
-const onResizeHandleDoubleClick = () => {
+const toggleSidebarCollapse = () => {
   if (isCollapsed.value) {
     sidebarWidth.value = 200;
     updateUISettings({ custom_sidebar_width: 200 });
@@ -734,11 +726,9 @@ useEventListener(document, 'touchend', onResizeEnd);
       <!-- Fixed Blue Background -->
       <div class="absolute inset-y-0 inset-x-0 z-[-1]" style="background-color: #182933;" />
 
-      <!-- Logo row: expanded shows logo + "Cruise Control" + compose button -->
-      <!-- Collapsed shows logo only -->
       <div
-        class="mb-6 flex py-1 pl-2 pr-3 w-full items-center"
-        :class="isCollapsed ? 'justify-center' : 'justify-between gap-2.5'"
+        class="mb-2 flex py-1 pl-2 pr-3 w-full items-center"
+        :class="isCollapsed ? 'justify-center' : ''"
       >
         <div class="flex items-center gap-2.5 min-w-0">
           <Logo class="size-10 text-white flex-shrink-0" />
@@ -748,7 +738,11 @@ useEventListener(document, 'touchend', onResizeEnd);
             :style="{ fontSize: brandTextSize }"
           >Cruise Control</span>
         </div>
-        <ComposeConversation v-if="!isCollapsed" @close="onComposeClose">
+      </div>
+
+      <!-- Expanded: compose button beside the expand/collapse toggle -->
+      <div v-if="!isCollapsed" class="flex items-center justify-between gap-2 mb-2 px-3 w-full">
+        <ComposeConversation @close="onComposeClose">
           <template #trigger="{ toggle }">
             <button
               class="size-8 rounded-xl bg-white/15 flex items-center justify-center text-white hover:bg-white/25 transition-all cursor-pointer flex-shrink-0"
@@ -758,10 +752,24 @@ useEventListener(document, 'touchend', onResizeEnd);
             </button>
           </template>
         </ComposeConversation>
+        <button
+          class="size-8 !p-0  rounded-xl bg-white/15 flex items-center justify-center text-white hover:bg-white/25 transition-all cursor-pointer flex-shrink-0"
+          v-tooltip="{ content: t('SIDEBAR.COLLAPSE'), placement: 'right' }"
+          @click="toggleSidebarCollapse"
+        >
+          <i class="i-lucide-chevrons-left size-5 text-white" />
+        </button>
       </div>
 
-      <!-- Collapsed only: compose button below logo -->
-      <div v-if="isCollapsed" class="flex flex-col gap-2 mb-4 px-2 w-full items-center">
+      <!-- Collapsed only: expand toggle on top, compose button below -->
+      <div v-if="isCollapsed" class="flex flex-col gap-2 mb-2 px-2 w-full items-center">
+        <button
+          class="size-8 !p-0 !pl-0.5  rounded-xl bg-white/15 flex items-center justify-center text-white hover:bg-white/25 transition-all cursor-pointer flex-shrink-0"
+          v-tooltip="{ content: t('SIDEBAR.EXPAND'), placement: 'right' }"
+          @click="toggleSidebarCollapse"
+        >
+          <i class="i-lucide-chevrons-right size-5 text-white" />
+        </button>
         <ComposeConversation @close="onComposeClose">
           <template #trigger="{ toggle }">
             <button
@@ -778,15 +786,27 @@ useEventListener(document, 'touchend', onResizeEnd);
       <nav v-if="isCollapsed" class="flex flex-col gap-2 flex-grow items-center overflow-y-auto no-scrollbar py-2 w-full">
         <template v-for="item in menuItems" :key="item.name">
           <!-- Group item -->
-          <div v-if="item.children" class="flex justify-center w-full">
+          <div v-if="item.children" class="flex flex-col items-center w-full">
             <button
               class="sidebar-item w-9 h-9 rounded-xl hover:bg-white/10 transition-all cursor-pointer flex items-center justify-center p-2 group/icon"
               :class="{ 'bg-white/35 shadow-inner': activeGroup === item.name || isGroupActive(item) }"
               v-tooltip="{ content: item.label, placement: 'right' }"
-              @click="onCollapsedGroupClick(item, $event)"
+              @click="onCollapsedGroupClick(item)"
             >
               <div class="size-5 text-white group-hover/icon:scale-110 transition-transform" :class="item.icon" />
             </button>
+            <div
+              v-if="beakGroup === item.name"
+              class="w-[40px] h-[24px] flex items-center justify-center bg-[#182933] rounded-b-xl shadow-[0_4px_10px_rgba(0,0,0,0.1)] cursor-pointer z-40"
+              @click.stop="toggleGroup(item)"
+            >
+              <div
+                class="flex items-center justify-center size-5 rounded-full transition-all"
+                :class="{ 'bg-white/35 shadow-inner': activeGroup === item.name || isGroupActive(item) }"
+              >
+                <i class="i-lucide-chevron-down size-3.5 text-white transition-transform duration-200" :class="{ 'rotate-180': activeGroup === beakGroup }" />
+              </div>
+            </div>
           </div>
           <!-- Link item -->
           <div v-else class="flex justify-center w-full">
@@ -913,10 +933,10 @@ useEventListener(document, 'touchend', onResizeEnd);
                   <div class="size-5 text-white group-hover/icon:scale-110 transition-transform" :class="item.icon" />
                 </button>
                 <div
-                  class="absolute left-full top-1/2 -translate-y-1/2 w-[24px] h-[40px] flex items-center justify-center bg-[#182933] rounded-r-xl shadow-[4px_0_10px_rgba(0,0,0,0.1)] transition-all duration-200 z-[60] cursor-pointer"
+                  class="absolute top-full left-1/2 -translate-x-1/2 w-[40px] h-[24px] flex items-center justify-center bg-[#182933] rounded-b-xl shadow-[0_4px_10px_rgba(0,0,0,0.1)] transition-all duration-200 z-[60] cursor-pointer"
                   :class="{
-                    'opacity-100 translate-x-0': activeGroup === item.name || isGroupActive(item),
-                    'opacity-0 pointer-events-none -translate-x-1': activeGroup !== item.name && !isGroupActive(item)
+                    'opacity-100 translate-y-0': activeGroup === item.name || isGroupActive(item),
+                    'opacity-0 pointer-events-none -translate-y-1': activeGroup !== item.name && !isGroupActive(item)
                   }"
                   @click.stop="toggleGroup(item)"
                 >
@@ -975,28 +995,19 @@ useEventListener(document, 'touchend', onResizeEnd);
         <div class="i-lucide-x size-5" />
       </button>
 
-      <!-- Beak toggle — positioned outside the sidebar to the right -->
-      <div
-        v-if="beakGroup && isCollapsed"
-        class="absolute left-full z-[60] w-[24px] h-[40px] flex items-center justify-center bg-[#182933] rounded-r-xl shadow-[4px_0_10px_rgba(0,0,0,0.1)] cursor-pointer"
-        :style="{ top: beakTop + 'px', transform: 'translateY(-50%)' }"
-        @click.stop="toggleGroup(menuItems.find(i => i.name === beakGroup))"
-      >
-        <i class="i-lucide-chevron-right size-[16px] text-white transition-transform duration-200" :class="{ 'rotate-180': activeGroup === beakGroup }" />
-      </div>
-
       <!-- Resize handle (desktop only) — must be last so z-index stacks above content -->
       <div
-        class="hidden md:block absolute top-0 h-full w-2 cursor-col-resize z-50 right-0 group"
+        class="hidden md:block absolute top-0 h-full w-2 cursor-col-resize z-40 right-0 group"
         @mousedown="onResizeStart"
         @touchstart="onResizeStart"
-        @dblclick="onResizeHandleDoubleClick"
+        @dblclick="toggleSidebarCollapse"
       >
         <div
           class="absolute top-0 h-full w-px right-0 bg-transparent group-hover:bg-white/40 transition-colors"
           :class="{ 'bg-white/60': isResizing }"
         />
       </div>
+
     </aside>
 
     <!-- Flyout Menu for Child Items (Push Layout) -->
