@@ -17,12 +17,6 @@ import { BUS_EVENTS } from 'shared/constants/busEvents';
 import { useSidebarKeyboardShortcuts } from 'dashboard/components-next/sidebar/useSidebarKeyboardShortcuts';
 import { FEATURE_FLAGS } from 'dashboard/featureFlags';
 
-import {
-  DropdownContainer,
-  DropdownBody,
-  DropdownSection,
-  DropdownItem,
-} from 'next/dropdown-menu/base';
 import Icon from 'next/icon/Icon.vue';
 
 const props = defineProps({
@@ -38,43 +32,64 @@ const props = defineProps({
 
 const emit = defineEmits([
   'openKeyShortcutModal',
-  'showCreateAccountModal',
   'closeMobileSidebar',
   'activeGroupChange',
 ]);
 
 const { t } = useI18n();
 const store = useStore();
-const { accountId, currentAccount, accountScopedRoute } = useAccount();
-const currentUser = useMapGetter('getCurrentUser');
-const globalConfig = useMapGetter('globalConfig/get');
-const userAccounts = useMapGetter('getUserAccounts');
+const { accountId, accountScopedRoute } = useAccount();
 const notificationsMeta = useMapGetter('notifications/getMeta');
 
 const { shouldShow } = usePolicy();
 const router = useRouter();
 const route = useRoute();
 
-const isFeatureEnabledonAccount = useMapGetter('accounts/isFeatureEnabledonAccount');
+const isFeatureEnabledonAccount = useMapGetter(
+  'accounts/isFeatureEnabledonAccount'
+);
 const hasConversationUnreadCounts = computed(() =>
-  isFeatureEnabledonAccount.value(accountId.value, FEATURE_FLAGS.CONVERSATION_UNREAD_COUNTS)
+  isFeatureEnabledonAccount.value(
+    accountId.value,
+    FEATURE_FLAGS.CONVERSATION_UNREAD_COUNTS
+  )
 );
 
-const allUnreadCount = useMapGetter('conversationUnreadCounts/getAllUnreadCount');
-const mentionsUnreadCount = useMapGetter('conversationUnreadCounts/getMentionsUnreadCount');
-const participatingUnreadCount = useMapGetter('conversationUnreadCounts/getParticipatingUnreadCount');
-const unattendedUnreadCount = useMapGetter('conversationUnreadCounts/getUnattendedUnreadCount');
-const getInboxUnreadCount = useMapGetter('conversationUnreadCounts/getInboxUnreadCount');
-const getTeamUnreadCount = useMapGetter('conversationUnreadCounts/getTeamUnreadCount');
-const getLabelUnreadCount = useMapGetter('conversationUnreadCounts/getLabelUnreadCount');
-const getFolderUnreadCount = useMapGetter('conversationUnreadCounts/getFolderUnreadCount');
+const allUnreadCount = useMapGetter(
+  'conversationUnreadCounts/getAllUnreadCount'
+);
+const mentionsUnreadCount = useMapGetter(
+  'conversationUnreadCounts/getMentionsUnreadCount'
+);
+const participatingUnreadCount = useMapGetter(
+  'conversationUnreadCounts/getParticipatingUnreadCount'
+);
+const unattendedUnreadCount = useMapGetter(
+  'conversationUnreadCounts/getUnattendedUnreadCount'
+);
+const getInboxUnreadCount = useMapGetter(
+  'conversationUnreadCounts/getInboxUnreadCount'
+);
+const getTeamUnreadCount = useMapGetter(
+  'conversationUnreadCounts/getTeamUnreadCount'
+);
+const getLabelUnreadCount = useMapGetter(
+  'conversationUnreadCounts/getLabelUnreadCount'
+);
+const getFolderUnreadCount = useMapGetter(
+  'conversationUnreadCounts/getFolderUnreadCount'
+);
 
-const formatUnreadCount = count => (count > 99 ? '99+' : count > 0 ? `${count}` : null);
+const formatUnreadCount = count => {
+  if (count > 99) return '99+';
+  if (count > 0) return `${count}`;
+  return null;
+};
 
 useSidebarKeyboardShortcuts(() => emit('openKeyShortcutModal'));
 
 const findRouteByName = name => {
-  return router.getRoutes().find(route => route.name === name);
+  return router.getRoutes().find(r => r.name === name);
 };
 
 const isAllowed = to => {
@@ -100,7 +115,9 @@ const inboxes = useMapGetter('inboxes/getInboxes');
 const labels = useMapGetter('labels/getLabelsOnSidebar');
 const teams = useMapGetter('teams/getMyTeams');
 const contactCustomViews = useMapGetter('customViews/getContactCustomViews');
-const conversationCustomViews = useMapGetter('customViews/getConversationCustomViews');
+const conversationCustomViews = useMapGetter(
+  'customViews/getConversationCustomViews'
+);
 
 onMounted(() => {
   store.dispatch('labels/get');
@@ -115,10 +132,6 @@ onMounted(() => {
   }
 });
 
-const showAccountSwitcher = computed(
-  () => (userAccounts.value || []).length > 1 && currentAccount.value.name
-);
-
 const hasUnreadNotifications = computed(
   () => (notificationsMeta.value?.unreadCount || 0) > 0
 );
@@ -127,17 +140,6 @@ const unreadNotificationsLabel = computed(() => {
   const count = notificationsMeta.value?.unreadCount || 0;
   return count > 99 ? '99+' : `${count}`;
 });
-
-const sortedCurrentUserAccounts = computed(() => {
-  return [...(currentUser.value.accounts || [])].sort((a, b) =>
-    a.name.localeCompare(b.name)
-  );
-});
-
-const onChangeAccount = newId => {
-  const accountUrl = `/app/accounts/${newId}/dashboard`;
-  window.location.href = accountUrl;
-};
 
 const onComposeOpen = toggleFn => {
   toggleFn();
@@ -165,7 +167,9 @@ const isChildActive = child => {
       return route.params?.navigationPath === targetNavigationPath;
     }
     // Compare all non-accountId params to distinguish items sharing the same route name
-    const relevantKeys = Object.keys(targetParams).filter(k => k !== 'accountId');
+    const relevantKeys = Object.keys(targetParams).filter(
+      k => k !== 'accountId'
+    );
     if (relevantKeys.length > 0) {
       return relevantKeys.every(
         k => String(route.params[k]) === String(targetParams[k])
@@ -179,7 +183,8 @@ const isChildActive = child => {
   }
 
   const currentPath = route.path;
-  const targetPath = typeof child.to === 'string' ? child.to : router.resolve(child.to).href;
+  const targetPath =
+    typeof child.to === 'string' ? child.to : router.resolve(child.to).href;
 
   return currentPath === targetPath;
 };
@@ -205,12 +210,50 @@ const menuItems = computed(() => {
       label: t('SIDEBAR.CONVERSATIONS'),
       icon: 'i-lucide-message-square-more',
       children: [
-        { type: 'link', label: t('SIDEBAR.ALL_CONVERSATIONS'), icon: 'i-lucide-message-square', to: accountScopedRoute('home'), activeOn: ['inbox_conversation'], unreadCount: formatUnreadCount(allUnreadCount.value) },
-        { type: 'link', label: t('SIDEBAR.MENTIONED_CONVERSATIONS'), icon: 'i-lucide-at-sign', to: accountScopedRoute('conversation_mentions'), activeOn: ['conversation_through_mentions'], unreadCount: formatUnreadCount(mentionsUnreadCount.value) },
-        { type: 'link', label: t('SIDEBAR.PARTICIPATING_CONVERSATIONS'), icon: 'i-lucide-message-square-text', to: accountScopedRoute('conversation_participating'), activeOn: ['conversation_through_participating'], unreadCount: formatUnreadCount(participatingUnreadCount.value) },
-        { type: 'link', label: t('SIDEBAR.UNATTENDED_CONVERSATIONS'), icon: 'i-lucide-clock', to: accountScopedRoute('conversation_unattended'), activeOn: ['conversation_through_unattended'], unreadCount: formatUnreadCount(unattendedUnreadCount.value) },
-        { type: 'link', label: t('SIDEBAR.SPAM'), icon: 'i-lucide-octagon-alert', to: accountScopedRoute('conversation_spam'), activeOn: ['conversation_through_spam'] },
-        { type: 'header', label: t('SIDEBAR.CUSTOM_VIEWS_FOLDER'), icon: 'i-lucide-folder' },
+        {
+          type: 'link',
+          label: t('SIDEBAR.ALL_CONVERSATIONS'),
+          icon: 'i-lucide-message-square',
+          to: accountScopedRoute('home'),
+          activeOn: ['inbox_conversation'],
+          unreadCount: formatUnreadCount(allUnreadCount.value),
+        },
+        {
+          type: 'link',
+          label: t('SIDEBAR.MENTIONED_CONVERSATIONS'),
+          icon: 'i-lucide-at-sign',
+          to: accountScopedRoute('conversation_mentions'),
+          activeOn: ['conversation_through_mentions'],
+          unreadCount: formatUnreadCount(mentionsUnreadCount.value),
+        },
+        {
+          type: 'link',
+          label: t('SIDEBAR.PARTICIPATING_CONVERSATIONS'),
+          icon: 'i-lucide-message-square-text',
+          to: accountScopedRoute('conversation_participating'),
+          activeOn: ['conversation_through_participating'],
+          unreadCount: formatUnreadCount(participatingUnreadCount.value),
+        },
+        {
+          type: 'link',
+          label: t('SIDEBAR.UNATTENDED_CONVERSATIONS'),
+          icon: 'i-lucide-clock',
+          to: accountScopedRoute('conversation_unattended'),
+          activeOn: ['conversation_through_unattended'],
+          unreadCount: formatUnreadCount(unattendedUnreadCount.value),
+        },
+        {
+          type: 'link',
+          label: t('SIDEBAR.SPAM'),
+          icon: 'i-lucide-octagon-alert',
+          to: accountScopedRoute('conversation_spam'),
+          activeOn: ['conversation_through_spam'],
+        },
+        {
+          type: 'header',
+          label: t('SIDEBAR.CUSTOM_VIEWS_FOLDER'),
+          icon: 'i-lucide-folder',
+        },
         ...conversationCustomViews.value.map(view => ({
           type: 'link',
           label: view.name,
@@ -226,11 +269,18 @@ const menuItems = computed(() => {
           to: accountScopedRoute('team_conversations', { teamId: team.id }),
           unreadCount: formatUnreadCount(getTeamUnreadCount.value(team.id)),
         })),
-        { type: 'header', label: t('SIDEBAR.CHANNELS'), icon: 'i-lucide-mailbox' },
+        {
+          type: 'header',
+          label: t('SIDEBAR.CHANNELS'),
+          icon: 'i-lucide-mailbox',
+        },
         ...inboxes.value.map(inbox => ({
           type: 'link',
           label: inbox.name,
-          icon: getInboxIconByType(inbox.channel_type || inbox.channelType, inbox.medium),
+          icon: getInboxIconByType(
+            inbox.channel_type || inbox.channelType,
+            inbox.medium
+          ),
           to: accountScopedRoute('inbox_dashboard', { inbox_id: inbox.id }),
           reauthorizationRequired: inbox.reauthorization_required,
           unreadCount: formatUnreadCount(getInboxUnreadCount.value(inbox.id)),
@@ -241,7 +291,9 @@ const menuItems = computed(() => {
           label: label.title,
           color: label.color,
           to: accountScopedRoute('label_conversations', { label: label.title }),
-          unreadCount: formatUnreadCount(getLabelUnreadCount.value(label.title)),
+          unreadCount: formatUnreadCount(
+            getLabelUnreadCount.value(label.title)
+          ),
         })),
       ],
     },
@@ -250,14 +302,31 @@ const menuItems = computed(() => {
       label: t('SIDEBAR.CONTACTS'),
       icon: 'i-lucide-users-round',
       children: [
-        { type: 'link', label: t('SIDEBAR.ALL_CONTACTS'), icon: 'i-lucide-users', to: accountScopedRoute('contacts_dashboard_index'), activeOn: ['contacts_edit', 'contact_profile_page'] },
-        { type: 'link', label: t('SIDEBAR.ACTIVE'), icon: 'i-lucide-user-check', to: accountScopedRoute('contacts_dashboard_active') },
-        { type: 'header', label: t('SIDEBAR.CUSTOM_VIEWS_SEGMENTS'), icon: 'i-lucide-group' },
+        {
+          type: 'link',
+          label: t('SIDEBAR.ALL_CONTACTS'),
+          icon: 'i-lucide-users',
+          to: accountScopedRoute('contacts_dashboard_index'),
+          activeOn: ['contacts_edit', 'contact_profile_page'],
+        },
+        {
+          type: 'link',
+          label: t('SIDEBAR.ACTIVE'),
+          icon: 'i-lucide-user-check',
+          to: accountScopedRoute('contacts_dashboard_active'),
+        },
+        {
+          type: 'header',
+          label: t('SIDEBAR.CUSTOM_VIEWS_SEGMENTS'),
+          icon: 'i-lucide-group',
+        },
         ...contactCustomViews.value.map(view => ({
           type: 'link',
           label: view.name,
           icon: 'i-lucide-group',
-          to: accountScopedRoute('contacts_dashboard_segments_index', { segmentId: view.id }),
+          to: accountScopedRoute('contacts_dashboard_segments_index', {
+            segmentId: view.id,
+          }),
         })),
       ],
     },
@@ -266,7 +335,12 @@ const menuItems = computed(() => {
       label: t('SIDEBAR.COMPANIES'),
       icon: 'i-lucide-briefcase',
       children: [
-        { type: 'link', label: t('SIDEBAR.ALL_COMPANIES'), icon: 'i-lucide-building', to: accountScopedRoute('companies_dashboard_index') },
+        {
+          type: 'link',
+          label: t('SIDEBAR.ALL_COMPANIES'),
+          icon: 'i-lucide-building',
+          to: accountScopedRoute('companies_dashboard_index'),
+        },
       ],
     },
     {
@@ -274,11 +348,36 @@ const menuItems = computed(() => {
       label: t('SIDEBAR.REPORTS'),
       icon: 'i-lucide-bar-chart-3',
       children: [
-        { type: 'link', label: t('SIDEBAR.REPORTS_OVERVIEW'), icon: 'i-lucide-chart-pie', to: accountScopedRoute('account_overview_reports') },
-        { type: 'link', label: t('SIDEBAR.REPORTS_CONVERSATION'), icon: 'i-lucide-message-square-dashed', to: accountScopedRoute('conversation_reports') },
-        { type: 'link', label: t('SIDEBAR.REPORTS_BOOKINGS'), icon: 'i-lucide-calendar', to: accountScopedRoute('bookings_reports') },
-        { type: 'link', label: t('SIDEBAR.REPORTS_HANDOFF'), icon: 'i-lucide-handshake', to: accountScopedRoute('handoff_reports') },
-        { type: 'link', label: t('SIDEBAR.TWILIO_USAGES'), icon: 'i-lucide-phone', to: accountScopedRoute('twilio_reports') },
+        {
+          type: 'link',
+          label: t('SIDEBAR.REPORTS_OVERVIEW'),
+          icon: 'i-lucide-chart-pie',
+          to: accountScopedRoute('account_overview_reports'),
+        },
+        {
+          type: 'link',
+          label: t('SIDEBAR.REPORTS_CONVERSATION'),
+          icon: 'i-lucide-message-square-dashed',
+          to: accountScopedRoute('conversation_reports'),
+        },
+        {
+          type: 'link',
+          label: t('SIDEBAR.REPORTS_BOOKINGS'),
+          icon: 'i-lucide-calendar',
+          to: accountScopedRoute('bookings_reports'),
+        },
+        {
+          type: 'link',
+          label: t('SIDEBAR.REPORTS_HANDOFF'),
+          icon: 'i-lucide-handshake',
+          to: accountScopedRoute('handoff_reports'),
+        },
+        {
+          type: 'link',
+          label: t('SIDEBAR.TWILIO_USAGES'),
+          icon: 'i-lucide-phone',
+          to: accountScopedRoute('twilio_reports'),
+        },
       ],
     },
     {
@@ -286,9 +385,24 @@ const menuItems = computed(() => {
       label: t('SIDEBAR.CAMPAIGNS'),
       icon: 'i-lucide-send-horizontal',
       children: [
-        { type: 'link', label: t('SIDEBAR.LIVE_CHAT'), icon: 'i-lucide-message-square', to: accountScopedRoute('campaigns_livechat_index') },
-        { type: 'link', label: t('SIDEBAR.SMS'), icon: 'i-lucide-message-square', to: accountScopedRoute('campaigns_sms_index') },
-        { type: 'link', label: t('SIDEBAR.WHATSAPP'), icon: 'i-lucide-message-square-more', to: accountScopedRoute('campaigns_whatsapp_index') },
+        {
+          type: 'link',
+          label: t('SIDEBAR.LIVE_CHAT'),
+          icon: 'i-lucide-message-square',
+          to: accountScopedRoute('campaigns_livechat_index'),
+        },
+        {
+          type: 'link',
+          label: t('SIDEBAR.SMS'),
+          icon: 'i-lucide-message-square',
+          to: accountScopedRoute('campaigns_sms_index'),
+        },
+        {
+          type: 'link',
+          label: t('SIDEBAR.WHATSAPP'),
+          icon: 'i-lucide-message-square-more',
+          to: accountScopedRoute('campaigns_whatsapp_index'),
+        },
       ],
     },
     {
@@ -296,13 +410,62 @@ const menuItems = computed(() => {
       label: t('SIDEBAR.CAPTAIN'),
       icon: 'i-lucide-sparkles',
       children: [
-        { type: 'link', label: t('SIDEBAR.CAPTAIN_RESPONSES'), icon: 'i-lucide-message-circle-question', to: accountScopedRoute('captain_assistants_index', { navigationPath: 'captain_assistants_responses_index' }) },
-        { type: 'link', label: t('SIDEBAR.CAPTAIN_DOCUMENTS'), icon: 'i-lucide-file-text', to: accountScopedRoute('captain_assistants_index', { navigationPath: 'captain_assistants_documents_index' }) },
-        { type: 'link', label: t('SIDEBAR.CAPTAIN_SCENARIOS'), icon: 'i-lucide-list-checks', to: accountScopedRoute('captain_assistants_index', { navigationPath: 'captain_assistants_scenarios_index' }) },
-        { type: 'link', label: t('SIDEBAR.CAPTAIN_PLAYGROUND'), icon: 'i-lucide-flask-conical', to: accountScopedRoute('captain_assistants_index', { navigationPath: 'captain_assistants_playground_index' }) },
-        { type: 'link', label: t('SIDEBAR.CAPTAIN_INBOXES'), icon: 'i-lucide-inbox', to: accountScopedRoute('captain_assistants_index', { navigationPath: 'captain_assistants_inboxes_index' }) },
-        { type: 'link', label: t('SIDEBAR.CAPTAIN_TOOLS'), icon: 'i-lucide-wrench', to: accountScopedRoute('captain_assistants_index', { navigationPath: 'captain_tools_index' }) },
-        { type: 'link', label: t('SIDEBAR.CAPTAIN_SETTINGS'), icon: 'i-lucide-settings', to: accountScopedRoute('captain_assistants_index', { navigationPath: 'captain_assistants_settings_index' }) },
+        {
+          type: 'link',
+          label: t('SIDEBAR.CAPTAIN_RESPONSES'),
+          icon: 'i-lucide-message-circle-question',
+          to: accountScopedRoute('captain_assistants_index', {
+            navigationPath: 'captain_assistants_responses_index',
+          }),
+        },
+        {
+          type: 'link',
+          label: t('SIDEBAR.CAPTAIN_DOCUMENTS'),
+          icon: 'i-lucide-file-text',
+          to: accountScopedRoute('captain_assistants_index', {
+            navigationPath: 'captain_assistants_documents_index',
+          }),
+        },
+        {
+          type: 'link',
+          label: t('SIDEBAR.CAPTAIN_SCENARIOS'),
+          icon: 'i-lucide-list-checks',
+          to: accountScopedRoute('captain_assistants_index', {
+            navigationPath: 'captain_assistants_scenarios_index',
+          }),
+        },
+        {
+          type: 'link',
+          label: t('SIDEBAR.CAPTAIN_PLAYGROUND'),
+          icon: 'i-lucide-flask-conical',
+          to: accountScopedRoute('captain_assistants_index', {
+            navigationPath: 'captain_assistants_playground_index',
+          }),
+        },
+        {
+          type: 'link',
+          label: t('SIDEBAR.CAPTAIN_INBOXES'),
+          icon: 'i-lucide-inbox',
+          to: accountScopedRoute('captain_assistants_index', {
+            navigationPath: 'captain_assistants_inboxes_index',
+          }),
+        },
+        {
+          type: 'link',
+          label: t('SIDEBAR.CAPTAIN_TOOLS'),
+          icon: 'i-lucide-wrench',
+          to: accountScopedRoute('captain_assistants_index', {
+            navigationPath: 'captain_tools_index',
+          }),
+        },
+        {
+          type: 'link',
+          label: t('SIDEBAR.CAPTAIN_SETTINGS'),
+          icon: 'i-lucide-settings',
+          to: accountScopedRoute('captain_assistants_index', {
+            navigationPath: 'captain_assistants_settings_index',
+          }),
+        },
       ],
     },
     {
@@ -324,10 +487,48 @@ const menuItems = computed(() => {
       label: t('SIDEBAR.HELP_CENTER.TITLE'),
       icon: 'i-lucide-book-open-text',
       children: [
-        { type: 'link', label: t('SIDEBAR.HELP_CENTER.ARTICLES'), icon: 'i-lucide-file-text', to: accountScopedRoute('portals_index', { navigationPath: 'portals_articles_index' }), activeOn: ['portals_articles_new', 'portals_articles_edit', 'portals_new'] },
-        { type: 'link', label: t('SIDEBAR.HELP_CENTER.CATEGORIES'), icon: 'i-lucide-boxes', to: accountScopedRoute('portals_index', { navigationPath: 'portals_categories_index' }), activeOn: ['portals_categories_articles_index', 'portals_categories_articles_new', 'portals_categories_articles_edit'] },
-        { type: 'link', label: t('SIDEBAR.HELP_CENTER.LOCALES'), icon: 'i-lucide-languages', to: accountScopedRoute('portals_index', { navigationPath: 'portals_locales_index' }) },
-        { type: 'link', label: t('SIDEBAR.HELP_CENTER.SETTINGS'), icon: 'i-lucide-settings', to: accountScopedRoute('portals_index', { navigationPath: 'portals_settings_index' }) },
+        {
+          type: 'link',
+          label: t('SIDEBAR.HELP_CENTER.ARTICLES'),
+          icon: 'i-lucide-file-text',
+          to: accountScopedRoute('portals_index', {
+            navigationPath: 'portals_articles_index',
+          }),
+          activeOn: [
+            'portals_articles_new',
+            'portals_articles_edit',
+            'portals_new',
+          ],
+        },
+        {
+          type: 'link',
+          label: t('SIDEBAR.HELP_CENTER.CATEGORIES'),
+          icon: 'i-lucide-boxes',
+          to: accountScopedRoute('portals_index', {
+            navigationPath: 'portals_categories_index',
+          }),
+          activeOn: [
+            'portals_categories_articles_index',
+            'portals_categories_articles_new',
+            'portals_categories_articles_edit',
+          ],
+        },
+        {
+          type: 'link',
+          label: t('SIDEBAR.HELP_CENTER.LOCALES'),
+          icon: 'i-lucide-languages',
+          to: accountScopedRoute('portals_index', {
+            navigationPath: 'portals_locales_index',
+          }),
+        },
+        {
+          type: 'link',
+          label: t('SIDEBAR.HELP_CENTER.SETTINGS'),
+          icon: 'i-lucide-settings',
+          to: accountScopedRoute('portals_index', {
+            navigationPath: 'portals_settings_index',
+          }),
+        },
       ],
     },
     {
@@ -480,67 +681,72 @@ const menuItems = computed(() => {
     },
   ];
 
-  return items.map(item => {
-    if (!item.children) return item;
-    
-    const filteredChildren = [];
-    let pendingHeader = null;
-    
-    item.children.forEach(child => {
-      if (child.type === 'header') {
-        pendingHeader = child;
-      } else if (child.type === 'link') {
-        if (isAllowed(child.to)) {
-          if (pendingHeader) {
-            filteredChildren.push(pendingHeader);
-            pendingHeader = null;
-          }
-          filteredChildren.push(child);
-        }
-      }
-    });
+  return items
+    .map(item => {
+      if (!item.children) return item;
 
-    return { ...item, children: filteredChildren };
-  }).filter(item => {
-    if (item.children) return item.children.some(c => c.type === 'link');
-    return isAllowed(item.to);
-  });
+      const filteredChildren = [];
+      let pendingHeader = null;
+
+      item.children.forEach(child => {
+        if (child.type === 'header') {
+          pendingHeader = child;
+        } else if (child.type === 'link') {
+          if (isAllowed(child.to)) {
+            if (pendingHeader) {
+              filteredChildren.push(pendingHeader);
+              pendingHeader = null;
+            }
+            filteredChildren.push(child);
+          }
+        }
+      });
+
+      return { ...item, children: filteredChildren };
+    })
+    .filter(item => {
+      if (item.children) return item.children.some(c => c.type === 'link');
+      return isAllowed(item.to);
+    });
 });
 
 const bottomItems = computed(() => {
   const items = [];
 
-  return items.map(item => {
-    if (!item.children) return item;
-    
-    const filteredChildren = [];
-    let pendingHeader = null;
-    
-    item.children.forEach(child => {
-      if (child.type === 'header') {
-        pendingHeader = child;
-      } else if (child.type === 'link') {
-        if (isAllowed(child.to)) {
-          if (pendingHeader) {
-            filteredChildren.push(pendingHeader);
-            pendingHeader = null;
-          }
-          filteredChildren.push(child);
-        }
-      }
-    });
+  return items
+    .map(item => {
+      if (!item.children) return item;
 
-    return { ...item, children: filteredChildren };
-  }).filter(item => {
-    if (item.children) return item.children.some(c => c.type === 'link');
-    return isAllowed(item.to);
-  });
+      const filteredChildren = [];
+      let pendingHeader = null;
+
+      item.children.forEach(child => {
+        if (child.type === 'header') {
+          pendingHeader = child;
+        } else if (child.type === 'link') {
+          if (isAllowed(child.to)) {
+            if (pendingHeader) {
+              filteredChildren.push(pendingHeader);
+              pendingHeader = null;
+            }
+            filteredChildren.push(child);
+          }
+        }
+      });
+
+      return { ...item, children: filteredChildren };
+    })
+    .filter(item => {
+      if (item.children) return item.children.some(c => c.type === 'link');
+      return isAllowed(item.to);
+    });
 });
 
 const hasBottomItems = computed(() => bottomItems.value.length > 0);
 
 const activeGroup = ref(null);
 const activeChildren = ref([]);
+const expandedGroup = ref(null);
 
 watch(activeGroup, groupName => {
   emit('activeGroupChange', groupName);
@@ -556,12 +762,9 @@ const toggleGroup = item => {
   }
 };
 
-const beakGroup = ref(null);
-
 const navigateItem = item => {
   activeGroup.value = null;
   activeChildren.value = [];
-  beakGroup.value = null;
 
   if (item.children) {
     const defaultChild = item.children.find(child => child.type === 'link');
@@ -588,7 +791,6 @@ const onCollapsedGroupClick = item => {
   // Close flyout, just show the beak button
   activeGroup.value = null;
   activeChildren.value = [];
-  beakGroup.value = item.name;
 };
 
 // Sidebar resize (main icon sidebar)
@@ -599,13 +801,19 @@ const SIDEBAR_DEFAULT_WIDTH = 60;
 const SIDEBAR_COLLAPSED_THRESHOLD = 140;
 const SIDEBAR_MAX_WIDTH = 280;
 
-const sidebarWidth = ref(uiSettings.value.custom_sidebar_width || SIDEBAR_DEFAULT_WIDTH);
-const isCollapsed = computed(() => sidebarWidth.value < SIDEBAR_COLLAPSED_THRESHOLD);
+const sidebarWidth = ref(
+  uiSettings.value.custom_sidebar_width || SIDEBAR_DEFAULT_WIDTH
+);
+const isCollapsed = computed(
+  () => sidebarWidth.value < SIDEBAR_COLLAPSED_THRESHOLD
+);
 
 // Brand text scales linearly from 14px (at collapsed threshold) to 20px (at max width)
 const brandTextSize = computed(() => {
-  const t = (sidebarWidth.value - SIDEBAR_COLLAPSED_THRESHOLD) / (SIDEBAR_MAX_WIDTH - SIDEBAR_COLLAPSED_THRESHOLD);
-  const size = Math.round(14 + Math.max(0, Math.min(1, t)) * 6);
+  const progress =
+    (sidebarWidth.value - SIDEBAR_COLLAPSED_THRESHOLD) /
+    (SIDEBAR_MAX_WIDTH - SIDEBAR_COLLAPSED_THRESHOLD);
+  const size = Math.round(14 + Math.max(0, Math.min(1, progress)) * 6);
   return `${size}px`;
 });
 
@@ -618,26 +826,28 @@ watch(isCollapsed, nowCollapsed => {
 });
 
 // Expanded sidebar accordion
-const expandedGroup = ref(null);
-
 const resolveExpandedGroup = () => {
-  for (const item of menuItems.value) {
-    if (item.children && item.children.some(child => child.type === 'link' && isChildActive(child))) {
-      return item.name;
-    }
-  }
-  return null;
+  const activeItem = menuItems.value.find(
+    item =>
+      item.children &&
+      item.children.some(child => child.type === 'link' && isChildActive(child))
+  );
+  return activeItem?.name ?? null;
 };
 
 // Re-resolve when route OR menu data changes (menu loads async: inboxes, labels, etc.)
 // Only update when a matching group is found; navigating to a detail page (e.g. a
 // conversation) returns null — in that case keep the current group open.
-watch([route, menuItems], () => {
-  const resolved = resolveExpandedGroup();
-  if (resolved !== null) {
-    expandedGroup.value = resolved;
-  }
-}, { immediate: true });
+watch(
+  [route, menuItems],
+  () => {
+    const resolved = resolveExpandedGroup();
+    if (resolved !== null) {
+      expandedGroup.value = resolved;
+    }
+  },
+  { immediate: true }
+);
 
 const toggleExpandedGroup = item => {
   const isAlreadyExpanded = expandedGroup.value === item.name;
@@ -660,20 +870,27 @@ const isResizing = ref(false);
 const resizeStartX = ref(0);
 const resizeStartWidth = ref(0);
 
-const getClientX = event => (event.touches ? event.touches[0].clientX : event.clientX);
+const getClientX = event =>
+  event.touches ? event.touches[0].clientX : event.clientX;
 
 const onResizeStart = event => {
   isResizing.value = true;
   resizeStartX.value = getClientX(event);
   resizeStartWidth.value = sidebarWidth.value;
-  Object.assign(document.body.style, { cursor: 'col-resize', userSelect: 'none' });
+  Object.assign(document.body.style, {
+    cursor: 'col-resize',
+    userSelect: 'none',
+  });
   event.preventDefault();
 };
 
 const onResizeMove = event => {
   if (!isResizing.value) return;
   const delta = getClientX(event) - resizeStartX.value;
-  sidebarWidth.value = Math.max(SIDEBAR_MIN_WIDTH, Math.min(SIDEBAR_MAX_WIDTH, resizeStartWidth.value + delta));
+  sidebarWidth.value = Math.max(
+    SIDEBAR_MIN_WIDTH,
+    Math.min(SIDEBAR_MAX_WIDTH, resizeStartWidth.value + delta)
+  );
 };
 
 const onResizeEnd = () => {
@@ -720,11 +937,14 @@ useEventListener(document, 'touchend', onResizeEnd);
 
     <aside
       class="custom-sidebar flex flex-col h-full items-start py-4 z-50 flex-shrink-0 border-r border-black/10 shadow-lg relative"
-      :class="{ 'transition-[width] duration-200': !isResizing, 'is-collapsed': isCollapsed }"
+      :class="{
+        'transition-[width] duration-200': !isResizing,
+        'is-collapsed': isCollapsed,
+      }"
       :style="{ width: sidebarWidth + 'px', minWidth: sidebarWidth + 'px' }"
     >
       <!-- Fixed Blue Background -->
-      <div class="absolute inset-y-0 inset-x-0 z-[-1]" style="background-color: #182933;" />
+      <div class="absolute inset-y-0 inset-x-0 z-[-1] bg-[#182933]" />
 
       <div
         class="mb-2 flex py-1 pl-2 pr-3 w-full items-center"
@@ -736,12 +956,16 @@ useEventListener(document, 'touchend', onResizeEnd);
             v-if="!isCollapsed"
             class="text-white font-bold tracking-tight truncate transition-[font-size] duration-200"
             :style="{ fontSize: brandTextSize }"
-          >Cruise Control</span>
+            >{{ t('SIDEBAR.BRAND_NAME') }}</span
+          >
         </div>
       </div>
 
       <!-- Expanded: compose button beside the expand/collapse toggle -->
-      <div v-if="!isCollapsed" class="flex items-center justify-between gap-2 mb-2 px-3 w-full">
+      <div
+        v-if="!isCollapsed"
+        class="flex items-center justify-between gap-2 mb-2 px-3 w-full"
+      >
         <ComposeConversation @close="onComposeClose">
           <template #trigger="{ toggle }">
             <button
@@ -753,8 +977,8 @@ useEventListener(document, 'touchend', onResizeEnd);
           </template>
         </ComposeConversation>
         <button
-          class="size-8 !p-0  rounded-xl bg-white/15 flex items-center justify-center text-white hover:bg-white/25 transition-all cursor-pointer flex-shrink-0"
           v-tooltip="{ content: t('SIDEBAR.COLLAPSE'), placement: 'right' }"
+          class="size-8 !p-0 rounded-xl bg-white/15 flex items-center justify-center text-white hover:bg-white/25 transition-all cursor-pointer flex-shrink-0"
           @click="toggleSidebarCollapse"
         >
           <i class="i-lucide-chevrons-left size-5 text-white" />
@@ -762,10 +986,13 @@ useEventListener(document, 'touchend', onResizeEnd);
       </div>
 
       <!-- Collapsed only: expand toggle on top, compose button below -->
-      <div v-if="isCollapsed" class="flex flex-col gap-2 mb-2 px-2 w-full items-center">
+      <div
+        v-if="isCollapsed"
+        class="flex flex-col gap-2 mb-2 px-2 w-full items-center"
+      >
         <button
-          class="size-8 !p-0 !pl-0.5  rounded-xl bg-white/15 flex items-center justify-center text-white hover:bg-white/25 transition-all cursor-pointer flex-shrink-0"
           v-tooltip="{ content: t('SIDEBAR.EXPAND'), placement: 'right' }"
+          class="size-8 !p-0 !pl-0.5 rounded-xl bg-white/15 flex items-center justify-center text-white hover:bg-white/25 transition-all cursor-pointer flex-shrink-0"
           @click="toggleSidebarCollapse"
         >
           <i class="i-lucide-chevrons-right size-5 text-white" />
@@ -783,54 +1010,75 @@ useEventListener(document, 'touchend', onResizeEnd);
       </div>
 
       <!-- ── COLLAPSED: icon-only nav with flyout on click ── -->
-      <nav v-if="isCollapsed" class="flex flex-col gap-2 flex-grow items-center overflow-y-auto no-scrollbar py-2 w-full">
+      <nav
+        v-if="isCollapsed"
+        class="flex flex-col gap-2 flex-grow items-center overflow-y-auto no-scrollbar py-2 w-full"
+      >
         <template v-for="item in menuItems" :key="item.name">
           <!-- Group item -->
           <div v-if="item.children" class="flex flex-col items-center w-full">
             <button
-              class="sidebar-item w-9 h-9 rounded-xl hover:bg-white/10 transition-all cursor-pointer flex items-center justify-center p-2 group/icon"
-              :class="{ 'bg-white/35 shadow-inner': activeGroup === item.name || isGroupActive(item) }"
               v-tooltip="{ content: item.label, placement: 'right' }"
+              class="sidebar-item w-9 h-9 rounded-xl hover:bg-white/10 transition-all cursor-pointer flex items-center justify-center p-2 group/icon"
+              :class="{
+                'bg-white/35 shadow-inner':
+                  activeGroup === item.name || isGroupActive(item),
+              }"
               @click="onCollapsedGroupClick(item)"
             >
-              <div class="size-5 text-white group-hover/icon:scale-110 transition-transform" :class="item.icon" />
+              <div
+                class="size-5 text-white group-hover/icon:scale-110 transition-transform"
+                :class="item.icon"
+              />
             </button>
             <div
-              v-if="beakGroup === item.name"
+              v-if="isGroupActive(item)"
               class="w-[40px] h-[24px] flex items-center justify-center bg-[#182933] rounded-b-xl shadow-[0_4px_10px_rgba(0,0,0,0.1)] cursor-pointer z-40"
               @click.stop="toggleGroup(item)"
             >
               <div
                 class="flex items-center justify-center size-5 rounded-full transition-all"
-                :class="{ 'bg-white/35 shadow-inner': activeGroup === item.name || isGroupActive(item) }"
+                :class="{
+                  'bg-white/35 shadow-inner':
+                    activeGroup === item.name || isGroupActive(item),
+                }"
               >
-                <i class="i-lucide-chevron-down size-3.5 text-white transition-transform duration-200" :class="{ 'rotate-180': activeGroup === beakGroup }" />
+                <i
+                  class="i-lucide-chevron-down size-3.5 text-white transition-transform duration-200"
+                  :class="{ 'rotate-180': activeGroup === item.name }"
+                />
               </div>
             </div>
           </div>
           <!-- Link item -->
           <div v-else class="flex justify-center w-full">
             <router-link
+              v-tooltip="{ content: item.label, placement: 'right' }"
               :to="item.to"
               class="sidebar-item relative w-9 h-9 rounded-xl hover:bg-white/10 transition-all flex items-center justify-center p-2 group"
               active-class="bg-white/35"
-              v-tooltip="{ content: item.label, placement: 'right' }"
               @click="navigateItem(item)"
             >
-              <div class="size-5 text-white group-hover:scale-110 transition-transform" :class="item.icon" />
+              <div
+                class="size-5 text-white group-hover:scale-110 transition-transform"
+                :class="item.icon"
+              />
               <span
                 v-if="item.name === 'Inbox' && hasUnreadNotifications"
                 class="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full text-[10px] leading-4 text-white bg-n-teal-9 text-center"
-              >{{ unreadNotificationsLabel }}</span>
+                >{{ unreadNotificationsLabel }}</span
+              >
             </router-link>
           </div>
         </template>
       </nav>
 
       <!-- ── EXPANDED: accordion navigation (one section open at a time) ── -->
-      <nav v-else class="flex flex-col flex-grow overflow-y-auto no-scrollbar py-1 w-full px-2">
+      <nav
+        v-else
+        class="flex flex-col flex-grow overflow-y-auto no-scrollbar py-1 w-full px-2"
+      >
         <template v-for="item in menuItems" :key="item.name">
-
           <!-- Group with children: clickable accordion toggle -->
           <template v-if="item.children">
             <button
@@ -838,8 +1086,14 @@ useEventListener(document, 'touchend', onResizeEnd);
               :class="{ 'bg-white/15': isGroupActive(item) }"
               @click="toggleExpandedGroup(item)"
             >
-              <div class="size-4 text-white/80 flex-shrink-0" :class="item.icon" />
-              <span class="text-white/90 text-[13px] font-medium truncate flex-1 text-left">{{ item.label }}</span>
+              <div
+                class="size-4 text-white/80 flex-shrink-0"
+                :class="item.icon"
+              />
+              <span
+                class="text-white/90 text-[13px] font-medium truncate flex-1 text-left"
+                >{{ item.label }}</span
+              >
               <div
                 class="i-lucide-chevron-right size-3.5 text-white/40 flex-shrink-0 transition-transform duration-200"
                 :class="{ 'rotate-90': expandedGroup === item.name }"
@@ -854,7 +1108,12 @@ useEventListener(document, 'touchend', onResizeEnd);
               v-show="expandedGroup === item.name || isGroupActive(item)"
               class="mt-0.5 mb-1 ml-3 pl-2 border-l border-white/10 flex flex-col gap-0.5"
             >
-              <template v-for="child in item.children" :key="(child.label || '') + String(child.to?.name || child.to || '')">
+              <template
+                v-for="child in item.children"
+                :key="
+                  (child.label || '') + String(child.to?.name || child.to || '')
+                "
+              >
                 <!-- Sub-section headers only show when fully expanded -->
                 <div
                   v-if="child.type === 'header'"
@@ -874,10 +1133,24 @@ useEventListener(document, 'touchend', onResizeEnd);
                   :class="{ 'bg-white/20': isChildActive(child) }"
                   @click="onChildClick"
                 >
-                  <div v-if="child.color" class="size-2 rounded-full flex-shrink-0" :style="{ backgroundColor: child.color }" />
-                  <Icon v-else-if="child.icon" :icon="child.icon" class="size-3.5 text-white/60 flex-shrink-0" />
-                  <div v-else class="size-1.5 rounded-full bg-white/50 flex-shrink-0" />
-                  <span class="text-white/85 text-[13px] font-medium truncate flex-1">{{ child.label }}</span>
+                  <div
+                    v-if="child.color"
+                    class="size-2 rounded-full flex-shrink-0"
+                    :style="{ backgroundColor: child.color }"
+                  />
+                  <Icon
+                    v-else-if="child.icon"
+                    :icon="child.icon"
+                    class="size-3.5 text-white/60 flex-shrink-0"
+                  />
+                  <div
+                    v-else
+                    class="size-1.5 rounded-full bg-white/50 flex-shrink-0"
+                  />
+                  <span
+                    class="text-white/85 text-[13px] font-medium truncate flex-1"
+                    >{{ child.label }}</span
+                  >
                   <span
                     v-if="child.unreadCount"
                     class="min-w-[16px] h-4 px-1 rounded-full text-[10px] leading-4 text-white bg-n-teal-9 text-center flex-shrink-0"
@@ -905,53 +1178,78 @@ useEventListener(document, 'touchend', onResizeEnd);
             @click="navigateItem(item)"
           >
             <div class="size-4 text-white flex-shrink-0" :class="item.icon" />
-            <span class="text-white/90 text-[13px] font-medium truncate flex-1">{{ item.label }}</span>
+            <span
+              class="text-white/90 text-[13px] font-medium truncate flex-1"
+              >{{ item.label }}</span
+            >
             <span
               v-if="item.name === 'Inbox' && hasUnreadNotifications"
               class="min-w-[16px] h-4 px-1 rounded-full text-[10px] leading-4 text-white bg-n-teal-9 text-center ml-auto"
-            >{{ unreadNotificationsLabel }}</span>
+              >{{ unreadNotificationsLabel }}</span
+            >
           </router-link>
-
         </template>
       </nav>
 
       <!-- Bottom Items -->
       <template v-if="hasBottomItems">
         <div class="w-8 h-px bg-white/10 my-3 flex-shrink-0 mx-auto" />
-        <nav class="mb-4 w-full px-2" :class="isCollapsed ? 'flex flex-col items-center gap-2' : 'flex flex-col gap-0.5'">
+        <nav
+          class="mb-4 w-full px-2"
+          :class="
+            isCollapsed
+              ? 'flex flex-col items-center gap-2'
+              : 'flex flex-col gap-0.5'
+          "
+        >
           <template v-for="item in bottomItems" :key="item.name">
-
             <!-- Collapsed: icon buttons -->
             <template v-if="isCollapsed">
-              <div v-if="item.children" class="relative flex justify-center w-full">
+              <div
+                v-if="item.children"
+                class="relative flex justify-center w-full"
+              >
                 <button
-                  class="sidebar-item w-9 h-9 rounded-xl hover:bg-white/10 transition-all cursor-pointer flex items-center justify-center p-2 group/icon"
-                  :class="{ 'bg-white/35 shadow-inner': activeGroup === item.name }"
                   v-tooltip="{ content: item.label, placement: 'right' }"
+                  class="sidebar-item w-9 h-9 rounded-xl hover:bg-white/10 transition-all cursor-pointer flex items-center justify-center p-2 group/icon"
+                  :class="{
+                    'bg-white/35 shadow-inner': activeGroup === item.name,
+                  }"
                   @click="toggleGroup(item)"
                 >
-                  <div class="size-5 text-white group-hover/icon:scale-110 transition-transform" :class="item.icon" />
+                  <div
+                    class="size-5 text-white group-hover/icon:scale-110 transition-transform"
+                    :class="item.icon"
+                  />
                 </button>
                 <div
                   class="absolute top-full left-1/2 -translate-x-1/2 w-[40px] h-[24px] flex items-center justify-center bg-[#182933] rounded-b-xl shadow-[0_4px_10px_rgba(0,0,0,0.1)] transition-all duration-200 z-[60] cursor-pointer"
                   :class="{
-                    'opacity-100 translate-y-0': activeGroup === item.name || isGroupActive(item),
-                    'opacity-0 pointer-events-none -translate-y-1': activeGroup !== item.name && !isGroupActive(item)
+                    'opacity-100 translate-y-0':
+                      activeGroup === item.name || isGroupActive(item),
+                    'opacity-0 pointer-events-none -translate-y-1':
+                      activeGroup !== item.name && !isGroupActive(item),
                   }"
                   @click.stop="toggleGroup(item)"
                 >
-                  <i class="i-lucide-chevron-right size-[16px] text-white transition-transform duration-300" :class="{ 'rotate-180': activeGroup === item.name }" />
+                  <i
+                    class="i-lucide-chevron-right size-[16px] text-white transition-transform duration-300"
+                    :class="{ 'rotate-180': activeGroup === item.name }"
+                  />
                 </div>
               </div>
               <div v-else class="flex justify-center w-full">
                 <router-link
+                  v-tooltip="{ content: item.label, placement: 'right' }"
                   :to="item.to"
                   class="sidebar-item w-9 h-9 rounded-xl hover:bg-white/10 transition-all flex items-center justify-center p-2 group"
                   active-class="bg-white/35"
-                  v-tooltip="{ content: item.label, placement: 'right' }"
                   @click="navigateItem(item)"
                 >
-                  <div class="size-5 text-white group-hover:scale-110 transition-transform" :class="item.icon" />
+                  <div
+                    class="size-5 text-white group-hover:scale-110 transition-transform"
+                    :class="item.icon"
+                  />
                 </router-link>
               </div>
             </template>
@@ -959,27 +1257,69 @@ useEventListener(document, 'touchend', onResizeEnd);
             <!-- Expanded: full-width rows -->
             <template v-else>
               <div v-if="item.children">
-                <div class="px-2 pt-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-white/40 select-none">{{ item.label }}</div>
-                <template v-for="child in item.children" :key="(child.label || '') + String(child.to?.name || child.to || '')">
-                  <div v-if="child.type === 'header'" class="px-2 pt-3 pb-1 text-[9px] font-bold uppercase tracking-widest text-white/30 select-none">{{ child.label }}</div>
-                  <router-link v-else :to="child.to" class="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-white/10 transition-all" :class="{ 'bg-white/20': isChildActive(child) }" @click="onChildClick">
-                    <Icon v-if="child.icon" :icon="child.icon" class="size-3.5 text-white/60 flex-shrink-0" />
-                    <span class="text-white/85 text-[13px] font-medium truncate flex-1">{{ child.label }}</span>
+                <div
+                  class="px-2 pt-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-white/40 select-none"
+                >
+                  {{ item.label }}
+                </div>
+                <template
+                  v-for="child in item.children"
+                  :key="
+                    (child.label || '') +
+                    String(child.to?.name || child.to || '')
+                  "
+                >
+                  <div
+                    v-if="child.type === 'header'"
+                    class="px-2 pt-3 pb-1 text-[9px] font-bold uppercase tracking-widest text-white/30 select-none"
+                  >
+                    {{ child.label }}
+                  </div>
+                  <router-link
+                    v-else
+                    :to="child.to"
+                    class="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-white/10 transition-all"
+                    :class="{ 'bg-white/20': isChildActive(child) }"
+                    @click="onChildClick"
+                  >
+                    <Icon
+                      v-if="child.icon"
+                      :icon="child.icon"
+                      class="size-3.5 text-white/60 flex-shrink-0"
+                    />
+                    <span
+                      class="text-white/85 text-[13px] font-medium truncate flex-1"
+                      >{{ child.label }}</span
+                    >
                   </router-link>
                 </template>
               </div>
-              <router-link v-else :to="item.to" class="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-white/10 transition-all" active-class="bg-white/20" @click="navigateItem(item)">
-                <div class="size-4 text-white flex-shrink-0" :class="item.icon" />
-                <span class="text-white/90 text-[13px] font-medium truncate flex-1">{{ item.label }}</span>
+              <router-link
+                v-else
+                :to="item.to"
+                class="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-white/10 transition-all"
+                active-class="bg-white/20"
+                @click="navigateItem(item)"
+              >
+                <div
+                  class="size-4 text-white flex-shrink-0"
+                  :class="item.icon"
+                />
+                <span
+                  class="text-white/90 text-[13px] font-medium truncate flex-1"
+                  >{{ item.label }}</span
+                >
               </router-link>
             </template>
-
           </template>
         </nav>
       </template>
 
       <!-- Profile -->
-      <div class="sidebar-profile px-2 pt-2 border-t border-white/10 w-full" :class="isCollapsed ? 'flex justify-center' : ''">
+      <div
+        class="sidebar-profile px-2 pt-2 border-t border-white/10 w-full"
+        :class="isCollapsed ? 'flex justify-center' : ''"
+      >
         <SidebarProfileMenu
           class="bg-transparent border-none !p-0"
           @open-key-shortcut-modal="emit('openKeyShortcutModal')"
@@ -1007,7 +1347,6 @@ useEventListener(document, 'touchend', onResizeEnd);
           :class="{ 'bg-white/60': isResizing }"
         />
       </div>
-
     </aside>
 
     <!-- Flyout Menu for Child Items (Push Layout) -->
@@ -1021,18 +1360,24 @@ useEventListener(document, 'touchend', onResizeEnd);
     >
       <div
         v-if="activeGroup && isCollapsed"
-        class="custom-flyout h-full backdrop-blur-2xl z-40 border-r py-10 flex flex-col flex-shrink-0"
-        style="width: 16rem; min-width: 16rem;"
+        class="custom-flyout h-full backdrop-blur-2xl z-40 border-r py-10 flex flex-col flex-shrink-0 w-64 min-w-64"
       >
         <div class="px-6 mb-6">
-          <div class="flyout-header-text text-[10px] font-black uppercase tracking-[0.2em] whitespace-nowrap">
+          <div
+            class="flyout-header-text text-[10px] font-black uppercase tracking-[0.2em] whitespace-nowrap"
+          >
             {{ activeGroup }}
           </div>
         </div>
 
-        <div class="flex-grow overflow-y-auto no-scrollbar px-3 flex flex-col gap-1">
+        <div
+          class="flex-grow overflow-y-auto no-scrollbar px-3 flex flex-col gap-1"
+        >
           <template v-for="child in activeChildren" :key="child.label">
-            <div v-if="child.type === 'header'" class="flyout-sub-header mt-4 mb-2 px-3 text-[9px] font-bold uppercase tracking-widest whitespace-nowrap opacity-60">
+            <div
+              v-if="child.type === 'header'"
+              class="flyout-sub-header mt-4 mb-2 px-3 text-[9px] font-bold uppercase tracking-widest whitespace-nowrap opacity-60"
+            >
               {{ child.label }}
             </div>
             <router-link
@@ -1056,7 +1401,10 @@ useEventListener(document, 'touchend', onResizeEnd);
                 v-else
                 class="flyout-link-indicator size-1.5 rounded-full transition-all flex-shrink-0"
               />
-              <span class="text-[13px] font-semibold transition-colors truncate flex-1">{{ child.label }}</span>
+              <span
+                class="text-[13px] font-semibold transition-colors truncate flex-1"
+                >{{ child.label }}</span
+              >
               <span
                 v-if="child.unreadCount"
                 class="min-w-[18px] h-[18px] px-1 rounded-full text-[10px] leading-[18px] text-white bg-n-teal-9 text-center flex-shrink-0"
@@ -1075,7 +1423,6 @@ useEventListener(document, 'touchend', onResizeEnd);
         </div>
       </div>
     </transition>
-
   </div>
 </template>
 
@@ -1092,7 +1439,7 @@ useEventListener(document, 'touchend', onResizeEnd);
     }
 
     :deep(button > .min-w-0 .text-n-slate-11) {
-      color: rgba(255, 255, 255, 0.60) !important;
+      color: rgba(255, 255, 255, 0.6) !important;
     }
   }
 }
