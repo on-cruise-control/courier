@@ -52,56 +52,68 @@ const cwSpinner = () =>
     </svg>
   </div>`;
 
-const CLOSE_BTN =
-  `<button id="cw-vehicle-modal-close" style="background:rgba(0,0,0,0.5);border:none;cursor:pointer;padding:6px;border-radius:8px;color:#fff;line-height:0">
+const CLOSE_BTN = `<button id="cw-vehicle-modal-close" style="background:rgba(0,0,0,0.5);border:none;cursor:pointer;padding:6px;border-radius:8px;color:#fff;line-height:0">
     <svg width="24" height="24" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
   </button>`;
 
 const VehicleModalHelper = {
-  _keyHandler: null,
+  keyHandler: null,
 
-  _createOverlay() {
+  createOverlay() {
     const existing = document.getElementById('cw-vehicle-modal');
     if (existing) existing.remove();
     const overlay = document.createElement('div');
     overlay.id = 'cw-vehicle-modal';
-    overlay.style.cssText = 'position:fixed;inset:0;z-index:2147483647;background:#fff;overflow-y:auto;scrollbar-width:none;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif';
+    overlay.style.cssText =
+      'position:fixed;inset:0;z-index:2147483647;background:#fff;overflow-y:auto;scrollbar-width:none;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif';
     return overlay;
   },
 
-  _attachClose(overlay) {
+  attachClose(overlay) {
     overlay.addEventListener('click', e => {
-      if (e.target.closest('#cw-vehicle-modal-close')) this._close(overlay);
+      if (e.target.closest('#cw-vehicle-modal-close')) this.closeModal(overlay);
     });
-    if (this._keyHandler) document.removeEventListener('keydown', this._keyHandler);
-    this._keyHandler = e => { if (e.key === 'Escape') this._close(overlay); };
-    document.addEventListener('keydown', this._keyHandler);
+    if (this.keyHandler)
+      document.removeEventListener('keydown', this.keyHandler);
+    this.keyHandler = e => {
+      if (e.key === 'Escape') this.closeModal(overlay);
+    };
+    document.addEventListener('keydown', this.keyHandler);
   },
 
-  _close(overlay) {
+  closeModal(overlay) {
     overlay.remove();
-    if (this._keyHandler) {
-      document.removeEventListener('keydown', this._keyHandler);
-      this._keyHandler = null;
+    if (this.keyHandler) {
+      document.removeEventListener('keydown', this.keyHandler);
+      this.keyHandler = null;
     }
   },
 
   showLoading() {
-    const overlay = this._createOverlay();
+    const overlay = this.createOverlay();
     overlay.innerHTML = `
       ${CW_SPIN_STYLE}
       <div style="position:fixed;top:16px;right:16px">${CLOSE_BTN}</div>
       <div style="display:flex;align-items:center;justify-content:center;height:100vh">${cwSpinner()}</div>`;
     document.body.appendChild(overlay);
-    this._attachClose(overlay);
+    this.attachClose(overlay);
     return overlay;
   },
 
-  updateWithVehicle(overlay, vehicle, { baseUrl = '', websiteToken = '', conversationId = null } = {}) {
+  updateWithVehicle(
+    overlay,
+    vehicle,
+    { baseUrl = '', websiteToken = '', conversationId = null } = {}
+  ) {
     const images = vehicle.vehicle_images || [];
     let idx = 0;
     const isMobile = window.innerWidth < 668;
     const isMedium = window.innerWidth >= 668 && window.innerWidth < 1100;
+    const responsiveValue = (mobileValue, mediumValue, defaultValue) => {
+      if (isMobile) return mobileValue;
+      if (isMedium) return mediumValue;
+      return defaultValue;
+    };
     const price = vehicle.price || vehicle.msrp || vehicle.sale_price || null;
 
     const icons = {
@@ -119,40 +131,101 @@ const VehicleModalHelper = {
     };
 
     const mpgValue = [
-      vehicle.city_fuel_economy != null ? `${vehicle.city_fuel_economy} CITY` : null,
-      vehicle.highway_fuel_economy != null ? `${vehicle.highway_fuel_economy} HWY` : null,
-    ].filter(Boolean).join(' / ');
+      vehicle.city_fuel_economy != null
+        ? `${vehicle.city_fuel_economy} CITY`
+        : null,
+      vehicle.highway_fuel_economy != null
+        ? `${vehicle.highway_fuel_economy} HWY`
+        : null,
+    ]
+      .filter(Boolean)
+      .join(' / ');
 
     const specsList = [
-      vehicle.exterior_color ? { icon: icons.exterior, label: 'Exterior', value: vehicle.exterior_color } : null,
-      vehicle.interior_color ? { icon: icons.interior, label: 'Interior', value: vehicle.interior_color } : null,
-      vehicle.body_style ? { icon: icons.body, label: 'Body', value: vehicle.body_style } : null,
-      mpgValue ? { icon: icons.mpg, label: 'Miles per gallon', value: mpgValue } : null,
-      vehicle.combined_fuel_economy ? { icon: icons.fuelEconomy, label: 'Combined fuel economy', value: vehicle.combined_fuel_economy } : null,
-      vehicle.fuel_type ? { icon: icons.fuel, label: 'Fuel type', value: vehicle.fuel_type } : null,
-      vehicle.mileage != null ? { icon: icons.mileage, label: 'Mileage', value: Number(vehicle.mileage).toLocaleString() + ' mi' } : null,
-      vehicle.fuel_tank_size != null ? { icon: icons.tankSize, label: 'Fuel tank size', value: vehicle.fuel_tank_size + ' gal' } : null,
-      vehicle.engine ? { icon: icons.engine, label: 'Engine', value: vehicle.engine } : null,
-      vehicle.transmission ? { icon: icons.transmission, label: 'Transmission', value: vehicle.transmission } : null,
-      vehicle.drivetrain ? { icon: icons.drivetrain, label: 'Drivetrain', value: vehicle.drivetrain } : null,
+      vehicle.exterior_color
+        ? {
+            icon: icons.exterior,
+            label: 'Exterior',
+            value: vehicle.exterior_color,
+          }
+        : null,
+      vehicle.interior_color
+        ? {
+            icon: icons.interior,
+            label: 'Interior',
+            value: vehicle.interior_color,
+          }
+        : null,
+      vehicle.body_style
+        ? { icon: icons.body, label: 'Body', value: vehicle.body_style }
+        : null,
+      mpgValue
+        ? { icon: icons.mpg, label: 'Miles per gallon', value: mpgValue }
+        : null,
+      vehicle.combined_fuel_economy
+        ? {
+            icon: icons.fuelEconomy,
+            label: 'Combined fuel economy',
+            value: vehicle.combined_fuel_economy,
+          }
+        : null,
+      vehicle.fuel_type
+        ? { icon: icons.fuel, label: 'Fuel type', value: vehicle.fuel_type }
+        : null,
+      vehicle.mileage != null
+        ? {
+            icon: icons.mileage,
+            label: 'Mileage',
+            value: Number(vehicle.mileage).toLocaleString() + ' mi',
+          }
+        : null,
+      vehicle.fuel_tank_size != null
+        ? {
+            icon: icons.tankSize,
+            label: 'Fuel tank size',
+            value: vehicle.fuel_tank_size,
+          }
+        : null,
+      vehicle.engine
+        ? { icon: icons.engine, label: 'Engine', value: vehicle.engine }
+        : null,
+      vehicle.transmission
+        ? {
+            icon: icons.transmission,
+            label: 'Transmission',
+            value: vehicle.transmission,
+          }
+        : null,
+      vehicle.drivetrain
+        ? {
+            icon: icons.drivetrain,
+            label: 'Drivetrain',
+            value: vehicle.drivetrain,
+          }
+        : null,
     ].filter(Boolean);
 
-    const specsHTML = specsList.map(s =>
-      `<div style="display:flex;align-items:flex-start;gap:16px;padding:18px 0;border-bottom:1px solid #f3f4f6">
+    const specsHTML = specsList
+      .map(
+        s =>
+          `<div style="display:flex;align-items:flex-start;gap:16px;padding:18px 0;border-bottom:1px solid #f3f4f6">
         <span style="color:#1f2937;flex-shrink:0;margin-top:2px">${s.icon}</span>
         <div>
           <div style="font-size:15px;color:#6b7280;margin-bottom:5px;font-weight:500">${s.label}</div>
           <div style="font-size:16px;font-weight:600;color:#111827">${s.value}</div>
         </div>
       </div>`
-    ).join('');
+      )
+      .join('');
 
-    const imgMinH = isMobile ? '220px' : isMedium ? '300px' : '500px';
+    const imgMinH = responsiveValue('220px', '300px', '500px');
     const imgSection = images.length
       ? `<div style="position:relative;background:#f3f4f6;border-radius:12px;overflow:hidden;min-height:${imgMinH}">
           <div id="cw-img-loader" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:#f3f4f6;z-index:2">${cwSpinner(36)}</div>
           <img id="cw-vehicle-img" alt="" style="width:100%;height:100%;min-height:${imgMinH};object-fit:cover;display:block;opacity:0;transition:opacity .3s"/>
-          ${images.length > 1 ? `
+          ${
+            images.length > 1
+              ? `
             <button id="cw-vehicle-prev" style="display:none;position:absolute;left:12px;top:50%;transform:translateY(-50%);background:rgba(0,0,0,.45);border:none;cursor:pointer;border-radius:50%;width:40px;height:40px;align-items:center;justify-content:center;color:#fff;z-index:3">
               <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
             </button>
@@ -165,7 +238,9 @@ const VehicleModalHelper = {
             <button id="cw-fullscreen-btn" style="position:absolute;bottom:12px;right:12px;display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.92);border:none;cursor:pointer;border-radius:6px;padding:7px 12px;font-size:13px;font-weight:500;color:#111827;z-index:3;box-shadow:0 1px 4px rgba(0,0,0,.18)">
               <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 8V3h5M17 8V3h-5M3 12v5h5M17 12v5h-5"/></svg>
               Show Full Screen
-            </button>` : ''}
+            </button>`
+              : ''
+          }
         </div>`
       : '';
 
@@ -177,29 +252,38 @@ const VehicleModalHelper = {
         <p style="font-size:13px;color:#6b7280;margin:0 0 16px">Questions about payments?</p>`
       : '';
 
-    const stockVin = (vehicle.stock_number || vehicle.vin)
-      ? `<p style="font-size:13px;color:#6b7280;margin:20px 0 0">
+    const stockVin =
+      vehicle.stock_number || vehicle.vin
+        ? `<p style="font-size:13px;color:#6b7280;margin:20px 0 0">
           ${vehicle.stock_number ? `Stock: <strong style="color:#111827">${vehicle.stock_number}</strong>` : ''}
           ${vehicle.stock_number && vehicle.vin ? '&nbsp;&nbsp;' : ''}
           ${vehicle.vin ? `VIN: <strong style="color:#111827">${vehicle.vin}</strong>` : ''}
         </p>`
-      : '';
+        : '';
 
     const featuresHTML = (() => {
       if (!vehicle.additional_info) return '';
       const rawInfo = vehicle.additional_info.replace(/^features:\s*/i, '');
-      const features = rawInfo.split(',').map(f => f.trim()).filter(Boolean);
+      const features = rawInfo
+        .split(',')
+        .map(f => f.trim())
+        .filter(Boolean);
       const rows = [];
-      for (let i = 0; i < features.length; i += 2) rows.push([features[i], features[i + 1] || '']);
+      for (let i = 0; i < features.length; i += 2)
+        rows.push([features[i], features[i + 1] || '']);
       const VISIBLE = 5;
-      const rowsHTML = rows.map(([a, b], i) =>
-        `<div data-feat-row="${i}" style="display:grid;grid-template-columns:1fr 1fr;padding:0;background:#f5f5f5${i >= VISIBLE ? ';display:none' : ''}">
+      const rowsHTML = rows
+        .map(
+          ([a, b], i) =>
+            `<div data-feat-row="${i}" style="display:grid;grid-template-columns:1fr 1fr;padding:0;background:#f5f5f5${i >= VISIBLE ? ';display:none' : ''}">
           <span style="font-size:16px;font-weight:500;color:#111827;padding:18px 16px 18px 16px;border-bottom:1px solid #d1d5db;margin-right:18px;margin-left:20px">${a}</span>
           <span style="font-size:16px;font-weight:500;color:#111827;padding:18px 16px 18px 0;border-bottom:1px solid #d1d5db;margin-right:20px">${b}</span>
         </div>`
-      ).join('');
-      const showMoreBtn = rows.length > VISIBLE
-        ? `<div style="padding:12px 16px;background:#f5f5f5">
+        )
+        .join('');
+      const showMoreBtn =
+        rows.length > VISIBLE
+          ? `<div style="padding:12px 16px;background:#f5f5f5">
             <button id="cw-feat-toggle" onclick="
               var rows = document.querySelectorAll('[data-feat-row]');
               var btn = document.getElementById('cw-feat-toggle');
@@ -213,7 +297,7 @@ const VehicleModalHelper = {
               See More
             </button>
           </div>`
-        : '';
+          : '';
       return `<div style="margin-top:32px">
         <h3 style="margin:0 0 20px;font-size:20px;font-weight:700;color:#111827">Standard Features</h3>
         <div style="border-radius:8px;overflow:hidden">
@@ -226,15 +310,19 @@ const VehicleModalHelper = {
     overlay.innerHTML = `
       ${CW_SPIN_STYLE}
       <div style="position:fixed;top:12px;right:16px;z-index:10">${CLOSE_BTN}</div>
-      <div style="max-width:1200px;margin:0 auto;padding:${isMobile ? '16px 16px 40px' : isMedium ? '20px 20px 40px' : '32px 32px 56px'}">
-        <div style="display:flex;flex-direction:${isMobile ? 'column' : 'row'};gap:${isMobile ? '20px' : isMedium ? '24px' : '48px'}">
-          <div style="flex:0 0 ${isMobile ? '100%' : isMedium ? '55%' : '60%'};min-width:0">${imgSection}</div>
-          <div style="flex:1;min-width:0;padding-top:${isMobile ? '0' : isMedium ? '8px' : '40px'}">
+      <div style="max-width:1200px;margin:0 auto;padding:${responsiveValue('16px 16px 40px', '20px 20px 40px', '32px 32px 56px')}">
+        <div style="display:flex;flex-direction:${isMobile ? 'column' : 'row'};gap:${responsiveValue('20px', '24px', '48px')}">
+          <div style="flex:0 0 ${responsiveValue('100%', '55%', '60%')};min-width:0">${imgSection}</div>
+          <div style="flex:1;min-width:0;padding-top:${responsiveValue('0', '8px', '40px')}">
             <p style="margin:0 0 6px;font-size:${isMedium ? '13px' : '16px'};color:#6b7280">${vehicle.vehicle_condition || ''} / ${vehicle.make_name || ''}</p>
-            <h1 style="margin:0 0 ${isMedium ? '12px' : '20px'};font-size:${isMobile ? '20px' : isMedium ? '20px' : '34px'};font-weight:700;color:#111827;line-height:1.3">${vehicle.year} ${vehicle.make_name} ${vehicle.model_name}${vehicle.trim ? ' ' + vehicle.trim : ''}</h1>
+            <h1 style="margin:0 0 ${isMedium ? '12px' : '20px'};font-size:${responsiveValue('20px', '20px', '34px')};font-weight:700;color:#111827;line-height:1.3">${vehicle.year} ${vehicle.make_name} ${vehicle.model_name}${vehicle.trim ? ' ' + vehicle.trim : ''}</h1>
             ${priceBox}
-            ${isMobile ? '' : `<p style="margin:0 0 12px;font-size:${isMedium ? '13px' : '15px'};color:#2b2e34">Questions about vehicle?</p>
-            <button id="cw-contact-btn" style="width:100%;padding:${isMedium ? '12px' : '16px'};background:#2563eb;color:#fff;border:none;border-radius:8px;font-size:${isMedium ? '14px' : '16px'};font-weight:500;cursor:pointer">Contact Us</button>`}
+            ${
+              isMobile
+                ? ''
+                : `<p style="margin:0 0 12px;font-size:${isMedium ? '13px' : '15px'};color:#2b2e34">Questions about vehicle?</p>
+            <button id="cw-contact-btn" style="width:100%;padding:${isMedium ? '12px' : '16px'};background:#2563eb;color:#fff;border:none;border-radius:8px;font-size:${isMedium ? '14px' : '16px'};font-weight:500;cursor:pointer">Contact Us</button>`
+            }
           </div>
         </div>
         <div style="margin-top:${isMobile ? '24px' : '36px'}">
@@ -242,10 +330,14 @@ const VehicleModalHelper = {
           ${stockVin}
           ${featuresHTML}
         </div>
-        ${isMobile ? `<div style="margin-top:24px">
+        ${
+          isMobile
+            ? `<div style="margin-top:24px">
           <p style="margin:0 0 12px;font-size:15px;color:#2b2e34">Questions about vehicle?</p>
           <button id="cw-contact-btn" style="width:100%;padding:16px;background:#2563eb;color:#fff;border:none;border-radius:8px;font-size:16px;font-weight:500;cursor:pointer">Contact Us</button>
-        </div>` : ''}
+        </div>`
+            : ''
+        }
       </div>
       <div id="cw-fullscreen-overlay" style="display:none;position:fixed;inset:0;z-index:20;background:#000;overflow-y:auto;scrollbar-width:none">
         <style>#cw-fullscreen-overlay::-webkit-scrollbar{display:none}</style>
@@ -257,14 +349,18 @@ const VehicleModalHelper = {
           .cw-fs-spinner{width:40px;height:40px;border:3px solid rgba(255,255,255,.2);border-top-color:#fff;border-radius:50%;animation:cw-fs-spin .8s linear infinite}
         </style>
         <div id="cw-fullscreen-imgs" style="display:flex;flex-direction:column;gap:16px;padding:60px 24px 40px">
-          ${images.map((src, i) => `
+          ${images
+            .map(
+              (src, i) => `
             <div style="position:relative;max-width:960px;margin:0 auto;width:100%;min-height:180px;background:#111;border-radius:10px;display:flex;align-items:center;justify-content:center;overflow:hidden">
               <div id="cw-fsl-${i}" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:1">
                 <div class="cw-fs-spinner"></div>
               </div>
               <img src="${src}" alt="" style="width:100%;display:block;object-fit:contain;border-radius:10px;opacity:0;transition:opacity .35s;position:relative;z-index:2" onload="this.style.opacity='1';var l=document.getElementById('cw-fsl-${i}');if(l)l.style.display='none'" onerror="var l=document.getElementById('cw-fsl-${i}');if(l)l.style.display='none';this.style.opacity='1'"/>
             </div>
-          `).join('')}
+          `
+            )
+            .join('')}
         </div>
       </div>
       <div id="cw-contact-overlay" style="display:none;position:fixed;inset:0;z-index:10;background:rgba(0,0,0,.5);align-items:center;justify-content:center;padding:16px;box-sizing:border-box">
@@ -324,7 +420,7 @@ const VehicleModalHelper = {
         </div>
       </div>`;
 
-    this._attachClose(overlay);
+    this.attachClose(overlay);
 
     // Custom country dropdown logic
     const countryBtn = overlay.querySelector('#cwcf-country-btn');
@@ -336,28 +432,41 @@ const VehicleModalHelper = {
     const openDropdown = () => {
       countryList.style.display = 'flex';
       countrySearch.value = '';
-      countryList.querySelectorAll('.cwcf-co').forEach(el => { el.style.display = 'block'; });
+      countryList.querySelectorAll('.cwcf-co').forEach(el => {
+        el.style.display = 'block';
+      });
       setTimeout(() => countrySearch.focus(), 0);
     };
-    const closeDropdown = () => { countryList.style.display = 'none'; };
+    const closeDropdown = () => {
+      countryList.style.display = 'none';
+    };
 
     countryBtn.addEventListener('click', e => {
       e.stopPropagation();
-      countryList.style.display === 'flex' ? closeDropdown() : openDropdown();
+      if (countryList.style.display === 'flex') {
+        closeDropdown();
+      } else {
+        openDropdown();
+      }
     });
 
     countrySearch.addEventListener('input', e => {
       const q = e.target.value.toLowerCase();
       countryList.querySelectorAll('.cwcf-co').forEach(item => {
-        const match = item.dataset.name.includes(q) || item.dataset.dial.includes(q);
+        const match =
+          item.dataset.name.includes(q) || item.dataset.dial.includes(q);
         item.style.display = match ? 'block' : 'none';
       });
     });
     countrySearch.addEventListener('click', e => e.stopPropagation());
 
     countryList.querySelectorAll('.cwcf-co').forEach(item => {
-      item.addEventListener('mouseenter', () => { item.style.background = '#f3f4f6'; });
-      item.addEventListener('mouseleave', () => { item.style.background = ''; });
+      item.addEventListener('mouseenter', () => {
+        item.style.background = '#f3f4f6';
+      });
+      item.addEventListener('mouseleave', () => {
+        item.style.background = '';
+      });
       item.addEventListener('click', () => {
         countryInput.value = item.dataset.dial;
         countryLabel.textContent = item.dataset.label;
@@ -379,22 +488,39 @@ const VehicleModalHelper = {
       countryInput.value = '+1';
       countryLabel.textContent = '🇺🇸 +1';
       closeDropdown();
-      ['#cwcf-name-err','#cwcf-phone-err','#cwcf-email-err'].forEach(id => {
-        const el = overlay.querySelector(id); if (el) { el.style.display = 'none'; el.textContent = ''; }
+      ['#cwcf-name-err', '#cwcf-phone-err', '#cwcf-email-err'].forEach(id => {
+        const el = overlay.querySelector(id);
+        if (el) {
+          el.style.display = 'none';
+          el.textContent = '';
+        }
       });
-      ['#cwcf-name','#cwcf-phone','#cwcf-email'].forEach(id => {
-        const el = overlay.querySelector(id); if (el) el.style.borderColor = '#7d7f83';
+      ['#cwcf-name', '#cwcf-phone', '#cwcf-email'].forEach(id => {
+        const el = overlay.querySelector(id);
+        if (el) el.style.borderColor = '#7d7f83';
       });
       const msgEl = overlay.querySelector('#cw-contact-msg');
-      if (msgEl) { msgEl.style.display = 'none'; msgEl.textContent = ''; }
+      if (msgEl) {
+        msgEl.style.display = 'none';
+        msgEl.textContent = '';
+      }
       const submitBtn = overlay.querySelector('#cw-contact-submit');
-      if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Submit'; }
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Submit';
+      }
     };
     const tyOverlay = overlay.querySelector('#cw-thankyou-overlay');
-    const closeTy = () => { tyOverlay.style.display = 'none'; };
+    const closeTy = () => {
+      tyOverlay.style.display = 'none';
+    };
     overlay.querySelector('#cw-thankyou-ok').addEventListener('click', closeTy);
-    overlay.querySelector('#cw-thankyou-close').addEventListener('click', closeTy);
-    tyOverlay.addEventListener('click', e => { if (e.target === tyOverlay) closeTy(); });
+    overlay
+      .querySelector('#cw-thankyou-close')
+      .addEventListener('click', closeTy);
+    tyOverlay.addEventListener('click', e => {
+      if (e.target === tyOverlay) closeTy();
+    });
 
     const fullscreenOverlay = overlay.querySelector('#cw-fullscreen-overlay');
     const fullscreenBtn = overlay.querySelector('#cw-fullscreen-btn');
@@ -403,9 +529,11 @@ const VehicleModalHelper = {
         fullscreenOverlay.style.display = 'block';
         fullscreenOverlay.scrollTop = 0;
       });
-      overlay.querySelector('#cw-fullscreen-close').addEventListener('click', () => {
-        fullscreenOverlay.style.display = 'none';
-      });
+      overlay
+        .querySelector('#cw-fullscreen-close')
+        .addEventListener('click', () => {
+          fullscreenOverlay.style.display = 'none';
+        });
     }
 
     const contactPanel = overlay.querySelector('#cw-contact-panel');
@@ -413,7 +541,8 @@ const VehicleModalHelper = {
       resetContactForm();
       contactOverlay.style.display = 'flex';
       contactPanel.classList.remove('cw-slide-down');
-      void contactPanel.offsetWidth;
+      // Force reflow so the re-added class re-triggers the animation.
+      contactPanel.getBoundingClientRect();
       contactPanel.classList.add('cw-slide-down');
     });
     overlay.querySelector('#cw-contact-close').addEventListener('click', () => {
@@ -421,101 +550,134 @@ const VehicleModalHelper = {
       resetContactForm();
     });
     contactOverlay.addEventListener('click', e => {
-      if (e.target === contactOverlay) { contactOverlay.style.display = 'none'; resetContactForm(); }
+      if (e.target === contactOverlay) {
+        contactOverlay.style.display = 'none';
+        resetContactForm();
+      }
     });
 
-    overlay.querySelector('#cw-contact-submit').addEventListener('click', async () => {
-      const submitBtn = overlay.querySelector('#cw-contact-submit');
-      const msgEl = overlay.querySelector('#cw-contact-msg');
-      const name = overlay.querySelector('#cwcf-name').value.trim();
-      const countryCode = overlay.querySelector('#cwcf-country').value;
-      const phoneRaw = overlay.querySelector('#cwcf-phone').value.trim();
-      const phone = phoneRaw ? `${countryCode}${phoneRaw}` : '';
-      const email = overlay.querySelector('#cwcf-email').value.trim();
-      const message = overlay.querySelector('#cwcf-message').value.trim();
-      const vehicleTitle = `${vehicle.year || ''} ${vehicle.make_name || ''} ${vehicle.model_name || ''} ${vehicle.trim || ''}`.trim();
+    overlay
+      .querySelector('#cw-contact-submit')
+      .addEventListener('click', async () => {
+        const submitBtn = overlay.querySelector('#cw-contact-submit');
+        const msgEl = overlay.querySelector('#cw-contact-msg');
+        const name = overlay.querySelector('#cwcf-name').value.trim();
+        const countryCode = overlay.querySelector('#cwcf-country').value;
+        const phoneRaw = overlay.querySelector('#cwcf-phone').value.trim();
+        const phone = phoneRaw ? `${countryCode}${phoneRaw}` : '';
+        const email = overlay.querySelector('#cwcf-email').value.trim();
+        const message = overlay.querySelector('#cwcf-message').value.trim();
+        const vehicleTitle =
+          `${vehicle.year || ''} ${vehicle.make_name || ''} ${vehicle.model_name || ''} ${vehicle.trim || ''}`.trim();
 
-      const fieldStyle = (id, border) => { overlay.querySelector(id).style.border = `1.5px solid ${border}`; };
-      const showErr = (id, msg) => { const el = overlay.querySelector(id); el.textContent = msg; el.style.display = 'block'; };
-      const hideErr = id => { const el = overlay.querySelector(id); el.textContent = ''; el.style.display = 'none'; };
-      const emailValid = v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
-      const phoneValid = v => /^[0-9]{9,10}$/.test(v);
+        const fieldStyle = (id, border) => {
+          overlay.querySelector(id).style.border = `1.5px solid ${border}`;
+        };
+        const showErr = (id, msg) => {
+          const el = overlay.querySelector(id);
+          el.textContent = msg;
+          el.style.display = 'block';
+        };
+        const hideErr = id => {
+          const el = overlay.querySelector(id);
+          el.textContent = '';
+          el.style.display = 'none';
+        };
+        const emailValid = v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+        const phoneValid = v => /^[0-9]{9,10}$/.test(v);
 
-      let valid = true;
+        let valid = true;
 
-      if (!name) {
-        showErr('#cwcf-name-err', 'Name is required.');
-        fieldStyle('#cwcf-name', '#dc2626');
-        valid = false;
-      } else {
-        hideErr('#cwcf-name-err');
-        fieldStyle('#cwcf-name', '#e5e7eb');
-      }
-
-      if (!phoneRaw) {
-        showErr('#cwcf-phone-err', 'Phone number is required.');
-        fieldStyle('#cwcf-phone', '#dc2626');
-        valid = false;
-      } else if (!phoneValid(phoneRaw)) {
-        showErr('#cwcf-phone-err', 'Enter a valid phone number.');
-        fieldStyle('#cwcf-phone', '#dc2626');
-        valid = false;
-      } else {
-        hideErr('#cwcf-phone-err');
-        fieldStyle('#cwcf-phone', '#e5e7eb');
-      }
-
-      if (!email) {
-        showErr('#cwcf-email-err', 'Email is required.');
-        fieldStyle('#cwcf-email', '#dc2626');
-        valid = false;
-      } else if (!emailValid(email)) {
-        showErr('#cwcf-email-err', 'Enter a valid email address.');
-        fieldStyle('#cwcf-email', '#dc2626');
-        valid = false;
-      } else {
-        hideErr('#cwcf-email-err');
-        fieldStyle('#cwcf-email', '#e5e7eb');
-      }
-
-      if (!valid) return;
-
-      submitBtn.disabled = true;
-      submitBtn.textContent = 'Sending…';
-      msgEl.style.display = 'none';
-
-      try {
-        const res = await fetch(`${baseUrl}/api/v1/widget/vehicle_contacts?website_token=${websiteToken}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, phone, email, message, vehicle_title: vehicleTitle, conversation_id: conversationId }),
-        });
-        if (res.ok) {
-          contactOverlay.style.display = 'none';
-          resetContactForm();
-          const tyOverlay = overlay.querySelector('#cw-thankyou-overlay');
-          overlay.querySelector('#cw-thankyou-msg').textContent = `Someone will be in touch shortly regarding your ${vehicleTitle}.`;
-          tyOverlay.style.display = 'flex';
+        if (!name) {
+          showErr('#cwcf-name-err', 'Name is required.');
+          fieldStyle('#cwcf-name', '#dc2626');
+          valid = false;
         } else {
-          throw new Error('Failed to send');
+          hideErr('#cwcf-name-err');
+          fieldStyle('#cwcf-name', '#e5e7eb');
         }
-      } catch {
-        msgEl.style.cssText = 'display:block;text-align:center;font-size:14px;padding:10px;border-radius:6px;margin-bottom:8px;background:#fee2e2;color:#991b1b';
-        msgEl.textContent = 'Something went wrong. Please try again.';
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Submit';
-      }
-    });
+
+        if (!phoneRaw) {
+          showErr('#cwcf-phone-err', 'Phone number is required.');
+          fieldStyle('#cwcf-phone', '#dc2626');
+          valid = false;
+        } else if (!phoneValid(phoneRaw)) {
+          showErr('#cwcf-phone-err', 'Enter a valid phone number.');
+          fieldStyle('#cwcf-phone', '#dc2626');
+          valid = false;
+        } else {
+          hideErr('#cwcf-phone-err');
+          fieldStyle('#cwcf-phone', '#e5e7eb');
+        }
+
+        if (!email) {
+          showErr('#cwcf-email-err', 'Email is required.');
+          fieldStyle('#cwcf-email', '#dc2626');
+          valid = false;
+        } else if (!emailValid(email)) {
+          showErr('#cwcf-email-err', 'Enter a valid email address.');
+          fieldStyle('#cwcf-email', '#dc2626');
+          valid = false;
+        } else {
+          hideErr('#cwcf-email-err');
+          fieldStyle('#cwcf-email', '#e5e7eb');
+        }
+
+        if (!valid) return;
+
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Sending…';
+        msgEl.style.display = 'none';
+
+        try {
+          const res = await fetch(
+            `${baseUrl}/api/v1/widget/vehicle_contacts?website_token=${websiteToken}`,
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                name,
+                phone,
+                email,
+                message,
+                vehicle_title: vehicleTitle,
+                conversation_id: conversationId,
+              }),
+            }
+          );
+          if (res.ok) {
+            contactOverlay.style.display = 'none';
+            resetContactForm();
+            overlay.querySelector('#cw-thankyou-msg').textContent =
+              `Someone will be in touch shortly regarding your ${vehicleTitle}.`;
+            tyOverlay.style.display = 'flex';
+          } else {
+            throw new Error('Failed to send');
+          }
+        } catch {
+          msgEl.style.cssText =
+            'display:block;text-align:center;font-size:14px;padding:10px;border-radius:6px;margin-bottom:8px;background:#fee2e2;color:#991b1b';
+          msgEl.textContent = 'Something went wrong. Please try again.';
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Submit';
+        }
+      });
 
     if (images.length) {
-      images.forEach(src => { const p = new Image(); p.src = src; });
+      images.forEach(src => {
+        const p = new Image();
+        p.src = src;
+      });
 
       const loadImage = src => {
         const img = overlay.querySelector('#cw-vehicle-img');
         const loader = overlay.querySelector('#cw-img-loader');
         img.style.opacity = '0';
         if (loader) loader.style.display = 'flex';
-        const onLoaded = () => { img.style.opacity = '1'; if (loader) loader.style.display = 'none'; };
+        const onLoaded = () => {
+          img.style.opacity = '1';
+          if (loader) loader.style.display = 'none';
+        };
         img.onload = onLoaded;
         img.src = src;
         if (img.complete && img.naturalWidth > 0) onLoaded();
@@ -526,28 +688,47 @@ const VehicleModalHelper = {
         const prev = overlay.querySelector('#cw-vehicle-prev');
         const next = overlay.querySelector('#cw-vehicle-next');
         if (prev) prev.style.display = idx > 0 ? 'flex' : 'none';
-        if (next) next.style.display = idx < images.length - 1 ? 'flex' : 'none';
-        overlay.querySelectorAll('#cw-vehicle-dots button').forEach((btn, i) => {
-          btn.style.background = i === idx ? '#fff' : 'rgba(255,255,255,.45)';
-        });
+        if (next)
+          next.style.display = idx < images.length - 1 ? 'flex' : 'none';
+        overlay
+          .querySelectorAll('#cw-vehicle-dots button')
+          .forEach((btn, i) => {
+            btn.style.background = i === idx ? '#fff' : 'rgba(255,255,255,.45)';
+          });
       };
 
       loadImage(images[0]);
 
       overlay.addEventListener('click', e => {
-        if (e.target.closest('#cw-vehicle-prev') && idx > 0) { idx--; updateImage(); }
-        if (e.target.closest('#cw-vehicle-next') && idx < images.length - 1) { idx++; updateImage(); }
+        if (e.target.closest('#cw-vehicle-prev') && idx > 0) {
+          idx -= 1;
+          updateImage();
+        }
+        if (e.target.closest('#cw-vehicle-next') && idx < images.length - 1) {
+          idx += 1;
+          updateImage();
+        }
         const dot = e.target.closest('#cw-vehicle-dots button');
-        if (dot) { idx = parseInt(dot.dataset.i, 10); updateImage(); }
+        if (dot) {
+          idx = parseInt(dot.dataset.i, 10);
+          updateImage();
+        }
       });
 
-      if (this._keyHandler) document.removeEventListener('keydown', this._keyHandler);
-      this._keyHandler = e => {
-        if (e.key === 'Escape') this._close(overlay);
-        if (e.key === 'ArrowLeft' && idx > 0) { idx--; updateImage(); }
-        if (e.key === 'ArrowRight' && idx < images.length - 1) { idx++; updateImage(); }
+      if (this.keyHandler)
+        document.removeEventListener('keydown', this.keyHandler);
+      this.keyHandler = e => {
+        if (e.key === 'Escape') this.closeModal(overlay);
+        if (e.key === 'ArrowLeft' && idx > 0) {
+          idx -= 1;
+          updateImage();
+        }
+        if (e.key === 'ArrowRight' && idx < images.length - 1) {
+          idx += 1;
+          updateImage();
+        }
       };
-      document.addEventListener('keydown', this._keyHandler);
+      document.addEventListener('keydown', this.keyHandler);
     }
   },
 };
