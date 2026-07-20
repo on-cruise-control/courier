@@ -16,7 +16,6 @@ import { emitter } from 'shared/helpers/mitt';
 import { BUS_EVENTS } from 'shared/constants/busEvents';
 import { useSidebarKeyboardShortcuts } from 'dashboard/components-next/sidebar/useSidebarKeyboardShortcuts';
 import { FEATURE_FLAGS } from 'dashboard/featureFlags';
-
 import Icon from 'next/icon/Icon.vue';
 
 const props = defineProps({

@@ -64,6 +64,10 @@ RSpec.describe Conversations::MessageWindowService do
     let!(:conversation) { create(:conversation, inbox: facebook_inbox, account: facebook_channel.account) }
 
     context 'when the HUMAN_AGENT is enabled' do
+      before do
+        allow_any_instance_of(Message).to receive(:schedule_follow_up_job).and_return(nil)
+      end
+
       it 'return false if the last message is outgoing' do
         with_modified_env ENABLE_MESSENGER_CHANNEL_HUMAN_AGENT: 'true' do
           service = described_class.new(conversation)
@@ -204,6 +208,13 @@ RSpec.describe Conversations::MessageWindowService do
     let!(:conversation) { create(:conversation, inbox: instagram_inbox, account: instagram_channel.account) }
 
     context 'when the HUMAN_AGENT is enabled' do
+      before do
+        # Prevent Message#schedule_follow_up_job from running during factory creation.
+        # Otherwise it raises: "Locking a record with unpersisted changes is not supported"
+        # (changed attribute: display_id).
+        allow_any_instance_of(Message).to receive(:schedule_follow_up_job).and_return(nil)
+      end
+
       it 'return false if the last message is outgoing' do
         with_modified_env ENABLE_INSTAGRAM_CHANNEL_HUMAN_AGENT: 'true' do
           service = described_class.new(conversation)
@@ -391,6 +402,8 @@ RSpec.describe Conversations::MessageWindowService do
     end
 
     it 'return true if last message is outgoing but previous incoming message is within window' do
+      allow_any_instance_of(Message).to receive(:schedule_follow_up_job).and_return(nil)
+
       create(
         :message,
         account: conversation.account,
@@ -580,6 +593,8 @@ RSpec.describe Conversations::MessageWindowService do
     end
 
     it 'return true if last message is outgoing but previous incoming message is within window' do
+      allow_any_instance_of(Message).to receive(:schedule_follow_up_job).and_return(nil)
+
       create(
         :message,
         account: conversation.account,

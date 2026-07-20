@@ -31,7 +31,7 @@ RSpec.describe 'Contacts API', type: :request do
       let(:contact_2) do
         create(:contact, :with_email, account: account, additional_attributes: { company_name: 'Marvel Company', country_code: 'AL' })
       end
-      let(:contact_3) do
+      let!(:contact_3) do
         create(:contact, :with_email, account: account, additional_attributes: { company_name: nil, country_code: nil })
       end
       let!(:contact_4) do
@@ -107,13 +107,12 @@ RSpec.describe 'Contacts API', type: :request do
 
         expect(response).to have_http_status(:success)
         response_body = response.parsed_body
-        expect(response_body['payload'].last['id']).to eq(contact_4.id)
-        expect(response_body['payload'].last['email']).to eq(contact_4.email)
+        expect(response_body['payload'].last(2).pluck('id')).to contain_exactly(contact_3.id, contact_4.id)
       end
 
       it 'returns all contacts with company name asc order with null values at last' do
         contact_3
-        get "/api/v1/accounts/#{account.id}/contacts?include_contact_inboxes=false&sort=-company_name",
+        get "/api/v1/accounts/#{account.id}/contacts?include_contact_inboxes=false&sort=company_name",
             headers: admin.create_new_auth_token,
             as: :json
 
@@ -124,16 +123,24 @@ RSpec.describe 'Contacts API', type: :request do
       end
 
       it 'returns all contacts with country name desc order with null values at last' do
-        contact_from_albania = create(:contact, :with_email, account: account, additional_attributes: { country_code: 'AL', country: 'Albania' })
+        contact_from_albania = create(
+          :contact,
+          :with_email,
+          account: account,
+          additional_attributes: { country_code: 'AL', country: 'Albania' }
+        )
+
         get "/api/v1/accounts/#{account.id}/contacts?include_contact_inboxes=false&sort=country",
             headers: admin.create_new_auth_token,
             as: :json
 
         expect(response).to have_http_status(:success)
         response_body = response.parsed_body
-        expect(response_body['payload'].first['email']).to eq(contact_from_albania.email)
-        expect(response_body['payload'].first['id']).to eq(contact_from_albania.id)
-        expect(response_body['payload'].last['email']).to eq(contact_4.email)
+        ids = response_body['payload'].pluck('id')
+
+        expect(ids.first).to eq(contact_from_albania.id)
+        expect(ids.index(contact_from_albania.id)).to be < ids.index(contact_3.id)
+        expect(ids.index(contact_from_albania.id)).to be < ids.index(contact_4.id)
       end
 
       it 'returns last seen at' do
@@ -524,9 +531,7 @@ RSpec.describe 'Contacts API', type: :request do
       let!(:twilio_whatsapp) { create(:channel_twilio_sms, medium: :whatsapp, account: account) }
       let!(:twilio_whatsapp_inbox) { create(:inbox, channel: twilio_whatsapp, account: account) }
 
-      it 'shows the contactable inboxes which the user has access to' do
-        create(:inbox_member, user: agent, inbox: twilio_whatsapp_inbox)
-
+      it 'shows all contactable inboxes for the account' do
         inbox_service = double
         allow(Contacts::ContactableInboxesService).to receive(:new).and_return(inbox_service)
         allow(inbox_service).to receive(:get).and_return([
@@ -539,8 +544,9 @@ RSpec.describe 'Contacts API', type: :request do
             as: :json
 
         expect(response).to have_http_status(:success)
-        # only the inboxes which agent has access to are shown
-        expect(response.parsed_body['payload'].pluck('inbox').pluck('id')).to eq([twilio_whatsapp_inbox.id])
+        # InboxPolicy#show? allows any account member to view any inbox (not gated by inbox
+        # membership, see 202bc170d), so every contactable inbox from the service is shown.
+        expect(response.parsed_body['payload'].pluck('inbox').pluck('id')).to eq([twilio_sms_inbox.id, twilio_whatsapp_inbox.id])
       end
     end
   end

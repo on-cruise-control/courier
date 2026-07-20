@@ -20,9 +20,12 @@ RSpec.describe Account, type: :model do
     end
 
     it 'deletes associated sla policies' do
+      allow_any_instance_of(Account).to receive(:update_cache_key)
+
       perform_enqueued_jobs do
         account.destroy!
       end
+
       expect { sla_policy.reload }.to raise_error(ActiveRecord::RecordNotFound)
     end
   end
@@ -39,7 +42,11 @@ RSpec.describe Account, type: :model do
     let(:assistant) { create(:captain_assistant, account: account) }
 
     before do
-      create(:installation_config, name: 'ACCOUNT_AGENTS_LIMIT', value: 20)
+      GlobalConfig.clear_cache
+      allow(GlobalConfig).to receive(:get).and_call_original
+
+      allow(GlobalConfig).to receive(:get).with('ACCOUNT_AGENTS_LIMIT')
+                                          .and_return({ 'ACCOUNT_AGENTS_LIMIT' => 20 }.with_indifferent_access)
     end
 
     describe 'when captain limits are configured' do
@@ -155,6 +162,13 @@ RSpec.describe Account, type: :model do
     end
 
     it 'returns max limits from global config when enterprise version' do
+      account.update!(limits: {})
+      GlobalConfig.clear_cache
+
+      allow(GlobalConfig).to receive(:get)
+        .with('ACCOUNT_AGENTS_LIMIT')
+        .and_return({ 'ACCOUNT_AGENTS_LIMIT' => 20 }.with_indifferent_access)
+
       expect(account.usage_limits[:agents]).to eq(20)
     end
 
@@ -176,6 +190,9 @@ RSpec.describe Account, type: :model do
     it 'returns max limits from app limit if account limit and installation config is absent' do
       account.update(limits: { agents: '' })
       InstallationConfig.where(name: 'ACCOUNT_AGENTS_LIMIT').update(value: '')
+
+      allow(GlobalConfig).to receive(:get).and_call_original
+      GlobalConfig.clear_cache
 
       expect(account.usage_limits[:agents]).to eq(ChatwootApp.max_limit)
     end

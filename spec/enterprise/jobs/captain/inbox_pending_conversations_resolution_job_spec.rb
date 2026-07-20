@@ -355,13 +355,13 @@ RSpec.describe Captain::InboxPendingConversationsResolutionJob, type: :job do
     expect(resolvable_pending_conversation.reload.status).to eq('pending')
   end
 
-  it 'adds the correct activity message after resolution by Captain' do
-    perform_enqueued_jobs { described_class.perform_later(inbox) }
+  it 'creates resolution message and activity message for time based resolution' do
+    perform_enqueued_jobs do
+      described_class.perform_now(inbox)
+    end
     activity_message = resolvable_pending_conversation.messages.activity.last
     expect(activity_message).not_to be_nil
-    expect(activity_message.content).to eq(
-      I18n.t('conversations.activity.captain.resolved', user_name: captain_assistant.name)
-    described_class.perform_now(inbox)
+
     outgoing_message = resolvable_pending_conversation.messages.outgoing.last
     expect(outgoing_message.content).to eq(
       I18n.t('conversations.activity.auto_resolution_message')

@@ -1,10 +1,11 @@
 module Stark
   module Validator
+    UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+    VALID_EVENTS = %w[message.created].freeze
+
     extend ActiveSupport::Concern
 
     included do
-      UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-      VALID_EVENTS = %w[message.created].freeze
     end
 
     def can_process_message?

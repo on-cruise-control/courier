@@ -6,7 +6,7 @@ describe Sms::SendOnSmsService do
       let(:sms_request) { double }
       let!(:sms_channel) { create(:channel_sms) }
       let!(:contact_inbox) { create(:contact_inbox, inbox: sms_channel.inbox, source_id: '+123456789') }
-      let!(:conversation) { create(:conversation, contact_inbox: contact_inbox, inbox: sms_channel.inbox) }
+      let!(:conversation) { create(:conversation, contact_inbox: contact_inbox, inbox: sms_channel.inbox).tap(&:reload) }
 
       it 'calls channel.send_message' do
         message = create(:message, message_type: :outgoing, content: 'test',

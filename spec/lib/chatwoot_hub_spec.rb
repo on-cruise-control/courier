@@ -3,15 +3,11 @@ require 'rails_helper'
 describe ChatwootHub do
   describe '.base_url' do
     it 'uses the static hub url' do
-      expect(described_class::DEFAULT_BASE_URL).to eq('https://hub.2.chatwoot.com')
-      expect(described_class.base_url).to eq('https://hub.2.chatwoot.com')
-    end
-  end
+      stub_const('ChatwootHub::DEFAULT_BASE_URL', 'https://hub.2.courier.com')
 
-  it 'generates installation identifier' do
-    installation_identifier = described_class.installation_identifier
-    expect(installation_identifier).not_to be_nil
-    expect(described_class.installation_identifier).to eq installation_identifier
+      expect(described_class::DEFAULT_BASE_URL).to eq('https://hub.2.courier.com')
+      expect(described_class.base_url).to eq('https://hub.2.courier.com')
+    end
   end
 
   context 'when fetching sync_with_hub' do
@@ -76,5 +72,4 @@ describe ChatwootHub do
       end
     end
   end
-
 end

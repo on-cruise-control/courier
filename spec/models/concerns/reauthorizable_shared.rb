@@ -44,16 +44,7 @@ shared_examples_for 'reauthorizable' do
   end
 
   def setup_channel_mailer(_obj)
-    channel_mailer = instance_double(AdministratorNotifications::ChannelNotificationsMailer)
-    facebook_mailer_response = instance_double(ActionMailer::MessageDelivery, deliver_later: true)
-    whatsapp_mailer_response = instance_double(ActionMailer::MessageDelivery, deliver_later: true)
-    email_mailer_response = instance_double(ActionMailer::MessageDelivery, deliver_later: true)
-    instagram_mailer_response = instance_double(ActionMailer::MessageDelivery, deliver_later: true)
-    allow(AdministratorNotifications::ChannelNotificationsMailer).to receive(:with).and_return(channel_mailer)
-    allow(channel_mailer).to receive(:facebook_disconnect).and_return(facebook_mailer_response)
-    allow(channel_mailer).to receive(:whatsapp_disconnect).and_return(whatsapp_mailer_response)
-    allow(channel_mailer).to receive(:email_disconnect).and_return(email_mailer_response)
-    allow(channel_mailer).to receive(:instagram_disconnect).and_return(instagram_mailer_response)
+    allow(SlackNotifierService).to receive(:call)
   end
 
   describe 'prompt_reauthorization!' do
@@ -82,7 +73,7 @@ shared_examples_for 'reauthorizable' do
       elsif model.to_s == 'Integrations::Hook'
         expect(AdministratorNotifications::IntegrationsNotificationMailer).to have_received(:with).with(account: obj.account)
       else
-        expect(AdministratorNotifications::ChannelNotificationsMailer).to have_received(:with).with(account: obj.account)
+        expect(SlackNotifierService).to have_received(:call)
       end
     end
   end

@@ -4,7 +4,7 @@ RSpec.describe Conversations::UpdateMessageStatusJob do
   subject(:job) { described_class.perform_later(conversation.id, conversation.contact_last_seen_at, :read) }
 
   let!(:account) { create(:account) }
-  let!(:conversation) { create(:conversation, account: account, contact_last_seen_at: DateTime.now.utc) }
+  let!(:conversation) { create(:conversation, account: account, contact_last_seen_at: DateTime.now.utc).reload }
   let!(:message) { create(:message, conversation: conversation, message_type: 'outgoing', status: 'sent', created_at: 1.day.ago) }
 
   it 'enqueues the job' do
@@ -48,33 +48,33 @@ RSpec.describe Conversations::UpdateMessageStatusJob do
       message.update!(status: 'failed')
       expect do
         described_class.perform_now(conversation.id, conversation.contact_last_seen_at)
-      end.not_to change(message.reload, :status)
+      end.not_to(change { message.reload.status })
     end
 
     it 'does not mark incoming messages as read' do
       message.update!(message_type: 'incoming')
       expect do
         described_class.perform_now(conversation.id, conversation.contact_last_seen_at)
-      end.not_to change(message.reload, :status)
+      end.not_to(change { message.reload.status })
     end
 
     it 'does not mark messages created after the contact last seen time as read' do
-      message.update!(created_at: DateTime.now.utc)
+      message.update!(created_at: conversation.contact_last_seen_at + 1.second)
       expect do
         described_class.perform_now(conversation.id, conversation.contact_last_seen_at)
-      end.not_to change(message.reload, :status)
+      end.not_to(change { message.reload.status })
     end
 
     it 'does not run the job if the conversation does not exist' do
       expect do
         described_class.perform_now(1212, conversation.contact_last_seen_at)
-      end.not_to change(message.reload, :status)
+      end.not_to(change { message.reload.status })
     end
 
     it 'does not run the job if the status is failed' do
       expect do
         described_class.perform_now(conversation.id, conversation.contact_last_seen_at, :failed)
-      end.not_to change(message.reload, :status)
+      end.not_to(change { message.reload.status })
     end
   end
 end

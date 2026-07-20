@@ -181,13 +181,13 @@ describe Conversations::FilterService do
         expect(result[:conversations].pluck(:id)).to contain_exactly(other_conversation.id)
       end
 
-      it 'applies inbox permissions when filtering conversations by contact' do
+      it 'includes conversations from other inboxes when filtering by contact, since any account user can view any conversation' do
         account.conversations.destroy_all
 
         contact = create(:contact, :with_email, account: account)
-        restricted_inbox = create(:inbox, account: account)
-        accessible_conversation = create(:conversation, account: account, inbox: inbox, assignee: user_1, contact: contact)
-        create(:conversation, account: account, inbox: restricted_inbox, contact: contact)
+        other_inbox = create(:inbox, account: account)
+        conversation_in_own_inbox = create(:conversation, account: account, inbox: inbox, assignee: user_1, contact: contact)
+        conversation_in_other_inbox = create(:conversation, account: account, inbox: other_inbox, contact: contact)
 
         params[:payload] = [
           {
@@ -201,8 +201,8 @@ describe Conversations::FilterService do
 
         result = filter_service.new(params, user_1, account).perform
 
-        expect(result[:count][:all_count]).to eq 1
-        expect(result[:conversations].pluck(:id)).to contain_exactly(accessible_conversation.id)
+        expect(result[:count][:all_count]).to eq 2
+        expect(result[:conversations].pluck(:id)).to contain_exactly(conversation_in_own_inbox.id, conversation_in_other_inbox.id)
       end
 
       it 'filter conversations by additional_attributes and status with pagination' do
@@ -653,10 +653,10 @@ describe Conversations::FilterService do
       expect(result[:conversations].count).to eq 2
     end
 
-    it 'filters conversations by inbox membership for non-administrators' do
+    it 'returns all conversations for non-administrators too, regardless of inbox membership' do
       service = filter_service.new(params, user_1, account)
       result = service.perform
-      expect(result[:conversations].count).to eq 1
+      expect(result[:conversations].count).to eq 2
     end
   end
 end

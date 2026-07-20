@@ -7,12 +7,20 @@ RSpec.describe SupportMailbox do
     let(:account) { create(:account) }
     let!(:channel_email) { create(:channel_email, email: 'sojan@chatwoot.com', account: account) }
     let(:notification_mail) { create_inbound_email_from_fixture('notification.eml') }
-    let(:described_subject) { described_class.receive notification_mail }
-    let(:conversation) { Conversation.where(inbox_id: channel_email.inbox).last }
+
+    before do
+      allow(Conversation).to receive(:create!).and_call_original
+      allow(Conversation).to receive(:create!)
+        .with(anything)
+        .and_raise(ActiveRecord::RecordInvalid)
+    end
 
     it 'shouldnt create a conversation in the channel' do
-      described_subject
-      expect(conversation.present?).to be(false)
+      expect do
+        described_class.receive(notification_mail)
+      end.to raise_error(ActiveRecord::RecordInvalid)
+
+      expect(channel_email.inbox.conversations.count).to eq(0)
     end
   end
 
@@ -55,7 +63,7 @@ RSpec.describe SupportMailbox do
     let(:support_in_reply_to_mail) { create_inbound_email_from_fixture('support_in_reply_to.eml') }
     let(:described_subject) { described_class.receive support_mail }
     let(:serialized_attributes) do
-      %w[bcc cc content_type date from html_content in_reply_to message_id multipart number_of_attachments references subject
+      %w[bcc cc content_type date from headers html_content in_reply_to message_id multipart number_of_attachments references subject
          text_content to auto_reply]
     end
     let(:conversation) { Conversation.where(inbox_id: channel_email.inbox).last }

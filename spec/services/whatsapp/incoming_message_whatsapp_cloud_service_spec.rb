@@ -33,6 +33,7 @@ describe Whatsapp::IncomingMessageWhatsappCloudService do
 
     context 'when valid attachment message params' do
       it 'creates appropriate conversations, message and contacts' do
+        # media_url_with_phone_number
         stub_media_url_request
         stub_sample_png_request
         described_class.new(inbox: whatsapp_channel.inbox, params: params).perform
@@ -46,8 +47,7 @@ describe Whatsapp::IncomingMessageWhatsappCloudService do
         stub_request(
           :get,
           whatsapp_channel.media_url(
-            'b1c68f38-8734-4ad3-b4a1-ef0c10d683',
-            whatsapp_channel.provider_config['phone_number_id']
+            'b1c68f38-8734-4ad3-b4a1-ef0c10d683'
           )
         ).to_return(
           status: 401
@@ -55,7 +55,7 @@ describe Whatsapp::IncomingMessageWhatsappCloudService do
 
         described_class.new(inbox: whatsapp_channel.inbox, params: params).perform
         expect(whatsapp_channel.inbox.conversations.count).not_to eq(0)
-        expect(Contact.all.first.name).to eq('Sojan Jose')
+        expect(Contact.order(:created_at).last.name).to eq('Sojan Jose')
         expect(whatsapp_channel.inbox.messages.first.content).to eq('Check out my product!')
         expect(whatsapp_channel.inbox.messages.first.attachments.present?).to be false
         expect(whatsapp_channel.authorization_error_count).to eq(1)
@@ -130,7 +130,7 @@ describe Whatsapp::IncomingMessageWhatsappCloudService do
       it 'with attachment errors' do
         described_class.new(inbox: whatsapp_channel.inbox, params: error_params).perform
         expect(whatsapp_channel.inbox.conversations.count).not_to eq(0)
-        expect(Contact.all.first.name).to eq('Sojan Jose')
+        expect(Contact.order(:created_at).last.name).to eq('Sojan Jose')
         expect(whatsapp_channel.inbox.messages.count).to eq(0)
       end
     end
@@ -229,10 +229,11 @@ describe Whatsapp::IncomingMessageWhatsappCloudService do
 
     context 'when invalid params' do
       it 'will not throw error' do
+        initial_contact_count = Contact.count
         described_class.new(inbox: whatsapp_channel.inbox, params: { phone_number: whatsapp_channel.phone_number,
                                                                      object: 'whatsapp_business_account', entry: {} }).perform
         expect(whatsapp_channel.inbox.conversations.count).to eq(0)
-        expect(Contact.all.first).to be_nil
+        expect(Contact.count).to eq(initial_contact_count)
         expect(whatsapp_channel.inbox.messages.count).to eq(0)
       end
     end
@@ -411,7 +412,7 @@ describe Whatsapp::IncomingMessageWhatsappCloudService do
   end
 
   def expect_contact_name
-    expect(Contact.all.first.name).to eq('Sojan Jose')
+    expect(Contact.order(:created_at).last.name).to eq('Sojan Jose')
   end
 
   def expect_message_content
@@ -423,27 +424,6 @@ describe Whatsapp::IncomingMessageWhatsappCloudService do
   end
 
   # Métodos auxiliares para reduzir o tamanho do exemplo
-
-  def stub_media_url_request
-    stub_request(
-      :get,
-      whatsapp_channel.media_url(
-        'b1c68f38-8734-4ad3-b4a1-ef0c10d683',
-        whatsapp_channel.provider_config['phone_number_id']
-      )
-    ).to_return(
-      status: 200,
-      body: {
-        messaging_product: 'whatsapp',
-        url: 'https://chatwoot-assets.local/sample.png',
-        mime_type: 'image/jpeg',
-        sha256: 'sha256',
-        file_size: 'SIZE',
-        id: 'b1c68f38-8734-4ad3-b4a1-ef0c10d683'
-      }.to_json,
-      headers: { 'content-type' => 'application/json' }
-    )
-  end
 
   def stub_sample_png_request
     stub_request(:get, 'https://chatwoot-assets.local/sample.png').to_return(
@@ -457,7 +437,7 @@ describe Whatsapp::IncomingMessageWhatsappCloudService do
   end
 
   def expect_contact_name
-    expect(Contact.all.first.name).to eq('Sojan Jose')
+    expect(Contact.order(:created_at).last.name).to eq('Sojan Jose')
   end
 
   def expect_message_content

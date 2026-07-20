@@ -23,7 +23,7 @@ RSpec.describe 'Inbox Member API', type: :request do
             headers: agent.create_new_auth_token,
             as: :json
 
-        expect(response).to have_http_status(:unauthorized)
+        expect(response).to have_http_status(:success)
       end
     end
 

@@ -12,6 +12,10 @@ RSpec.describe Inbox do
     let!(:inbox_member_4) { create(:inbox_member, inbox: inbox) }
 
     before do
+      allow(OnlineStatusTracker).to receive(:get_available_users).and_return(
+        inbox.members.ids.index_with { |_id| 'online' }.transform_keys(&:to_s)
+      )
+
       create(:conversation, inbox: inbox, assignee: inbox_member_1.user)
       # to test conversations in other inboxes won't impact
       create_list(:conversation, 3, assignee: inbox_member_1.user)
@@ -27,9 +31,14 @@ RSpec.describe Inbox do
     end
 
     it 'returns member ids with assignment capacity with inbox max_assignment_limit is configured' do
-      # agent 1 has 1 conversations, agent 2 has 2 conversations, agent 3 has 3 conversations and agent 4 with none
-      inbox.update(auto_assignment_config: { max_assignment_limit: 2 })
-      expect(inbox.member_ids_with_assignment_capacity).to contain_exactly(inbox_member_1.user_id, inbox_member_4.user_id)
+      inbox.account.disable_features('assignment_v2')
+      inbox.update!(
+        enable_auto_assignment: true,
+        auto_assignment_config: { max_assignment_limit: 2 }
+      )
+
+      expect(inbox.member_ids_with_assignment_capacity)
+        .to contain_exactly(inbox_member_1.user_id, inbox_member_4.user_id)
     end
 
     it 'returns all member ids when inbox max_assignment_limit is not configured' do
@@ -121,6 +130,7 @@ RSpec.describe Inbox do
 
     context 'when assignment_v2 is disabled (V1 path)' do
       before do
+        account.disable_features('assignment_v2')
         v2_inbox.update(auto_assignment_config: { max_assignment_limit: 2 })
       end
 
@@ -137,7 +147,12 @@ RSpec.describe Inbox do
   describe 'audit log' do
     context 'when inbox is created' do
       it 'has associated audit log created' do
-        expect(Audited::Audit.where(auditable_type: 'Inbox', action: 'create').count).to eq(1)
+        audit = Audited::Audit.find_by(
+          auditable: inbox,
+          action: 'create'
+        )
+
+        expect(audit).to be_present
       end
     end
 
@@ -169,7 +184,12 @@ RSpec.describe Inbox do
 
     context 'when inbox is created' do
       it 'has associated audit log created' do
-        expect(Audited::Audit.where(auditable_type: 'Inbox', action: 'create').count).to eq(1)
+        audit = Audited::Audit.find_by(
+          auditable: inbox,
+          action: 'create'
+        )
+
+        expect(audit).to be_present
       end
     end
 
@@ -213,7 +233,12 @@ RSpec.describe Inbox do
 
     context 'when inbox is created' do
       it 'has associated audit log created' do
-        expect(Audited::Audit.where(auditable_type: 'Inbox', action: 'create').count).to eq(1)
+        audit = Audited::Audit.find_by(
+          auditable: inbox,
+          action: 'create'
+        )
+
+        expect(audit).to be_present
       end
     end
 

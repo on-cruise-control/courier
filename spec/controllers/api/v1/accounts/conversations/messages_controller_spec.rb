@@ -219,6 +219,7 @@ RSpec.describe 'Conversation Messages API', type: :request do
       end
 
       it 'deletes interactive messages' do
+        conversation.reload
         interactive_message = create(
           :message, message_type: :outgoing, content: 'test', content_type: 'input_select',
                     content_attributes: { 'items' => [{ 'title' => 'test', 'value' => 'test' }] },

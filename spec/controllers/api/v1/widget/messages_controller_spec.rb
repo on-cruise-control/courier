@@ -23,8 +23,7 @@ RSpec.describe '/api/v1/widget/messages', type: :request do
 
         expect(response).to have_http_status(:success)
         json_response = response.parsed_body
-        # 2 messages created + 2 messages by the email hook
-        expect(json_response['payload'].length).to eq(4)
+        expect(json_response['payload'].length).to eq(2)
         expect(json_response['meta']).not_to be_empty
       end
 

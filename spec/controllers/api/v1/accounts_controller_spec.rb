@@ -71,11 +71,18 @@ RSpec.describe 'Accounts API', type: :request do
     context 'when an authenticated user creates a second account' do
       let(:existing_user) { create(:user, password: 'Password1!') }
 
+      before do
+        captcha = double
+        allow(ChatwootCaptcha).to receive(:new).and_return(captcha)
+        allow(captcha).to receive(:valid?).and_return(true)
+      end
+
       it 'returns the full response with account_id' do
         with_modified_env ENABLE_ACCOUNT_SIGNUP: 'true' do
           post api_v1_accounts_url,
                params: { account_name: 'Second Account', email: existing_user.email,
-                         user_full_name: existing_user.name, password: 'Password1!' },
+                         user_full_name: existing_user.name, password: 'Password1!',
+                         dealership_id: '123', h_captcha_client_response: '123' },
                headers: existing_user.create_new_auth_token,
                as: :json
 
@@ -122,9 +129,6 @@ RSpec.describe 'Accounts API', type: :request do
     end
 
     context 'when ENABLE_ACCOUNT_SIGNUP env variable is set to api_only' do
-      it 'does not respond 404 on requests' do
-        params = { account_name: 'test', email: email, user_full_name: user_full_name, password: 'Password1!', dealership_id: '123',
-                   h_captcha_client_response: '123' }
       before do
         GlobalConfig.clear_cache
         InstallationConfig.where(name: 'ENABLE_ACCOUNT_SIGNUP').delete_all
@@ -135,8 +139,30 @@ RSpec.describe 'Accounts API', type: :request do
         GlobalConfig.clear_cache
       end
 
+      it 'does not respond 404 on requests' do
+        captcha = double
+        allow(ChatwootCaptcha).to receive(:new).and_return(captcha)
+        allow(captcha).to receive(:valid?).and_return(true)
+
+        params = { account_name: 'test', email: email, user_full_name: user_full_name, password: 'Password1!', dealership_id: '123',
+                   h_captcha_client_response: '123' }
+        with_modified_env ENABLE_ACCOUNT_SIGNUP: 'api_only' do
+          post api_v1_accounts_url,
+               params: params,
+               as: :json
+
+          expect(response).to have_http_status(:success)
+          expect(response.headers.keys).to include('access-token', 'token-type', 'client', 'expiry', 'uid')
+        end
+      end
+
       it 'returns auth headers and full response for api_only signup' do
-        params = { account_name: 'test', email: email, user_full_name: user_full_name, password: 'Password1!' }
+        captcha = double
+        allow(ChatwootCaptcha).to receive(:new).and_return(captcha)
+        allow(captcha).to receive(:valid?).and_return(true)
+
+        params = { account_name: 'test', email: email, user_full_name: user_full_name, password: 'Password1!',
+                   dealership_id: '123', h_captcha_client_response: '123' }
         with_modified_env ENABLE_ACCOUNT_SIGNUP: 'api_only' do
           post api_v1_accounts_url,
                params: params,
@@ -150,7 +176,12 @@ RSpec.describe 'Accounts API', type: :request do
 
     context 'when CW_API_ONLY_SERVER is true' do
       it 'returns auth headers and full response' do
-        params = { account_name: 'test', email: email, user_full_name: user_full_name, password: 'Password1!' }
+        captcha = double
+        allow(ChatwootCaptcha).to receive(:new).and_return(captcha)
+        allow(captcha).to receive(:valid?).and_return(true)
+
+        params = { account_name: 'test', email: email, user_full_name: user_full_name, password: 'Password1!',
+                   dealership_id: '123', h_captcha_client_response: '123' }
         with_modified_env ENABLE_ACCOUNT_SIGNUP: 'true', CW_API_ONLY_SERVER: 'true' do
           post api_v1_accounts_url,
                params: params,
@@ -252,25 +283,28 @@ RSpec.describe 'Accounts API', type: :request do
     end
 
     context 'when it is an authenticated user' do
-      params = {
-        name: 'New Name',
-        locale: 'en',
-        domain: 'example.com',
-        support_email: 'care@example.com',
-        auto_resolve_after: 40,
-        auto_resolve_message: 'Auto resolved',
-        auto_resolve_ignore_waiting: false,
-        timezone: 'Asia/Kolkata',
-        industry: 'Technology',
-        company_size: '1-10'
-      }
+      let(:account) { create(:account, custom_attributes: {}) }
+
+      let(:params) do
+        {
+          name: 'New Name',
+          locale: 'en',
+          domain: 'example.com',
+          support_email: 'care@example.com',
+          auto_resolve_after: 40,
+          auto_resolve_message: 'Auto resolved',
+          auto_resolve_ignore_waiting: false,
+          timezone: 'Asia/Kolkata',
+          industry: 'Technology',
+          company_size: '1-10'
+        }
+      end
 
       it 'returns a valid schema' do
         patch "/api/v1/accounts/#{account.id}",
               params: params,
               headers: admin.create_new_auth_token,
               as: :json
-
         expect(response).to conform_schema(200)
       end
 
@@ -279,19 +313,19 @@ RSpec.describe 'Accounts API', type: :request do
               params: params,
               headers: admin.create_new_auth_token,
               as: :json
-
+        account.reload
         expect(response).to have_http_status(:success)
-        expect(account.reload.name).to eq(params[:name])
-        expect(account.reload.locale).to eq(params[:locale])
-        expect(account.reload.domain).to eq(params[:domain])
-        expect(account.reload.support_email).to eq(params[:support_email])
+        expect(account.name).to eq(params[:name])
+        expect(account.locale).to eq(params[:locale])
+        expect(account.domain).to eq(params[:domain])
+        expect(account.support_email).to eq(params[:support_email])
 
         %w[auto_resolve_after auto_resolve_message auto_resolve_ignore_waiting].each do |attribute|
-          expect(account.reload.settings[attribute]).to eq(params[attribute.to_sym])
+          expect(account.settings[attribute]).to eq(params[attribute.to_sym])
         end
 
         %w[timezone industry company_size].each do |attribute|
-          expect(account.reload.custom_attributes[attribute]).to eq(params[attribute.to_sym])
+          expect(account.custom_attributes[attribute]).to eq(params[attribute.to_sym])
         end
       end
 

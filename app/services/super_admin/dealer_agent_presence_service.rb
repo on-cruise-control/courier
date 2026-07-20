@@ -79,11 +79,11 @@ class SuperAdmin::DealerAgentPresenceService
 
   def latest_session_for(account_user)
     UserDailySession.where(account_id: account_user.account_id, user_id: account_user.user_id)
-               .order(session_date: :desc, created_at: :desc)
-               .first
+                    .order(session_date: :desc, created_at: :desc)
+                    .first
   end
 
-  def session_duration_for(session, active_session)
+  def session_duration_for(session, _active_session)
     return session&.duration_seconds if session.present?
 
     nil
@@ -103,7 +103,7 @@ class SuperAdmin::DealerAgentPresenceService
   end
 
   def finalize_stale_session(account_user, session)
-    UserSessions::FinalizeService.new(
+    UserDailySessions::FinalizeService.new(
       account_user: account_user,
       timestamp: Time.current,
       end_timestamp: account_user.active_at

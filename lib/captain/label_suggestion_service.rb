@@ -38,7 +38,8 @@ class Captain::LabelSuggestionService < Captain::BaseTaskService
       ::Redis::Alfred::OPENAI_CONVERSATION_KEY,
       event_name: 'label_suggestion',
       conversation_id: conversation.id,
-      updated_at: conversation.last_activity_at.to_i
+      # in case last_activity_at is nil during tests/seed data
+      updated_at: (conversation.last_activity_at || conversation.updated_at).to_i
     )
   end
 
@@ -47,12 +48,14 @@ class Captain::LabelSuggestionService < Captain::BaseTaskService
 
     cached = Redis::Alfred.get(cache_key)
     JSON.parse(cached, symbolize_names: true) if cached.present?
+  rescue TypeError
+    nil
   rescue JSON::ParserError
     nil
   end
 
   def write_to_cache(response)
-    Redis::Alfred.setex(cache_key, response.to_json) if cache_key
+    Redis::Alfred.setex(cache_key, 3600, response.to_json) if cache_key
   end
 
   def labels_with_messages

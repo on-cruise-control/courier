@@ -114,13 +114,17 @@ describe ContactInboxWithContactBuilder do
     it 'reuses contact if it exists with the same source_id in a Facebook inbox when creating for Instagram inbox' do
       instagram_source_id = '123456789'
 
+      # Stub Facebook and Instagram subscription API calls
+      allow(Facebook::Messenger::Subscriptions).to receive(:subscribe)
+      allow(HTTParty).to receive(:post)
+
       # Create a Facebook page inbox with a contact using the same source_id
-      facebook_inbox = create(:inbox, channel_type: 'Channel::FacebookPage', account: account)
+      facebook_inbox = create(:inbox, channel: build(:channel_facebook_page, account: account), account: account)
       facebook_contact = create(:contact, account: account)
       facebook_contact_inbox = create(:contact_inbox, contact: facebook_contact, inbox: facebook_inbox, source_id: instagram_source_id)
 
       # Create an Instagram inbox
-      instagram_inbox = create(:inbox, channel_type: 'Channel::Instagram', account: account)
+      instagram_inbox = create(:inbox, channel: build(:channel_instagram, account: account), account: account)
 
       # Try to create a contact inbox with same source_id for Instagram
       contact_inbox = described_class.new(

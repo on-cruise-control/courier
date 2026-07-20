@@ -2,6 +2,7 @@ require 'rails_helper'
 
 describe Instagram::ReadStatusService do
   before do
+    stub_request(:post, /graph\.(facebook|instagram)\.com/)
     create(:message, message_type: :incoming, inbox: instagram_inbox, account: account, conversation: conversation,
                      source_id: 'chatwoot-app-user-id-1')
   end
@@ -11,7 +12,7 @@ describe Instagram::ReadStatusService do
   let!(:instagram_inbox) { create(:inbox, channel: instagram_channel, account: account, greeting_enabled: false) }
   let!(:contact) { create(:contact, account: account) }
   let(:contact_inbox) { create(:contact_inbox, contact: contact, inbox: instagram_inbox) }
-  let(:conversation) { create(:conversation, contact: contact, inbox: instagram_inbox, contact_inbox: contact_inbox) }
+  let(:conversation) { create(:conversation, contact: contact, inbox: instagram_inbox, contact_inbox: contact_inbox).reload }
 
   describe '#perform' do
     context 'when messaging_seen callback is fired' do

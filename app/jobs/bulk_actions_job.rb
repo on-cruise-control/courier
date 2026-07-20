@@ -18,20 +18,21 @@ class BulkActionsJob < ApplicationJob
   end
 
   def bulk_update
-    bulk_remove_labels
     bulk_conversation_update
+    bulk_remove_labels
   end
 
   def bulk_conversation_update
-    params = available_params(@params)
+    params = available_params(@params) || {}
     records.each do |conversation|
-      bulk_add_labels(conversation)
       bulk_snoozed_until(conversation)
+      bulk_add_labels(conversation)
+
       was_spam = conversation.is_spam
-      conversation.update(params) if params
-      if !was_spam && conversation.is_spam && conversation.follow_up_jid.present?
-        conversation.cancel_existing_follow_up_job
-      end
+
+      conversation.update!(params) if params.present?
+
+      conversation.cancel_existing_follow_up_job if !was_spam && conversation.is_spam && conversation.follow_up_jid.present?
     end
   end
 
@@ -42,13 +43,18 @@ class BulkActionsJob < ApplicationJob
   end
 
   def available_params(params)
-    return unless params[:fields]
+    fields = params[:fields]&.to_h || {}
 
-    params[:fields].delete_if { |key, value| value.nil? && key == 'status' }
+    fields.delete('status') if fields['status'].nil?
+
+    fields
   end
 
   def bulk_add_labels(conversation)
-    conversation.add_labels(@params[:labels][:add]) if @params[:labels] && @params[:labels][:add]
+    return unless @params[:labels]&.[](:add)
+
+    conversation.add_labels(@params[:labels][:add])
+    conversation.save!
   end
 
   def bulk_snoozed_until(conversation)

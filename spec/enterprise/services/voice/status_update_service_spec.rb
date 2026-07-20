@@ -13,18 +13,8 @@ RSpec.describe Voice::StatusUpdateService do
   let(:conversation) do
     create(:conversation, account: account, inbox: inbox, contact: contact, contact_inbox: contact_inbox)
   end
-  let!(:call) do
-    create(
-      :call,
-      account: account,
-      inbox: inbox,
-      conversation: conversation,
-      contact: contact,
-      provider_call_id: call_sid
-    )
-  end
   let!(:message) do
-    msg = conversation.messages.create!(
+    conversation.messages.create!(
       account_id: account.id,
       inbox_id: inbox.id,
       message_type: :incoming,
@@ -34,10 +24,17 @@ RSpec.describe Voice::StatusUpdateService do
       content_attributes: { data: { call_sid: call_sid, status: 'ringing' } }
     )
   end
-  let(:channel) { create(:channel_voice, account: account, phone_number: '+15551230002') }
-  let(:inbox) { channel.inbox }
-  let(:from_number) { '+15550002222' }
-  let(:call_sid) { 'CATESTSTATUS123' }
+  let!(:call) do
+    create(
+      :call,
+      account: account,
+      inbox: inbox,
+      conversation: conversation,
+      contact: contact,
+      provider_call_id: call_sid,
+      message: message
+    )
+  end
 
   before do
     allow(Twilio::VoiceWebhookSetupService).to receive(:new)

@@ -89,7 +89,7 @@ RSpec.describe Conversations::UnreadCounts::Counter do
       teams: { visible_team.id.to_s => 1 },
       mentions_count: 0,
       participating_count: 0,
-      unattended_count: 1,
+      unattended_count: 2,
       folders: {}
     )
   end

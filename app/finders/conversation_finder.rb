@@ -137,7 +137,7 @@ class ConversationFinder
     when 'assigned'
       @conversations = @conversations.assigned
     when 'comments'
-      @conversations = @conversations.where("additional_attributes ->> 'type' IN (?)", ['feed_comments', 'instagram_comments'])
+      @conversations = @conversations.where("additional_attributes ->> 'type' IN (?)", %w[feed_comments instagram_comments])
     end
     @conversations
   end
@@ -200,7 +200,7 @@ class ConversationFinder
       Arel.sql("COUNT(*) FILTER (WHERE assignee_id = #{current_user.id})"),
       Arel.sql('COUNT(*) FILTER (WHERE assignee_id IS NULL)'),
       Arel.sql('COUNT(*)'),
-      Arel.sql("COUNT(*) FILTER (WHERE additional_attributes ->> 'type' IN ('feed_comments', 'instagram_comments'))")
+      Arel.sql("COUNT(*) FILTER (WHERE conversations.additional_attributes ->> 'type' IN ('feed_comments', 'instagram_comments'))")
     )
     counts || [0, 0, 0, 0]
   end
@@ -210,7 +210,7 @@ class ConversationFinder
       @conversations.assigned_to(current_user).count,
       @conversations.unassigned.count,
       @conversations.count,
-      @conversations.where("additional_attributes ->> 'type' IN (?)", ['feed_comments', 'instagram_comments']).count
+      @conversations.where("conversations.additional_attributes ->> 'type' IN (?)", %w[feed_comments instagram_comments]).count
     ]
   end
 

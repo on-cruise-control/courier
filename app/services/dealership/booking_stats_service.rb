@@ -44,14 +44,14 @@ class Dealership::BookingStatsService
 
   def make_request
     url = "#{@base_uri}/api/v1/dealerships/#{@dealership_id}/stats"
-    
+
     query_params = { period: @period }
     query_params[:since] = @since if @since
     query_params[:until] = @until_time if @until_time
-    
+
     headers = { 'Content-Type' => 'application/json', 'Accept' => 'application/json' }
     headers['Authorization'] = "Bearer #{@api_key}" if @api_key.present?
-    
+
     response = self.class.get(url, query: query_params, headers: headers, timeout: 30)
     handle_response(response)
   end
@@ -74,16 +74,22 @@ class Dealership::BookingStatsService
     return { data: [], period: @period } unless body.is_a?(Hash)
 
     # Handle nested response structures
-    nested_data = body.dig('body', 'data', 'data') || body.dig('data', 'data') || body['data']
-    
-    if nested_data.is_a?(Array)
-      period = body.dig('body', 'data', 'period') || body.dig('data', 'period') || body['period'] || @period
-      { data: nested_data, period: period }
-    else
-      { data: [], period: @period }
-    end
+    # nested_data = body.dig('body', 'data', 'data') || body.dig('data', 'data') || body['data']
+
+    nested_data =
+      if body.dig('body', 'data', 'data')
+        body.dig('body', 'data', 'data')
+      elsif body['data'].is_a?(Hash)
+        body['data']['data']
+      else
+        body['data']
+      end
+
+    {
+      data: nested_data || [],
+      period: body['period'] || @period
+    }
   rescue JSON::ParserError => e
     raise ApiError.new("Failed to parse response: #{e.message}", response.code, response)
   end
 end
-

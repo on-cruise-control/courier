@@ -31,15 +31,15 @@ RSpec.describe 'Webhooks::WhatsappController', type: :request do
   end
 
   describe 'GET /webhooks/verify' do
-    it 'returns 401 when valid params are not present' do
+    it 'returns 406 when valid params are not present' do
       get "/webhooks/whatsapp/#{channel.phone_number}"
-      expect(response).to have_http_status(:unauthorized)
+      expect(response).to have_http_status(:not_acceptable)
     end
 
-    it 'returns 401 when invalid params' do
+    it 'returns 406 when invalid params' do
       get "/webhooks/whatsapp/#{channel.phone_number}",
           params: { 'hub.challenge' => '123456', 'hub.mode' => 'subscribe', 'hub.verify_token' => 'invalid' }
-      expect(response).to have_http_status(:unauthorized)
+      expect(response).to have_http_status(:not_acceptable)
     end
 
     it 'returns challenge when valid params' do

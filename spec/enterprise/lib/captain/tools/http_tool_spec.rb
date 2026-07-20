@@ -7,6 +7,11 @@ RSpec.describe Captain::Tools::HttpTool, type: :model do
   let(:tool) { described_class.new(assistant, custom_tool) }
   let(:tool_context) { Struct.new(:state).new({}) }
 
+  before do
+    allow(Resolv).to receive(:getaddresses).and_call_original
+    allow(Resolv).to receive(:getaddresses).with('example.com').and_return(['93.184.216.34'])
+  end
+
   describe '#active?' do
     it 'returns true when custom tool is enabled' do
       custom_tool.update!(enabled: true)

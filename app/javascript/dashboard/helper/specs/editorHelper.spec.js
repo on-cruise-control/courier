@@ -1361,36 +1361,43 @@ describe('getContentNode', () => {
   });
 });
 
+const withoutCopilot = formatting => ({
+  ...formatting,
+  menu: formatting.menu.filter(item => item !== 'copilot'),
+});
+
 describe('getFormattingForEditor', () => {
   describe('channel-specific formatting', () => {
     it('returns full formatting for Email channel', () => {
       const result = getFormattingForEditor('Channel::Email');
 
-      expect(result).toEqual(FORMATTING['Channel::Email']);
+      expect(result).toEqual(withoutCopilot(FORMATTING['Channel::Email']));
     });
 
     it('returns full formatting for WebWidget channel', () => {
       const result = getFormattingForEditor('Channel::WebWidget');
 
-      expect(result).toEqual(FORMATTING['Channel::WebWidget']);
+      expect(result).toEqual(withoutCopilot(FORMATTING['Channel::WebWidget']));
     });
 
     it('returns limited formatting for WhatsApp channel', () => {
       const result = getFormattingForEditor('Channel::Whatsapp');
 
-      expect(result).toEqual(FORMATTING['Channel::Whatsapp']);
+      expect(result).toEqual(withoutCopilot(FORMATTING['Channel::Whatsapp']));
     });
 
     it('returns no formatting for API channel', () => {
       const result = getFormattingForEditor('Channel::Api');
 
-      expect(result).toEqual(FORMATTING['Channel::Api']);
+      expect(result).toEqual(withoutCopilot(FORMATTING['Channel::Api']));
     });
 
     it('returns limited formatting for FacebookPage channel', () => {
       const result = getFormattingForEditor('Channel::FacebookPage');
 
-      expect(result).toEqual(FORMATTING['Channel::FacebookPage']);
+      expect(result).toEqual(
+        withoutCopilot(FORMATTING['Channel::FacebookPage'])
+      );
     });
 
     it('returns no formatting for TwitterProfile channel', () => {
@@ -1408,13 +1415,13 @@ describe('getFormattingForEditor', () => {
     it('returns limited formatting for Telegram channel', () => {
       const result = getFormattingForEditor('Channel::Telegram');
 
-      expect(result).toEqual(FORMATTING['Channel::Telegram']);
+      expect(result).toEqual(withoutCopilot(FORMATTING['Channel::Telegram']));
     });
 
     it('returns formatting for Instagram channel', () => {
       const result = getFormattingForEditor('Channel::Instagram');
 
-      expect(result).toEqual(FORMATTING['Channel::Instagram']);
+      expect(result).toEqual(withoutCopilot(FORMATTING['Channel::Instagram']));
     });
   });
 

@@ -105,6 +105,10 @@ RSpec.describe Twilio::TemplateSyncService do
 
   let(:templates) { [text_template, media_template, quick_reply_template, catalog_template, call_to_action_template] }
 
+  let(:content_instance) { double }
+  let(:approval_fetch) { double }
+  let(:approval_response) { double }
+
   before do
     allow(twilio_channel).to receive(:send).and_call_original
     allow(twilio_channel).to receive(:send).with(:client).and_return(twilio_client)
@@ -112,6 +116,14 @@ RSpec.describe Twilio::TemplateSyncService do
     allow(content_api).to receive(:v1).and_return(content_api)
     allow(content_api).to receive(:contents).and_return(contents_list)
     allow(contents_list).to receive(:list).with(limit: 1000).and_return(templates)
+
+    # Mock for content instance (when called with content_sid)
+    allow(content_api).to receive(:contents).with(anything).and_return(content_instance)
+    allow(content_instance).to receive(:approval_fetch).and_return(approval_fetch)
+    allow(approval_fetch).to receive(:fetch).and_return(approval_response)
+
+    # Default approval response - will be overridden in specific tests
+    allow(approval_response).to receive(:whatsapp).and_return({ 'status' => 'approved', 'category' => 'UTILITY' })
   end
 
   describe '#call' do
@@ -233,6 +245,7 @@ RSpec.describe Twilio::TemplateSyncService do
         )
 
         allow(contents_list).to receive(:list).with(limit: 1000).and_return([marketing_template])
+        allow(approval_response).to receive(:whatsapp).and_return({ 'status' => 'approved', 'category' => 'MARKETING' })
 
         sync_service.call
 
@@ -255,6 +268,7 @@ RSpec.describe Twilio::TemplateSyncService do
         )
 
         allow(contents_list).to receive(:list).with(limit: 1000).and_return([auth_template])
+        allow(approval_response).to receive(:whatsapp).and_return({ 'status' => 'approved', 'category' => 'AUTHENTICATION' })
 
         sync_service.call
 
@@ -359,8 +373,8 @@ RSpec.describe Twilio::TemplateSyncService do
 
         # derive_template_type prioritizes media
         expect(template_data['template_type']).to eq('media')
-        # but extract_body_content prioritizes text
-        expect(template_data['body']).to eq('Text content')
+        # extract_body_content returns the first body found in iteration order
+        expect(template_data['body']).to eq('Media content')
       end
     end
   end

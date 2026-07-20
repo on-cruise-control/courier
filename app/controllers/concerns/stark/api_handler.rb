@@ -1,9 +1,10 @@
 module Stark
   module ApiHandler
+    AUTH_TOKEN = ENV.fetch('STARK_API_KEY', nil)
+
     extend ActiveSupport::Concern
 
     included do
-      AUTH_TOKEN = ENV.fetch('STARK_API_KEY', nil)
       include HTTParty
       include StarkRetryable
     end
@@ -20,7 +21,7 @@ module Stark
 
         case status_code
         when 200
-          parse_stark_response(response , message)
+          parse_stark_response(response, message)
         when 400, 500
           log_stark_error(status_code, response, conversation)
           nil
@@ -64,7 +65,7 @@ module Stark
     end
 
     def build_request_payload(conversation, content, message = nil)
-      payload = {
+      {
         question: content,
         is_image_attached: message_has_image?(message),
         is_story_mentioned: is_story_mentioned?(message),
@@ -77,7 +78,6 @@ module Stark
         platform: conversation.inbox.platform_name,
         recent_messages: format_recent_messages(conversation, exclude_message: message)
       }
-      payload
     end
 
     def format_recent_messages(conversation, exclude_message: nil)
@@ -126,7 +126,7 @@ module Stark
       }
     end
 
-    def parse_stark_response(response , message = nil)
+    def parse_stark_response(response, message = nil)
       data = response['body']['data']
       customer_data = data['customer'].is_a?(Hash) ? data['customer'] : {}
 
@@ -149,7 +149,7 @@ module Stark
       if data['human_redirect']
         handoff_reason = data['handoff_reason']
         message_text = message.content
-        ConversationHandoffService.new(conversation).process_handoff(refined_customer_data, handoff_reason , message_text)
+        ConversationHandoffService.new(conversation).process_handoff(refined_customer_data, handoff_reason, message_text)
       end
 
       if data['team_reached_out'] == false
@@ -221,6 +221,7 @@ module Stark
       # Website: Only send name if contact has email (meaning they entered it and name was updated from random)
       if platform == 'Website'
         return contact.name if contact.email.present?
+
         return nil
       end
 

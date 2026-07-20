@@ -79,6 +79,7 @@ RSpec.describe HookJob do
 
     before do
       allow(process_service).to receive(:perform)
+      allow_any_instance_of(Message).to receive(:schedule_follow_up_job)
     end
 
     it 'calls UpdateSlackMessageJob when content_attributes changed' do

@@ -93,7 +93,7 @@ class ActionCableListener < BaseListener
     account, inbox_members, include_admins = ::Conversations::UnreadCounts::BroadcastScope.new(event).perform
     return if account.blank? || !account.feature_enabled?('conversation_unread_counts')
 
-    tokens = include_admins ? user_tokens(account, inbox_members) : inbox_members.pluck(:pubsub_token)
+    tokens = include_admins ? inbox_and_admin_tokens(account, inbox_members) : inbox_members.pluck(:pubsub_token)
 
     broadcast(account, tokens, CONVERSATION_UNREAD_COUNT_CHANGED, {})
   end
@@ -188,12 +188,19 @@ class ActionCableListener < BaseListener
   end
 
   def typing_event_listener_tokens(account, conversation, user)
-    current_user_token = user.is_a?(Contact) ? conversation.contact_inbox.pubsub_token : user.pubsub_token
+    current_user_token = user.is_a?(Contact) ? conversation.contact_inbox.pubsub_token : user.try(:pubsub_token)
     (account_user_tokens(account) + [conversation.contact_inbox.pubsub_token]) - [current_user_token]
   end
 
   def account_user_tokens(account)
     account.users.pluck(:pubsub_token).compact.uniq
+  end
+
+  # Sidebar count refresh, not conversation content, so this stays inbox+admin scoped unlike the rest of this file.
+  def inbox_and_admin_tokens(account, agents)
+    agent_tokens = agents.pluck(:pubsub_token)
+    admin_tokens = account.administrators.pluck(:pubsub_token)
+    (agent_tokens + admin_tokens).uniq
   end
 
   def contact_tokens(contact_inbox, message)

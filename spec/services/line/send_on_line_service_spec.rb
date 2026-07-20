@@ -10,6 +10,8 @@ describe Line::SendOnLineService do
     end
 
     before do
+      allow_any_instance_of(Message).to receive(:schedule_follow_up_job).and_return(nil)
+
       allow(Line::Bot::Client).to receive(:new).and_return(line_client)
     end
 

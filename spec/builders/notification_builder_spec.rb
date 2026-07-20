@@ -148,16 +148,19 @@ describe NotificationBuilder do
         outsider_inbox = create(:inbox, account: account)
         message = create(:message, account: account, inbox: outsider_inbox,
                                    conversation: create(:conversation, account: account, inbox: outsider_inbox))
+        # ConversationPolicy#show? grants access to any account member (see 202bc170d), so
+        # only a user with no account_user record for this account is denied access here.
+        unrelated_user = create(:user)
 
         expect do
           described_class.new(
             notification_type: 'conversation_mention',
-            user: outsider,
+            user: unrelated_user,
             account: account,
             primary_actor: message.conversation,
             secondary_actor: message
           ).perform
-        end.not_to(change { outsider.notifications.count })
+        end.not_to(change { unrelated_user.notifications.count })
       end
     end
   end
