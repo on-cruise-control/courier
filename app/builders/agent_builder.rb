@@ -18,10 +18,18 @@ class AgentBuilder
       @user = find_or_create_user
       create_account_user
     end
+    schedule_confirmation_reminder
     @user
   end
 
   private
+
+  # Schedules a reminder email for 24 hours from now if the user still hasn't confirmed their account.
+  def schedule_confirmation_reminder
+    return unless user_needs_confirmation?
+
+    Users::ConfirmationReminderJob.set(wait: 24.hours).perform_later(@user.id, 'first')
+  end
 
   # Finds a user by email or creates a new one with a temporary password.
   # @return [User] the found or created user.
