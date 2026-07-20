@@ -290,4 +290,60 @@ RSpec.describe User do
       expect { user_with_tokens.save! }.to change(user_with_tokens.user_sessions, :count).by(-2)
     end
   end
+
+  describe '#cancel_confirmation_reminder_jobs' do
+    let(:unconfirmed_user) { create(:user, skip_confirmation: false) }
+
+    it 'deletes only the scheduled Users::ConfirmationReminderJob entries belonging to this user' do
+      matching_job = instance_double(Sidekiq::SortedEntry, display_class: 'Users::ConfirmationReminderJob',
+                                                           args: [{ 'arguments' => [unconfirmed_user.id, 'first'] }])
+      other_users_job = instance_double(Sidekiq::SortedEntry, display_class: 'Users::ConfirmationReminderJob',
+                                                              args: [{ 'arguments' => [-1, 'first'] }])
+      unrelated_job = instance_double(Sidekiq::SortedEntry, display_class: 'SomeOtherJob', args: [{ 'arguments' => [unconfirmed_user.id] }])
+      scheduled_set = instance_double(Sidekiq::ScheduledSet)
+
+      allow(Sidekiq::ScheduledSet).to receive(:new).and_return(scheduled_set)
+      allow(scheduled_set).to receive(:each).and_yield(matching_job).and_yield(other_users_job).and_yield(unrelated_job)
+      allow(other_users_job).to receive(:delete)
+      allow(unrelated_job).to receive(:delete)
+
+      expect(matching_job).to receive(:delete)
+
+      unconfirmed_user.send(:cancel_confirmation_reminder_jobs)
+
+      expect(other_users_job).not_to have_received(:delete)
+      expect(unrelated_job).not_to have_received(:delete)
+    end
+  end
+
+  describe 'confirmed_at change callback' do
+    let(:unconfirmed_user) { create(:user, skip_confirmation: false) }
+
+    it 'cancels pending confirmation reminder jobs when the user confirms via Devise' do
+      expect(unconfirmed_user).to receive(:cancel_confirmation_reminder_jobs)
+
+      unconfirmed_user.confirm
+    end
+
+    it 'cancels pending confirmation reminder jobs when confirmed_at is set directly (e.g. by Super Admin)' do
+      expect(unconfirmed_user).to receive(:cancel_confirmation_reminder_jobs)
+
+      unconfirmed_user.update!(confirmed_at: Time.current)
+    end
+
+    it 'does not cancel jobs when confirmed_at is unchanged' do
+      unconfirmed_user
+      expect(unconfirmed_user).not_to receive(:cancel_confirmation_reminder_jobs)
+
+      unconfirmed_user.update!(name: 'New Name')
+    end
+  end
+
+  describe 'after_destroy callback' do
+    it 'cancels pending confirmation reminder jobs when the user is destroyed' do
+      expect(user).to receive(:cancel_confirmation_reminder_jobs)
+
+      user.destroy
+    end
+  end
 end
