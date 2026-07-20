@@ -314,6 +314,8 @@
   "SIDEBAR": {
     "BRAND_NAME": "Cruise Control",
     "NO_ITEMS": "No items",
+    "EXPAND": "Expand sidebar",
+    "COLLAPSE": "Collapse sidebar",
     "CURRENTLY_VIEWING_ACCOUNT": "Currently viewing:",
     "SWITCH": "Switch",
     "INBOX_VIEW": "Inbox View",
