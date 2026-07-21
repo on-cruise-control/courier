@@ -18,6 +18,7 @@ class Conversations::EventDataPresenter < SimpleDelegator
       priority: priority,
       waiting_since: waiting_since.to_i,
       is_spam: is_spam,
+      is_blacklisted: is_blacklisted,
       comment_sentiment: comment_sentiment,
       stop_follow_up: stop_follow_up,
       should_send_reply: should_send_reply,

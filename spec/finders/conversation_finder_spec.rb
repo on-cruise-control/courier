@@ -314,6 +314,32 @@ describe ConversationFinder do
           expect(result[:conversations].length).to be 4
         end
       end
+
+      context 'with blacklist conversation type' do
+        let(:params) { { status: 'all', conversation_type: 'blacklist' } }
+
+        it 'returns only blacklisted conversations' do
+          blacklisted_conversation = create(:conversation, account: account, inbox: inbox, is_blacklisted: true)
+
+          result = conversation_finder.perform
+
+          expect(result[:conversations].map(&:id)).to eq [blacklisted_conversation.id]
+        end
+      end
+
+      context 'without blacklist conversation type' do
+        let(:params) { { status: 'all' } }
+
+        it 'excludes blacklisted conversations from the default view' do
+          create(:conversation, account: account, inbox: inbox, is_blacklisted: true)
+
+          result = conversation_finder.perform
+
+          # The 5 pre-existing conversations from the outer before block are returned,
+          # the blacklisted one created above is excluded.
+          expect(result[:conversations].length).to be 5
+        end
+      end
     end
   end
 end

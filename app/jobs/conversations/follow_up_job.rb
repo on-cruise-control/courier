@@ -4,7 +4,7 @@ class Conversations::FollowUpJob < ApplicationJob
   def perform(conversation_id, follow_up_number)
     conversation = Conversation.find_by(id: conversation_id)
     return if conversation.nil?
-    return if (conversation.is_spam || conversation.stop_follow_up || conversation.assignee_id.present?)
+    return if conversation.is_spam || conversation.is_blacklisted || conversation.stop_follow_up || conversation.assignee_id.present?
     return unless conversation.can_reply?
 
     last_message = conversation.messages

@@ -49,6 +49,15 @@ describe('#URL Helpers', () => {
         })
       ).toBe('/app/accounts/1/participating/conversations');
     });
+
+    it('should return url to blacklisted conversations', () => {
+      expect(
+        conversationListPageURL({
+          accountId: 1,
+          conversationType: 'blacklist',
+        })
+      ).toBe('/app/accounts/1/blacklist/conversations');
+    });
   });
   describe('conversationUrl', () => {
     it('should return direct conversation URL if activeInbox is nil', () => {
@@ -70,6 +79,11 @@ describe('#URL Helpers', () => {
       expect(conversationUrl({ accountId: 1, teamId: 1, id: 1 })).toBe(
         'accounts/1/team/1/conversations/1'
       );
+    });
+    it('should return correct conversation URL if conversationType is blacklist', () => {
+      expect(
+        conversationUrl({ accountId: 1, id: 1, conversationType: 'blacklist' })
+      ).toBe('accounts/1/blacklist/conversations/1');
     });
   });
 
@@ -181,9 +195,9 @@ describe('#URL Helpers', () => {
 
   describe('hasValidAvatarUrl', () => {
     test('should return true for valid non-Gravatar URL', () => {
-      expect(
-        hasValidAvatarUrl('https://getcruisecontrol.com/avatar.jpg')
-      ).toBe(true);
+      expect(hasValidAvatarUrl('https://getcruisecontrol.com/avatar.jpg')).toBe(
+        true
+      );
     });
 
     test('should return false for a Gravatar URL (www.gravatar.com)', () => {

@@ -632,6 +632,7 @@ RSpec.describe Conversation do
         priority: nil,
         unread_count: 0,
         is_spam: false,
+        is_blacklisted: false,
         comment_sentiment: nil,
         should_send_reply: true,
         stop_follow_up: false

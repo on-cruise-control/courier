@@ -19,6 +19,7 @@ class Integrations::Stark::ProcessorService < Integrations::BotProcessorService
   def should_run_processor?(message)
     # Don't process messages on spam conversations
     return false if current_conversation.is_spam
+    return false if current_conversation.is_blacklisted
 
     # Primary check: if conversation is assigned, don't process regardless of status
     return false if current_conversation.assignee_id.present?
@@ -98,7 +99,7 @@ class Integrations::Stark::ProcessorService < Integrations::BotProcessorService
 
     current_conversation.update!(
       stop_follow_up: response['stop_follow_up'],
-      should_send_reply: response['should_send_reply'].nil? ? true : response['should_send_reply']
+      should_send_reply: response['should_send_reply'].nil? || response['should_send_reply']
     )
     schedule_booking_follow_up if response['is_booking_created']
     handle_response(response)

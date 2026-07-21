@@ -16,6 +16,7 @@
 #  follow_up_jid                          :string
 #  handoff_attended_at                    :datetime
 #  identifier                             :string
+#  is_blacklisted                         :boolean          default(FALSE)
 #  is_spam                                :boolean          default(FALSE)
 #  last_activity_at                       :datetime         not null
 #  last_handoff_at                        :datetime
@@ -45,26 +46,27 @@
 #
 # Indexes
 #
-#  conv_acid_inbid_stat_asgnid_idx                    (account_id,inbox_id,status,assignee_id)
-#  index_conversations_on_account_id                  (account_id)
-#  index_conversations_on_account_id_and_display_id   (account_id,display_id) UNIQUE
-#  index_conversations_on_account_id_and_is_spam      (account_id,is_spam)
-#  index_conversations_on_assignee_id_and_account_id  (assignee_id,account_id)
-#  index_conversations_on_campaign_id                 (campaign_id)
-#  index_conversations_on_contact_id                  (contact_id)
-#  index_conversations_on_contact_inbox_id            (contact_inbox_id)
-#  index_conversations_on_first_reply_created_at      (first_reply_created_at)
-#  index_conversations_on_handoff_attended_by_id      (handoff_attended_by_id)
-#  index_conversations_on_id_and_account_id           (account_id,id)
-#  index_conversations_on_identifier_and_account_id   (identifier,account_id)
-#  index_conversations_on_inbox_id                    (inbox_id)
-#  index_conversations_on_last_handoff_at             (last_handoff_at)
-#  index_conversations_on_priority                    (priority)
-#  index_conversations_on_status_and_account_id       (status,account_id)
-#  index_conversations_on_status_and_priority         (status,priority)
-#  index_conversations_on_team_id                     (team_id)
-#  index_conversations_on_uuid                        (uuid) UNIQUE
-#  index_conversations_on_waiting_since               (waiting_since)
+#  conv_acid_inbid_stat_asgnid_idx                       (account_id,inbox_id,status,assignee_id)
+#  index_conversations_on_account_id                     (account_id)
+#  index_conversations_on_account_id_and_display_id      (account_id,display_id) UNIQUE
+#  index_conversations_on_account_id_and_is_blacklisted  (account_id,is_blacklisted)
+#  index_conversations_on_account_id_and_is_spam         (account_id,is_spam)
+#  index_conversations_on_assignee_id_and_account_id     (assignee_id,account_id)
+#  index_conversations_on_campaign_id                    (campaign_id)
+#  index_conversations_on_contact_id                     (contact_id)
+#  index_conversations_on_contact_inbox_id               (contact_inbox_id)
+#  index_conversations_on_first_reply_created_at         (first_reply_created_at)
+#  index_conversations_on_handoff_attended_by_id         (handoff_attended_by_id)
+#  index_conversations_on_id_and_account_id              (account_id,id)
+#  index_conversations_on_identifier_and_account_id      (identifier,account_id)
+#  index_conversations_on_inbox_id                       (inbox_id)
+#  index_conversations_on_last_handoff_at                (last_handoff_at)
+#  index_conversations_on_priority                       (priority)
+#  index_conversations_on_status_and_account_id          (status,account_id)
+#  index_conversations_on_status_and_priority            (status,priority)
+#  index_conversations_on_team_id                        (team_id)
+#  index_conversations_on_uuid                           (uuid) UNIQUE
+#  index_conversations_on_waiting_since                  (waiting_since)
 #
 
 class Conversation < ApplicationRecord
@@ -93,6 +95,9 @@ class Conversation < ApplicationRecord
 
   scope :not_spam, -> { where(is_spam: [false, nil]) }
   scope :spam, -> { where(is_spam: true) }
+
+  scope :not_blacklisted, -> { where(is_blacklisted: [false, nil]) }
+  scope :blacklisted, -> { where(is_blacklisted: true) }
 
   scope :unassigned, -> { where(assignee_id: nil) }
   scope :assigned, -> { where.not(assignee_id: nil) }
@@ -361,7 +366,7 @@ class Conversation < ApplicationRecord
 
   def list_of_keys
     %w[team_id assignee_id assignee_agent_bot_id status snoozed_until custom_attributes label_list waiting_since
-       first_reply_created_at priority is_spam comment_sentiment stop_follow_up should_send_reply]
+       first_reply_created_at priority is_spam is_blacklisted comment_sentiment stop_follow_up should_send_reply]
   end
 
   def allowed_keys?
@@ -454,9 +459,9 @@ class Conversation < ApplicationRecord
       end
     end
 
-    if newly_added.include?('handoff')
-      ConversationHandoff::SendHandoffNotificationsJob.perform_later(self)
-    end
+    return unless newly_added.include?('handoff')
+
+    ConversationHandoff::SendHandoffNotificationsJob.perform_later(self)
   end
 
   def sync_stark_human_redirect(newly_added, removed_labels)
@@ -476,7 +481,7 @@ class Conversation < ApplicationRecord
     Rails.logger.error("Failed to sync Stark human_redirect for conversation #{id}: #{result[:message]}")
   end
 
-  def last_outgoing_stark_message 
+  def last_outgoing_stark_message
     stark_bot = inbox.agent_bot if inbox.agent_bot&.stark?
     stark_bot ||= AgentBot.accessible_to(account).find_by(bot_type: 'stark')
     return if stark_bot.blank?
@@ -490,9 +495,7 @@ class Conversation < ApplicationRecord
 
   def escalation_trigger_message
     scope = messages.where(message_type: :incoming)
-    msg = if last_handoff_at.present?
-            scope.where('created_at < ?', last_handoff_at).order(created_at: :desc).last
-          end
+    msg = (scope.where('created_at < ?', last_handoff_at).order(created_at: :desc).last if last_handoff_at.present?)
     msg || nil
     msg&.content
   end

@@ -23,6 +23,15 @@ RSpec.describe Conversations::BookingFollowUpJob do
       end
     end
 
+    context 'when conversation is blacklisted' do
+      it 'returns without creating a message' do
+        conversation.update!(is_blacklisted: true)
+        expect do
+          described_class.perform_now(conversation.id)
+        end.not_to change(conversation.messages, :count)
+      end
+    end
+
     context 'when conversation is valid' do
       it 'clears the booking_follow_up_jid' do
         conversation.update!(booking_follow_up_jid: 'some_jid')

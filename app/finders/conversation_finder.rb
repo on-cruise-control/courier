@@ -125,6 +125,8 @@ class ConversationFinder
     filter_by_conversation_type if params[:conversation_type]
     # Exclude spam from all views except the dedicated spam view
     @conversations = @conversations.not_spam unless params[:conversation_type] == 'spam'
+    # Exclude blacklisted conversations from all views except the dedicated blacklist view
+    @conversations = @conversations.not_blacklisted unless params[:conversation_type] == 'blacklist'
     @conversations
   end
 
@@ -153,6 +155,8 @@ class ConversationFinder
       @conversations = @conversations.unattended
     when 'spam'
       @conversations = @conversations.spam
+    when 'blacklist'
+      @conversations = @conversations.blacklisted
     end
     @conversations
   end

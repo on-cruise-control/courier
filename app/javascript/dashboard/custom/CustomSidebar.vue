@@ -249,6 +249,13 @@ const menuItems = computed(() => {
           activeOn: ['conversation_through_spam'],
         },
         {
+          type: 'link',
+          label: t('SIDEBAR.BLACKLIST'),
+          icon: 'i-lucide-ban',
+          to: accountScopedRoute('conversation_blacklist'),
+          activeOn: ['conversation_through_blacklist'],
+        },
+        {
           type: 'header',
           label: t('SIDEBAR.CUSTOM_VIEWS_FOLDER'),
           icon: 'i-lucide-folder',
@@ -1423,6 +1430,7 @@ useEventListener(document, 'touchend', onResizeEnd);
       </div>
     </transition>
   </div>
+  <template v-else />
 </template>
 
 <style scoped lang="scss">
