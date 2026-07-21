@@ -188,6 +188,22 @@ RSpec.describe 'Api::V1::Accounts::BulkActionsController', type: :request do
         expect(Conversation.second.status).to eq('snoozed')
       end
 
+      it 'Bulk update conversation is_blacklisted' do
+        conversation_ids = account.conversations.first(2).pluck(:display_id)
+        expect(account.conversations.first.reload.is_blacklisted).to be false
+
+        perform_enqueued_jobs do
+          post "/api/v1/accounts/#{account.id}/bulk_actions",
+               headers: agent.create_new_auth_token,
+               params: { type: 'Conversation', fields: { is_blacklisted: true }, ids: conversation_ids }
+
+          expect(response).to have_http_status(:success)
+        end
+
+        expect(account.conversations.first.reload.is_blacklisted).to be true
+        expect(account.conversations.second.reload.is_blacklisted).to be true
+      end
+
       it 'Bulk update conversation labels' do
         params = { type: 'Conversation', ids: account.conversations.first(3).pluck(:display_id), labels: { add: %w[support priority_customer] } }
 

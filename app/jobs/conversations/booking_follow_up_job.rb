@@ -7,7 +7,7 @@ class Conversations::BookingFollowUpJob < ApplicationJob
 
     conversation.update_column(:booking_follow_up_jid, nil)
 
-    return if conversation.is_spam
+    return if conversation.is_spam || conversation.is_blacklisted
 
     dealership_name = conversation.account.name
     content = "Hey I'm just checking in from #{dealership_name}. Has someone from our team reached out to you to book an appointment?"

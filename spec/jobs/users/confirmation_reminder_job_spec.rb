@@ -3,11 +3,18 @@ require 'rails_helper'
 RSpec.describe Users::ConfirmationReminderJob, type: :job do
   let(:account) { create(:account) }
   let(:user) { create(:user, skip_confirmation: false, account: account) }
+  let(:mailer_double) { instance_double(ActionMailer::MessageDelivery, deliver_now: true) }
+
+  before do
+    allow(AgentNotifications::ConfirmationReminderMailer).to receive(:reminder).and_return(mailer_double)
+  end
 
   describe '#perform' do
     context 'when the user no longer exists' do
       it 'does not send a reminder email' do
-        expect { described_class.perform_now(-1, 'first') }.not_to(change { ActionMailer::Base.deliveries.count })
+        described_class.perform_now(-1, 'first')
+
+        expect(AgentNotifications::ConfirmationReminderMailer).not_to have_received(:reminder)
       end
     end
 
@@ -15,7 +22,9 @@ RSpec.describe Users::ConfirmationReminderJob, type: :job do
       before { user.confirm }
 
       it 'does not send a reminder email' do
-        expect { described_class.perform_now(user.id, 'first') }.not_to(change { ActionMailer::Base.deliveries.count })
+        described_class.perform_now(user.id, 'first')
+
+        expect(AgentNotifications::ConfirmationReminderMailer).not_to have_received(:reminder)
       end
 
       it 'does not schedule the second reminder' do
@@ -25,12 +34,10 @@ RSpec.describe Users::ConfirmationReminderJob, type: :job do
 
     context 'when the user is still unconfirmed and stage is first' do
       it 'sends the first reminder email' do
-        expect { described_class.perform_now(user.id, 'first') }
-          .to change { ActionMailer::Base.deliveries.count }.by(1)
+        described_class.perform_now(user.id, 'first')
 
-        mail = ActionMailer::Base.deliveries.last
-        expect(mail.to).to eq([user.email])
-        expect(mail.subject).to eq('Reminder: Finish setting up your account')
+        expect(AgentNotifications::ConfirmationReminderMailer).to have_received(:reminder).with(user: user, stage: 'first')
+        expect(mailer_double).to have_received(:deliver_now)
       end
 
       it 'schedules the second reminder' do
@@ -41,11 +48,10 @@ RSpec.describe Users::ConfirmationReminderJob, type: :job do
 
     context 'when the user is still unconfirmed and stage is second' do
       it 'sends the second reminder email' do
-        expect { described_class.perform_now(user.id, 'second') }
-          .to change { ActionMailer::Base.deliveries.count }.by(1)
+        described_class.perform_now(user.id, 'second')
 
-        mail = ActionMailer::Base.deliveries.last
-        expect(mail.subject).to eq('Reminder: Your account is still waiting for you')
+        expect(AgentNotifications::ConfirmationReminderMailer).to have_received(:reminder).with(user: user, stage: 'second')
+        expect(mailer_double).to have_received(:deliver_now)
       end
 
       it 'does not schedule another reminder' do

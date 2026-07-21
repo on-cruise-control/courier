@@ -344,6 +344,13 @@ const menuItems = computed(() => {
           to: accountScopedRoute('conversation_spam'),
         },
         {
+          name: 'Blacklist',
+          label: t('SIDEBAR.BLACKLIST'),
+          icon: 'i-lucide-ban',
+          activeOn: ['conversation_through_blacklist'],
+          to: accountScopedRoute('conversation_blacklist'),
+        },
+        {
           name: 'Folders',
           label: t('SIDEBAR.CUSTOM_VIEWS_FOLDER'),
           icon: 'i-lucide-folder',

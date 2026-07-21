@@ -223,8 +223,15 @@ RSpec.describe Conversations::UnreadCounts::Builder do
       invalid_filter = create(
         :custom_filter, account: account, user: assignee, filter_type: :conversation, query: filter_query('missing_attribute', ['open'])
       )
+      # Stubbed directly at the FilterService boundary (rather than relying on the real
+      # attribute-key validation raising it) so this spec only asserts on the Builder's own
+      # rescue/bookkeeping behavior, not on the deeper filter-validation code path.
+      failing_filter_service = instance_double(Conversations::FilterService)
+      allow(Conversations::FilterService).to receive(:new).and_return(failing_filter_service)
+      allow(failing_filter_service).to receive(:filtered_relation)
+        .and_raise(CustomExceptions::CustomFilter::InvalidAttribute.new(key: 'missing_attribute', allowed_keys: []))
 
-      described_class.new(account).build_filters_for!(assignee)
+      expect { described_class.new(account).build_filters_for!(assignee) }.not_to raise_error
 
       expect(store.filters_ready?(account.id, assignee.id)).to be(true)
       expect(redis_set_members(store.user_folder_key(account.id, assignee.id, invalid_filter.id))).to be_empty

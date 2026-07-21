@@ -46,7 +46,6 @@ import { generateValuesForEditCustomViews } from 'dashboard/helper/customViewsHe
 import { conversationListPageURL } from '../helper/URLHelper';
 import {
   isOnMentionsView,
-  isOnParticipatingView,
   isOnUnattendedView,
   isOnSpamView,
 } from '../store/modules/conversations/helpers/actionHelpers';
@@ -97,6 +96,7 @@ const appliedFilter = ref([]);
 const advancedFilterTypes = ref(
   advancedFilterOptions.map(filter => ({
     ...filter,
+    // eslint-disable-next-line @intlify/vue-i18n/no-dynamic-keys
     attributeName: t(`FILTER.ATTRIBUTES.${filter.attributeI18nKey}`),
   }))
 );
@@ -119,9 +119,14 @@ const inboxesList = useMapGetter('inboxes/getInboxes');
 const campaigns = useMapGetter('campaigns/getAllCampaigns');
 const labels = useMapGetter('labels/getLabels');
 const currentAccountId = useMapGetter('getCurrentAccountId');
-const isFeatureEnabledonAccount = useMapGetter('accounts/isFeatureEnabledonAccount');
+const isFeatureEnabledonAccount = useMapGetter(
+  'accounts/isFeatureEnabledonAccount'
+);
 const isCustomUIEnabled = computed(() =>
-  isFeatureEnabledonAccount.value(currentAccountId.value, FEATURE_FLAGS.CUSTOM_UI)
+  isFeatureEnabledonAccount.value(
+    currentAccountId.value,
+    FEATURE_FLAGS.CUSTOM_UI
+  )
 );
 // We can't useFunctionGetter here since it needs to be called on setup?
 const getTeamFn = useMapGetter('teams/getTeam');
@@ -202,6 +207,7 @@ const assigneeTabItems = computed(() => {
     item => item.permissions
   ).map(({ key, count: countKey }) => ({
     key,
+    // eslint-disable-next-line @intlify/vue-i18n/no-dynamic-keys
     name: t(`CHAT_LIST.ASSIGNEE_TYPE_TABS.${key}`),
     count: conversationStats.value[countKey] || 0,
   }));
@@ -209,7 +215,7 @@ const assigneeTabItems = computed(() => {
   // Reorder tabs to show 'all' first, then other tabs in their original order
   const allTab = filteredItems.find(item => item.key === 'all');
   const otherTabs = filteredItems.filter(item => item.key !== 'all');
-  
+
   return allTab ? [allTab, ...otherTabs] : filteredItems;
 });
 
@@ -259,7 +265,7 @@ const conversationListPagination = computed(() => {
     Array.isArray(chatsOnView.value) &&
     !chatsOnView.value.length;
   const isNoFiltersOrFoldersAndChatListNotEmpty =
-    !hasAppliedFiltersOrActiveFolders.value && 
+    !hasAppliedFiltersOrActiveFolders.value &&
     activeAssigneeTab.value !== 'comments' &&
     hasChatsOnView;
   const isUnderPerPage =
@@ -273,7 +279,6 @@ const conversationListPagination = computed(() => {
 
   return currentPage.value + 1;
 });
-
 
 const conversationFilters = computed(() => {
   const tabConversationType =
@@ -323,6 +328,9 @@ const pageTitle = computed(() => {
   }
   if (props.conversationType === 'spam') {
     return t('CHAT_LIST.SPAM_HEADING');
+  }
+  if (props.conversationType === 'blacklist') {
+    return t('CHAT_LIST.BLACKLIST_HEADING');
   }
   if (hasActiveFolders.value) {
     return activeFolder.value.name;
@@ -850,10 +858,6 @@ const shouldShowMarkAsSpam = computed(() => {
   });
 });
 
-function onContextMenuToggle(state) {
-  isContextMenuOpen.value = state;
-}
-
 function toggleSelectAll(check) {
   selectAllConversations(check, conversationList);
 }
@@ -959,7 +963,6 @@ watch(conversationFilters, (newVal, oldVal) => {
       :is-on-expanded-layout="isOnExpandedLayout"
       :conversation-stats="conversationStats"
       :is-list-loading="chatListLoading && !conversationList.length"
-
       @add-folders="onClickOpenAddFoldersModal"
       @delete-folders="onClickOpenDeleteFoldersModal"
       @filters-modal="onToggleAdvanceFiltersModal"
@@ -1070,7 +1073,6 @@ watch(conversationFilters, (newVal, oldVal) => {
       v-if="showAdvancedFilters"
       to="#conversationFilterTeleportTarget"
     >
-
       <ConversationFilter
         v-model="appliedFilter"
         :folder-name="activeFolderName"

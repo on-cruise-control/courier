@@ -243,7 +243,9 @@ export default {
       props: () => ({ conversationType: 'spam' }),
     },
     {
-      path: frontendURL('accounts/:accountId/spam/conversations/:conversationId'),
+      path: frontendURL(
+        'accounts/:accountId/spam/conversations/:conversationId'
+      ),
       name: 'conversation_through_spam',
       meta: {
         permissions: CONVERSATION_PERMISSIONS,
@@ -252,6 +254,29 @@ export default {
       props: route => ({
         conversationId: route.params.conversationId,
         conversationType: 'spam',
+      }),
+    },
+    {
+      path: frontendURL('accounts/:accountId/blacklist/conversations'),
+      name: 'conversation_blacklist',
+      meta: {
+        permissions: CONVERSATION_PERMISSIONS,
+      },
+      component: ConversationView,
+      props: () => ({ conversationType: 'blacklist' }),
+    },
+    {
+      path: frontendURL(
+        'accounts/:accountId/blacklist/conversations/:conversationId'
+      ),
+      name: 'conversation_through_blacklist',
+      meta: {
+        permissions: CONVERSATION_PERMISSIONS,
+      },
+      component: ConversationView,
+      props: route => ({
+        conversationId: route.params.conversationId,
+        conversationType: 'blacklist',
       }),
     },
   ],

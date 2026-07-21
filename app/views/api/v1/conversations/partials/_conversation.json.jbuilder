@@ -63,4 +63,5 @@ json.sla_policy_id conversation.sla_policy_id
 json.is_spam conversation.is_spam
 json.comment_sentiment conversation.comment_sentiment
 json.mark_as_not_spam conversation.mark_as_not_spam
+json.is_blacklisted conversation.is_blacklisted
 json.partial! 'enterprise/api/v1/conversations/partials/conversation', conversation: conversation if ChatwootApp.enterprise?

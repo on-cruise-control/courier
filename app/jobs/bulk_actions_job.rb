@@ -29,11 +29,19 @@ class BulkActionsJob < ApplicationJob
       bulk_add_labels(conversation)
 
       was_spam = conversation.is_spam
+      was_blacklisted = conversation.is_blacklisted
 
       conversation.update!(params) if params.present?
 
-      conversation.cancel_existing_follow_up_job if !was_spam && conversation.is_spam && conversation.follow_up_jid.present?
+      cancel_follow_up_job_if_newly_flagged(conversation, was_spam, was_blacklisted)
     end
+  end
+
+  def cancel_follow_up_job_if_newly_flagged(conversation, was_spam, was_blacklisted)
+    return if conversation.follow_up_jid.blank?
+    return unless (!was_spam && conversation.is_spam) || (!was_blacklisted && conversation.is_blacklisted)
+
+    conversation.cancel_existing_follow_up_job
   end
 
   def bulk_remove_labels
@@ -43,7 +51,7 @@ class BulkActionsJob < ApplicationJob
   end
 
   def available_params(params)
-    fields = params[:fields]&.to_h || {}
+    fields = params[:fields].to_h
 
     fields.delete('status') if fields['status'].nil?
 

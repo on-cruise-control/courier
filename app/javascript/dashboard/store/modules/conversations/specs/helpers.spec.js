@@ -1,7 +1,62 @@
 import { describe, it, expect } from 'vitest';
-import { applyRoleFilter } from '../helpers';
+import {
+  applyRoleFilter,
+  filterByBlacklist,
+  applyPageFilters,
+} from '../helpers';
 
 describe('Conversation Helpers', () => {
+  describe('#filterByBlacklist', () => {
+    it('only keeps blacklisted conversations on the blacklist view', () => {
+      expect(filterByBlacklist(true, 'blacklist', true)).toBe(true);
+      expect(filterByBlacklist(true, 'blacklist', false)).toBe(false);
+    });
+
+    it('excludes blacklisted conversations from every other view', () => {
+      expect(filterByBlacklist(true, undefined, true)).toBe(false);
+      expect(filterByBlacklist(true, 'mention', true)).toBe(false);
+      expect(filterByBlacklist(true, undefined, false)).toBe(true);
+    });
+
+    it('does not override an already-false shouldFilter', () => {
+      expect(filterByBlacklist(false, 'blacklist', true)).toBe(false);
+    });
+  });
+
+  describe('#applyPageFilters with is_blacklisted', () => {
+    const baseConversation = {
+      status: 'open',
+      inbox_id: 1,
+      labels: [],
+      meta: {},
+    };
+
+    it('excludes a blacklisted conversation from the default (all conversations) view', () => {
+      const conversation = { ...baseConversation, is_blacklisted: true };
+      expect(applyPageFilters(conversation, { status: 'open' })).toBe(false);
+    });
+
+    it('includes a blacklisted conversation on the blacklist view', () => {
+      const conversation = { ...baseConversation, is_blacklisted: true };
+      expect(
+        applyPageFilters(conversation, {
+          status: 'open',
+          conversationType: 'blacklist',
+        })
+      ).toBe(true);
+    });
+
+    it('excludes a non-blacklisted conversation from the blacklist view', () => {
+      const conversation = { ...baseConversation, is_blacklisted: false };
+      expect(
+        applyPageFilters(conversation, {
+          status: 'open',
+          conversationType: 'blacklist',
+        })
+      ).toBe(false);
+    });
+  });
+
   describe('#applyRoleFilter', () => {
     // Test data for conversations
     const conversationWithAssignee = {

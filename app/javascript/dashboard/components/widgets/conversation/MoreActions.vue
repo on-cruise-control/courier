@@ -24,6 +24,29 @@ const [showEmailActionsModal, toggleEmailModal] = useToggle(false);
 const [showActionsDropdown, toggleDropdown] = useToggle(false);
 
 const currentChat = computed(() => store.getters.getSelectedChat);
+const isBlacklisted = computed(() => currentChat.value.is_blacklisted);
+
+const toggleBlacklist = async () => {
+  const wasBlacklisted = isBlacklisted.value;
+  try {
+    await store.dispatch('bulkActions/process', {
+      type: 'Conversation',
+      ids: [currentChat.value.id],
+      fields: { is_blacklisted: !wasBlacklisted },
+    });
+    useAlert(
+      wasBlacklisted
+        ? t('CONVERSATION.UNBLOCK_SUCCESS')
+        : t('CONVERSATION.BLOCK_SUCCESS')
+    );
+  } catch (error) {
+    useAlert(
+      wasBlacklisted
+        ? t('CONVERSATION.UNBLOCK_ERROR')
+        : t('CONVERSATION.BLOCK_ERROR')
+    );
+  }
+};
 
 const actionMenuItems = computed(() => {
   const items = [];
@@ -95,6 +118,17 @@ onUnmounted(() => {
     <ResolveAction
       :conversation-id="currentChat.id"
       :status="currentChat.status"
+    />
+    <ButtonV4
+      v-tooltip="
+        isBlacklisted ? $t('CONVERSATION.UNBLOCK') : $t('CONVERSATION.BLOCK')
+      "
+      size="sm"
+      variant="faded"
+      :color="slate"
+      :icon="isBlacklisted ? 'i-lucide-ban' : 'i-lucide-shield-check'"
+      class="rounded-md"
+      @click="toggleBlacklist"
     />
     <div
       v-on-clickaway="() => toggleDropdown(false)"

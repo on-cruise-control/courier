@@ -23,6 +23,15 @@ RSpec.describe Conversations::FollowUpJob do
       end
     end
 
+    context 'when conversation is blacklisted' do
+      it 'returns without action' do
+        conversation.update!(is_blacklisted: true)
+        expect do
+          described_class.perform_now(conversation.id, 1)
+        end.not_to change(conversation.messages, :count)
+      end
+    end
+
     context 'when conversation has stop_follow_up set' do
       it 'returns without action' do
         conversation.update!(stop_follow_up: true)
