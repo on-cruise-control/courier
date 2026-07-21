@@ -18,7 +18,6 @@ RSpec.describe 'API Base', type: :request do
             headers: { api_access_token: admin.access_token.token },
             as: :json
 
-
         expect(response).to have_http_status(:success)
         expect(response.parsed_body['id']).to eq(conversation.display_id)
       end
@@ -96,24 +95,23 @@ RSpec.describe 'API Base', type: :request do
     end
 
     context 'when the account is suspended' do
-      it 'returns 401 unauthorized' do
+      it 'allows read access and does not return 401' do
         account.update!(status: :suspended)
 
-        post "/api/v1/accounts/#{account.id}/canned_responses",
-             headers: { api_access_token: user.access_token.token },
-             as: :json
+        get "/api/v1/accounts/#{account.id}/canned_responses",
+            headers: { api_access_token: user.access_token.token },
+            as: :json
 
-        expect(response).to have_http_status(:unauthorized)
+        expect(response).to have_http_status(:success)
       end
 
-      # this exception occured in a client instance (DoubleRender error)
-      it 'will not throw exception if user does not have access to suspended account' do
+      it 'will still not throw exception if user does not have access to suspended account' do
         user_with_out_access = create(:user)
         account.update!(status: :suspended)
 
-        post "/api/v1/accounts/#{account.id}/canned_responses",
-             headers: { api_access_token: user_with_out_access.access_token.token },
-             as: :json
+        get "/api/v1/accounts/#{account.id}/canned_responses",
+            headers: { api_access_token: user_with_out_access.access_token.token },
+            as: :json
 
         expect(response).to have_http_status(:unauthorized)
       end

@@ -3,7 +3,10 @@ require 'rails_helper'
 describe Messages::SendEmailNotificationService do
   let(:account) { create(:account) }
   let(:conversation) { create(:conversation, account: account) }
-  let(:message) { create(:message, conversation: conversation, message_type: 'outgoing') }
+  let(:message) do
+    conversation.reload
+    create(:message, conversation: conversation, message_type: 'outgoing')
+  end
   let(:service) { described_class.new(message: message) }
 
   describe '#perform' do
@@ -58,6 +61,7 @@ describe Messages::SendEmailNotificationService do
         # Create 5 threads that simultaneously try to enqueue workers for the same conversation
         threads = Array.new(5) do
           Thread.new do
+            conversation.reload
             msg = create(:message, conversation: conversation, message_type: 'outgoing')
             described_class.new(message: msg).perform
           end
@@ -156,8 +160,7 @@ describe Messages::SendEmailNotificationService do
 
       before do
         conversation.contact.update!(email: 'test@example.com')
-        allow(account).to receive(:feature_enabled?).and_return(false)
-        allow(account).to receive(:feature_enabled?).with('email_continuity_on_api_channel').and_return(true)
+        account.enable_features!('email_continuity_on_api_channel')
       end
 
       it 'returns true when email_continuity_on_api_channel feature is enabled' do
@@ -166,8 +169,7 @@ describe Messages::SendEmailNotificationService do
 
       context 'when email_continuity_on_api_channel feature is disabled' do
         before do
-          allow(account).to receive(:feature_enabled?).and_return(false)
-          allow(account).to receive(:feature_enabled?).with('email_continuity_on_api_channel').and_return(false)
+          account.disable_features!('email_continuity_on_api_channel')
         end
 
         it 'returns false' do

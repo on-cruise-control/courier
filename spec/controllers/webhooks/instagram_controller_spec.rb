@@ -17,6 +17,7 @@ RSpec.describe 'Webhooks::InstagramController', type: :request do
 
   before do
     InstallationConfig.where(name: %w[FB_APP_SECRET IG_VERIFY_TOKEN INSTAGRAM_APP_SECRET INSTAGRAM_VERIFY_TOKEN]).delete_all
+    InstallationConfig.create!(name: 'INSTAGRAM_APP_SECRET', value: client_secret)
     GlobalConfig.clear_cache
   end
 
@@ -44,6 +45,7 @@ RSpec.describe 'Webhooks::InstagramController', type: :request do
   describe 'POST /webhooks/instagram' do
     let!(:dm_params) { build(:instagram_message_create_event).with_indifferent_access }
     let(:body) { dm_params.merge(object: 'instagram').to_json }
+    let!(:instagram_channel) { create(:channel_instagram, instagram_id: dm_params[:entry].first[:id]) }
 
     it 'calls the instagram events job with the params for a valid signature' do
       allow(Webhooks::InstagramEventsJob).to receive(:perform_later)
@@ -92,16 +94,14 @@ RSpec.describe 'Webhooks::InstagramController', type: :request do
     context 'when processing echo events' do
       let!(:echo_params) { build(:instagram_story_mention_event_with_echo).with_indifferent_access }
       let(:echo_body) { echo_params.merge(object: 'instagram').to_json }
+      let!(:echo_instagram_channel) { create(:channel_instagram, instagram_id: echo_params[:entry].first[:id]) }
 
-      it 'delays processing for echo events by 2 seconds' do
-        job_double = class_double(Webhooks::InstagramEventsJob)
-        allow(Webhooks::InstagramEventsJob).to receive(:set).with(wait: 2.seconds).and_return(job_double)
-        allow(job_double).to receive(:perform_later)
+      it 'processes echo events without delay' do
+        allow(Webhooks::InstagramEventsJob).to receive(:perform_later)
 
         post_instagram_webhook(echo_body)
         expect(response).to have_http_status(:success)
-        expect(Webhooks::InstagramEventsJob).to have_received(:set).with(wait: 2.seconds)
-        expect(job_double).to have_received(:perform_later)
+        expect(Webhooks::InstagramEventsJob).to have_received(:perform_later)
       end
     end
   end

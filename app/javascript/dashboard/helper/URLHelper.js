@@ -29,6 +29,8 @@ export const conversationUrl = ({
     url = `accounts/${accountId}/unattended/conversations/${id}`;
   } else if (conversationType === 'spam') {
     url = `accounts/${accountId}/spam/conversations/${id}`;
+  } else if (conversationType === 'blacklist') {
+    url = `accounts/${accountId}/blacklist/conversations/${id}`;
   }
   return url;
 };
@@ -56,6 +58,7 @@ export const conversationListPageURL = ({
       participating: 'participating/conversations',
       unattended: 'unattended/conversations',
       spam: 'spam/conversations',
+      blacklist: 'blacklist/conversations',
     };
     url = `accounts/${accountId}/${urlMap[conversationType]}`;
   }

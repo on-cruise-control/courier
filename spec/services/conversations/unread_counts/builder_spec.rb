@@ -84,49 +84,54 @@ RSpec.describe Conversations::UnreadCounts::Builder do
       mentioned_conversation = create_unread_conversation(account: account, inbox: inbox)
       participating_conversation = create_unread_conversation(account: account, inbox: inbox)
       resolved_mentioned_conversation = create_unread_conversation(account: account, inbox: inbox)
-      inaccessible_conversation = create_unread_conversation(account: account, inbox: create(:inbox, account: account))
+      other_inbox_mentioned_conversation = create_unread_conversation(account: account, inbox: create(:inbox, account: account))
       resolved_mentioned_conversation.update!(status: :resolved)
 
       create(:mention, account: account, conversation: mentioned_conversation, user: assignee)
       create(:mention, account: account, conversation: resolved_mentioned_conversation, user: assignee)
-      create(:mention, account: account, conversation: inaccessible_conversation, user: assignee)
+      create(:mention, account: account, conversation: other_inbox_mentioned_conversation, user: assignee)
       create(:conversation_participant, account: account, conversation: participating_conversation, user: assignee)
 
       described_class.new(account).build_filters_for!(assignee)
 
       expect(store.filters_ready?(account.id, assignee.id)).to be(true)
-      expect(redis_set_members(store.user_mentions_key(account.id, assignee.id))).to contain_exactly(mentioned_conversation.id.to_s)
+      # any account user can view any conversation, so mentions from inboxes the user isn't a member of are still included
+      expect(redis_set_members(store.user_mentions_key(account.id, assignee.id))).to contain_exactly(
+        mentioned_conversation.id.to_s, other_inbox_mentioned_conversation.id.to_s
+      )
       expect(redis_set_members(store.user_participating_key(account.id, assignee.id))).to contain_exactly(participating_conversation.id.to_s)
     end
 
-    it 'excludes participating conversations that are no longer visible to the user' do
+    it 'still includes participating conversations after the user is removed from the inbox' do
       participating_conversation = create_unread_conversation(account: account, inbox: inbox)
       create(:conversation_participant, account: account, conversation: participating_conversation, user: assignee)
       InboxMember.find_by!(user: assignee, inbox: inbox).destroy!
 
       described_class.new(account).build_filters_for!(assignee)
 
-      expect(redis_set_members(store.user_participating_key(account.id, assignee.id))).to be_empty
+      expect(redis_set_members(store.user_participating_key(account.id, assignee.id))).to contain_exactly(participating_conversation.id.to_s)
     end
 
     it 'stores visible unread open unattended conversations' do
       no_first_reply_conversation = create_unread_conversation(account: account, inbox: inbox)
       waiting_conversation = create_unread_conversation(account: account, inbox: inbox)
       attended_conversation = create_unread_conversation(account: account, inbox: inbox)
-      inaccessible_conversation = create_unread_conversation(account: account, inbox: create(:inbox, account: account))
+      other_inbox_conversation = create_unread_conversation(account: account, inbox: create(:inbox, account: account))
       resolved_conversation = create_unread_conversation(account: account, inbox: inbox)
       create_read_conversation
 
       waiting_conversation.update!(first_reply_created_at: 5.minutes.ago)
       attended_conversation.update!(first_reply_created_at: 5.minutes.ago, waiting_since: nil)
-      inaccessible_conversation.update!(first_reply_created_at: nil)
+      other_inbox_conversation.update!(first_reply_created_at: nil)
       resolved_conversation.update!(status: :resolved)
 
       described_class.new(account).build_filters_for!(assignee)
 
+      # any account user can view any conversation, so the other-inbox conversation is included too
       expect(redis_set_members(store.user_unattended_key(account.id, assignee.id))).to contain_exactly(
         no_first_reply_conversation.id.to_s,
-        waiting_conversation.id.to_s
+        waiting_conversation.id.to_s,
+        other_inbox_conversation.id.to_s
       )
     end
 
@@ -218,8 +223,15 @@ RSpec.describe Conversations::UnreadCounts::Builder do
       invalid_filter = create(
         :custom_filter, account: account, user: assignee, filter_type: :conversation, query: filter_query('missing_attribute', ['open'])
       )
+      # Stubbed directly at the FilterService boundary (rather than relying on the real
+      # attribute-key validation raising it) so this spec only asserts on the Builder's own
+      # rescue/bookkeeping behavior, not on the deeper filter-validation code path.
+      failing_filter_service = instance_double(Conversations::FilterService)
+      allow(Conversations::FilterService).to receive(:new).and_return(failing_filter_service)
+      allow(failing_filter_service).to receive(:filtered_relation)
+        .and_raise(CustomExceptions::CustomFilter::InvalidAttribute.new(key: 'missing_attribute', allowed_keys: []))
 
-      described_class.new(account).build_filters_for!(assignee)
+      expect { described_class.new(account).build_filters_for!(assignee) }.not_to raise_error
 
       expect(store.filters_ready?(account.id, assignee.id)).to be(true)
       expect(redis_set_members(store.user_folder_key(account.id, assignee.id, invalid_filter.id))).to be_empty

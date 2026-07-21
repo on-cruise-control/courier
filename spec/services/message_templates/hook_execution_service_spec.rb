@@ -202,12 +202,14 @@ describe MessageTemplates::HookExecutionService do
         conversation.inbox.update(working_hours_enabled: true, out_of_office_message: 'We are out of office')
         conversation.inbox.working_hours.today.update!(closed_all_day: true)
 
+        conversation.reload
         create(:message, conversation: conversation, account: conversation.account, message_type: :outgoing, created_at: 2.minutes.ago)
 
         out_of_office_service = double
         allow(MessageTemplates::Template::OutOfOffice).to receive(:new).and_return(out_of_office_service)
         allow(out_of_office_service).to receive(:perform).and_return(true)
 
+        conversation.reload
         create(:message, conversation: conversation, account: conversation.account)
 
         expect(MessageTemplates::Template::OutOfOffice).not_to have_received(:new)
@@ -241,6 +243,7 @@ describe MessageTemplates::HookExecutionService do
       conversation.inbox.update(working_hours_enabled: true, out_of_office_message: 'We are out of office')
       conversation.inbox.working_hours.today.update!(closed_all_day: true)
 
+      conversation.reload
       out_of_office_service = double
 
       allow(MessageTemplates::Template::OutOfOffice).to receive(:new).and_return(out_of_office_service)

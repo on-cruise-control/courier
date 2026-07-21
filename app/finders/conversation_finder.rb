@@ -125,6 +125,8 @@ class ConversationFinder
     filter_by_conversation_type if params[:conversation_type]
     # Exclude spam from all views except the dedicated spam view
     @conversations = @conversations.not_spam unless params[:conversation_type] == 'spam'
+    # Exclude blacklisted conversations from all views except the dedicated blacklist view
+    @conversations = @conversations.not_blacklisted unless params[:conversation_type] == 'blacklist'
     @conversations
   end
 
@@ -137,7 +139,7 @@ class ConversationFinder
     when 'assigned'
       @conversations = @conversations.assigned
     when 'comments'
-      @conversations = @conversations.where("additional_attributes ->> 'type' IN (?)", ['feed_comments', 'instagram_comments'])
+      @conversations = @conversations.where("additional_attributes ->> 'type' IN (?)", %w[feed_comments instagram_comments])
     end
     @conversations
   end
@@ -153,6 +155,8 @@ class ConversationFinder
       @conversations = @conversations.unattended
     when 'spam'
       @conversations = @conversations.spam
+    when 'blacklist'
+      @conversations = @conversations.blacklisted
     end
     @conversations
   end
@@ -200,7 +204,7 @@ class ConversationFinder
       Arel.sql("COUNT(*) FILTER (WHERE assignee_id = #{current_user.id})"),
       Arel.sql('COUNT(*) FILTER (WHERE assignee_id IS NULL)'),
       Arel.sql('COUNT(*)'),
-      Arel.sql("COUNT(*) FILTER (WHERE additional_attributes ->> 'type' IN ('feed_comments', 'instagram_comments'))")
+      Arel.sql("COUNT(*) FILTER (WHERE conversations.additional_attributes ->> 'type' IN ('feed_comments', 'instagram_comments'))")
     )
     counts || [0, 0, 0, 0]
   end
@@ -210,7 +214,7 @@ class ConversationFinder
       @conversations.assigned_to(current_user).count,
       @conversations.unassigned.count,
       @conversations.count,
-      @conversations.where("additional_attributes ->> 'type' IN (?)", ['feed_comments', 'instagram_comments']).count
+      @conversations.where("conversations.additional_attributes ->> 'type' IN (?)", %w[feed_comments instagram_comments]).count
     ]
   end
 

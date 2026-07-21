@@ -1,17 +1,14 @@
 class UserDailySessions::RecordActivityService
   def initialize(account_user:, timestamp: Time.current)
     @account_user = account_user
-    @timestamp = timestamp.in_time_zone
+    @timestamp = timestamp
   end
 
   def perform
     account_user.with_lock do
       session = session_for_day
 
-      if session.persisted? && stale_session?(session) && session.session_started_at.present?
-        finalize_open_session!(session, account_user.active_at || timestamp)
-      end
-
+      finalize_open_session!(session, timestamp) if session.persisted? && stale_session?(session) && session.session_started_at.present?
       start_session!(session) if session.new_record? || session.session_started_at.blank? || stale_session?(session)
 
       account_user.update!(active_at: timestamp)
@@ -33,7 +30,7 @@ class UserDailySessions::RecordActivityService
     )
   end
 
-  def stale_session?(session)
+  def stale_session?(_session)
     account_user.active_at.blank? || account_user.active_at < timestamp - AccountUser::SESSION_ACTIVE_TIMEOUT
   end
 
@@ -46,5 +43,6 @@ class UserDailySessions::RecordActivityService
   def finalize_open_session!(session, end_timestamp)
     session.duration_seconds += [end_timestamp.to_i - session.session_started_at.to_i, 0].max
     session.session_started_at = nil
+    session.save!
   end
 end

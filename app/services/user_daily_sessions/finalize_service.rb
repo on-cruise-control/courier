@@ -10,7 +10,7 @@ class UserDailySessions::FinalizeService
       session = latest_session
       return unless session&.session_started_at.present?
 
-      finished_at = end_timestamp || account_user.active_at || session.session_started_at + AccountUser::SESSION_ACTIVE_TIMEOUT
+      finished_at = end_timestamp || account_user.active_at || timestamp
       session.duration_seconds += [finished_at.to_i - session.session_started_at.to_i, 0].max
       session.session_started_at = nil
       session.save!
@@ -20,8 +20,7 @@ class UserDailySessions::FinalizeService
 
   private
 
-  attr_reader :account_user, :timestamp
-  attr_reader :end_timestamp
+  attr_reader :account_user, :timestamp, :end_timestamp
 
   def latest_session
     UserDailySession.where(account_id: account_user.account_id, user_id: account_user.user_id).order(session_date: :desc, created_at: :desc).first

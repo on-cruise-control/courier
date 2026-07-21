@@ -206,6 +206,7 @@ RSpec.describe AutomationRules::ActionService do
       before do
         create(:inbox_member, inbox: conversation.inbox, user: agent)
         rule.actions << { action_name: 'assign_agent', action_params: ['last_responding_agent'] }
+        allow_any_instance_of(Message).to receive(:schedule_follow_up_job)
       end
 
       it 'assigns the conversation to the last responding agent' do

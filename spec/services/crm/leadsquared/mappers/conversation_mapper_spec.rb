@@ -67,6 +67,10 @@ RSpec.describe Crm::Leadsquared::Mappers::ConversationMapper do
   end
 
   describe '.map_transcript_activity' do
+    before do
+      allow_any_instance_of(Message).to receive(:schedule_follow_up_job).and_return(nil)
+    end
+
     context 'when conversation has no messages' do
       it 'returns no messages message' do
         result = described_class.map_transcript_activity(hook, conversation)

@@ -1,4 +1,6 @@
 require 'spec_helper'
+require_relative 'coverage_helper'
+
 ENV['RAILS_ENV'] ||= 'test'
 require File.expand_path('../config/environment', __dir__)
 # Prevent database truncation if the environment is production
@@ -44,10 +46,11 @@ rescue ActiveRecord::PendingMigrationError => e
 end
 RSpec.configure do |config|
   config.include FactoryBot::Syntax::Methods
-  # Remove this line if you're not using ActiveRecord or ActiveRecord fixtures
-  config.fixture_path = Rails.root.join('spec/fixtures')
+  # Rails 7.1 deprecated singular fixture_path in favour of an array.
+  config.fixture_paths = [Rails.root.join('spec/fixtures')]
 
   # If you're not using ActiveRecord, or you'd prefer not to run each of your
+
   # examples within a transaction, remove the following line or assign false
   # instead of true.
   config.use_transactional_fixtures = true
@@ -84,6 +87,20 @@ RSpec.configure do |config|
   # OpenAPI response validation via Skooma
   path_to_openapi = Rails.root.join('swagger/swagger.json')
   config.include Skooma::RSpec[path_to_openapi], type: :request
+
+  config.before do
+    stub_request(:post, 'https://slack.com/api/chat.postMessage').to_return(status: 200, body: '{}', headers: {})
+    stub_request(:post, /graph\.instagram\.com/).to_return(status: 200, body: '{}', headers: {})
+    stub_request(:delete, /graph\.instagram\.com/).to_return(status: 200, body: '{}', headers: {})
+  end
+
+  config.before(:each, type: :request) do
+    allow_any_instance_of(ActionView::Base).to receive(:vite_client_tag).and_return('')
+    allow_any_instance_of(ActionView::Base).to receive(:vite_javascript_tag).and_return('')
+  end
+  config.after do
+    Current.reset
+  end
 end
 
 Shoulda::Matchers.configure do |config|

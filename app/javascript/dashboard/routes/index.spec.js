@@ -35,7 +35,7 @@ describe('#validateAuthenticateRoutePermission', () => {
       // Mock window.location.assign
       const mockAssign = vi.fn();
       delete window.location;
-      window.location = { assign: mockAssign };
+      window.location = { assign: mockAssign, pathname: '/', search: '' };
 
       validateAuthenticateRoutePermission(to, next);
 

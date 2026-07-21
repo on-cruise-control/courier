@@ -86,7 +86,7 @@ class Account < ApplicationRecord
   include AccountCaptainAutoResolve
 
   has_many :account_users, dependent: :destroy_async
-  has_many :user_sessions, dependent: :destroy_async
+  has_many :user_daily_sessions, dependent: :destroy_async
   has_many :agent_bot_inboxes, dependent: :destroy_async
   has_many :agent_bots, dependent: :destroy_async
   has_many :api_channels, dependent: :destroy_async, class_name: '::Channel::Api'
@@ -147,8 +147,8 @@ class Account < ApplicationRecord
   after_create_commit :notify_creation
   after_create_commit :create_default_labels
   after_update_commit :clear_unread_conversation_counts_cache, if: :saved_change_to_feature_conversation_unread_counts?
-  after_destroy :remove_account_sequences
   after_update :handle_status_change, if: :saved_change_to_status?
+  after_destroy :remove_account_sequences
 
   def agents
     users.where(account_users: { role: :agent })
@@ -298,9 +298,7 @@ class Account < ApplicationRecord
     end
 
     escalation_emails.each do |email|
-      unless email =~ Devise.email_regexp
-        errors.add(:escalation_emails, "#{email} is not a valid email")
-      end
+      errors.add(:escalation_emails, "#{email} is not a valid email") unless email&.match?(Devise.email_regexp)
     end
   end
 
@@ -313,9 +311,7 @@ class Account < ApplicationRecord
     end
 
     vehicle_parts_emails.each do |email|
-      unless email =~ Devise.email_regexp
-        errors.add(:vehicle_parts_emails, "#{email} is not a valid email")
-      end
+      errors.add(:vehicle_parts_emails, "#{email} is not a valid email") unless email&.match?(Devise.email_regexp)
     end
   end
 
@@ -328,9 +324,20 @@ class Account < ApplicationRecord
     end
 
     service_emails.each do |email|
-      unless email =~ Devise.email_regexp
-        errors.add(:service_emails, "#{email} is not a valid email")
-      end
+      errors.add(:service_emails, "#{email} is not a valid email") unless email&.match?(Devise.email_regexp)
+    end
+  end
+
+  def validate_service_emails
+    return if service_emails.blank?
+
+    unless service_emails.is_a?(Array)
+      errors.add(:service_emails, 'must be an array')
+      return
+    end
+
+    service_emails.each do |email|
+      errors.add(:service_emails, "#{email} is not a valid email") unless email&.match?(Devise.email_regexp)
     end
   end
 end

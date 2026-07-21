@@ -56,15 +56,18 @@ RSpec.describe User do
     end
 
     it 'return value if CHATWOOT_INBOX_HMAC_KEY is set' do
-      ConfigLoader.new.process
-      i = InstallationConfig.find_by(name: 'CHATWOOT_INBOX_HMAC_KEY')
-      i.value = 'random_secret_key'
-      i.save!
+      config = InstallationConfig.find_or_initialize_by(name: 'CHATWOOT_INBOX_HMAC_KEY')
+      old_value = config.value
+
+      config.update!(value: 'random_secret_key')
       GlobalConfig.clear_cache
 
       expected_hmac_identifier = OpenSSL::HMAC.hexdigest('sha256', 'random_secret_key', user.email)
 
       expect(user.hmac_identifier).to eq expected_hmac_identifier
+    ensure
+      config.update!(value: old_value)
+      GlobalConfig.clear_cache
     end
   end
 
@@ -285,6 +288,62 @@ RSpec.describe User do
       user_with_tokens.tokens = {}
 
       expect { user_with_tokens.save! }.to change(user_with_tokens.user_sessions, :count).by(-2)
+    end
+  end
+
+  describe '#cancel_confirmation_reminder_jobs' do
+    let(:unconfirmed_user) { create(:user, skip_confirmation: false) }
+
+    it 'deletes only the scheduled Users::ConfirmationReminderJob entries belonging to this user' do
+      matching_job = instance_double(Sidekiq::SortedEntry, display_class: 'Users::ConfirmationReminderJob',
+                                                           args: [{ 'arguments' => [unconfirmed_user.id, 'first'] }])
+      other_users_job = instance_double(Sidekiq::SortedEntry, display_class: 'Users::ConfirmationReminderJob',
+                                                              args: [{ 'arguments' => [-1, 'first'] }])
+      unrelated_job = instance_double(Sidekiq::SortedEntry, display_class: 'SomeOtherJob', args: [{ 'arguments' => [unconfirmed_user.id] }])
+      scheduled_set = instance_double(Sidekiq::ScheduledSet)
+
+      allow(Sidekiq::ScheduledSet).to receive(:new).and_return(scheduled_set)
+      allow(scheduled_set).to receive(:each).and_yield(matching_job).and_yield(other_users_job).and_yield(unrelated_job)
+      allow(other_users_job).to receive(:delete)
+      allow(unrelated_job).to receive(:delete)
+
+      expect(matching_job).to receive(:delete)
+
+      unconfirmed_user.send(:cancel_confirmation_reminder_jobs)
+
+      expect(other_users_job).not_to have_received(:delete)
+      expect(unrelated_job).not_to have_received(:delete)
+    end
+  end
+
+  describe 'confirmed_at change callback' do
+    let(:unconfirmed_user) { create(:user, skip_confirmation: false) }
+
+    it 'cancels pending confirmation reminder jobs when the user confirms via Devise' do
+      expect(unconfirmed_user).to receive(:cancel_confirmation_reminder_jobs)
+
+      unconfirmed_user.confirm
+    end
+
+    it 'cancels pending confirmation reminder jobs when confirmed_at is set directly (e.g. by Super Admin)' do
+      expect(unconfirmed_user).to receive(:cancel_confirmation_reminder_jobs)
+
+      unconfirmed_user.update!(confirmed_at: Time.current)
+    end
+
+    it 'does not cancel jobs when confirmed_at is unchanged' do
+      unconfirmed_user
+      expect(unconfirmed_user).not_to receive(:cancel_confirmation_reminder_jobs)
+
+      unconfirmed_user.update!(name: 'New Name')
+    end
+  end
+
+  describe 'after_destroy callback' do
+    it 'cancels pending confirmation reminder jobs when the user is destroyed' do
+      expect(user).to receive(:cancel_confirmation_reminder_jobs)
+
+      user.destroy
     end
   end
 end

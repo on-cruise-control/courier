@@ -9,6 +9,7 @@ RSpec.describe V2::Reports::BotMetricsBuilder do
   let(:params) { { since: since, until: until_time } }
 
   before do
+    allow_any_instance_of(Message).to receive(:schedule_follow_up_job)
     create(:agent_bot_inbox, inbox: inbox)
   end
 

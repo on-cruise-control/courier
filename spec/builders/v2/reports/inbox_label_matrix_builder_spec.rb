@@ -14,6 +14,12 @@ RSpec.describe V2::Reports::InboxLabelMatrixBuilder do
   end
   let(:builder) { described_class.new(account: account, params: params) }
 
+  before do
+    # Account creates default labels (escalation, handoff) on creation.
+    # Remove them so they don't add extra columns to the matrix.
+    account.labels.where(title: %w[escalation handoff]).destroy_all
+  end
+
   describe '#build' do
     subject(:report) { builder.build }
 

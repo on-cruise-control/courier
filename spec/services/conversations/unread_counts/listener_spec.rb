@@ -22,6 +22,8 @@ RSpec.describe Conversations::UnreadCounts::Listener do
   end
 
   it 'clears user filter counts when a non-incoming message updates last activity' do
+    allow_any_instance_of(Message).to receive(:schedule_follow_up_job).and_return(nil)
+
     account.enable_features!(:conversation_unread_counts)
     message = create(:message, account: account, inbox: conversation.inbox, conversation: conversation, message_type: :outgoing)
     event = Events::Base.new('message.created', Time.zone.now, message: message)

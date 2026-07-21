@@ -2,27 +2,37 @@ require 'rails_helper'
 
 RSpec.describe 'Api::V1::Summaries', type: :request do
   let(:account) { create(:account) }
-  let(:conversation) { create(:conversation, account: account) }
-  let(:agent) { create(:user, account: account, role: :agent) }
+  let(:agent) { create(:user, account: account, role: 'agent') }
+  let(:conversation) { create(:conversation, account: account, assignee: agent) }
 
   before do
-    allow(GlobalConfig).to receive(:get_value).with('CONVERSATION_SUMMARY_API_URL').and_return('http://example.com/summary')
+    Current.account = account
+    Current.user = agent
+
+    allow(Conversation).to receive(:find_by!).with(display_id: conversation.display_id.to_s).and_return(conversation)
+
+    allow(GlobalConfig).to receive(:get_value)
+      .with('CONVERSATION_SUMMARY_API_URL')
+      .and_return('http://example.com/summary')
   end
 
   describe 'GET /api/v1/summaries' do
     context 'when unauthenticated' do
       it 'returns unauthorized' do
-        get "/api/v1/summaries?conversation_id=#{conversation.display_id}"
+        get "/api/v1/summary?conversation_id=#{conversation.display_id}"
         expect(response).to have_http_status(:unauthorized)
       end
     end
 
     context 'when authenticated' do
       it 'returns summary successfully' do
-        response_double = double(success?: true, body: { body: { data: { summary: 'New summary' } } }.to_json)
+        response_double = double(
+          success?: true,
+          body: { data: { summary: 'New summary' } }.to_json
+        )
         allow(HTTParty).to receive(:post).and_return(response_double)
 
-        get '/api/v1/summaries',
+        get '/api/v1/summary',
             params: { conversation_id: conversation.display_id },
             headers: agent.create_new_auth_token
 
@@ -35,7 +45,7 @@ RSpec.describe 'Api::V1::Summaries', type: :request do
       it 'returns cached summary if available' do
         conversation.update!(summary: 'Cached summary', summary_updated_at: Time.current)
 
-        get '/api/v1/summaries',
+        get '/api/v1/summary',
             params: { conversation_id: conversation.display_id },
             headers: agent.create_new_auth_token
 
@@ -52,10 +62,10 @@ RSpec.describe 'Api::V1::Summaries', type: :request do
           conversation_summary_last_generated_at: 1.hour.ago
         )
 
-        get '/api/v1/summaries',
+        get '/api/v1/summary',
             params: { conversation_id: conversation.display_id, force_refresh: true },
             headers: agent.create_new_auth_token
-
+        conversation.reload
         expect(response).to have_http_status(:success)
         json = JSON.parse(response.body)
         expect(json['cached']).to be true

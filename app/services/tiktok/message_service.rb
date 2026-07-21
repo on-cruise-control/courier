@@ -24,10 +24,18 @@ class Tiktok::MessageService
 
   def conversation
     @conversation ||= if channel.inbox.lock_to_single_conversation
-                        contact_inbox.conversations.order(created_at: :desc).first
+                        contact_inbox.conversations
+                                     .where(inbox_id: channel.inbox.id)
+                                     .order(created_at: :desc)
+                                     .first
                       else
-                        contact_inbox.conversations.where.not(status: :resolved).order(created_at: :desc).first
+                        contact_inbox.conversations
+                                     .where(inbox_id: channel.inbox.id)
+                                     .where.not(status: :resolved)
+                                     .order(created_at: :desc)
+                                     .first
                       end
+
     @conversation ||= create_conversation(channel, contact_inbox, tt_conversation_id)
   end
 

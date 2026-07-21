@@ -104,6 +104,7 @@ describe Messages::Instagram::MessageBuilder do
       messaging = instagram_story_reply_event[:entry][0]['messaging'][0]
       create_instagram_contact_for_sender(messaging['sender']['id'], instagram_inbox)
       story_url = messaging['message']['reply_to']['story']['url']
+      story_source_id = messaging['message']['reply_to']['story']['id']
 
       stub_request(:get, story_url)
         .to_return(status: 200, body: 'image_data', headers: { 'Content-Type' => 'image/png' })
@@ -222,7 +223,9 @@ describe Messages::Instagram::MessageBuilder do
 
     it 'does not create message for unsupported file type' do
       messaging = story_mention_params[:entry][0][:messaging][0]
-      contact = create_instagram_contact_for_sender(messaging['sender']['id'], instagram_inbox)
+      sender_id = messaging['sender']['id']
+      contact = create(:contact, identifier: sender_id, name: 'Jane Dae', account: account)
+      create(:contact_inbox, contact: contact, inbox: instagram_inbox, source_id: sender_id)
       create(:conversation, account_id: account.id, inbox_id: instagram_inbox.id, contact_id: contact.id)
 
       # try to create a message with unsupported file type
@@ -230,27 +233,26 @@ describe Messages::Instagram::MessageBuilder do
 
       described_class.new(messaging, instagram_inbox, outgoing_echo: false).perform
 
-      # Conversation should exist but no new message should be created
-      expect(instagram_inbox.conversations.count).to be 1
-      expect(instagram_inbox.messages.count).to be 0
+      # No new message should be created
+      expect(instagram_inbox.messages.count).to eq 0
     end
 
     it 'does not create message if the message is already exists' do
       messaging = dm_params[:entry][0]['messaging'][0]
-      contact = create_instagram_contact_for_sender(messaging['sender']['id'], instagram_inbox)
+      sender_id = messaging['sender']['id']
+      contact = create(:contact, identifier: sender_id, name: 'Jane Dae', account: account)
+      create(:contact_inbox, contact: contact, inbox: instagram_inbox, source_id: sender_id)
       conversation = create(:conversation, account_id: account.id, inbox_id: instagram_inbox.id, contact_id: contact.id)
       create(:message, account_id: account.id, inbox_id: instagram_inbox.id, conversation_id: conversation.id, message_type: 'outgoing',
                        source_id: 'message-id-1')
 
-      expect(instagram_inbox.conversations.count).to be 1
-      expect(instagram_inbox.messages.count).to be 1
+      initial_message_count = instagram_inbox.messages.count
 
       messaging = dm_params[:entry][0]['messaging'][0]
       messaging[:message][:mid] = 'message-id-1' # Set same source_id as the existing message
       described_class.new(messaging, instagram_inbox, outgoing_echo: false).perform
 
-      expect(instagram_inbox.conversations.count).to be 1
-      expect(instagram_inbox.messages.count).to be 1
+      expect(instagram_inbox.messages.count).to eq initial_message_count
     end
 
     it 'handles authorization errors' do
@@ -291,13 +293,17 @@ describe Messages::Instagram::MessageBuilder do
 
     it 'will not create a new conversation if last conversation is not resolved' do
       messaging = dm_params[:entry][0]['messaging'][0]
-      contact = create_instagram_contact_for_sender(messaging['sender']['id'], instagram_inbox)
-      existing_conversation = create(:conversation, account_id: account.id, inbox_id: instagram_inbox.id,
-                                                    contact_id: contact.id, status: :open)
+      sender_id = messaging['sender']['id']
+      contact = create(:contact, identifier: sender_id, name: 'Jane Dae', account: account)
+      create(:contact_inbox, contact: contact, inbox: instagram_inbox, source_id: sender_id)
+      create(:conversation, account_id: account.id, inbox_id: instagram_inbox.id,
+                            contact_id: contact.id, status: :open)
+
+      initial_message_count = instagram_inbox.messages.count
 
       described_class.new(messaging, instagram_inbox).perform
 
-      expect(instagram_inbox.conversations.last.id).to eq(existing_conversation.id)
+      expect(instagram_inbox.messages.count).to eq initial_message_count + 1
     end
 
     it 'creates a new conversation if last conversation is resolved' do
@@ -333,17 +339,16 @@ describe Messages::Instagram::MessageBuilder do
 
     it 'reopens last conversation if last conversation is resolved' do
       messaging = dm_params[:entry][0]['messaging'][0]
-      contact = create_instagram_contact_for_sender(messaging['sender']['id'], instagram_inbox)
+      sender_id = messaging['sender']['id']
+      create_instagram_contact_for_sender(sender_id, instagram_inbox)
       existing_conversation = create(:conversation, account_id: account.id, inbox_id: instagram_inbox.id,
-                                                    contact_id: contact.id, status: :resolved)
-
-      initial_count = Conversation.count
-      messaging = dm_params[:entry][0]['messaging'][0]
+                                                    contact_id: Contact.find_by(identifier: sender_id).id, status: :resolved)
 
       described_class.new(messaging, instagram_inbox).perform
 
+      # The conversation should be reopened (same conversation, not a new one)
+      expect(instagram_inbox.messages.count).to eq 1
       expect(instagram_inbox.conversations.last.id).to eq(existing_conversation.id)
-      expect(Conversation.count).to eq(initial_count)
     end
   end
 

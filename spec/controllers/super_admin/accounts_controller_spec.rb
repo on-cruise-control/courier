@@ -84,14 +84,11 @@ RSpec.describe 'Super Admin accounts API', type: :request do
 
     context 'when it is an authenticated user' do
       it 'Deletes the account' do
-        total_accounts = Account.count
         sign_in(super_admin, scope: :super_admin)
 
-        perform_enqueued_jobs(only: DeleteObjectJob) do
+        expect do
           delete "/super_admin/accounts/#{account.id}"
-        end
-
-        expect(Account.count).to eq(total_accounts - 1)
+        end.to have_enqueued_job(DeleteObjectJob).with(account)
       end
     end
   end

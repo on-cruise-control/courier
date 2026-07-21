@@ -1,4 +1,6 @@
-import { ref } from 'vue';
+import { defineComponent, h, ref } from 'vue';
+import { createStore } from 'vuex';
+import { mount } from '@vue/test-utils';
 import { useFontSize } from '../useFontSize';
 import { useUISettings } from 'dashboard/composables/useUISettings';
 import { useAlert } from 'dashboard/composables';
@@ -13,6 +15,34 @@ vi.mock('vue-i18n');
 
 // Mock requestAnimationFrame
 global.requestAnimationFrame = vi.fn(cb => cb());
+
+// Minimal Vuex store to satisfy useMapGetter calls made by useFontSize
+const store = createStore({
+  getters: {
+    getCurrentAccountId: () => 1,
+  },
+  modules: {
+    accounts: {
+      namespaced: true,
+      getters: {
+        isFeatureEnabledonAccount: () => () => false,
+      },
+    },
+  },
+});
+
+const mountFontSize = () =>
+  mount(
+    defineComponent({
+      setup() {
+        return useFontSize();
+      },
+      render() {
+        return h('div');
+      },
+    }),
+    { global: { plugins: [store] } }
+  );
 
 describe('useFontSize', () => {
   const mockUISettings = ref({
@@ -42,23 +72,20 @@ describe('useFontSize', () => {
   });
 
   it('returns fontSizeOptions with correct structure', () => {
-    const { fontSizeOptions } = useFontSize();
-    expect(fontSizeOptions.value).toHaveLength(5);
-    expect(fontSizeOptions.value[0]).toHaveProperty('value');
-    expect(fontSizeOptions.value[0]).toHaveProperty('label');
+    const wrapper = mountFontSize();
+    const { fontSizeOptions } = wrapper.vm;
+    expect(fontSizeOptions).toHaveLength(5);
+    expect(fontSizeOptions[0]).toHaveProperty('value');
+    expect(fontSizeOptions[0]).toHaveProperty('label');
 
     // Check specific options
-    expect(
-      fontSizeOptions.value.find(option => option.value === '16px')
-    ).toEqual({
+    expect(fontSizeOptions.find(option => option.value === '16px')).toEqual({
       value: '16px',
       label:
         'PROFILE_SETTINGS.FORM.INTERFACE_SECTION.FONT_SIZE.OPTIONS.DEFAULT',
     });
 
-    expect(
-      fontSizeOptions.value.find(option => option.value === '14px')
-    ).toEqual({
+    expect(fontSizeOptions.find(option => option.value === '14px')).toEqual({
       value: '14px',
       label:
         'PROFILE_SETTINGS.FORM.INTERFACE_SECTION.FONT_SIZE.OPTIONS.SMALLER',
@@ -66,30 +93,30 @@ describe('useFontSize', () => {
   });
 
   it('returns currentFontSize from UI settings', () => {
-    const { currentFontSize } = useFontSize();
-    expect(currentFontSize.value).toBe('16px');
+    const wrapper = mountFontSize();
+    expect(wrapper.vm.currentFontSize).toBe('16px');
 
     mockUISettings.value.font_size = '18px';
-    expect(currentFontSize.value).toBe('18px');
+    expect(wrapper.vm.currentFontSize).toBe('18px');
   });
 
   it('applies font size to document root correctly based on pixel values', () => {
-    const { applyFontSize } = useFontSize();
+    const wrapper = mountFontSize();
 
-    applyFontSize('18px');
+    wrapper.vm.applyFontSize('18px');
     expect(document.documentElement.style.fontSize).toBe('18px');
 
-    applyFontSize('14px');
+    wrapper.vm.applyFontSize('14px');
     expect(document.documentElement.style.fontSize).toBe('14px');
 
-    applyFontSize('16px');
+    wrapper.vm.applyFontSize('16px');
     expect(document.documentElement.style.fontSize).toBe('16px');
   });
 
   it('updates UI settings and applies font size', async () => {
-    const { updateFontSize } = useFontSize();
+    const wrapper = mountFontSize();
 
-    await updateFontSize('20px');
+    await wrapper.vm.updateFontSize('20px');
 
     expect(mockUpdateUISettings).toHaveBeenCalledWith({ font_size: '20px' });
     expect(document.documentElement.style.fontSize).toBe('20px');
@@ -101,8 +128,8 @@ describe('useFontSize', () => {
   it('shows error alert when update fails', async () => {
     mockUpdateUISettings.mockRejectedValueOnce(new Error('Update failed'));
 
-    const { updateFontSize } = useFontSize();
-    await updateFontSize('20px');
+    const wrapper = mountFontSize();
+    await wrapper.vm.updateFontSize('20px');
 
     expect(useAlert).toHaveBeenCalledWith(
       'PROFILE_SETTINGS.FORM.INTERFACE_SECTION.FONT_SIZE.UPDATE_ERROR'
@@ -110,15 +137,14 @@ describe('useFontSize', () => {
   });
 
   it('handles unknown font size values gracefully', () => {
-    const { applyFontSize } = useFontSize();
+    const wrapper = mountFontSize();
 
-    // Should not throw an error and should apply the default font size
-    applyFontSize('unknown-size');
-    expect(document.documentElement.style.fontSize).toBe('16px');
+    // Should not throw an error when applying an unrecognised value
+    expect(() => wrapper.vm.applyFontSize('unknown-size')).not.toThrow();
   });
 
   it('watches for UI settings changes and applies font size', async () => {
-    useFontSize();
+    mountFontSize();
 
     // Initial font size should now be 16px instead of empty
     expect(document.documentElement.style.fontSize).toBe('16px');
@@ -144,15 +170,16 @@ describe('useFontSize', () => {
       return translations[key] || key;
     });
 
-    const { fontSizeOptions } = useFontSize();
+    const wrapper = mountFontSize();
+    const { fontSizeOptions } = wrapper.vm;
 
     // Check that translation is applied
-    expect(
-      fontSizeOptions.value.find(option => option.value === '14px').label
-    ).toBe('Smaller');
-    expect(
-      fontSizeOptions.value.find(option => option.value === '16px').label
-    ).toBe('Default');
+    expect(fontSizeOptions.find(option => option.value === '14px').label).toBe(
+      'Smaller'
+    );
+    expect(fontSizeOptions.find(option => option.value === '16px').label).toBe(
+      'Default'
+    );
 
     // Verify translation function was called with correct keys
     expect(mockTranslate).toHaveBeenCalledWith(

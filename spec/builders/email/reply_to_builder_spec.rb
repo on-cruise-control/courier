@@ -7,6 +7,13 @@ RSpec.describe Email::ReplyToBuilder do
   let(:current_message) { create(:message, conversation: conversation, sender: agent, message_type: :outgoing) }
   let(:inbox) { create(:inbox, account: account) }
 
+  before do
+    # Stub callbacks that cause issues in test environment
+    allow_any_instance_of(Message).to receive(:schedule_follow_up_job)
+    allow_any_instance_of(Channel::Email).to receive(:notify_if_reauthorization_required)
+    allow(SlackNotifierService).to receive(:call)
+  end
+
   describe '#build' do
     context 'when inbox is an email channel' do
       let(:channel) { create(:channel_email, email: 'care@example.com', account: account) }

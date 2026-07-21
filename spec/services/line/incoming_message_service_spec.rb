@@ -233,10 +233,11 @@ describe Line::IncomingMessageService do
   describe '#perform' do
     context 'when non-text message params' do
       it 'does not create conversations, messages and contacts' do
+        Contact.delete_all
         line_bot = double
         line_user_profile = double
         allow(Line::Bot::Client).to receive(:new).and_return(line_bot)
-        allow(line_bot).to receive(:get_profile).and_return(line_user_profile)
+        allow(line_bot).to receive(:get_profile).with('U4af4980629').and_return(line_user_profile)
         allow(line_user_profile).to receive(:body).and_return(
           {
             'displayName': 'LINE Test',
@@ -252,11 +253,12 @@ describe Line::IncomingMessageService do
     end
 
     context 'when valid text message params' do
-      let(:line_bot) { double }
       let(:line_user_profile) { double }
 
       before do
-        allow(Line::Bot::Client).to receive(:new).and_return(line_bot)
+        Contact.delete_all
+        line_bot = instance_double(Line::Bot::Client)
+        allow(line_channel.inbox.channel).to receive(:client).and_return(line_bot)
         allow(line_bot).to receive(:get_profile).with('U4af4980629').and_return(line_user_profile)
         allow(line_user_profile).to receive(:body).and_return(
           {
@@ -277,6 +279,9 @@ describe Line::IncomingMessageService do
 
       it 'creates appropriate conversations, message and contacts for multi user' do
         line_user_profile2 = double
+        line_bot = instance_double(Line::Bot::Client)
+        allow(line_channel.inbox.channel).to receive(:client).and_return(line_bot)
+        allow(line_bot).to receive(:get_profile).with('U4af4980629').and_return(line_user_profile)
         allow(line_bot).to receive(:get_profile).with('U4af49806292').and_return(line_user_profile2)
         allow(line_user_profile2).to receive(:body).and_return(
           {
@@ -298,10 +303,10 @@ describe Line::IncomingMessageService do
 
     context 'when valid sticker message params' do
       it 'creates appropriate conversations, message and contacts' do
-        line_bot = double
         line_user_profile = double
-        allow(Line::Bot::Client).to receive(:new).and_return(line_bot)
-        allow(line_bot).to receive(:get_profile).and_return(line_user_profile)
+        line_bot = instance_double(Line::Bot::Client)
+        allow(line_channel.inbox.channel).to receive(:client).and_return(line_bot)
+        allow(line_bot).to receive(:get_profile).with('U4af4980629').and_return(line_user_profile)
         allow(line_user_profile).to receive(:body).and_return(
           {
             'displayName': 'LINE Test',
@@ -309,6 +314,7 @@ describe Line::IncomingMessageService do
             'pictureUrl': 'https://test.com'
           }.to_json
         )
+        Contact.delete_all
         described_class.new(inbox: line_channel.inbox, params: sticker_params).perform
         expect(line_channel.inbox.conversations).not_to eq(0)
         expect(Contact.all.first.name).to eq('LINE Test')
@@ -318,10 +324,10 @@ describe Line::IncomingMessageService do
 
     context 'when valid image message params' do
       it 'creates appropriate conversations, message and contacts' do
-        line_bot = double
         line_user_profile = double
-        allow(Line::Bot::Client).to receive(:new).and_return(line_bot)
-        allow(line_bot).to receive(:get_profile).and_return(line_user_profile)
+        line_bot = instance_double(Line::Bot::Client)
+        allow(line_channel.inbox.channel).to receive(:client).and_return(line_bot)
+        allow(line_bot).to receive(:get_profile).with('U4af4980629').and_return(line_user_profile)
         file = fixture_file_upload(Rails.root.join('spec/assets/avatar.png'), 'image/png')
         allow(line_bot).to receive(:get_message_content).and_return(
           OpenStruct.new({
@@ -336,6 +342,7 @@ describe Line::IncomingMessageService do
             'pictureUrl': 'https://test.com'
           }.to_json
         )
+        Contact.delete_all
         described_class.new(inbox: line_channel.inbox, params: image_params).perform
         expect(line_channel.inbox.conversations).not_to eq(0)
         expect(Contact.all.first.name).to eq('LINE Test')
@@ -348,10 +355,10 @@ describe Line::IncomingMessageService do
 
     context 'when valid video message params' do
       it 'creates appropriate conversations, message and contacts' do
-        line_bot = double
         line_user_profile = double
-        allow(Line::Bot::Client).to receive(:new).and_return(line_bot)
-        allow(line_bot).to receive(:get_profile).and_return(line_user_profile)
+        line_bot = instance_double(Line::Bot::Client)
+        allow(line_channel.inbox.channel).to receive(:client).and_return(line_bot)
+        allow(line_bot).to receive(:get_profile).with('U4af4980629').and_return(line_user_profile)
         file = fixture_file_upload(Rails.root.join('spec/assets/sample.mp4'), 'video/mp4')
         allow(line_bot).to receive(:get_message_content).and_return(
           OpenStruct.new({
@@ -366,6 +373,7 @@ describe Line::IncomingMessageService do
             'pictureUrl': 'https://test.com'
           }.to_json
         )
+        Contact.delete_all
         described_class.new(inbox: line_channel.inbox, params: video_params).perform
         expect(line_channel.inbox.conversations).not_to eq(0)
         expect(Contact.all.first.name).to eq('LINE Test')
@@ -378,10 +386,10 @@ describe Line::IncomingMessageService do
 
     context 'when valid file message params' do
       it 'creates appropriate conversations, message and contacts' do
-        line_bot = double
         line_user_profile = double
-        allow(Line::Bot::Client).to receive(:new).and_return(line_bot)
-        allow(line_bot).to receive(:get_profile).and_return(line_user_profile)
+        line_bot = instance_double(Line::Bot::Client)
+        allow(line_channel.inbox.channel).to receive(:client).and_return(line_bot)
+        allow(line_bot).to receive(:get_profile).with('U4af4980629').and_return(line_user_profile)
         file = fixture_file_upload(Rails.root.join('spec/assets/contacts.csv'), 'text/csv')
         allow(line_bot).to receive(:get_message_content).and_return(
           OpenStruct.new({
@@ -396,6 +404,7 @@ describe Line::IncomingMessageService do
             'pictureUrl': 'https://test.com'
           }.to_json
         )
+        Contact.delete_all
         described_class.new(inbox: line_channel.inbox, params: file_params).perform
         expect(line_channel.inbox.conversations).not_to eq(0)
         expect(Contact.all.first.name).to eq('LINE Test')

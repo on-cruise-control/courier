@@ -11,6 +11,7 @@
     "MENTION_HEADING": "Mentions",
     "UNATTENDED_HEADING": "Unattended",
     "SPAM_HEADING": "Spam",
+    "BLACKLIST_HEADING": "Blacklist",
     "SEARCH": {
       "INPUT": "Search for People, Chats, Saved Replies .."
     },

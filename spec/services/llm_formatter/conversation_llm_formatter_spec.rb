@@ -5,6 +5,10 @@ RSpec.describe LlmFormatter::ConversationLlmFormatter do
   let(:conversation) { create(:conversation, account: account) }
   let(:formatter) { described_class.new(conversation) }
 
+  before do
+    allow_any_instance_of(Message).to receive(:schedule_follow_up_job).and_return(nil)
+  end
+
   describe '#format' do
     context 'when conversation has no messages' do
       it 'returns basic conversation info with no messages' do

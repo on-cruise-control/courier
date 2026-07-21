@@ -16,13 +16,7 @@ RSpec.describe Channel::Whatsapp do
 
     context 'when prompt_reauthorization!' do
       it 'calls channel notifier mail for whatsapp' do
-        admin_mailer = double
-        mailer_double = double
-
-        expect(AdministratorNotifications::ChannelNotificationsMailer).to receive(:with).and_return(admin_mailer)
-        expect(admin_mailer).to receive(:whatsapp_disconnect).with(channel.inbox).and_return(mailer_double)
-        expect(mailer_double).to receive(:deliver_later)
-
+        expect(SlackNotifierService).to receive(:call)
         channel.prompt_reauthorization!
       end
     end

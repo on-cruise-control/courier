@@ -6,6 +6,9 @@ RSpec.describe Captain::Tools::SimplePageCrawlService do
 
   before do
     WebMock.disable_net_connect!
+    allow(Resolv).to receive(:getaddresses).and_call_original
+    allow(Resolv).to receive(:getaddresses).with('example.com').and_return(['93.184.216.34'])
+    allow(Resolv).to receive(:getaddresses).with('cdn.example.com').and_return(['93.184.216.35'])
   end
 
   after do

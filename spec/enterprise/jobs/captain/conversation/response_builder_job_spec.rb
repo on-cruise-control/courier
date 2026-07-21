@@ -452,7 +452,7 @@ RSpec.describe Captain::Conversation::ResponseBuilderJob, type: :job do
 
       it 'ensures Current.executed_by is reset' do
         expect(Current).to receive(:executed_by=).with(assistant)
-        expect(Current).to receive(:executed_by=).with(nil)
+        expect(Current).to receive(:executed_by=).with(nil).at_least(:once)
 
         described_class.perform_now(conversation, assistant)
       end

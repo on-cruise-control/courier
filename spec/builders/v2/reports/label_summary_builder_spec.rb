@@ -4,6 +4,14 @@ RSpec.describe V2::Reports::LabelSummaryBuilder do
   include ActiveJob::TestHelper
 
   let_it_be(:account) { create(:account) }
+
+  before do
+    # Account creates default labels (escalation, handoff) on creation.
+    # Remove them so they don't add extra entries to the report.
+    account.labels.where(title: %w[escalation handoff]).destroy_all
+    allow_any_instance_of(Message).to receive(:schedule_follow_up_job)
+  end
+
   let_it_be(:label_1) { create(:label, title: 'label_1', account: account) }
   let_it_be(:label_2) { create(:label, title: 'label_2', account: account) }
   let_it_be(:label_3) { create(:label, title: 'label_3', account: account) }
@@ -47,6 +55,12 @@ RSpec.describe V2::Reports::LabelSummaryBuilder do
       let(:business_hours) { false }
       let(:empty_account) { create(:account) }
       let(:empty_builder) { described_class.new(account: empty_account, params: params) }
+
+      before do
+        # Account creates default labels (escalation, handoff) on creation.
+        # Remove them to test the no-labels scenario.
+        empty_account.labels.where(title: %w[escalation handoff]).destroy_all
+      end
 
       it 'returns empty array' do
         expect(empty_builder.build).to eq([])

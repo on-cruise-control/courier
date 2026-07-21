@@ -269,10 +269,10 @@ describe Contacts::FilterService do
           }.with_indifferent_access
         ]
 
-        expected_count = Contact.where('last_activity_at < ?', (Time.zone.today - 2.days)).count
+        expected_count = account.contacts.where('last_activity_at < ?', (Time.zone.today - 2.days)).count
 
         result = filter_service.new(account, first_user, params).perform
-        expect(result[:contacts].length).to be expected_count
+        expect(result[:contacts].length).to be(expected_count)
         expect(result[:contacts].pluck(:id)).to include(el_contact.id)
         expect(result[:contacts].pluck(:id)).to include(cs_contact.id)
         expect(result[:contacts].pluck(:id)).not_to include(en_contact.id)

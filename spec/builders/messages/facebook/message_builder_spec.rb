@@ -35,6 +35,7 @@ describe Messages::Facebook::MessageBuilder do
     it 'increments channel authorization_error_count when error is thrown' do
       allow(Koala::Facebook::API).to receive(:new).and_return(fb_object)
       allow(fb_object).to receive(:get_object).and_raise(Koala::Facebook::AuthenticationError.new(500, 'Error validating access token'))
+      allow(SlackNotifierService).to receive(:call)
       message_builder
 
       expect(facebook_channel.authorization_error_count).to eq(2)

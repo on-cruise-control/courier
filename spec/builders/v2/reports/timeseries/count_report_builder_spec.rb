@@ -1,6 +1,6 @@
 require 'rails_helper'
 
-describe V2::Reports::Timeseries::CountReportBuilder do
+describe V2::Reports::Timeseries::ReportBuilder do
   subject { described_class.new(account, params) }
 
   let(:account) { create(:account) }

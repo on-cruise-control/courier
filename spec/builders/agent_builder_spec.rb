@@ -67,5 +67,20 @@ RSpec.describe AgentBuilder, type: :model do
         expect(user.encrypted_password).not_to be_empty
       end
     end
+
+    context 'when the new user is unconfirmed' do
+      it 'schedules a confirmation reminder job for 24 hours later' do
+        expect { agent_builder.perform }
+          .to have_enqueued_job(Users::ConfirmationReminderJob).with(kind_of(Integer), 'first').on_queue('low')
+      end
+    end
+
+    context 'when the user already exists and is confirmed' do
+      before { create(:user, email: email, skip_confirmation: true) }
+
+      it 'does not schedule a confirmation reminder job' do
+        expect { agent_builder.perform }.not_to have_enqueued_job(Users::ConfirmationReminderJob)
+      end
+    end
   end
 end

@@ -9,13 +9,14 @@ describe Email::SendOnEmailService do
   let(:service) { described_class.new(message: message) }
 
   describe '#perform' do
+    before do
+      allow_any_instance_of(Message).to receive(:schedule_follow_up_job).and_return(nil)
+      allow(ConversationReplyMailer).to receive(:with).with(account: message.account).and_return(mailer_context)
+    end
+
     let(:mailer_context) { instance_double(ConversationReplyMailer) }
     let(:delivery) { instance_double(ActionMailer::MessageDelivery) }
     let(:email_message) { instance_double(Mail::Message) }
-
-    before do
-      allow(ConversationReplyMailer).to receive(:with).with(account: message.account).and_return(mailer_context)
-    end
 
     context 'when message is email notifiable' do
       before do

@@ -16,7 +16,7 @@ describe ActionCableListener do
   describe '#message_created' do
     let(:event_name) { :'message.created' }
     let!(:message) do
-      create(:message, message_type: 'outgoing',
+      create(:message, message_type: 'outgoing', sender: agent,
                        account: account, inbox: inbox, conversation: conversation)
     end
     let!(:event) { Events::Base.new(event_name, Time.zone.now, message: message) }
@@ -213,7 +213,7 @@ describe ActionCableListener do
       expect(conversation.inbox.reload.inbox_members.count).to eq(1)
 
       expect(ActionCableBroadcastJob).to receive(:perform_later).with(
-        [agent.pubsub_token, admin.pubsub_token, conversation.contact_inbox.pubsub_token],
+        a_collection_containing_exactly(agent.pubsub_token, admin.pubsub_token, conversation.contact_inbox.pubsub_token),
         'conversation.updated',
         conversation.push_event_data.merge(account_id: account.id)
       )
@@ -224,7 +224,7 @@ describe ActionCableListener do
       expect(conversation.reload.push_event_data[:labels]).to eq(conversation.labels.pluck(:name))
 
       expect(ActionCableBroadcastJob).to receive(:perform_later).with(
-        [agent.pubsub_token, admin.pubsub_token, conversation.contact_inbox.pubsub_token],
+        a_collection_containing_exactly(agent.pubsub_token, admin.pubsub_token, conversation.contact_inbox.pubsub_token),
         'conversation.updated',
         conversation.push_event_data.merge(account_id: account.id)
       )

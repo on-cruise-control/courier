@@ -140,11 +140,9 @@ class Message < ApplicationRecord
   after_create_commit :execute_after_create_commit_callbacks
 
   after_update_commit :dispatch_update_event
-  after_commit :reindex_for_search, if: :should_index?, on: [:create, :update]
-
   after_create :schedule_follow_up_job, if: :is_outgoing?
-
   after_create :cancel_follow_up_job, if: :incoming?
+  after_commit :reindex_for_search, if: :should_index?, on: [:create, :update]
 
   store_accessor :additional_attributes, :delivery_status
 
@@ -458,7 +456,8 @@ class Message < ApplicationRecord
     return if private?
 
     instagram_dm = inbox.channel_type == 'Channel::Instagram' && conversation.additional_attributes['type'] != 'instagram_comments'
-    facebook_dm  = inbox.channel_type == 'Channel::FacebookPage' && !%w[facebook_comments feed_comments].include?(conversation.additional_attributes['type'].to_s)
+    facebook_dm  = inbox.channel_type == 'Channel::FacebookPage' && !%w[facebook_comments
+                                                                        feed_comments].include?(conversation.additional_attributes['type'].to_s)
 
     if (instagram_dm || facebook_dm) && additional_attributes['delivery_status'] != 'sent' && message_type == 'outgoing'
       mark_pending!
@@ -538,6 +537,7 @@ class Message < ApplicationRecord
   def schedule_follow_up_job
     return if content_attributes['follow_up']
 
+    conversation.save! if conversation.changed?
     conversation.with_lock do
       conversation.reload
       if conversation.additional_attributes&.dig('skip_follow_up_on_unspam') == true

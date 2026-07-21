@@ -10,7 +10,6 @@ describe Twilio::SendOnTwilioService do
   let!(:account) { create(:account) }
   let!(:twilio_sms) { create(:channel_twilio_sms, account: account) }
   let!(:twilio_inbox) { create(:inbox, channel: twilio_sms, account: account) }
-  let!(:twilio_whatsapp_inbox) { create(:inbox, channel: twilio_whatsapp, account: account) }
   let!(:contact) { create(:contact, account: account) }
   let(:contact_inbox) { create(:contact_inbox, contact: contact, inbox: twilio_inbox) }
   let(:conversation) { create(:conversation, contact: contact, inbox: twilio_inbox, contact_inbox: contact_inbox) }

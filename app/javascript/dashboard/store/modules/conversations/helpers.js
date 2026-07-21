@@ -47,6 +47,17 @@ export const filterBySpam = (shouldFilter, conversationType, isSpam) => {
   return !isSpam && shouldFilter;
 };
 
+export const filterByBlacklist = (
+  shouldFilter,
+  conversationType,
+  isBlacklisted
+) => {
+  if (conversationType === 'blacklist') {
+    return !!isBlacklisted && shouldFilter;
+  }
+  return !isBlacklisted && shouldFilter;
+};
+
 export const applyPageFilters = (conversation, filters) => {
   const { inboxId, status, labels = [], teamId, conversationType } = filters;
   const {
@@ -57,14 +68,13 @@ export const applyPageFilters = (conversation, filters) => {
     first_reply_created_at: firstReplyOn,
     waiting_since: waitingSince,
     is_spam: isSpam,
+    is_blacklisted: isBlacklisted,
   } = conversation;
   const team = meta.team || {};
   const { id: chatTeamId } = team;
 
   let shouldFilter =
-    conversationType === 'comments'
-      ? true
-      : filterByStatus(chatStatus, status);
+    conversationType === 'comments' ? true : filterByStatus(chatStatus, status);
   shouldFilter = filterByInbox(shouldFilter, inboxId, chatInboxId);
   shouldFilter = filterByTeam(shouldFilter, teamId, chatTeamId);
   shouldFilter = filterByLabel(shouldFilter, labels, chatLabels);
@@ -75,6 +85,11 @@ export const applyPageFilters = (conversation, filters) => {
     waitingSince
   );
   shouldFilter = filterBySpam(shouldFilter, conversationType, isSpam);
+  shouldFilter = filterByBlacklist(
+    shouldFilter,
+    conversationType,
+    isBlacklisted
+  );
 
   return shouldFilter;
 };

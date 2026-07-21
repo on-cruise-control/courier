@@ -119,6 +119,7 @@ RSpec.describe 'Reports API', type: :request do
         create(:inbox_member, user: agent2, inbox: inbox)
         conversation = create(:conversation, account: account,
                                              inbox: inbox, assignee: agent2)
+        conversation.reload
 
         create(:message, message_type: 'incoming', content: 'Hi',
                          account: account, inbox: inbox,

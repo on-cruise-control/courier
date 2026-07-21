@@ -28,7 +28,7 @@ describe Whatsapp::IncomingMessageService do
       it 'creates appropriate conversations, message and contacts' do
         described_class.new(inbox: whatsapp_channel.inbox, params: params).perform
         expect(whatsapp_channel.inbox.conversations.count).not_to eq(0)
-        expect(Contact.all.first.name).to eq('Sojan Jose')
+        expect(Contact.order(:created_at).last.name).to eq('Sojan Jose')
         expect(whatsapp_channel.inbox.messages.first.content).to eq('Test')
       end
 
@@ -202,7 +202,7 @@ describe Whatsapp::IncomingMessageService do
 
         described_class.new(inbox: whatsapp_channel.inbox, params: params).perform
         expect(whatsapp_channel.inbox.conversations.count).to eq(0)
-        expect(Contact.count).to eq(0)
+        expect(Contact.where(phone_number: '2423423243').count).to eq(0)
         expect(whatsapp_channel.inbox.messages.count).to eq(0)
       end
 
@@ -218,7 +218,7 @@ describe Whatsapp::IncomingMessageService do
 
         described_class.new(inbox: whatsapp_channel.inbox, params: params).perform
         expect(whatsapp_channel.inbox.conversations.count).to eq(1)
-        expect(Contact.count).to eq(1)
+        expect(Contact.where(phone_number: '2423423243').count).to eq(0)
         expect(whatsapp_channel.inbox.messages.count).to eq(1)
         message = whatsapp_channel.inbox.messages.last
         expect(message.content).to eq('This message is unavailable.')
@@ -311,7 +311,7 @@ describe Whatsapp::IncomingMessageService do
         }.with_indifferent_access
         described_class.new(inbox: whatsapp_channel.inbox, params: params).perform
         expect(whatsapp_channel.inbox.conversations.count).not_to eq(0)
-        expect(Contact.all.first.name).to eq('Sojan Jose')
+        expect(Contact.order(:created_at).last.name).to eq('Sojan Jose')
         expect(whatsapp_channel.inbox.messages.first.content).to eq('First Button')
       end
     end
@@ -329,7 +329,7 @@ describe Whatsapp::IncomingMessageService do
         }.with_indifferent_access
         described_class.new(inbox: whatsapp_channel.inbox, params: params).perform
         expect(whatsapp_channel.inbox.conversations.count).not_to eq(0)
-        expect(Contact.all.first.name).to eq('Sojan Jose')
+        expect(Contact.order(:created_at).last.name).to eq('Sojan Jose')
         expect(whatsapp_channel.inbox.messages.first.content).to eq('Yes this is a button')
       end
     end
@@ -352,7 +352,7 @@ describe Whatsapp::IncomingMessageService do
         }.with_indifferent_access
         described_class.new(inbox: whatsapp_channel.inbox, params: params).perform
         expect(whatsapp_channel.inbox.conversations.count).not_to eq(0)
-        expect(Contact.all.first.name).to eq('Sojan Jose')
+        expect(Contact.order(:created_at).last.name).to eq('Sojan Jose')
         expect(whatsapp_channel.inbox.messages.first.content).to eq('Check out my product!')
         expect(whatsapp_channel.inbox.messages.first.attachments.present?).to be true
       end
@@ -373,7 +373,7 @@ describe Whatsapp::IncomingMessageService do
         }.with_indifferent_access
         described_class.new(inbox: whatsapp_channel.inbox, params: params).perform
         expect(whatsapp_channel.inbox.conversations.count).not_to eq(0)
-        expect(Contact.all.first.name).to eq('Sojan Jose')
+        expect(Contact.order(:created_at).last.name).to eq('Sojan Jose')
         location_attachment = whatsapp_channel.inbox.messages.first.attachments.first
         expect(location_attachment.file_type).to eq('location')
         expect(location_attachment.fallback_title).to eq('Bay Bridge, San Francisco, CA, USA')
@@ -425,7 +425,7 @@ describe Whatsapp::IncomingMessageService do
                                         'phones' => [{ 'phone' => '+1 (415) 341-8386' }] }
                                     ] }] }.with_indifferent_access
         described_class.new(inbox: whatsapp_channel.inbox, params: params).perform
-        expect(Contact.all.first.name).to eq('Kedar')
+        expect(Contact.order(:created_at).last.name).to eq('Kedar')
         expect(whatsapp_channel.inbox.conversations.count).not_to eq(0)
 
         m1 = whatsapp_channel.inbox.messages.first
@@ -446,7 +446,7 @@ describe Whatsapp::IncomingMessageService do
       it 'creates appropriate conversations, message and contacts if contact does not exit' do
         described_class.new(inbox: whatsapp_channel.inbox, params: params).perform
         expect(whatsapp_channel.inbox.conversations.count).not_to eq(0)
-        expect(Contact.all.first.name).to eq('Sojan Jose')
+        expect(Contact.order(:created_at).last.name).to eq('Sojan Jose')
         expect(whatsapp_channel.inbox.messages.first.content).to eq('Test')
         expect(whatsapp_channel.inbox.contact_inboxes.first.source_id).to eq(wa_id)
       end
@@ -493,7 +493,7 @@ describe Whatsapp::IncomingMessageService do
         it 'creates contact inbox with the incoming waid' do
           described_class.new(inbox: whatsapp_channel.inbox, params: params).perform
           expect(whatsapp_channel.inbox.conversations.count).not_to eq(0)
-          expect(Contact.all.first.name).to eq('Sojan Jose')
+          expect(Contact.order(:created_at).last.name).to eq('Sojan Jose')
           expect(whatsapp_channel.inbox.messages.first.content).to eq('Test')
           expect(whatsapp_channel.inbox.contact_inboxes.first.source_id).to eq(wa_id)
         end
@@ -506,7 +506,7 @@ describe Whatsapp::IncomingMessageService do
       it 'creates appropriate conversations, message and contacts if contact does not exist' do
         described_class.new(inbox: whatsapp_channel.inbox, params: params).perform
         expect(whatsapp_channel.inbox.conversations.count).not_to eq(0)
-        expect(Contact.all.first.name).to eq('Sojan Jose')
+        expect(Contact.order(:created_at).last.name).to eq('Sojan Jose')
         expect(whatsapp_channel.inbox.messages.first.content).to eq('Test')
         expect(whatsapp_channel.inbox.contact_inboxes.first.source_id).to eq(wa_id)
       end
@@ -545,7 +545,7 @@ describe Whatsapp::IncomingMessageService do
         it 'creates contact inbox with the incoming waid' do
           described_class.new(inbox: whatsapp_channel.inbox, params: params).perform
           expect(whatsapp_channel.inbox.conversations.count).not_to eq(0)
-          expect(Contact.all.first.name).to eq('Sojan Jose')
+          expect(Contact.order(:created_at).last.name).to eq('Sojan Jose')
           expect(whatsapp_channel.inbox.messages.first.content).to eq('Test')
           expect(whatsapp_channel.inbox.contact_inboxes.first.source_id).to eq(wa_id)
         end

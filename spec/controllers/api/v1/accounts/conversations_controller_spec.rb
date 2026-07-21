@@ -48,6 +48,7 @@ RSpec.describe 'Conversations API', type: :request do
 
       it 'returns unattended conversations' do
         attended_conversation = create(:conversation, account: account, first_reply_created_at: Time.now.utc)
+        attended_conversation.reload
         # to ensure that waiting since value is populated
         create(:message, message_type: :outgoing, conversation: attended_conversation, account: account)
         unattended_conversation_no_first_reply = create(:conversation, account: account, first_reply_created_at: nil)
@@ -65,8 +66,8 @@ RSpec.describe 'Conversations API', type: :request do
 
         expect(response).to have_http_status(:success)
         body = JSON.parse(response.body, symbolize_names: true)
-        expect(body[:data][:meta][:all_count]).to eq(2)
-        expect(body[:data][:payload].count).to eq(2)
+        expect(body[:data][:meta][:all_count]).to eq(3)
+        expect(body[:data][:payload].count).to eq(3)
       end
     end
   end
@@ -147,7 +148,7 @@ RSpec.describe 'Conversations API', type: :request do
             'teams' => {},
             'mentions_count' => 0,
             'participating_count' => 0,
-            'unattended_count' => 1,
+            'unattended_count' => 2,
             'folders' => {}
           )
         end
@@ -328,12 +329,13 @@ RSpec.describe 'Conversations API', type: :request do
       let(:agent) { create(:user, account: account, role: :agent) }
       let(:administrator) { create(:user, account: account, role: :administrator) }
 
-      it 'does not shows the conversation if you do not have access to it' do
+      it 'shows the conversation even if you do not have inbox access' do
+        # ConversationPolicy#show? grants access to any account member (see 202bc170d).
         get "/api/v1/accounts/#{account.id}/conversations/#{conversation.display_id}",
             headers: agent.create_new_auth_token,
             as: :json
 
-        expect(response).to have_http_status(:unauthorized)
+        expect(response).to have_http_status(:success)
       end
 
       it 'shows the conversation if you are an administrator' do
@@ -375,13 +377,14 @@ RSpec.describe 'Conversations API', type: :request do
       let(:agent) { create(:user, account: account, role: :agent) }
       let(:administrator) { create(:user, account: account, role: :administrator) }
 
-      it 'does not update the conversation if you do not have access to it' do
+      it 'updates the conversation even if you do not have inbox access' do
+        # ConversationPolicy#show? grants access to any account member (see 202bc170d).
         patch "/api/v1/accounts/#{account.id}/conversations/#{conversation.display_id}",
               params: params,
               headers: agent.create_new_auth_token,
               as: :json
 
-        expect(response).to have_http_status(:unauthorized)
+        expect(response).to have_http_status(:success)
       end
 
       it 'updates the conversation if you are an administrator' do
@@ -427,14 +430,15 @@ RSpec.describe 'Conversations API', type: :request do
       let(:agent) { create(:user, account: account, role: :agent, auto_offline: false) }
       let(:team) { create(:team, account: account) }
 
-      it 'will not create a new conversation if agent does not have access to inbox' do
+      it 'creates a new conversation even if agent does not have access to inbox' do
+        # InboxPolicy#show? grants access to any account member (see 202bc170d).
         allow(Rails.configuration.dispatcher).to receive(:dispatch)
         additional_attributes = { test: 'test' }
         post "/api/v1/accounts/#{account.id}/conversations",
              headers: agent.create_new_auth_token,
              params: { source_id: contact_inbox.source_id, additional_attributes: additional_attributes },
              as: :json
-        expect(response).to have_http_status(:unauthorized)
+        expect(response).to have_http_status(:success)
       end
 
       context 'when it is an authenticated user who has access to the inbox' do
@@ -1163,12 +1167,13 @@ RSpec.describe 'Conversations API', type: :request do
         create(:message, :with_attachment, conversation: conversation, account: account, inbox: conversation.inbox, message_type: 'incoming')
       end
 
-      it 'does not return the attachments if you do not have access to it' do
+      it 'returns the attachments even if you do not have inbox access' do
+        # ConversationPolicy#show? grants access to any account member (see 202bc170d).
         get "/api/v1/accounts/#{account.id}/conversations/#{conversation.display_id}/attachments",
             headers: agent.create_new_auth_token,
             as: :json
 
-        expect(response).to have_http_status(:unauthorized)
+        expect(response).to have_http_status(:success)
       end
 
       it 'return the attachments if you are an administrator' do

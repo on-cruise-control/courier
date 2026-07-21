@@ -48,7 +48,7 @@ class Integrations::Openai::ProcessorService < Integrations::LlmBaseService
 
   def prompt_from_file(file_name, enterprise: false)
     path = enterprise ? 'enterprise/lib/enterprise/integrations/openai_prompts' : 'lib/integrations/openai/openai_prompts'
-    Rails.root.join(path, "#{file_name}.txt").read
+    Rails.root.join(path, "#{file_name}.liquid").read
   end
 
   def build_api_call_body(system_content, user_content = event['data']['content'])

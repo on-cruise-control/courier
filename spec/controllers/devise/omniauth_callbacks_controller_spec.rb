@@ -2,7 +2,7 @@ require 'rails_helper'
 
 RSpec.describe 'DeviseOverrides::OmniauthCallbacksController', type: :request do
   let(:account_builder) { double }
-  let(:user_double) { object_double(:user) }
+  let(:user_double) { double('User') }
   let(:email_validation_service) { instance_double(Account::SignUpEmailValidationService) }
 
   def set_omniauth_config(for_email = 'test@example.com')

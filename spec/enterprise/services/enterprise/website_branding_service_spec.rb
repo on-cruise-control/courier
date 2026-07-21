@@ -39,6 +39,8 @@ RSpec.describe Enterprise::WebsiteBrandingService do
     end
 
     before do
+      allow(Resolv).to receive(:getaddresses).and_call_original
+      allow(Resolv).to receive(:getaddresses).with('example.com').and_return(['93.184.216.34'])
       stub_request(:get, 'https://example.com').to_return(status: 200, body: fallback_html,
                                                           headers: { 'content-type' => 'text/html' })
     end

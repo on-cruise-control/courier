@@ -29,9 +29,9 @@ RSpec.describe 'Api::V2::Accounts::LiveReports', type: :request do
         create(:conversation, :with_assignee, account: account, status: :open)
         create(:conversation, account: account, status: :open)
         create(:conversation, :with_assignee, account: account, status: :pending)
-        create(:conversation, :with_assignee, account: account, status: :open) do |conversation|
-          create(:message, account: account, conversation: conversation, message_type: :outgoing)
-        end
+        conversation = create(:conversation, :with_assignee, account: account, status: :open)
+        conversation = Conversation.find(conversation.id)
+        create(:message, account: account, conversation: conversation, message_type: :outgoing)
       end
 
       it 'returns conversation metrics' do
@@ -109,14 +109,14 @@ RSpec.describe 'Api::V2::Accounts::LiveReports', type: :request do
       before do
         create(:conversation, account: account, status: :open, team_id: team.id)
         create(:conversation, account: account, status: :open, team_id: team.id)
-        create(:conversation, account: account, status: :open, team_id: team.id) do |conversation|
-          create(:message, account: account, conversation: conversation, message_type: :outgoing)
-        end
+        conversation3 = create(:conversation, account: account, status: :open, team_id: team.id)
+        conversation3 = Conversation.find(conversation3.id)
+        create(:message, account: account, conversation: conversation3, message_type: :outgoing)
 
         create(:conversation, account: account, status: :open, assignee_id: assignee1.id)
-        create(:conversation, account: account, status: :open) do |conversation|
-          create(:message, account: account, conversation: conversation, message_type: :outgoing)
-        end
+        conversation5 = create(:conversation, account: account, status: :open)
+        conversation5 = Conversation.find(conversation5.id)
+        create(:message, account: account, conversation: conversation5, message_type: :outgoing)
       end
 
       it 'returns metrics grouped by team' do
@@ -144,9 +144,9 @@ RSpec.describe 'Api::V2::Accounts::LiveReports', type: :request do
       before do
         create(:conversation, assignee_id: agent.id, account: account, status: :open)
         create(:conversation, account: account, status: :open)
-        create(:conversation, assignee_id: agent.id, account: account, status: :open) do |conversation|
-          create(:message, account: account, conversation: conversation, message_type: :outgoing)
-        end
+        conversation3 = create(:conversation, assignee_id: agent.id, account: account, status: :open)
+        conversation3.save!
+        create(:message, account: account, conversation: conversation3, message_type: :outgoing)
       end
 
       it 'returns metrics grouped by assignee' do

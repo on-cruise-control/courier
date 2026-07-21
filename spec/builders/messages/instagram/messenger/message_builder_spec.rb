@@ -4,7 +4,12 @@ describe Messages::Instagram::Messenger::MessageBuilder do
   subject(:instagram_message_builder) { described_class }
 
   before do
+    allow_any_instance_of(Inbox).to receive(:facebook?).and_return(true)
+    Channel::Instagram.class_eval { def page_access_token = 'dummy' }
+
     stub_request(:post, /graph\.facebook\.com/)
+    stub_request(:post, /graph\.instagram\.com/)
+    stub_request(:delete, /graph\.instagram\.com/)
     stub_request(:get, 'https://www.example.com/test.jpeg')
   end
 
@@ -383,7 +388,6 @@ describe Messages::Instagram::Messenger::MessageBuilder do
         id: sender_id
       }.with_indifferent_access)
 
-      # Then allow story data fetch
       allow(fb_object).to receive(:get_object).with(anything, fields: %w[story from])
                                               .and_return(story_data)
 

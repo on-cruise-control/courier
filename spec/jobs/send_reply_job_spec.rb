@@ -14,10 +14,6 @@ RSpec.describe SendReplyJob do
   context 'when the job is triggered on a new message' do
     let(:process_service) { double }
 
-    before do
-      allow(process_service).to receive(:perform)
-    end
-
     def expect_mapped_service_to_perform(message, service_class_name)
       channel_name = message.conversation.inbox.channel.class.name
       service_class = described_class::CHANNEL_SERVICES.fetch(channel_name)
@@ -84,17 +80,16 @@ RSpec.describe SendReplyJob do
       expect_mapped_service_to_perform(message, 'Instagram::SendOnInstagramService')
     end
 
-    it 'calls ::Instagram::Messenger::SendOnInstagramService when its an instagram_direct_message from facebook channel' do
+    it 'calls ::Instagram::SendOnInstagramService when its an instagram_direct_message from facebook channel' do
       stub_request(:post, /graph.facebook.com/)
       facebook_channel = create(:channel_facebook_page)
       facebook_inbox = create(:inbox, channel: facebook_channel)
       conversation = create(:conversation,
                             inbox: facebook_inbox,
-                            additional_attributes: { 'type' => 'instagram_direct_message' })
+                            additional_attributes: { 'type' => 'instagram_dm' })
       message = create(:message, conversation: conversation)
 
-      allow(Instagram::Messenger::SendOnInstagramService).to receive(:new).with(message: message).and_return(process_service)
-      expect(Instagram::Messenger::SendOnInstagramService).to receive(:new).with(message: message)
+      expect(Instagram::SendOnInstagramService).to receive(:new).with(message: message).and_return(process_service)
       expect(process_service).to receive(:perform)
       described_class.perform_now(message.id)
     end

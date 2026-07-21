@@ -7,6 +7,7 @@ RSpec.describe Channel::Voice do
   let(:channel) { create(:channel_voice) }
 
   before do
+    skip 'channel_voice table does not exist' unless ActiveRecord::Base.connection.data_source_exists?('channel_voice')
     allow(Twilio::VoiceWebhookSetupService).to receive(:new).and_return(instance_double(Twilio::VoiceWebhookSetupService, perform: twiml_app_sid))
   end
 

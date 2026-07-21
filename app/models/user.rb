@@ -89,7 +89,7 @@ class User < ApplicationRecord
 
   has_many :account_users, dependent: :destroy_async
   has_many :accounts, through: :account_users
-  has_many :user_sessions, dependent: :destroy_async
+  has_many :user_sessions, dependent: :destroy
   accepts_nested_attributes_for :account_users
 
   has_many :assigned_conversations, foreign_key: 'assignee_id', class_name: 'Conversation', dependent: :nullify, inverse_of: :assignee
@@ -105,7 +105,6 @@ class User < ApplicationRecord
   has_many :messages, as: :sender, dependent: :nullify
   has_many :invitees, through: :account_users, class_name: 'User', foreign_key: 'inviter_id', source: :inviter, dependent: :nullify
 
-  has_many :user_sessions, dependent: :destroy
   has_many :custom_filters, dependent: :destroy_async
   has_many :dashboard_apps, dependent: :nullify
   has_many :mentions, dependent: :destroy_async
@@ -123,7 +122,9 @@ class User < ApplicationRecord
 
   before_validation :set_password_and_uid, on: :create
   after_destroy :remove_macros
+  after_destroy :cancel_confirmation_reminder_jobs
   after_save :sync_user_sessions, if: :saved_change_to_tokens?
+  after_save :cancel_confirmation_reminder_jobs, if: :saved_change_to_confirmed_at?
 
   scope :order_by_full_name, -> { order('lower(name) ASC') }
 
@@ -219,6 +220,15 @@ class User < ApplicationRecord
   end
 
   private
+
+  def cancel_confirmation_reminder_jobs
+    scheduled_set = Sidekiq::ScheduledSet.new
+    scheduled_set.each do |job|
+      next unless job.display_class == 'Users::ConfirmationReminderJob'
+
+      job.delete if job.args.first['arguments']&.first == id
+    end
+  end
 
   def sync_user_sessions
     active_client_ids = (tokens || {}).keys

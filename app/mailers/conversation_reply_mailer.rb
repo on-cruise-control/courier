@@ -111,6 +111,22 @@ class ConversationReplyMailer < ApplicationMailer
     should_use_conversation_email_address? ? parse_email(@account.support_email) : parse_email(inbox_from_email_address)
   end
 
+  def parse_email(raw_email)
+    return raw_email if raw_email.blank?
+
+    # Support formats like:
+    # - "support@example.com"
+    # - "Inbox <support@example.com>"
+    # - "Display Name <support@example.com>"
+    if defined?(Mail::Address)
+      Mail::Address.new(raw_email).format_address
+    else
+      raw_email
+    end
+  rescue StandardError
+    raw_email
+  end
+
   def mail_subject
     subject = @conversation.additional_attributes['mail_subject']
     return "[##{@conversation.display_id}] #{I18n.t('conversations.reply.email_subject')}" if subject.nil?

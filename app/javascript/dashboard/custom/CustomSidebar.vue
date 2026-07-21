@@ -16,7 +16,6 @@ import { emitter } from 'shared/helpers/mitt';
 import { BUS_EVENTS } from 'shared/constants/busEvents';
 import { useSidebarKeyboardShortcuts } from 'dashboard/components-next/sidebar/useSidebarKeyboardShortcuts';
 import { FEATURE_FLAGS } from 'dashboard/featureFlags';
-
 import Icon from 'next/icon/Icon.vue';
 
 const props = defineProps({
@@ -248,6 +247,13 @@ const menuItems = computed(() => {
           icon: 'i-lucide-octagon-alert',
           to: accountScopedRoute('conversation_spam'),
           activeOn: ['conversation_through_spam'],
+        },
+        {
+          type: 'link',
+          label: t('SIDEBAR.BLACKLIST'),
+          icon: 'i-lucide-ban',
+          to: accountScopedRoute('conversation_blacklist'),
+          activeOn: ['conversation_through_blacklist'],
         },
         {
           type: 'header',
@@ -1424,6 +1430,7 @@ useEventListener(document, 'touchend', onResizeEnd);
       </div>
     </transition>
   </div>
+  <template v-else />
 </template>
 
 <style scoped lang="scss">
