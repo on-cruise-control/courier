@@ -123,11 +123,15 @@ onUnmounted(() => {
       v-tooltip="
         isBlacklisted ? $t('CONVERSATION.UNBLOCK') : $t('CONVERSATION.BLOCK')
       "
+      :label="
+        isBlacklisted
+          ? $t('CONVERSATION.UNBLOCK_BUTTON')
+          : $t('CONVERSATION.BLOCK_BUTTON')
+      "
       size="sm"
-      variant="faded"
-      :color="slate"
-      :icon="isBlacklisted ? 'i-lucide-ban' : 'i-lucide-shield-check'"
-      class="rounded-md"
+      color="slate"
+      no-animation
+      class="!outline-0"
       @click="toggleBlacklist"
     />
     <div
