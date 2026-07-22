@@ -482,6 +482,13 @@ const menuItems = computed(() => {
       activeOn: ['contests_customers'],
     },
     {
+      name: 'Offers',
+      label: t('SIDEBAR.OFFERS_AND_PROMOTIONS'),
+      icon: 'i-lucide-handshake',
+      to: accountScopedRoute('offers_index'),
+      activeOn: ['offers_index'],
+    },
+    {
       name: 'Bookings',
       label: t('BOOKINGS.HEADER'),
       icon: 'i-lucide-calendar-check',
@@ -952,6 +959,7 @@ useEventListener(document, 'touchend', onResizeEnd);
       <!-- Fixed Blue Background -->
       <div class="absolute inset-y-0 inset-x-0 z-[-1] bg-[#182933]" />
 
+      <!-- Logo row: logo alone -->
       <div
         class="mb-2 flex py-1 pl-2 pr-3 w-full items-center"
         :class="isCollapsed ? 'justify-center' : ''"
@@ -1025,11 +1033,8 @@ useEventListener(document, 'touchend', onResizeEnd);
           <div v-if="item.children" class="flex flex-col items-center w-full">
             <button
               v-tooltip="{ content: item.label, placement: 'right' }"
-              class="sidebar-item w-9 h-9 rounded-xl hover:bg-white/10 transition-all cursor-pointer flex items-center justify-center p-2 group/icon"
-              :class="{
-                'bg-white/35 shadow-inner':
-                  activeGroup === item.name || isGroupActive(item),
-              }"
+              class="sidebar-item w-9 h-9 rounded-xl hover:bg-white/10 transition-all flex items-center justify-center p-2 group/icon"
+              :class="{ 'bg-white/35 shadow-inner': isGroupActive(item) }"
               @click="onCollapsedGroupClick(item)"
             >
               <div
@@ -1037,6 +1042,7 @@ useEventListener(document, 'touchend', onResizeEnd);
                 :class="item.icon"
               />
             </button>
+            <!-- Expand beak: takes real layout space so icons below shift down -->
             <div
               v-if="isGroupActive(item)"
               class="w-[40px] h-[24px] flex items-center justify-center bg-[#182933] rounded-b-xl shadow-[0_4px_10px_rgba(0,0,0,0.1)] cursor-pointer z-40"

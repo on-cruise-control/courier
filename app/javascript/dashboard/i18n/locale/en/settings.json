@@ -374,6 +374,7 @@
     "ALL_CONTACTS": "All Contacts",
     "CONTESTS": "Contests",
     "ALL_CONTESTS": "All Contests",
+    "OFFERS_AND_PROMOTIONS": "Offers & Promotions",
     "TAGGED_WITH": "Tagged with",
     "NEW_LABEL": "New label",
     "NEW_TEAM": "New team",
@@ -1012,6 +1013,65 @@
       "NOT_AVAILABLE": "Not Available",
       "SUMMARY": "Interaction Summary",
       "NO_SUMMARY": "No summary available for this booking."
+    }
+  },
+  "OFFERS_MGMT": {
+    "LIST_HEADING": "Offers & Promotions",
+    "LIST_SUBHEADING": "Create and manage offers and promotions for this dealership",
+    "LIST_CREATE_BUTTON": "Create Offer",
+    "EMPTY_MESSAGE": "No offers or promotions found",
+    "SHOW_NOT_FOUND": "Offer not found",
+    "ERROR_FETCHING": "Failed to fetch offers. Please try again.",
+    "CREATE_HEADING": "Create Offer",
+    "CREATE_SUBMIT": "Create Offer",
+    "CREATE_SUCCESS": "Offer created successfully",
+    "ERROR_CREATE": "Failed to create offer. Please try again.",
+    "EDIT_HEADING": "Edit Offer",
+    "EDIT_SUBMIT": "Save Changes",
+    "EDIT_SUCCESS": "Offer updated successfully",
+    "ERROR_UPDATE": "Failed to update offer. Please try again.",
+    "DELETE_SUCCESS": "Offer deleted successfully",
+    "ERROR_DELETE": "Failed to delete offer. Please try again.",
+    "DELETE_CONFIRM_TITLE": "Delete Offer",
+    "DELETE_CONFIRM_MESSAGE": "Are you sure you want to delete \"{title}\"? This action cannot be undone.",
+    "DELETE_CONFIRM_SUBMIT": "Delete",
+    "DELETE_CONFIRM_CANCEL": "Cancel",
+    "TABLE": {
+      "TITLE": "Title",
+      "START_DATE": "Start Date",
+      "END_DATE": "End Date",
+      "PDF": "Document",
+      "VIEW_DOCUMENT": "View Document",
+      "NO_PDF": "No document",
+      "OFFER_DETAILS": "Offer Details",
+      "EDIT_ACTION": "Edit",
+      "DELETE_ACTION": "Delete"
+    },
+    "FORM": {
+      "HEADING": "Offer",
+      "SUBMIT": "Save",
+      "CANCEL": "Cancel",
+      "VALIDATION_REQUIRED": "This field is required",
+      "VALIDATION_DATE_ORDER": "End date must be after the start date",
+      "TITLE": {
+        "LABEL": "Title",
+        "PLACEHOLDER": "Enter offer title"
+      },
+      "START_DATE": {
+        "LABEL": "Start Date"
+      },
+      "END_DATE": {
+        "LABEL": "End Date"
+      },
+      "PDF": {
+        "LABEL": "Document",
+        "CHOOSE_FILE": "Choose a file",
+        "FILE_SIZE": "{size} MB",
+        "HELP_TEXT": "Upload a document",
+        "REPLACE_HELP": "Choose a file to replace the current document",
+        "VIEW_CURRENT": "View current document",
+        "REMOVE": "Remove selected file"
+      }
     }
   }
 }

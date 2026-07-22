@@ -10,6 +10,7 @@ import helpcenterRoutes from './helpcenter/helpcenter.routes';
 import campaignsRoutes from './campaigns/campaigns.routes';
 import bookingsRoutes from './bookings/bookings.routes';
 import contestsRoutes from './contests/contests.routes';
+import offersRoutes from './offers/offers.routes';
 import { routes as captainRoutes } from './captain/captain.routes';
 // CUSTOM START
 import AppContainer from './DashboardContainer.vue';
@@ -31,6 +32,7 @@ export default {
         ...contactRoutes,
         ...bookingsRoutes.routes,
         ...contestsRoutes.routes,
+        ...offersRoutes.routes,
         ...companyRoutes,
         ...searchRoutes,
         ...notificationRoutes,

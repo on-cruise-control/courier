@@ -94,6 +94,9 @@
 - name: bookings
   display_name: Bookings
   enabled: true
+- name: offers_and_promotions
+  display_name: Offers & Promotions
+  enabled: true
 - name: crm
   display_name: CRM
   enabled: true
