@@ -39,6 +39,8 @@
     "ASSIGN_TO_HUMAN": "Assign to human",
     "BLOCK": "Add to Blacklist",
     "UNBLOCK": "Remove from Blacklist",
+    "BLOCK_BUTTON": "Block",
+    "UNBLOCK_BUTTON": "Unblock",
     "BLOCK_SUCCESS": "Conversation added to the blacklist.",
     "BLOCK_ERROR": "Failed to add the conversation to the blacklist. Please try again.",
     "UNBLOCK_SUCCESS": "Conversation removed from the blacklist.",
