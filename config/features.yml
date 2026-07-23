@@ -254,4 +254,8 @@
 - name: custom_ui
   display_name: Custom UI
   enabled: true
+- name: payment_calculator
+  display_name: Payment Calculator
+  enabled: false
+  webhook_managed: true
 # CUSTOM END
