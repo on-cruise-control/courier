@@ -426,6 +426,14 @@
   type: secret
 # ------- End of Shopify Related Config ------- #
 
+# ------- PostHog Config ------- #
+- name: POSTHOG_WEBHOOK_SECRET
+  display_title: 'PostHog Webhook Secret'
+  description: 'Shared secret used to verify inbound PostHog webhook requests (sent as the X-Posthog-Secret header)'
+  locked: false
+  type: secret
+# ------- End of PostHog Config ------- #
+
 # ------- Instagram Channel Related Config ------- #
 - name: INSTAGRAM_APP_ID
   display_title: 'Instagram App ID'
