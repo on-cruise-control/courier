@@ -55,7 +55,7 @@ export const actions = {
       Object.keys(pendingCustomAttributes).length > 0 ||
       pendingLabels.length > 0;
 
-    commit('pushMessageToConversation', message);
+    commit('pushMessageToConversation', { ...message, status: 'in_progress' });
     commit('updateMessageMeta', { id, meta: { ...meta, error: '' } });
     try {
       const { data } = await sendMessageAPI(content, replyTo, {

@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onUnmounted } from 'vue';
+import { computed, onUnmounted, ref } from 'vue';
 import { useToggle } from '@vueuse/core';
 import { useStore } from 'vuex';
 import { useAlert } from 'dashboard/composables';
@@ -9,6 +9,7 @@ import EmailTranscriptModal from './EmailTranscriptModal.vue';
 import ResolveAction from '../../buttons/ResolveAction.vue';
 import ButtonV4 from 'dashboard/components-next/button/Button.vue';
 import DropdownMenu from 'dashboard/components-next/dropdown-menu/DropdownMenu.vue';
+import Dialog from 'dashboard/components-next/dialog/Dialog.vue';
 
 import {
   CMD_MUTE_CONVERSATION,
@@ -25,9 +26,9 @@ const [showActionsDropdown, toggleDropdown] = useToggle(false);
 
 const currentChat = computed(() => store.getters.getSelectedChat);
 const isBlacklisted = computed(() => currentChat.value.is_blacklisted);
+const blockConfirmDialogRef = ref(null);
 
-const toggleBlacklist = async () => {
-  const wasBlacklisted = isBlacklisted.value;
+const setBlacklisted = async wasBlacklisted => {
   try {
     await store.dispatch('bulkActions/process', {
       type: 'Conversation',
@@ -46,6 +47,19 @@ const toggleBlacklist = async () => {
         : t('CONVERSATION.BLOCK_ERROR')
     );
   }
+};
+
+const toggleBlacklist = () => {
+  if (isBlacklisted.value) {
+    setBlacklisted(true);
+  } else {
+    blockConfirmDialogRef.value?.open();
+  }
+};
+
+const handleBlockConfirm = () => {
+  setBlacklisted(false);
+  blockConfirmDialogRef.value?.close();
 };
 
 const actionMenuItems = computed(() => {
@@ -159,6 +173,14 @@ onUnmounted(() => {
       :show="showEmailActionsModal"
       :current-chat="currentChat"
       @cancel="toggleEmailModal"
+    />
+    <Dialog
+      ref="blockConfirmDialogRef"
+      type="alert"
+      :title="$t('CONVERSATION.BLOCK_CONFIRM.TITLE')"
+      :description="$t('CONVERSATION.BLOCK_CONFIRM.DESCRIPTION')"
+      :confirm-button-label="$t('CONVERSATION.BLOCK_CONFIRM.CONFIRM')"
+      @confirm="handleBlockConfirm"
     />
   </div>
 </template>
