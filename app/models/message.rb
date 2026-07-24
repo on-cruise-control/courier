@@ -66,6 +66,7 @@ class Message < ApplicationRecord
 
   before_validation :ensure_content_type
   before_validation :prevent_message_flooding
+  before_validation :prevent_blocked_conversation_message
   before_save :ensure_processed_message_content
   before_save :ensure_in_reply_to
 
@@ -339,6 +340,13 @@ class Message < ApplicationRecord
       Rails.logger.error "Too many message: Account Id - #{account_id} : Conversation id - #{conversation_id}"
       errors.add(:base, 'Too many messages')
     end
+  end
+
+  def prevent_blocked_conversation_message
+    return if conversation.blank?
+    return unless incoming?
+
+    errors.add(:base, 'Conversation is blocked') if conversation.is_blacklisted?
   end
 
   def ensure_processed_message_content
