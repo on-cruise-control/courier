@@ -36,7 +36,12 @@ const submitText = computed(
 const defaultForm = { title: '', start_date: '', end_date: '' };
 
 const form = reactive({ ...defaultForm, ...props.offer });
-const errors = reactive({ title: '', start_date: '', end_date: '' });
+const errors = reactive({
+  title: '',
+  start_date: '',
+  end_date: '',
+  offer_document: '',
+});
 const selectedFile = ref(null);
 const fileInputRef = ref(null);
 
@@ -53,6 +58,19 @@ watch(
 
 const existingDocumentUrl = computed(() => props.offer?.offer_document || '');
 
+const selectedFileSizeLabel = computed(() => {
+  if (!selectedFile.value) return '';
+  const { size } = selectedFile.value;
+  if (size < 1024 * 1024) {
+    return t('OFFERS_MGMT.FORM.PDF.FILE_SIZE_KB', {
+      size: Math.max(size / 1024, 0.1).toFixed(1),
+    });
+  }
+  return t('OFFERS_MGMT.FORM.PDF.FILE_SIZE', {
+    size: (size / 1024 / 1024).toFixed(2),
+  });
+});
+
 const openFileDialog = () => {
   nextTick(() => fileInputRef.value?.click());
 };
@@ -62,6 +80,7 @@ const handleFileChange = event => {
   if (!file) return;
 
   selectedFile.value = file;
+  errors.offer_document = '';
 };
 
 const clearSelectedFile = () => {
@@ -89,6 +108,10 @@ const validateForm = () => {
     new Date(form.end_date) < new Date(form.start_date)
   ) {
     errors.end_date = t('OFFERS_MGMT.FORM.VALIDATION_DATE_ORDER');
+    isValid = false;
+  }
+  if (!selectedFile.value && !existingDocumentUrl.value) {
+    errors.offer_document = t('OFFERS_MGMT.FORM.VALIDATION_REQUIRED_FILE');
     isValid = false;
   }
   return isValid;
@@ -197,11 +220,7 @@ const handleCancel = () => emit('cancel');
               </p>
               <p class="m-0 text-xs text-n-slate-11">
                 <template v-if="selectedFile">
-                  {{
-                    t('OFFERS_MGMT.FORM.PDF.FILE_SIZE', {
-                      size: (selectedFile.size / 1024 / 1024).toFixed(2),
-                    })
-                  }}
+                  {{ selectedFileSizeLabel }}
                 </template>
                 <template v-else-if="existingDocumentUrl">
                   {{ t('OFFERS_MGMT.FORM.PDF.REPLACE_HELP') }}
@@ -233,6 +252,12 @@ const handleCancel = () => emit('cancel');
         >
           {{ t('OFFERS_MGMT.FORM.PDF.VIEW_CURRENT') }}
         </a>
+        <p
+          v-if="errors.offer_document"
+          class="text-xs text-n-ruby-9 dark:text-n-ruby-9"
+        >
+          {{ errors.offer_document }}
+        </p>
       </div>
 
       <footer class="flex justify-end gap-3 mt-2">
