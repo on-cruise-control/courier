@@ -20,13 +20,13 @@ const getters = {
 };
 
 const actions = {
-  fetch: async ({ commit }) => {
-    commit('SET_UI_FLAGS', { isFetching: true });
+  fetch: async ({ commit }, { silent = false } = {}) => {
+    if (!silent) commit('SET_UI_FLAGS', { isFetching: true });
     try {
       const response = await OffersAPI.get();
       commit('SET_RECORDS', response.data.results || []);
     } finally {
-      commit('SET_UI_FLAGS', { isFetching: false });
+      if (!silent) commit('SET_UI_FLAGS', { isFetching: false });
     }
   },
   create: async ({ commit }, offer) => {
@@ -65,7 +65,7 @@ const mutations = {
     _state.records = records;
   },
   ADD_RECORD(_state, record) {
-    _state.records.push(record);
+    _state.records.unshift(record);
   },
   EDIT_RECORD(_state, { id, offer }) {
     const index = _state.records.findIndex(record => record.id === id);

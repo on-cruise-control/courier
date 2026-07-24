@@ -13,6 +13,7 @@ import OfferShow from '../components/OfferShow.vue';
 
 const ITEMS_PER_PAGE = 10;
 const TABLET_BREAKPOINT = 767;
+const DOCUMENT_TEXT_REFRESH_DELAY_MS = 2000;
 
 const store = useStore();
 const { t } = useI18n();
@@ -64,11 +65,16 @@ const openCreateDialog = () => {
 };
 const closeCreateDialog = () => createDialogRef.value?.close();
 
+const refreshOffersSilently = () => {
+  store.dispatch('offers/fetch', { silent: true }).catch(() => {});
+};
+
 const handleCreate = async payload => {
   try {
     await store.dispatch('offers/create', payload);
     useAlert(t('OFFERS_MGMT.CREATE_SUCCESS'));
     closeCreateDialog();
+    setTimeout(refreshOffersSilently, DOCUMENT_TEXT_REFRESH_DELAY_MS);
   } catch (error) {
     useAlert(t('OFFERS_MGMT.ERROR_CREATE'));
   }
