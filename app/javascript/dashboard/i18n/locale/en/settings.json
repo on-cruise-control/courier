@@ -1054,6 +1054,7 @@
       "VALIDATION_REQUIRED": "This field is required",
       "VALIDATION_REQUIRED_FILE": "Please upload the document",
       "VALIDATION_DATE_ORDER": "End date must be after the start date",
+      "VALIDATION_FILE_SIZE": "File size must not exceed 50 MB",
       "TITLE": {
         "LABEL": "Title",
         "PLACEHOLDER": "Enter offer title"
@@ -1069,7 +1070,7 @@
         "CHOOSE_FILE": "Choose a file",
         "FILE_SIZE": "{size} MB",
         "FILE_SIZE_KB": "{size} KB",
-        "HELP_TEXT": "Upload a document",
+        "HELP_TEXT": "Upload a file (Up to 50 MB)",
         "REPLACE_HELP": "Choose a file to replace the current document",
         "VIEW_CURRENT": "View current document",
         "REMOVE": "Remove selected file"

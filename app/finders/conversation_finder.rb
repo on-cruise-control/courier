@@ -172,7 +172,7 @@ class ConversationFinder
   end
 
   def filter_by_status
-    return if params[:status] == 'all'
+    return if Array.wrap(params[:status]).include?('all')
     return if params[:conversation_type] == 'comments'
 
     @conversations = @conversations.where(status: params[:status] || DEFAULT_STATUS)

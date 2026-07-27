@@ -8,11 +8,11 @@ export const findPendingMessageIndex = (chat, message) => {
 };
 
 export const filterByStatus = (chatStatus, filterStatus) => {
-  if (filterStatus === 'all') return true;
   if (Array.isArray(filterStatus)) {
+    if (filterStatus.includes('all')) return true;
     return filterStatus.includes(chatStatus);
   }
-  return chatStatus === filterStatus;
+  return filterStatus === 'all' || chatStatus === filterStatus;
 };
 
 export const filterByInbox = (shouldFilter, inboxId, chatInboxId) => {
