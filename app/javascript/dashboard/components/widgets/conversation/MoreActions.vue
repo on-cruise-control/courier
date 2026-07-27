@@ -27,6 +27,7 @@ const [showActionsDropdown, toggleDropdown] = useToggle(false);
 const currentChat = computed(() => store.getters.getSelectedChat);
 const isBlacklisted = computed(() => currentChat.value.is_blacklisted);
 const blockConfirmDialogRef = ref(null);
+const unblockConfirmDialogRef = ref(null);
 
 const setBlacklisted = async wasBlacklisted => {
   try {
@@ -51,7 +52,7 @@ const setBlacklisted = async wasBlacklisted => {
 
 const toggleBlacklist = () => {
   if (isBlacklisted.value) {
-    setBlacklisted(true);
+    unblockConfirmDialogRef.value?.open();
   } else {
     blockConfirmDialogRef.value?.open();
   }
@@ -60,47 +61,28 @@ const toggleBlacklist = () => {
 const handleBlockConfirm = () => {
   setBlacklisted(false);
   blockConfirmDialogRef.value?.close();
+  document.activeElement?.blur();
 };
 
-const actionMenuItems = computed(() => {
-  const items = [];
+const handleUnblockConfirm = () => {
+  setBlacklisted(true);
+  unblockConfirmDialogRef.value?.close();
+  document.activeElement?.blur();
+};
 
-  if (!currentChat.value.muted) {
-    items.push({
-      icon: 'i-lucide-volume-off',
-      label: t('CONTACT_PANEL.MUTE_CONTACT'),
-      action: 'mute',
-      value: 'mute',
-    });
-  } else {
-    items.push({
-      icon: 'i-lucide-volume-1',
-      label: t('CONTACT_PANEL.UNMUTE_CONTACT'),
-      action: 'unmute',
-      value: 'unmute',
-    });
-  }
-
-  items.push({
+const actionMenuItems = computed(() => [
+  {
     icon: 'i-lucide-share',
     label: t('CONTACT_PANEL.SEND_TRANSCRIPT'),
     action: 'send_transcript',
     value: 'send_transcript',
-  });
-
-  return items;
-});
+  },
+]);
 
 const handleActionClick = ({ action }) => {
   toggleDropdown(false);
 
-  if (action === 'mute') {
-    store.dispatch('muteConversation', currentChat.value.id);
-    useAlert(t('CONTACT_PANEL.MUTED_SUCCESS'));
-  } else if (action === 'unmute') {
-    store.dispatch('unmuteConversation', currentChat.value.id);
-    useAlert(t('CONTACT_PANEL.UNMUTED_SUCCESS'));
-  } else if (action === 'send_transcript') {
+  if (action === 'send_transcript') {
     toggleEmailModal();
   }
 };
@@ -181,6 +163,14 @@ onUnmounted(() => {
       :description="$t('CONVERSATION.BLOCK_CONFIRM.DESCRIPTION')"
       :confirm-button-label="$t('CONVERSATION.BLOCK_CONFIRM.CONFIRM')"
       @confirm="handleBlockConfirm"
+    />
+    <Dialog
+      ref="unblockConfirmDialogRef"
+      type="alert"
+      :title="$t('CONVERSATION.UNBLOCK_CONFIRM.TITLE')"
+      :description="$t('CONVERSATION.UNBLOCK_CONFIRM.DESCRIPTION')"
+      :confirm-button-label="$t('CONVERSATION.UNBLOCK_CONFIRM.CONFIRM')"
+      @confirm="handleUnblockConfirm"
     />
   </div>
 </template>

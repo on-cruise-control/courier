@@ -41,7 +41,7 @@
     "UNBLOCK": "Unblock conversation",
     "BLOCK_BUTTON": "Block",
     "UNBLOCK_BUTTON": "Unblock",
-    "BLOCK_SUCCESS": "Conversation added to the blocked.",
+    "BLOCK_SUCCESS": "Conversation added to the block list.",
     "BLOCK_ERROR": "Failed to add the conversation to the block list. Please try again.",
     "UNBLOCK_SUCCESS": "Conversation removed from the block list.",
     "UNBLOCK_ERROR": "Failed to remove the conversation from the blocked list. Please try again.",
@@ -49,6 +49,11 @@
       "TITLE": "Block conversation",
       "DESCRIPTION": "Blocking this conversation prevents the customer from sending new messages and stops all AI responses. You can unblock the conversation whenever needed.",
       "CONFIRM": "Block conversation"
+    },
+    "UNBLOCK_CONFIRM": {
+      "TITLE": "Unblock conversation",
+      "DESCRIPTION": "Unblocking this conversation allows the customer to send new messages and resumes all AI responses. You can block the conversation again whenever needed.",
+      "CONFIRM": "Unblock conversation"
     },
     "BOT_HANDOFF_MESSAGE": "You are responding to a conversation which is currently handled by an assistant or a bot.",
     "BOT_HANDOFF_ACTION": "Mark open and assign to you",
