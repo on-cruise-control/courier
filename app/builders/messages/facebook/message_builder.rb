@@ -148,7 +148,8 @@ class Messages::Facebook::MessageBuilder < Messages::Messenger::MessageBuilder
       content: response.content,
       source_id: response.identifier,
       content_attributes: content_attributes,
-      sender: @outgoing_echo ? nil : @contact_inbox.contact
+      sender: @outgoing_echo ? nil : @contact_inbox.contact,
+      additional_attributes: { 'delivery_status': 'sent' }
     }
   end
 
