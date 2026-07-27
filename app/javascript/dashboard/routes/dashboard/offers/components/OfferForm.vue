@@ -45,6 +45,8 @@ const errors = reactive({
 const selectedFile = ref(null);
 const fileInputRef = ref(null);
 
+const MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024;
+
 watch(
   () => props.offer,
   value => {
@@ -78,6 +80,13 @@ const openFileDialog = () => {
 const handleFileChange = event => {
   const file = event.target.files[0];
   if (!file) return;
+
+  if (file.size > MAX_FILE_SIZE_BYTES) {
+    errors.offer_document = t('OFFERS_MGMT.FORM.VALIDATION_FILE_SIZE');
+    selectedFile.value = null;
+    if (fileInputRef.value) fileInputRef.value.value = '';
+    return;
+  }
 
   selectedFile.value = file;
   errors.offer_document = '';
@@ -135,6 +144,14 @@ watch(
     if (form.end_date) errors.end_date = '';
   }
 );
+
+const isFormValid = computed(() => {
+  if (!form.title?.trim()) return false;
+  if (!form.start_date || !form.end_date) return false;
+  if (new Date(form.end_date) < new Date(form.start_date)) return false;
+  if (!selectedFile.value && !existingDocumentUrl.value) return false;
+  return true;
+});
 
 const handleSubmit = () => {
   if (!validateForm()) return;
@@ -272,7 +289,7 @@ const handleCancel = () => emit('cancel');
           type="submit"
           :label="submitText"
           :is-loading="isSubmitting"
-          :disabled="isSubmitting"
+          :disabled="isSubmitting || !isFormValid"
         />
       </footer>
     </form>
