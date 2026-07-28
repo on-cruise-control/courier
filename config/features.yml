@@ -99,7 +99,7 @@
   enabled: true
 - name: auto_resolve_conversations
   display_name: Auto Resolve Conversations
-  enabled: true
+  enabled: false
 - name: custom_reply_email
   display_name: Custom Reply Email
   enabled: false
