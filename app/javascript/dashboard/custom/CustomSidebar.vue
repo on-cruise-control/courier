@@ -53,6 +53,12 @@ const hasConversationUnreadCounts = computed(() =>
     FEATURE_FLAGS.CONVERSATION_UNREAD_COUNTS
   )
 );
+const hasAutoResolveConversations = computed(() =>
+  isFeatureEnabledonAccount.value(
+    accountId.value,
+    FEATURE_FLAGS.AUTO_RESOLVE_CONVERSATIONS
+  )
+);
 
 const allUnreadCount = useMapGetter(
   'conversationUnreadCounts/getAllUnreadCount'
@@ -672,12 +678,16 @@ const menuItems = computed(() => {
           icon: 'i-lucide-clock-alert',
           to: accountScopedRoute('sla_list'),
         },
-        {
-          type: 'link',
-          label: t('SIDEBAR.CONVERSATION_WORKFLOW'),
-          icon: 'i-lucide-git-branch',
-          to: accountScopedRoute('conversation_workflow_index'),
-        },
+        ...(hasAutoResolveConversations.value
+          ? [
+              {
+                type: 'link',
+                label: t('SIDEBAR.CONVERSATION_WORKFLOW'),
+                icon: 'i-lucide-git-branch',
+                to: accountScopedRoute('conversation_workflow_index'),
+              },
+            ]
+          : []),
         {
           type: 'link',
           label: t('SIDEBAR.SECURITY'),

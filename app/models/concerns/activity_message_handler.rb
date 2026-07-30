@@ -16,6 +16,7 @@ module ActivityMessageHandler
     handle_priority_change(user_name)
     handle_label_change(user_name)
     handle_sla_policy_change(user_name)
+    handle_blacklist_change(user_name)
   end
 
   def determine_user_name
@@ -45,6 +46,15 @@ module ActivityMessageHandler
 
     sla_change_type = determine_sla_change_type
     create_sla_change_activity(sla_change_type, activity_message_owner(user_name))
+  end
+
+  def handle_blacklist_change(user_name)
+    return unless saved_change_to_is_blacklisted?
+    return unless user_name
+
+    change_type = is_blacklisted? ? 'blocked' : 'unblocked'
+    content = I18n.t("conversations.activity.#{change_type}", user_name: user_name)
+    ::Conversations::ActivityMessageJob.perform_later(self, activity_message_params(content))
   end
 
   def status_change_activity(user_name)

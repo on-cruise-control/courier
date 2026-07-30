@@ -43,7 +43,7 @@ class Integrations::Stark::ProcessorService < Integrations::BotProcessorService
 
     return true if last_relevant.sender == agent_bot
 
-    if (last_relevant.sent? || last_relevant.read?) && last_relevant.created_at >= 24.hours.ago
+    if (last_relevant.sent? || last_relevant.delivered? || last_relevant.read?) && last_relevant.created_at >= 24.hours.ago
       return true if unassigned_after?(last_relevant)
 
       return false

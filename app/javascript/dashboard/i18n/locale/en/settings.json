@@ -326,7 +326,7 @@
     "PARTICIPATING_CONVERSATIONS": "Participating",
     "UNATTENDED_CONVERSATIONS": "Unattended",
     "SPAM": "Spam",
-    "BLACKLIST": "Blacklist",
+    "BLACKLIST": "Blocked",
     "UNREAD_COUNT_TOOLTIP": {
       "ALL": "Total unread conversations",
       "INBOX": "Total unread conversations in this inbox",
