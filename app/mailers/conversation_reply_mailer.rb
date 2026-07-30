@@ -114,12 +114,8 @@ class ConversationReplyMailer < ApplicationMailer
   def parse_email(raw_email)
     return raw_email if raw_email.blank?
 
-    # Support formats like:
-    # - "support@example.com"
-    # - "Inbox <support@example.com>"
-    # - "Display Name <support@example.com>"
     if defined?(Mail::Address)
-      Mail::Address.new(raw_email).format_address
+      Mail::Address.new(raw_email).address
     else
       raw_email
     end
