@@ -9,9 +9,10 @@ module Stark
 
       if response['is_spam']
         current_conversation.update!(is_spam: true)
-        
+
         if response['content'].present? || (response['attachments'].is_a?(Array) && response['attachments'].any?)
-          create_bot_response_message(current_conversation, response['content'], response['attachments'], response['metadata'], is_deferred_spam_reply: true)
+          create_bot_response_message(current_conversation, response['content'], response['attachments'], response['metadata'],
+                                      is_deferred_spam_reply: true)
         end
         return
       end
@@ -88,14 +89,20 @@ module Stark
           )
         end
 
+      elsif widget_channel?(conversation) && attachments.is_a?(Array) && attachments.any?
+        contents.each do |content|
+          create_text_message(conversation, content, metadata, is_deferred_spam_reply) if content.present?
+        end
+        create_cards_message(conversation, attachments, metadata, is_deferred_spam_reply)
+
       else
         contents.each do |content|
           create_text_message(conversation, content, metadata, is_deferred_spam_reply) if content.present?
         end
         if attachments.is_a?(Array) && attachments.any?
-          create_cards_message(conversation, attachments, metadata, is_deferred_spam_reply)
+          create_attachment_messages(conversation, attachments, metadata, is_deferred_spam_reply)
         else
-          Rails.logger.info("[Cards] No attachments present, skipping cards message")
+          Rails.logger.info('[Cards] No attachments present, skipping cards message')
         end
       end
     end
@@ -149,12 +156,13 @@ module Stark
         vehicle_id = attachment.is_a?(Hash) ? (attachment['vehicle_id'] || attachment[:vehicle_id]) : nil
         action_type    = vehicle_id.present? ? 'view_vehicle' : 'postback'
         action_payload = vehicle_id.presence || title
-        { title: title, description: '', media_url: url, vehicle_id: vehicle_id, actions: [{ text: 'View Details', type: action_type, payload: action_payload }] }
+        { title: title, description: '', media_url: url, vehicle_id: vehicle_id,
+          actions: [{ text: 'View Details', type: action_type, payload: action_payload }] }
       end
 
       return if duplicate_outgoing?(conversation, cards_items: items)
 
-      msg = conversation.messages.create!(
+      conversation.messages.create!(
         content_type: :cards,
         content_attributes: { items: items },
         message_type: :outgoing,
@@ -165,17 +173,21 @@ module Stark
         private: is_deferred_spam_reply,
         additional_attributes: is_deferred_spam_reply ? { deferred_spam_reply: true } : {}
       )
-
-      msg
     end
 
-    def create_attachment_messages(conversation, attachments, is_deferred_spam_reply = false)
+    def create_attachment_messages(conversation, attachments, metadata = {}, is_deferred_spam_reply = false)
       attachments.each do |attachment|
         url = attachment.is_a?(Hash) ? (attachment['url'] || attachment[:url]) : attachment
         content = attachment.is_a?(Hash) ? (attachment['content'] || attachment[:content]) : nil
         next if url.blank?
 
-        file = URI.open(url)
+        begin
+          file = URI.open(url)
+        rescue OpenURI::HTTPError, StandardError => e
+          Rails.logger.warn "Failed to download attachment from #{url}: #{e.message}"
+          next
+        end
+
         filename = File.basename(URI.parse(url).path)
 
         blob = ActiveStorage::Blob.create_and_upload!(
@@ -190,6 +202,7 @@ module Stark
           account_id: conversation.account_id,
           inbox_id: conversation.inbox_id,
           sender: agent_bot,
+          metadata: metadata,
           private: is_deferred_spam_reply,
           additional_attributes: is_deferred_spam_reply ? { deferred_spam_reply: true } : {}
         )
@@ -210,6 +223,10 @@ module Stark
 
     def facebook_channel?(conversation)
       conversation.inbox.platform_name == 'Facebook'
+    end
+
+    def widget_channel?(conversation)
+      conversation.inbox.channel_type == 'Channel::WebWidget'
     end
   end
 end
