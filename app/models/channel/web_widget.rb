@@ -2,22 +2,30 @@
 #
 # Table name: channel_web_widgets
 #
-#  id                    :integer          not null, primary key
-#  continuity_via_email  :boolean          default(TRUE), not null
-#  feature_flags         :integer          default(7), not null
-#  hmac_mandatory        :boolean          default(FALSE)
-#  hmac_token            :string
-#  pre_chat_form_enabled :boolean          default(FALSE)
-#  pre_chat_form_options :jsonb
-#  reply_time            :integer          default("in_a_few_minutes")
-#  website_token         :string
-#  website_url           :string
-#  welcome_tagline       :string
-#  welcome_title         :string
-#  widget_color          :string           default("#1f93ff")
-#  created_at            :datetime         not null
-#  updated_at            :datetime         not null
-#  account_id            :integer
+#  id                     :integer          not null, primary key
+#  allowed_domains        :text             default("")
+#  avatar_name            :string
+#  continuity_via_email   :boolean          default(TRUE), not null
+#  dealer_name            :string
+#  dealer_tagline         :string
+#  feature_flags          :integer          default(7), not null
+#  google_analytics_token :string
+#  hmac_mandatory         :boolean          default(FALSE)
+#  hmac_token             :string
+#  launcher_title         :string           default("Chat with us")
+#  pre_chat_form_enabled  :boolean          default(FALSE)
+#  pre_chat_form_options  :jsonb
+#  reply_time             :integer          default("in_a_few_minutes")
+#  website_token          :string
+#  website_url            :string
+#  welcome_tagline        :string
+#  welcome_title          :string
+#  widget_color           :string           default("#1f93ff")
+#  widget_position        :string           default("right")
+#  widget_type            :string           default("standard")
+#  created_at             :datetime         not null
+#  updated_at             :datetime         not null
+#  account_id             :integer
 #
 # Indexes
 #
@@ -32,6 +40,8 @@ class Channel::WebWidget < ApplicationRecord
   self.table_name = 'channel_web_widgets'
   EDITABLE_ATTRS = [:website_url, :widget_color, :welcome_title, :welcome_tagline, :reply_time, :pre_chat_form_enabled,
                     :continuity_via_email, :hmac_mandatory,
+                    :dealer_name, :dealer_tagline, :avatar_name, :allowed_domains,
+                    :widget_position, :widget_type, :launcher_title, :google_analytics_token,
                     { pre_chat_form_options: [:pre_chat_message, :require_email,
                                               { pre_chat_fields:
                                                 [:field_type, :label, :placeholder, :name, :enabled, :type, :enabled, :required,
@@ -50,6 +60,7 @@ class Channel::WebWidget < ApplicationRecord
             2 => :emoji_picker,
             3 => :end_conversation,
             4 => :use_inbox_avatar_for_bot,
+            5 => :allow_mobile_webview,
             :column => 'feature_flags',
             :check_for_column => false
 
@@ -66,7 +77,6 @@ class Channel::WebWidget < ApplicationRecord
         var BASE_URL=\"#{ENV.fetch('FRONTEND_URL', '')}\";
         var g=d.createElement(t),s=d.getElementsByTagName(t)[0];
         g.src=BASE_URL+\"/packs/js/sdk.js\";
-        g.defer = true;
         g.async = true;
         s.parentNode.insertBefore(g,s);
         g.onload=function(){

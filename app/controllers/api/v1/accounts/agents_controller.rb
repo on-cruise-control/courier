@@ -72,7 +72,7 @@ class Api::V1::Accounts::AgentsController < Api::V1::Accounts::BaseController
   end
 
   def allowed_agent_params
-    [:name, :email, :name, :role, :availability, :auto_offline]
+    [:name, :email, :role, :availability, :auto_offline]
   end
 
   def agent_params
@@ -90,11 +90,11 @@ class Api::V1::Accounts::AgentsController < Api::V1::Accounts::BaseController
   def validate_limit_for_bulk_create
     limit_available = params[:emails].count <= available_agent_count
 
-    render_payment_required('Account limit exceeded. Please purchase more licenses') unless limit_available
+    render_payment_required('Account limit exceeded.') unless limit_available
   end
 
   def validate_limit
-    render_payment_required('Account limit exceeded. Please purchase more licenses') unless can_add_agent?
+    render_payment_required('Account limit exceeded.') unless can_add_agent?
   end
 
   def available_agent_count

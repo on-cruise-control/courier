@@ -1,21 +1,36 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useMessageContext } from '../provider.js';
 import Icon from 'next/icon/Icon.vue';
 import BaseBubble from 'next/message/bubbles/Base.vue';
 
 import MessageFormatter from 'shared/helpers/MessageFormatter.js';
-import { MESSAGE_VARIANTS } from '../constants';
+import { MESSAGE_VARIANTS, ATTACHMENT_TYPES } from '../constants';
 
 const emit = defineEmits(['error']);
-const { variant, content, attachments } = useMessageContext();
+const { t } = useI18n();
+const { variant, content, contentAttributes, attachments } =
+  useMessageContext();
 
 const attachment = computed(() => {
   return attachments.value[0];
 });
 
+const isStoryReply = computed(() => {
+  return contentAttributes.value?.imageType === ATTACHMENT_TYPES.IG_STORY_REPLY;
+});
+
 const hasImgStoryError = ref(false);
 const hasVideoStoryError = ref(false);
+
+watch(
+  () => attachment.value?.dataUrl,
+  () => {
+    hasImgStoryError.value = false;
+    hasVideoStoryError.value = false;
+  }
+);
 
 const formattedContent = computed(() => {
   if (variant.value === MESSAGE_VARIANTS.ACTIVITY) {
@@ -38,6 +53,9 @@ const onVideoLoadError = () => {
 
 <template>
   <BaseBubble class="p-3 overflow-hidden" data-bubble-name="ig-story">
+    <p v-if="isStoryReply" class="mb-1 text-xs text-n-slate-11">
+      {{ t('COMPONENTS.FILE_BUBBLE.INSTAGRAM_STORY_REPLY') }}
+    </p>
     <div v-if="content" v-dompurify-html="formattedContent" class="mb-2" />
     <img
       v-if="!hasImgStoryError"

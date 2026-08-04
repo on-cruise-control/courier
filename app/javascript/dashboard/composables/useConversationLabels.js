@@ -75,7 +75,7 @@ export function useConversationLabels() {
   const addLabelToConversation = value => {
     const result = activeLabels.value.map(item => item.title);
     result.push(value.title);
-    onUpdateLabels(result);
+    return onUpdateLabels(result);
   };
 
   /**
@@ -86,7 +86,7 @@ export function useConversationLabels() {
     const result = activeLabels.value
       .map(label => label.title)
       .filter(label => label !== value);
-    onUpdateLabels(result);
+    return onUpdateLabels(result);
   };
 
   return {

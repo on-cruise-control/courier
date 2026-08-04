@@ -33,12 +33,12 @@ describe Telegram::IncomingMessageService do
   let!(:telegram_channel) { create(:channel_telegram) }
   let!(:message_params) do
     {
-      'message_id' => 1,
-      'from' => {
-        'id' => 23, 'is_bot' => false, 'first_name' => 'Sojan', 'last_name' => 'Jose', 'username' => 'sojan', 'language_code' => 'en'
+      message_id: 1,
+      from: {
+        id: 23, is_bot: false, first_name: 'Sojan', last_name: 'Jose', username: 'sojan', language_code: 'en'
       },
-      'chat' => { 'id' => 23, 'first_name' => 'Sojan', 'last_name' => 'Jose', 'username' => 'sojan', 'type' => 'private' },
-      'date' => 1_631_132_077
+      chat: { id: 23, first_name: 'Sojan', last_name: 'Jose', username: 'sojan', type: 'private' },
+      date: 1_631_132_077
     }
   end
 
@@ -51,7 +51,7 @@ describe Telegram::IncomingMessageService do
         }.with_indifferent_access
         described_class.new(inbox: telegram_channel.inbox, params: params).perform
         expect(telegram_channel.inbox.conversations.count).not_to eq(0)
-        expect(Contact.all.first.name).to eq('Sojan Jose')
+        expect(Contact.order(:created_at).last.name).to eq('Sojan Jose')
         expect(telegram_channel.inbox.messages.first.content).to eq('test')
       end
     end
@@ -64,9 +64,11 @@ describe Telegram::IncomingMessageService do
         }.with_indifferent_access
         described_class.new(inbox: telegram_channel.inbox, params: params).perform
         expect(telegram_channel.inbox.conversations.count).not_to eq(0)
-        expect(Contact.all.first.name).to eq('Sojan Jose')
-        expect(Contact.all.first.additional_attributes['social_telegram_user_id']).to eq(23)
-        expect(Contact.all.first.additional_attributes['social_telegram_user_name']).to eq('sojan')
+        expect(Contact.order(:created_at).last.name).to eq('Sojan Jose')
+        contact = Contact.find do |c|
+          c.additional_attributes['social_telegram_user_id'] == 23
+        end
+        expect(contact.additional_attributes['social_telegram_user_name']).to eq('sojan')
         expect(telegram_channel.inbox.messages.first.content).to eq('test')
       end
     end
@@ -89,6 +91,72 @@ describe Telegram::IncomingMessageService do
       end
     end
 
+    context 'when business connection messages' do
+      subject do
+        described_class.new(inbox: telegram_channel.inbox, params: params).perform
+      end
+
+      let(:business_message_params) { message_params.merge('business_connection_id' => 'eooW3KF5WB5HxTD7T826') }
+      let(:params) do
+        {
+          'update_id' => 2_342_342_343_242,
+          'business_message' => { 'text' => 'test' }.deep_merge(business_message_params)
+        }.with_indifferent_access
+      end
+
+      it 'creates appropriate conversations, message and contacts' do
+        subject
+
+        expect(telegram_channel.inbox.conversations.count).not_to eq(0)
+        expect(telegram_channel.inbox.conversations.last.additional_attributes).to include({
+                                                                                             'chat_id' => 23,
+                                                                                             'business_connection_id' => 'eooW3KF5WB5HxTD7T826'
+                                                                                           })
+
+        contact = Contact.order(:created_at).last
+
+        expect(contact.name).to eq('Sojan Jose')
+        expect(contact.additional_attributes['language_code']).to eq('en')
+
+        message = telegram_channel.inbox.messages.first
+        expect(message.content).to eq('test')
+        expect(message.message_type).to eq('incoming')
+        expect(message.sender).to eq(contact)
+      end
+
+      context 'when sender is your business account' do
+        let(:business_message_params) do
+          message_params.merge(
+            'business_connection_id' => 'eooW3KF5WB5HxTD7T826',
+            'from' => {
+              'id' => 42, 'is_bot' => false, 'first_name' => 'John', 'last_name' => 'Doe', 'username' => 'johndoe', 'language_code' => 'en'
+            }
+          )
+        end
+
+        it 'creates appropriate conversations, message and contacts' do
+          subject
+
+          expect(telegram_channel.inbox.conversations.count).not_to eq(0)
+
+          expect(telegram_channel.inbox.conversations.last.additional_attributes).to include({
+                                                                                               'chat_id' => 23,
+                                                                                               'business_connection_id' => 'eooW3KF5WB5HxTD7T826'
+                                                                                             })
+
+          contact = Contact.order(:created_at).last
+
+          expect(contact.name).to eq('Sojan Jose')
+          expect(contact.additional_attributes['language_code']).to be_nil
+
+          message = telegram_channel.inbox.messages.first
+          expect(message.content).to eq('test')
+          expect(message.message_type).to eq('outgoing')
+          expect(message.sender).to be_nil
+        end
+      end
+    end
+
     context 'when valid audio messages params' do
       it 'creates appropriate conversations, message and contacts' do
         allow(telegram_channel.inbox.channel).to receive(:get_telegram_file_path).and_return('https://chatwoot-assets.local/sample.mp3')
@@ -106,9 +174,10 @@ describe Telegram::IncomingMessageService do
         }.with_indifferent_access
         described_class.new(inbox: telegram_channel.inbox, params: params).perform
         expect(telegram_channel.inbox.conversations.count).not_to eq(0)
-        expect(Contact.all.first.name).to eq('Sojan Jose')
-        expect(Contact.all.first.additional_attributes['social_telegram_user_id']).to eq(23)
-        expect(Contact.all.first.additional_attributes['social_telegram_user_name']).to eq('sojan')
+        expect(Contact.order(:created_at).last.name).to eq('Sojan Jose')
+        contact = Contact.order(:created_at).last
+        expect(contact.additional_attributes['social_telegram_user_id']).to eq(23)
+        expect(contact.additional_attributes['social_telegram_user_name']).to eq('sojan')
         expect(telegram_channel.inbox.messages.first.attachments.first.file_type).to eq('audio')
       end
     end
@@ -127,7 +196,7 @@ describe Telegram::IncomingMessageService do
         }.with_indifferent_access
         described_class.new(inbox: telegram_channel.inbox, params: params).perform
         expect(telegram_channel.inbox.conversations.count).not_to eq(0)
-        expect(Contact.all.first.name).to eq('Sojan Jose')
+        expect(Contact.order(:created_at).last.name).to eq('Sojan Jose')
         expect(telegram_channel.inbox.messages.first.attachments.first.file_type).to eq('image')
       end
     end
@@ -152,7 +221,7 @@ describe Telegram::IncomingMessageService do
         }.with_indifferent_access
         described_class.new(inbox: telegram_channel.inbox, params: params).perform
         expect(telegram_channel.inbox.conversations.count).not_to eq(0)
-        expect(Contact.all.first.name).to eq('Sojan Jose')
+        expect(Contact.order(:created_at).last.name).to eq('Sojan Jose')
         expect(telegram_channel.inbox.messages.first.attachments.first.file_type).to eq('image')
       end
     end
@@ -174,7 +243,36 @@ describe Telegram::IncomingMessageService do
         }.with_indifferent_access
         described_class.new(inbox: telegram_channel.inbox, params: params).perform
         expect(telegram_channel.inbox.conversations.count).not_to eq(0)
-        expect(Contact.all.first.name).to eq('Sojan Jose')
+        expect(Contact.order(:created_at).last.name).to eq('Sojan Jose')
+        expect(telegram_channel.inbox.messages.first.attachments.first.file_type).to eq('video')
+      end
+    end
+
+    context 'when valid video_note messages params' do
+      it 'creates appropriate conversations, message and contacts' do
+        allow(telegram_channel.inbox.channel).to receive(:get_telegram_file_path).and_return('https://chatwoot-assets.local/sample.mov')
+        params = {
+          'update_id' => 2_342_342_343_242,
+          'message' => {
+            'video_note' => {
+              'duration' => 3,
+              'length' => 240,
+              'thumb' => {
+                'file_id' => 'AAMCBQADGQEAA4ZhXd78Xz6_c6gCzbdIkgGiXJcwwwACqwMAAp3x8Fbhf3EWamgCWAEAB20AAyEE',
+                'file_unique_id' => 'AQADqwMAAp3x8FZy',
+                'file_size' => 11_462,
+                'width' => 240,
+                'height' => 240
+              },
+              'file_id' => 'DQACAgUAAxkBAAIBY2FdJlhf8PC2E3IalXSvXWO5m8GBAALJAwACwqHgVhb0truM0uhwIQQ',
+              'file_unique_id' => 'AgADyQMAAsKh4FY',
+              'file_size' => 132_446
+            }
+          }.merge(message_params)
+        }.with_indifferent_access
+        described_class.new(inbox: telegram_channel.inbox, params: params).perform
+        expect(telegram_channel.inbox.conversations.count).not_to eq(0)
+        expect(Contact.order(:created_at).last.name).to eq('Sojan Jose')
         expect(telegram_channel.inbox.messages.first.attachments.first.file_type).to eq('video')
       end
     end
@@ -193,7 +291,7 @@ describe Telegram::IncomingMessageService do
         }.with_indifferent_access
         described_class.new(inbox: telegram_channel.inbox, params: params).perform
         expect(telegram_channel.inbox.conversations.count).not_to eq(0)
-        expect(Contact.all.first.name).to eq('Sojan Jose')
+        expect(Contact.order(:created_at).last.name).to eq('Sojan Jose')
         expect(telegram_channel.inbox.messages.first.attachments.first.file_type).to eq('audio')
       end
     end
@@ -214,7 +312,7 @@ describe Telegram::IncomingMessageService do
         }.with_indifferent_access
         described_class.new(inbox: telegram_channel.inbox, params: params).perform
         expect(telegram_channel.inbox.conversations.count).not_to eq(0)
-        expect(Contact.all.first.name).to eq('Sojan Jose')
+        expect(Contact.order(:created_at).last.name).to eq('Sojan Jose')
         expect(telegram_channel.inbox.messages.first.attachments.first.file_type).to eq('file')
       end
     end
@@ -252,7 +350,7 @@ describe Telegram::IncomingMessageService do
         }.with_indifferent_access
         described_class.new(inbox: telegram_channel.inbox, params: params).perform
         expect(telegram_channel.inbox.conversations.count).not_to eq(0)
-        expect(Contact.all.first.name).to eq('Sojan Jose')
+        expect(Contact.order(:created_at).last.name).to eq('Sojan Jose')
         expect(telegram_channel.inbox.messages.first.attachments.first.file_type).to eq('location')
       end
 
@@ -271,7 +369,7 @@ describe Telegram::IncomingMessageService do
         }.with_indifferent_access
         described_class.new(inbox: telegram_channel.inbox, params: params).perform
         expect(telegram_channel.inbox.conversations.count).not_to eq(0)
-        expect(Contact.all.first.name).to eq('Sojan Jose')
+        expect(Contact.order(:created_at).last.name).to eq('Sojan Jose')
 
         attachment = telegram_channel.inbox.messages.first.attachments.first
         expect(attachment.file_type).to eq('location')
@@ -304,8 +402,9 @@ describe Telegram::IncomingMessageService do
 
         described_class.new(inbox: telegram_channel.inbox, params: params).perform
         expect(telegram_channel.inbox.conversations.count).not_to eq(0)
-        expect(Contact.all.first.name).to eq('Sojan Jose')
-        expect(Contact.all.first.additional_attributes['social_telegram_user_id']).to eq(5_171_248)
+        expect(Contact.order(:created_at).last.name).to eq('Sojan Jose')
+        contact = Contact.order(:created_at).last
+        expect(contact.additional_attributes['social_telegram_user_id']).to eq(5_171_248)
         expect(telegram_channel.inbox.messages.first.content).to eq('Option 1')
       end
     end
@@ -322,9 +421,239 @@ describe Telegram::IncomingMessageService do
         }.with_indifferent_access
         described_class.new(inbox: telegram_channel.inbox, params: params).perform
         expect(telegram_channel.inbox.conversations.count).not_to eq(0)
-        expect(Contact.all.first.name).to eq('Sojan Jose')
+        expect(Contact.order(:created_at).last.name).to eq('Sojan Jose')
         expect(telegram_channel.inbox.messages.first.attachments.first.file_type).to eq('contact')
       end
+    end
+
+    context 'when lock_to_single_conversation is false' do
+      before do
+        telegram_channel.inbox.update(lock_to_single_conversation: false)
+      end
+
+      it 'creates a new conversation when all previous conversations are resolved' do
+        # Create a contact and a resolved conversation
+        params = {
+          'update_id' => 2_342_342_343_242,
+          'message' => { 'text' => 'first message' }.merge(message_params)
+        }.with_indifferent_access
+
+        described_class.new(inbox: telegram_channel.inbox, params: params).perform
+
+        # Mark the conversation as resolved
+        conversation = telegram_channel.inbox.conversations.last
+        conversation.update(status: :resolved)
+
+        # Send a new message
+        new_params = {
+          'update_id' => 2_342_342_343_243,
+          'message' => { 'text' => 'second message' }.merge(message_params)
+        }.with_indifferent_access
+
+        described_class.new(inbox: telegram_channel.inbox, params: new_params).perform
+
+        # Should create a new conversation
+        expect(telegram_channel.inbox.conversations.count).to eq(2)
+        expect(telegram_channel.inbox.conversations.last.messages.first.content).to eq('second message')
+      end
+
+      it 'uses the existing conversation when there is an unresolved conversation' do
+        # Create a contact and an unresolved conversation
+        params = {
+          'update_id' => 2_342_342_343_242,
+          'message' => { 'text' => 'first message' }.merge(message_params)
+        }.with_indifferent_access
+
+        described_class.new(inbox: telegram_channel.inbox, params: params).perform
+
+        # Send a new message
+        new_params = {
+          'update_id' => 2_342_342_343_243,
+          'message' => { 'text' => 'second message' }.merge(message_params)
+        }.with_indifferent_access
+
+        described_class.new(inbox: telegram_channel.inbox, params: new_params).perform
+
+        # Should use the same conversation
+        expect(telegram_channel.inbox.conversations.count).to eq(1)
+        expect(telegram_channel.inbox.conversations.last.messages.count).to eq(2)
+        expect(telegram_channel.inbox.conversations.last.messages.last.content).to eq('second message')
+      end
+    end
+
+    context 'when lock_to_single_conversation is true' do
+      before do
+        telegram_channel.inbox.update(lock_to_single_conversation: true)
+      end
+
+      it 'uses the existing conversation even when it is resolved' do
+        # Create a contact and a resolved conversation
+        params = {
+          'update_id' => 2_342_342_343_242,
+          'message' => { 'text' => 'first message' }.merge(message_params)
+        }.with_indifferent_access
+
+        described_class.new(inbox: telegram_channel.inbox, params: params).perform
+
+        # Mark the conversation as resolved
+        conversation = telegram_channel.inbox.conversations.last
+        conversation.update(status: :resolved)
+
+        # Send a new message
+        new_params = {
+          'update_id' => 2_342_342_343_243,
+          'message' => { 'text' => 'second message' }.merge(message_params)
+        }.with_indifferent_access
+
+        described_class.new(inbox: telegram_channel.inbox, params: new_params).perform
+
+        # Should use the same conversation
+        expect(telegram_channel.inbox.conversations.count).to eq(1)
+        expect(telegram_channel.inbox.conversations.last.messages.count).to eq(2)
+        expect(telegram_channel.inbox.conversations.last.messages.last.content).to eq('second message')
+      end
+    end
+  end
+
+  context 'when lock to single conversation is enabled' do
+    before do
+      # ensure message_params exists in this context and has from.id
+      message_params[:from] ||= {}
+      message_params[:from][:id] ||= 23
+    end
+
+    it 'reopens last conversation if last conversation is resolved' do
+      telegram_channel.inbox.update!(lock_to_single_conversation: true)
+      contact_inbox = ContactInbox.find_or_create_by(inbox: telegram_channel.inbox, source_id: message_params[:from][:id]) do |ci|
+        ci.contact = create(:contact)
+      end
+      resolved_conversation = create(:conversation, inbox: telegram_channel.inbox, contact_inbox: contact_inbox, status: :resolved)
+
+      params = {
+        'update_id' => 2_342_342_343_242,
+        'message' => { 'text' => 'test' }.merge(message_params)
+      }.with_indifferent_access
+
+      described_class.new(inbox: telegram_channel.inbox, params: params).perform
+
+      expect(telegram_channel.inbox.conversations.count).to eq(1)
+      expect(resolved_conversation.reload.messages.last.content).to eq('test')
+    end
+  end
+
+  context 'when lock to single conversation is disabled' do
+    before do
+      # ensure message_params exists in this context and has from.id
+      message_params[:from] ||= {}
+      message_params[:from][:id] ||= 23
+    end
+
+    it 'creates new conversation if last conversation is resolved' do
+      telegram_channel.inbox.update!(lock_to_single_conversation: false)
+      contact_inbox = ContactInbox.find_or_create_by(inbox: telegram_channel.inbox, source_id: message_params[:from][:id]) do |ci|
+        ci.contact = create(:contact)
+      end
+      _resolved_conversation = create(:conversation, inbox: telegram_channel.inbox, contact_inbox: contact_inbox, status: :resolved)
+
+      params = {
+        'update_id' => 2_342_342_343_242,
+        'message' => { 'text' => 'test' }.merge(message_params)
+      }.with_indifferent_access
+
+      described_class.new(inbox: telegram_channel.inbox, params: params).perform
+
+      expect(telegram_channel.inbox.conversations.count).to eq(2)
+      expect(telegram_channel.inbox.conversations.last.messages.first.content).to eq('test')
+      expect(telegram_channel.inbox.conversations.last.status).to eq('open')
+    end
+
+    it 'appends to last conversation if last conversation is not resolved' do
+      telegram_channel.inbox.update!(lock_to_single_conversation: false)
+      contact_inbox = ContactInbox.find_or_create_by(inbox: telegram_channel.inbox, source_id: message_params[:from][:id]) do |ci|
+        ci.contact = create(:contact)
+      end
+      open_conversation = create(:conversation, inbox: telegram_channel.inbox, contact_inbox: contact_inbox, status: :open)
+
+      params = {
+        'update_id' => 2_342_342_343_242,
+        'message' => { 'text' => 'test' }.merge(message_params)
+      }.with_indifferent_access
+
+      described_class.new(inbox: telegram_channel.inbox, params: params).perform
+
+      expect(telegram_channel.inbox.conversations.count).to eq(1)
+      expect(open_conversation.reload.messages.last.content).to eq('test')
+    end
+  end
+
+  context 'when lock to single conversation is enabled' do
+    before do
+      # ensure message_params exists in this context and has from.id
+      message_params[:from] ||= {}
+      message_params[:from][:id] ||= 23
+    end
+
+    it 'reopens last conversation if last conversation is resolved' do
+      telegram_channel.inbox.update!(lock_to_single_conversation: true)
+      contact_inbox = ContactInbox.find_or_create_by(inbox: telegram_channel.inbox, source_id: message_params[:from][:id]) do |ci|
+        ci.contact = create(:contact)
+      end
+      resolved_conversation = create(:conversation, inbox: telegram_channel.inbox, contact_inbox: contact_inbox, status: :resolved)
+
+      params = {
+        'update_id' => 2_342_342_343_242,
+        'message' => { 'text' => 'test' }.merge(message_params)
+      }.with_indifferent_access
+
+      described_class.new(inbox: telegram_channel.inbox, params: params).perform
+
+      expect(telegram_channel.inbox.conversations.count).to eq(1)
+      expect(resolved_conversation.reload.messages.last.content).to eq('test')
+    end
+  end
+
+  context 'when lock to single conversation is disabled' do
+    before do
+      # ensure message_params exists in this context and has from.id
+      message_params[:from] ||= {}
+      message_params[:from][:id] ||= 23
+    end
+
+    it 'creates new conversation if last conversation is resolved' do
+      telegram_channel.inbox.update!(lock_to_single_conversation: false)
+      contact_inbox = ContactInbox.find_or_create_by(inbox: telegram_channel.inbox, source_id: message_params[:from][:id]) do |ci|
+        ci.contact = create(:contact)
+      end
+      _resolved_conversation = create(:conversation, inbox: telegram_channel.inbox, contact_inbox: contact_inbox, status: :resolved)
+
+      params = {
+        'update_id' => 2_342_342_343_242,
+        'message' => { 'text' => 'test' }.merge(message_params)
+      }.with_indifferent_access
+
+      described_class.new(inbox: telegram_channel.inbox, params: params).perform
+
+      expect(telegram_channel.inbox.conversations.count).to eq(2)
+      expect(telegram_channel.inbox.conversations.last.messages.first.content).to eq('test')
+      expect(telegram_channel.inbox.conversations.last.status).to eq('open')
+    end
+
+    it 'appends to last conversation if last conversation is not resolved' do
+      telegram_channel.inbox.update!(lock_to_single_conversation: false)
+      contact_inbox = ContactInbox.find_or_create_by(inbox: telegram_channel.inbox, source_id: message_params[:from][:id]) do |ci|
+        ci.contact = create(:contact)
+      end
+      open_conversation = create(:conversation, inbox: telegram_channel.inbox, contact_inbox: contact_inbox, status: :open)
+
+      params = {
+        'update_id' => 2_342_342_343_242,
+        'message' => { 'text' => 'test' }.merge(message_params)
+      }.with_indifferent_access
+
+      described_class.new(inbox: telegram_channel.inbox, params: params).perform
+
+      expect(telegram_channel.inbox.conversations.count).to eq(1)
+      expect(open_conversation.reload.messages.last.content).to eq('test')
     end
   end
 end

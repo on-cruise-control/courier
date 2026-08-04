@@ -29,13 +29,18 @@ class Api::V1::ProfilesController < Api::BaseController
   end
 
   def set_active_account
-    @user.account_users.find_by(account_id: profile_params[:account_id]).update(active_at: Time.now.utc)
+    @user.account_users.find_by(account_id: profile_params[:account_id])&.record_session_activity!
     head :ok
   end
 
   def resend_confirmation
     @user.send_confirmation_instructions unless @user.confirmed?
     head :ok
+  end
+
+  def reset_access_token
+    @user.access_token.regenerate_token
+    @user.reload
   end
 
   private
@@ -58,6 +63,7 @@ class Api::V1::ProfilesController < Api::BaseController
       :name,
       :display_name,
       :avatar,
+      :phone_number,
       :message_signature,
       :account_id,
       ui_settings: {}
@@ -65,7 +71,7 @@ class Api::V1::ProfilesController < Api::BaseController
   end
 
   def custom_attributes_params
-    params.require(:profile).permit(:phone_number)
+    params.require(:profile).permit
   end
 
   def password_params

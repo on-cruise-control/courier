@@ -9,10 +9,11 @@
 #  auto_assignment_config        :jsonb
 #  business_name                 :string
 #  channel_type                  :string
+#  csat_config                   :jsonb            not null
 #  csat_survey_enabled           :boolean          default(FALSE)
 #  email_address                 :string
 #  enable_auto_assignment        :boolean          default(TRUE)
-#  enable_email_collect          :boolean          default(TRUE)
+#  enable_email_collect          :boolean          default(FALSE)
 #  greeting_enabled              :boolean          default(FALSE)
 #  greeting_message              :string
 #  lock_to_single_conversation   :boolean          default(FALSE), not null
@@ -43,11 +44,10 @@ class Inbox < ApplicationRecord
   include Avatarable
   include OutOfOffisable
   include AccountCacheRevalidator
+  include InboxAgentAvailability
 
   # Not allowing characters:
   validates :name, presence: true
-  validates :name, if: :check_channel_type?, format: { with: %r{^^\b[^/\\<>@]*\b$}, multiline: true,
-                                                       message: I18n.t('errors.inboxes.validations.name') }
   validates :account_id, presence: true
   validates :timezone, inclusion: { in: TZInfo::Timezone.all_identifiers }
   validates :out_of_office_message, length: { maximum: Limits::OUT_OF_OFFICE_MESSAGE_MAX_LENGTH }
@@ -68,6 +68,8 @@ class Inbox < ApplicationRecord
   has_many :conversations, dependent: :destroy_async
   has_many :messages, dependent: :destroy_async
 
+  has_one :inbox_assignment_policy, dependent: :destroy
+  has_one :assignment_policy, through: :inbox_assignment_policy
   has_one :agent_bot_inbox, dependent: :destroy_async
   has_one :agent_bot, through: :agent_bot_inbox
   has_many :webhooks, dependent: :destroy_async
@@ -78,7 +80,9 @@ class Inbox < ApplicationRecord
   after_destroy :delete_round_robin_agents
 
   after_create_commit :dispatch_create_event
+  after_create_commit :assign_stark_as_default_bot
   after_update_commit :dispatch_update_event
+  after_save :ensure_instagram_profile_url
 
   scope :order_by_name, -> { order('lower(name) ASC') }
 
@@ -98,6 +102,20 @@ class Inbox < ApplicationRecord
     update_account_cache
   end
 
+  # Sanitizes inbox name for balanced email provider compatibility
+  # ALLOWS: /'._- and Unicode letters/numbers/emojis
+  # REMOVES: Forbidden chars (\<>@"()) + spam-trigger symbols (!#$%&*+=?^`{|}~)
+  def sanitized_name
+    return default_name_for_blank_name if name.blank?
+
+    sanitized = apply_sanitization_rules(name)
+    sanitized.blank? && email? ? display_name_from_email : sanitized
+  end
+
+  def sanitized_business_name
+    sanitize_raw_name(business_name) || sanitized_name
+  end
+
   def sms?
     channel_type == 'Channel::Sms'
   end
@@ -107,7 +125,15 @@ class Inbox < ApplicationRecord
   end
 
   def instagram?
-    facebook? && channel.instagram_id.present?
+    (facebook? || instagram_direct?) && channel.instagram_id.present?
+  end
+
+  def instagram_direct?
+    channel_type == 'Channel::Instagram'
+  end
+
+  def tiktok?
+    channel_type == 'Channel::Tiktok'
   end
 
   def web_widget?
@@ -130,12 +156,20 @@ class Inbox < ApplicationRecord
     channel_type == 'Channel::TwitterProfile'
   end
 
+  def telegram?
+    channel_type == 'Channel::Telegram'
+  end
+
   def whatsapp?
     channel_type == 'Channel::Whatsapp'
   end
 
+  def twilio_whatsapp?
+    channel_type == 'Channel::TwilioSms' && channel.medium == 'whatsapp'
+  end
+
   def assignable_agents
-    (account.users.where(id: members.select(:user_id)) + account.administrators).uniq
+    account.users
   end
 
   def active_bot?
@@ -171,7 +205,58 @@ class Inbox < ApplicationRecord
     members.ids
   end
 
+  def platform_name
+    case channel_type
+    when 'Channel::WebWidget' then 'Website'
+    when 'Channel::Instagram' then 'Instagram'
+    when 'Channel::FacebookPage' then 'Facebook'
+    when 'Channel::TwilioSms' then 'SMS'
+    when 'Channel::Email' then 'Email'
+    when 'Channel::Whatsapp' then 'Whatsapp'
+    when 'Channel::Api' then 'Api'
+    when 'Channel::Telegram' then 'Telegram'
+    when 'Channel::Tiktok' then 'TikTok'
+    else 'Website'
+    end
+  end
+
+  def auto_assignment_v2_enabled?
+    account.feature_enabled?('assignment_v2')
+  end
+
+  # Callers (Reauthorizable) only invoke this on a real transition, so the previous
+  # value is always the inverse of the new boolean value.
+  def dispatch_reauthorization_event(reauthorization_required)
+    return if ENV['ENABLE_INBOX_EVENTS'].blank?
+
+    changed_attributes = { reauthorization_required: [!reauthorization_required, reauthorization_required] }
+    Rails.configuration.dispatcher.dispatch(INBOX_UPDATED, Time.zone.now, inbox: self, changed_attributes: changed_attributes)
+  end
+
   private
+
+  def default_name_for_blank_name
+    email? ? display_name_from_email : ''
+  end
+
+  def sanitize_raw_name(raw)
+    return nil if raw.blank?
+
+    result = apply_sanitization_rules(raw)
+    result.presence
+  end
+
+  def apply_sanitization_rules(name)
+    name.gsub(/[\\<>@"!#$%&*+=?^`{|}~:;()]/, '')        # Remove forbidden chars
+        .gsub(/[\x00-\x1F\x7F]/, ' ')                   # Replace control chars with spaces
+        .gsub(/\A[[:punct:]]+|[[:punct:]]+\z/, '')      # Remove leading/trailing punctuation
+        .gsub(/\s+/, ' ')                               # Normalize spaces
+        .strip
+  end
+
+  def display_name_from_email
+    channel.email.split('@').first.parameterize.titleize
+  end
 
   def dispatch_create_event
     return if ENV['ENABLE_INBOX_EVENTS'].blank?
@@ -195,6 +280,25 @@ class Inbox < ApplicationRecord
 
   def check_channel_type?
     ['Channel::Email', 'Channel::Api', 'Channel::WebWidget'].include?(channel_type)
+  end
+
+  # Assigns the default Stark bot to the inbox if it exists
+  def assign_stark_as_default_bot
+    agent_bot = AgentBot.find_by(bot_type: 'stark')
+    agent_bot ||= account.agent_bots.first if account.agent_bots.exists?
+
+    return unless agent_bot
+
+    AgentBotInbox.create!(inbox: self, agent_bot: agent_bot)
+  rescue StandardError => e
+    Rails.logger.error("Failed to assign bot to inbox: #{e.message}")
+  end
+
+  def ensure_instagram_profile_url
+    return unless instagram?
+    return if channel.instagram_profile_url.present?
+
+    channel.update_column(:instagram_profile_url, "https://www.instagram.com/#{name}")
   end
 end
 

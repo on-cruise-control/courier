@@ -52,3 +52,9 @@ Rails.application.configure do
   # config.action_view.raise_on_missing_translations = true
   config.log_level = ENV.fetch('LOG_LEVEL', 'debug').to_sym
 end
+
+Rails.application.configure do
+  config.active_record.encryption.primary_key = 'test_primary_key_must_be_32_bytes_test_primary_key'
+  config.active_record.encryption.deterministic_key = 'test_deterministic_key_must_be_32_bytes_test'
+  config.active_record.encryption.key_derivation_salt = 'test_salt'
+end

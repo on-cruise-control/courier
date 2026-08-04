@@ -13,12 +13,14 @@ import {
 } from '../../../helper/AnalyticsHelper/events';
 import MenuItem from '../../../components/widgets/conversation/contextMenu/menuItem.vue';
 import { useTrack } from 'dashboard/composables';
+import NextButton from 'dashboard/components-next/button/Button.vue';
 
 export default {
   components: {
     AddCannedModal,
     MenuItem,
     ContextMenu,
+    NextButton,
   },
   props: {
     message: {
@@ -45,6 +47,7 @@ export default {
   emits: ['open', 'close', 'replyTo'],
   setup() {
     const { getPlainText } = useMessageFormatter();
+
     return {
       getPlainText,
     };
@@ -59,6 +62,7 @@ export default {
     ...mapGetters({
       getAccount: 'accounts/getAccount',
       currentAccountId: 'getCurrentAccountId',
+      getUISettings: 'getUISettings',
     }),
     plainTextContent() {
       return this.getPlainText(this.messageContent);
@@ -114,11 +118,13 @@ export default {
       this.$emit('close', e);
     },
     handleTranslate() {
-      const { locale } = this.getAccount(this.currentAccountId);
+      const { locale: accountLocale } = this.getAccount(this.currentAccountId);
+      const agentLocale = this.getUISettings?.locale;
+      const targetLanguage = agentLocale || accountLocale || 'en';
       this.$store.dispatch('translateMessage', {
         conversationId: this.conversationId,
         messageId: this.messageId,
-        targetLanguage: locale || 'en',
+        targetLanguage,
       });
       useTrack(CONVERSATION_EVENTS.TRANSLATE_A_MESSAGE);
       this.handleClose();
@@ -165,7 +171,7 @@ export default {
     </woot-modal>
     <!-- Confirm Deletion -->
     <woot-delete-modal
-      v-if="showDeleteModal"
+      v-if="showDeleteModal && enabledOptions['delete']"
       v-model:show="showDeleteModal"
       class="context-menu--delete-modal"
       :on-close="closeDeleteModal"
@@ -175,12 +181,12 @@ export default {
       :confirm-text="$t('CONVERSATION.CONTEXT_MENU.DELETE_CONFIRMATION.DELETE')"
       :reject-text="$t('CONVERSATION.CONTEXT_MENU.DELETE_CONFIRMATION.CANCEL')"
     />
-    <woot-button
+    <NextButton
       v-if="!hideButton"
-      icon="more-vertical"
-      color-scheme="secondary"
-      variant="clear"
-      size="small"
+      ghost
+      slate
+      sm
+      icon="i-lucide-ellipsis-vertical"
       class="invisible group-hover/context-menu:visible"
       @click="handleOpen"
     />
@@ -210,7 +216,7 @@ export default {
           @click.stop="handleCopy"
         />
         <MenuItem
-          v-if="enabledOptions['copy']"
+          v-if="enabledOptions['translate']"
           :option="{
             icon: 'translate',
             label: $t('CONVERSATION.CONTEXT_MENU.TRANSLATE'),
@@ -220,6 +226,7 @@ export default {
         />
         <hr />
         <MenuItem
+          v-if="enabledOptions['copyLink']"
           :option="{
             icon: 'link',
             label: $t('CONVERSATION.CONTEXT_MENU.COPY_PERMALINK'),
@@ -253,7 +260,7 @@ export default {
 
 <style lang="scss" scoped>
 .menu-container {
-  @apply p-1 bg-white dark:bg-slate-900 shadow-xl rounded-md;
+  @apply p-1 bg-n-background shadow-xl rounded-md;
 
   hr:first-child {
     @apply hidden;
@@ -265,17 +272,11 @@ export default {
 }
 
 .context-menu--delete-modal {
-  ::v-deep {
-    .modal-container {
-      @apply max-w-[30rem];
+  :deep(.modal-container) {
+    @apply max-w-[30rem];
 
-      h2 {
-        @apply font-medium text-base;
-      }
-    }
-
-    .modal-footer {
-      @apply pt-4 pb-8 px-8;
+    h2 {
+      @apply font-medium text-base;
     }
   }
 }

@@ -1,6 +1,10 @@
 import Auth from '../api/auth';
 
-const parseErrorCode = error => Promise.reject(error);
+const parseErrorCode = error => {
+  // Account suspension no longer redirects to suspended screen
+  // Disabled accounts can still access the app with limited functionality
+  return Promise.reject(error);
+};
 
 export default axios => {
   const { apiHost = '' } = window.chatwootConfig || {};

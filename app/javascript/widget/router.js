@@ -35,6 +35,16 @@ const router = createRouter({
           component: () => import('./views/Messages.vue'),
         },
         {
+          path: '/sms-form',
+          name: 'sms-form',
+          component: () => import('./views/SmsForm.vue'),
+        },
+        {
+          path: '/terms-and-conditions',
+          name: 'terms-and-conditions',
+          component: () => import('./views/TermsAndConditions.vue'),
+        },
+        {
           path: '/article',
           name: 'article-viewer',
           component: () => import('./views/ArticleViewer.vue'),
@@ -66,6 +76,26 @@ const router = createRouter({
 router.beforeEach(async (to, from, next) => {
   // Prevent any user interactions during route transition
   await store.dispatch('appConfig/setRouteTransitionState', true);
+
+  // If opening for SMS, redirect home/messages to SMS form immediately
+  if (window.$chatwoot?.openingForSms) {
+    if (to.name === 'home' || to.name === 'messages') {
+      next({ name: 'sms-form' });
+      return;
+    }
+    if (to.name === 'sms-form') {
+      next();
+      return;
+    }
+  }
+
+  // Skip home page and redirect directly to messages page
+  // But only if not opening for SMS
+  if (to.name === 'home' && !window.$chatwoot?.openingForSms) {
+    next({ name: 'messages' });
+    return;
+  }
+
   next();
 });
 

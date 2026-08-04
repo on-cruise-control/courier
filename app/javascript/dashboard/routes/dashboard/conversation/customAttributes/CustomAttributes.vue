@@ -9,6 +9,7 @@ import { useI18n } from 'vue-i18n';
 import { useUISettings } from 'dashboard/composables/useUISettings';
 import { copyTextToClipboard } from 'shared/helpers/clipboard';
 import CustomAttribute from 'dashboard/components/CustomAttribute.vue';
+import NextButton from 'dashboard/components-next/button/Button.vue';
 
 const props = defineProps({
   attributeType: {
@@ -43,9 +44,10 @@ const dragging = ref(false);
 const [showAllAttributes, toggleShowAllAttributes] = useToggle(false);
 
 const currentChat = computed(() => getters.getSelectedChat.value);
-const attributes = computed(() =>
-  getters['attributes/getAttributesByModel'].value(props.attributeType)
-);
+const attributes = computed(() => {
+  const getAttributesByModel = getters['attributes/getAttributesByModel'].value;
+  return getAttributesByModel ? getAttributesByModel(props.attributeType) : [];
+});
 
 const contactIdentifier = computed(
   () =>
@@ -60,8 +62,8 @@ const contact = computed(() =>
 
 const customAttributes = computed(() => {
   if (props.attributeType === 'conversation_attribute')
-    return currentChat.value.custom_attributes || {};
-  return contact.value.custom_attributes || {};
+    return currentChat.value?.custom_attributes || {};
+  return contact.value?.custom_attributes || {};
 });
 
 const conversationId = computed(() => currentChat.value.id);
@@ -72,27 +74,24 @@ const toggleButtonText = computed(() =>
     : t('CUSTOM_ATTRIBUTES.SHOW_LESS')
 );
 
-const filteredCustomAttributes = computed(() =>
-  attributes.value.map(attribute => {
+const filteredCustomAttributes = computed(() => {
+  if (!attributes.value || !Array.isArray(attributes.value)) {
+    return [];
+  }
+  
+  return attributes.value.map(attribute => {
     // Check if the attribute key exists in customAttributes
-    const hasValue = Object.hasOwnProperty.call(
-      customAttributes.value,
-      attribute.attribute_key
-    );
-    const isCheckbox = attribute.attribute_display_type === 'checkbox';
-    const defaultValue = isCheckbox ? false : '';
+    const hasValue = attribute.attribute_key in customAttributes.value;
 
     return {
       ...attribute,
       type: 'custom_attribute',
       key: attribute.attribute_key,
-      // Set value from customAttributes if it exists, otherwise use default value
-      value: hasValue
-        ? customAttributes.value[attribute.attribute_key]
-        : defaultValue,
+      // Set value from customAttributes if it exists, otherwise use ''
+      value: hasValue ? customAttributes.value[attribute.attribute_key] : '',
     };
-  })
-);
+  });
+});
 
 // Order key name for UI settings
 const orderKey = computed(
@@ -214,7 +213,7 @@ const onUpdate = async (key, value) => {
     } else {
       store.dispatch('contacts/update', {
         id: props.contactId,
-        custom_attributes: updatedAttributes,
+        customAttributes: updatedAttributes,
       });
     }
     useAlert(t('CUSTOM_ATTRIBUTES.FORM.UPDATE.SUCCESS'));
@@ -257,8 +256,8 @@ onMounted(() => {
 });
 
 const evenClass = [
-  '[&>*:nth-child(odd)]:!bg-n-background [&>*:nth-child(even)]:!bg-n-slate-2',
-  'dark:[&>*:nth-child(odd)]:!bg-n-background dark:[&>*:nth-child(even)]:!bg-n-solid-1',
+  '[&>*:nth-child(odd)]:!bg-n-surface-1 [&>*:nth-child(even)]:!bg-n-slate-1',
+  'dark:[&>*:nth-child(odd)]:!bg-n-surface-2 dark:[&>*:nth-child(even)]:!bg-n-surface-1',
 ];
 </script>
 
@@ -318,17 +317,16 @@ const evenClass = [
       {{ emptyStateMessage }}
     </p>
     <!-- Show more and show less buttons show it if the combinedElements length is greater than 5 -->
-    <div v-if="combinedElements.length > 5" class="flex px-2 py-2">
-      <woot-button
-        size="small"
-        :icon="showAllAttributes ? 'chevron-up' : 'chevron-down'"
-        variant="clear"
-        color-scheme="primary"
-        class="!px-2 hover:!bg-transparent dark:hover:!bg-transparent"
+    <div v-if="combinedElements.length > 5" class="flex items-center px-2 py-2">
+      <NextButton
+        ghost
+        xs
+        :icon="
+          showAllAttributes ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'
+        "
+        :label="toggleButtonText"
         @click="onClickToggle"
-      >
-        {{ toggleButtonText }}
-      </woot-button>
+      />
     </div>
   </div>
 </template>

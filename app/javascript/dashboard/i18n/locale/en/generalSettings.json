@@ -1,5 +1,11 @@
 {
   "GENERAL_SETTINGS": {
+    "LIMIT_MESSAGES": {
+      "CONVERSATION": "You have exceeded the conversation limit. Hacker plan allows only 500 conversations.",
+      "INBOXES": "You have exceeded the inbox limit. Hacker plan only supports website live-chat. Additional inboxes like email, WhatsApp etc. require a paid plan.",
+      "AGENTS": "You have exceeded the agent limit. Your plan only allows {allowedAgents} agents.",
+      "NON_ADMIN": "Please contact your administrator to upgrade the plan and continue using all features."
+    },
     "TITLE": "Account settings",
     "SUBMIT": "Update settings",
     "BACK": "Back",
@@ -7,6 +13,26 @@
     "UPDATE": {
       "ERROR": "Could not update settings, try again!",
       "SUCCESS": "Successfully updated account settings"
+    },
+    "ACCOUNT_DELETE_SECTION": {
+      "TITLE": "Delete your Account",
+      "NOTE": "Once you delete your account, all your data will be deleted.",
+      "BUTTON_TEXT": "Delete Your Account",
+      "CONFIRM": {
+        "TITLE": "Delete Account",
+        "MESSAGE": "Deleting your Account is irreversible. Enter your account name below to confirm you want to permanently delete it.",
+        "BUTTON_TEXT": "Delete",
+        "DISMISS": "Cancel",
+        "PLACE_HOLDER": "Please type {accountName} to confirm"
+      },
+      "SUCCESS": "Account marked for deletion",
+      "FAILURE": "Could not delete account, try again!",
+      "SCHEDULED_DELETION": {
+        "TITLE": "Account Scheduled for Deletion",
+        "MESSAGE_MANUAL": "This account is scheduled for deletion on {deletionDate}. This was requested by an administrator. You can cancel the deletion before this date.",
+        "MESSAGE_INACTIVITY": "This account is scheduled for deletion on {deletionDate} due to account inactivity. You can cancel the deletion before this date.",
+        "CLEAR_BUTTON": "Cancel Scheduled Deletion"
+      }
     },
     "FORM": {
       "ERROR": "Please fix form errors",
@@ -17,6 +43,34 @@
       "ACCOUNT_ID": {
         "TITLE": "Account ID",
         "NOTE": "This ID is required if you are building an API based integration"
+      },
+      "AUTO_RESOLVE": {
+        "TITLE": "Auto-resolve conversations",
+        "NOTE": "This configuration would allow you to automatically resolve the conversation after a certain period of inactivity.",
+        "DURATION": {
+          "LABEL": "Inactivity duration",
+          "HELP": "Time period of inactivity after which conversation is auto-resolved",
+          "PLACEHOLDER": "30",
+          "ERROR": "Auto resolve duration should be between 10 minutes and 999 days",
+          "API": {
+            "SUCCESS": "Auto resolve settings updated successfully",
+            "ERROR": "Failed to update auto resolve settings"
+          }
+        },
+        "MESSAGE": {
+          "LABEL": "Custom auto-resolution message",
+          "PLACEHOLDER": "Conversation was marked resolved by system due to 15 days of inactivity",
+          "HELP": "Message sent to the customer after conversation is auto-resolved"
+        },
+        "PREFERENCES": "Preferences",
+        "LABEL": {
+          "LABEL": "Add label after auto-resolution",
+          "PLACEHOLDER": "Select a label"
+        },
+        "IGNORE_WAITING": {
+          "LABEL": "Skip conversations waiting for agent’s reply"
+        },
+        "UPDATE_BUTTON": "Save Changes"
       },
       "NAME": {
         "LABEL": "Account name",
@@ -38,10 +92,129 @@
         "PLACEHOLDER": "Your company's support email",
         "ERROR": ""
       },
+      "AUTO_RESOLVE_IGNORE_WAITING": {
+        "LABEL": "Exclude unattended conversations",
+        "HELP": "When enabled, the system will skip resolving conversations that are still waiting for an agent's reply."
+      },
+      "AUDIO_TRANSCRIPTION": {
+        "TITLE": "Transcribe Audio Messages",
+        "NOTE": "Automatically transcribe audio messages in conversations. Generate a text transcript whenever an audio message is sent or received, and display it alongside the message.",
+        "API": {
+          "SUCCESS": "Audio transcription setting updated successfully",
+          "ERROR": "Failed to update audio transcription setting"
+        }
+      },
       "AUTO_RESOLVE_DURATION": {
-        "LABEL": "Number of days after a ticket should auto resolve if there is no activity",
+        "LABEL": "Inactivity duration for resolution",
+        "HELP": "Duration after a conversation should auto resolve if there is no activity",
         "PLACEHOLDER": "30",
-        "ERROR": "Please enter a valid auto resolve duration (minimum 1 day and maximum 999 days)"
+        "ERROR": "Auto resolve duration should be between 10 minutes and 999 days",
+        "API": {
+          "SUCCESS": "Auto resolve settings updated successfully",
+          "ERROR": "Failed to update auto resolve settings"
+        },
+        "UPDATE_BUTTON": "Update",
+        "MESSAGE_LABEL": "Custom resolution message",
+        "MESSAGE_PLACEHOLDER": "Conversation was marked resolved by system due to 15 days of inactivity",
+        "MESSAGE_HELP": "This message is sent to the customer when a conversation is automatically resolved by the system due to inactivity."
+      },
+      "BOOKING_EMAILS": {
+        "TITLE": "Booking Notification Emails",
+        "NOTE": "Configure email addresses to receive booking notifications. Only these emails will receive booking alerts. If no emails are added, no booking notifications will be sent.",
+        "LABEL": "Add email address",
+        "HELP": "Enter an email address and click Add. You can add multiple email addresses.",
+        "PLACEHOLDER": "email{'@'}example.com",
+        "ADD_BUTTON": "Add",
+        "CONFIGURED_EMAILS": "Configured Email Addresses",
+        "EMPTY_STATE": "⚠️ No booking notification emails configured. Add at least one email address to receive booking notifications.",
+        "INVALID_EMAIL": "Please enter a valid email address",
+        "DUPLICATE_EMAIL": "This email address is already added",
+        "API": {
+          "SUCCESS": "Booking emails updated successfully",
+          "ERROR": "Failed to update booking emails"
+        }
+      },
+      "ESCALATION_EMAILS": {
+        "TITLE": "Escalation Notification Emails",
+        "NOTE": "Add emails to receive escalation alerts. Recommended: GM, GSM, and Service Manager.",
+        "LABEL": "Add email address",
+        "HELP": "Enter an email address and click Add. You can add multiple email addresses.",
+        "PLACEHOLDER": "email{'@'}example.com",
+        "ADD_BUTTON": "Add",
+        "CONFIGURED_EMAILS": "Configured Email Addresses",
+        "EMPTY_STATE": "⚠️ No escalation notification emails configured. Add at least one email address to receive escalation notifications.",
+        "INVALID_EMAIL": "Please enter a valid email address",
+        "DUPLICATE_EMAIL": "This email address is already added",
+        "API": {
+          "SUCCESS": "Escalation emails updated successfully",
+          "ERROR": "Failed to update escalation emails"
+        }
+      },
+      "VEHICLE_PARTS_EMAILS": {
+        "TITLE": "Vehicle Parts Notification Emails",
+        "NOTE": "Add emails to receive vehicle parts inquiry alerts. Recommended: Parts Manager and Service Advisor.",
+        "LABEL": "Add email address",
+        "HELP": "Enter an email address and click Add. You can add multiple email addresses.",
+        "PLACEHOLDER": "email{'@'}example.com",
+        "ADD_BUTTON": "Add",
+        "CONFIGURED_EMAILS": "Configured Email Addresses",
+        "EMPTY_STATE": "⚠️ No vehicle parts notification emails configured. Add at least one email address to receive vehicle parts notifications.",
+        "INVALID_EMAIL": "Please enter a valid email address",
+        "DUPLICATE_EMAIL": "This email address is already added",
+        "API": {
+          "SUCCESS": "Vehicle parts emails updated successfully",
+          "ERROR": "Failed to update vehicle parts emails"
+        }
+      },
+      "SERVICE_EMAILS": {
+        "TITLE": "Service Notification Emails",
+        "NOTE": "Add emails to receive service inquiry alerts. Recommended: Service Manager and Service Advisor.",
+        "LABEL": "Add email address",
+        "HELP": "Enter an email address and click Add. You can add multiple email addresses.",
+        "PLACEHOLDER": "email{'@'}example.com",
+        "ADD_BUTTON": "Add",
+        "CONFIGURED_EMAILS": "Configured Email Addresses",
+        "EMPTY_STATE": "⚠️ No service notification emails configured. Add at least one email address to receive service notifications.",
+        "INVALID_EMAIL": "Please enter a valid email address",
+        "DUPLICATE_EMAIL": "This email address is already added",
+        "API": {
+          "SUCCESS": "Service emails updated successfully",
+          "ERROR": "Failed to update service emails"
+        }
+      },
+      "TWILIO_CONFIGURATION": {
+        "TITLE": "SMS Notification Settings",
+        "NOTE": "Configure your Twilio credentials to send SMS notifications (booking, escalation, handoff alerts) from your own Twilio number.",
+        "ACCOUNT_SID": {
+          "LABEL": "Twilio Account SID",
+          "PLACEHOLDER": "Enter your Twilio Account SID",
+          "ERROR": "Account SID is required"
+        },
+        "AUTH_TOKEN": {
+          "LABEL": "Twilio Auth Token",
+          "PLACEHOLDER": "Enter your Twilio auth token",
+          "ERROR": "Auth token is required"
+        },
+        "PHONE_NUMBER": {
+          "LABEL": "Twilio Phone Number",
+          "PLACEHOLDER": "+14155552671",
+          "HELP": "",
+          "ERROR": "Enter a valid phone number with 10-13 digits"
+        },
+        "SUBMIT_BUTTON": "Save Twilio Settings",
+        "DELETE": {
+          "BUTTON": "Remove",
+          "CANCEL": "Cancel",
+          "CONFIRM_TITLE": "Remove Twilio Configuration",
+          "CONFIRM": "Are you sure you want to remove the Twilio configuration? SMS notifications will stop sending until you add new credentials.",
+          "SUCCESS": "Twilio configuration removed successfully",
+          "ERROR": "Failed to remove Twilio configuration"
+        },
+        "API": {
+          "SUCCESS": "Twilio settings updated successfully",
+          "ERROR": "Failed to update Twilio settings",
+          "ERROR_LOADING": "Failed to load Twilio settings"
+        }
       },
       "FEATURES": {
         "INBOUND_EMAIL_ENABLED": "Conversation continuity with emails is enabled for your account.",
@@ -51,6 +224,7 @@
     "UPDATE_CHATWOOT": "An update {latestChatwootVersion} for Chatwoot is available. Please update your instance.",
     "LEARN_MORE": "Learn more",
     "PAYMENT_PENDING": "Your payment is pending. Please update your payment information to continue using Chatwoot",
+    "UPGRADE": "Upgrade to continue using Chatwoot",
     "LIMITS_UPGRADE": "Your account has exceeded the usage limits, please upgrade your plan to continue using Chatwoot",
     "OPEN_BILLING": "Open billing"
   },
@@ -58,6 +232,7 @@
     "MULTISELECT": {
       "ENTER_TO_SELECT": "Press enter to select",
       "ENTER_TO_REMOVE": "Press enter to remove",
+      "NO_OPTIONS": "List is empty",
       "SELECT_ONE": "Select one",
       "SELECT": "Select"
     }
@@ -105,6 +280,7 @@
   },
   "COMMAND_BAR": {
     "SEARCH_PLACEHOLDER": "Search or jump to",
+    "SNOOZE_PLACEHOLDER": "Type a time e.g. tomorrow, 2 hours, next friday, jan 15...",
     "SECTIONS": {
       "GENERAL": "General",
       "REPORTS": "Reports",

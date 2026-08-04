@@ -8,6 +8,7 @@ class BulkActionsJob < ApplicationJob
 
   def perform(account:, params:, user:)
     @account = account
+    @user = user
     Current.user = user
     @params = params
     @records = records_to_updated(params[:ids])
@@ -17,17 +18,30 @@ class BulkActionsJob < ApplicationJob
   end
 
   def bulk_update
-    bulk_remove_labels
     bulk_conversation_update
+    bulk_remove_labels
   end
 
   def bulk_conversation_update
-    params = available_params(@params)
+    params = available_params(@params) || {}
     records.each do |conversation|
-      bulk_add_labels(conversation)
       bulk_snoozed_until(conversation)
-      conversation.update(params) if params
+      bulk_add_labels(conversation)
+
+      was_spam = conversation.is_spam
+      was_blacklisted = conversation.is_blacklisted
+
+      conversation.update!(params) if params.present?
+
+      cancel_follow_up_job_if_newly_flagged(conversation, was_spam, was_blacklisted)
     end
+  end
+
+  def cancel_follow_up_job_if_newly_flagged(conversation, was_spam, was_blacklisted)
+    return if conversation.follow_up_jid.blank?
+    return unless (!was_spam && conversation.is_spam) || (!was_blacklisted && conversation.is_blacklisted)
+
+    conversation.cancel_existing_follow_up_job
   end
 
   def bulk_remove_labels
@@ -37,13 +51,18 @@ class BulkActionsJob < ApplicationJob
   end
 
   def available_params(params)
-    return unless params[:fields]
+    fields = params[:fields].to_h
 
-    params[:fields].delete_if { |key, value| value.nil? && key == 'status' }
+    fields.delete('status') if fields['status'].nil?
+
+    fields
   end
 
   def bulk_add_labels(conversation)
-    conversation.add_labels(@params[:labels][:add]) if @params[:labels] && @params[:labels][:add]
+    return unless @params[:labels]&.[](:add)
+
+    conversation.add_labels(@params[:labels][:add])
+    conversation.save!
   end
 
   def bulk_snoozed_until(conversation)
@@ -61,6 +80,7 @@ class BulkActionsJob < ApplicationJob
     current_model = @params[:type].camelcase
     return unless MODEL_TYPE.include?(current_model)
 
-    current_model.constantize&.where(account_id: @account.id, display_id: ids)
+    scope = current_model.constantize.where(account_id: @account.id, display_id: ids)
+    Conversations::PermissionFilterService.new(scope, @user, @account).perform
   end
 end

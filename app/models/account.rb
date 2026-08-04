@@ -2,24 +2,31 @@
 #
 # Table name: accounts
 #
-#  id                         :integer          not null, primary key
-#  auto_resolve_duration      :integer
-#  contactable_contacts_count :integer          default(0)
-#  custom_attributes          :jsonb
-#  domain                     :string(100)
-#  feature_flags              :bigint           default(0), not null
-#  internal_attributes        :jsonb            not null
-#  limits                     :jsonb
-#  locale                     :integer          default("en")
-#  name                       :string           not null
-#  status                     :integer          default("active")
-#  support_email              :string(100)
-#  created_at                 :datetime         not null
-#  updated_at                 :datetime         not null
+#  id                    :integer          not null, primary key
+#  auto_resolve_duration :integer
+#  booking_emails        :jsonb
+#  custom_attributes     :jsonb
+#  domain                :string(100)
+#  escalation_emails     :jsonb
+#  feature_flags         :bigint           default(0), not null
+#  feature_flags_2       :bigint           default(0), not null
+#  internal_attributes   :jsonb            not null
+#  limits                :jsonb
+#  locale                :integer          default("en")
+#  name                  :string           not null
+#  service_emails        :jsonb
+#  settings              :jsonb
+#  status                :integer          default("active")
+#  support_email         :string(100)
+#  vehicle_parts_emails  :jsonb
+#  created_at            :datetime         not null
+#  updated_at            :datetime         not null
+#  dealership_id         :string
 #
 # Indexes
 #
-#  index_accounts_on_status  (status)
+#  index_accounts_on_dealership_id  (dealership_id)
+#  index_accounts_on_status         (status)
 #
 
 class Account < ApplicationRecord
@@ -28,20 +35,63 @@ class Account < ApplicationRecord
   include Reportable
   include Featurable
   include CacheKeys
+  include CaptainFeaturable
+  include AccountEmailRateLimitable
+  include AccountSettingsSchema
+
+  SETTINGS_PARAMS_SCHEMA = {
+    'type': 'object',
+    'properties':
+      {
+        'auto_resolve_after': { 'type': %w[integer null], 'minimum': 10, 'maximum': 1_439_856 },
+        'auto_resolve_message': { 'type': %w[string null] },
+        'auto_resolve_ignore_waiting': { 'type': %w[boolean null] },
+        'audio_transcriptions': { 'type': %w[boolean null] },
+        'auto_resolve_label': { 'type': %w[string null] },
+        'conversation_required_attributes': {
+          'type': %w[array null],
+          'items': { 'type': 'string' }
+        }
+      },
+    'required': [],
+    'additionalProperties': true
+  }.to_json.freeze
 
   DEFAULT_QUERY_SETTING = {
     flag_query_mode: :bit_operator,
     check_for_column: false
   }.freeze
 
-  validates :auto_resolve_duration, numericality: { greater_than_or_equal_to: 1, less_than_or_equal_to: 999, allow_nil: true }
+  validates :name, presence: true
+  validates :dealership_id, presence: true
+  # `domain` is the inbound email domain used to construct reply addresses
+  # (see `inbound_email_domain`). Do not repurpose it for a website or any
+  # non-mail-related domain.
   validates :domain, length: { maximum: 100 }
+  validate :validate_escalation_emails
+  validate :validate_vehicle_parts_emails
+  validate :validate_service_emails
+  validates_with JsonSchemaValidator,
+                 schema: SETTINGS_PARAMS_SCHEMA,
+                 attribute_resolver: ->(record) { record.settings }
+  validate :validate_reporting_timezone
+  validate :validate_support_email_format, if: :will_save_change_to_support_email?
+
+  store_accessor :settings, :auto_resolve_after, :auto_resolve_message, :auto_resolve_ignore_waiting
+  store_accessor :settings, :audio_transcriptions, :auto_resolve_label, :conversation_required_attributes
+  store_accessor :settings, :captain_models, :captain_features
+  store_accessor :settings, :reporting_timezone
+  store_accessor :settings, :keep_pending_on_bot_failure
+  store_accessor :settings, :captain_auto_resolve_mode
+  include AccountCaptainAutoResolve
 
   has_many :account_users, dependent: :destroy_async
+  has_many :user_daily_sessions, dependent: :destroy_async
   has_many :agent_bot_inboxes, dependent: :destroy_async
   has_many :agent_bots, dependent: :destroy_async
   has_many :api_channels, dependent: :destroy_async, class_name: '::Channel::Api'
   has_many :articles, dependent: :destroy_async, class_name: '::Article'
+  has_many :assignment_policies, dependent: :destroy_async
   has_many :automation_rules, dependent: :destroy_async
   has_many :macros, dependent: :destroy_async
   has_many :campaigns, dependent: :destroy_async
@@ -57,6 +107,7 @@ class Account < ApplicationRecord
   has_many :email_channels, dependent: :destroy_async, class_name: '::Channel::Email'
   has_many :facebook_pages, dependent: :destroy_async, class_name: '::Channel::FacebookPage'
   has_many :instagram_channels, dependent: :destroy_async, class_name: '::Channel::Instagram'
+  has_many :tiktok_channels, dependent: :destroy_async, class_name: '::Channel::Tiktok'
   has_many :hooks, dependent: :destroy_async, class_name: 'Integrations::Hook'
   has_many :inboxes, dependent: :destroy_async
   has_many :labels, dependent: :destroy_async
@@ -69,23 +120,34 @@ class Account < ApplicationRecord
   has_many :portals, dependent: :destroy_async, class_name: '::Portal'
   has_many :sms_channels, dependent: :destroy_async, class_name: '::Channel::Sms'
   has_many :teams, dependent: :destroy_async
-  has_many :telegram_bots, dependent: :destroy_async
   has_many :telegram_channels, dependent: :destroy_async, class_name: '::Channel::Telegram'
   has_many :twilio_sms, dependent: :destroy_async, class_name: '::Channel::TwilioSms'
+  has_one :twilio_configuration, dependent: :destroy_async, class_name: '::AccountTwilioConfiguration'
   has_many :twitter_profiles, dependent: :destroy_async, class_name: '::Channel::TwitterProfile'
   has_many :users, through: :account_users
   has_many :web_widgets, dependent: :destroy_async, class_name: '::Channel::WebWidget'
   has_many :webhooks, dependent: :destroy_async
   has_many :whatsapp_channels, dependent: :destroy_async, class_name: '::Channel::Whatsapp'
   has_many :working_hours, dependent: :destroy_async
+  has_many :email_templates, dependent: :nullify
 
   has_one_attached :contacts_export
 
-  enum locale: LANGUAGES_CONFIG.map { |key, val| [val[:iso_639_1_code], key] }.to_h
-  enum status: { active: 0, suspended: 1 }
+  enum :locale, LANGUAGES_CONFIG.map { |key, val| [val[:iso_639_1_code], key] }.to_h, prefix: true
+  enum :status, { active: 0, suspended: 1 }
+
+  scope :with_auto_resolve, -> { where("(settings ->> 'auto_resolve_after')::int IS NOT NULL") }
+
+  DEFAULT_LABELS = [
+    { title: 'escalation', color: '#FF0000', description: 'Escalated conversations requiring urgent attention' },
+    { title: 'handoff', color: '#1f93ff', description: 'Conversations handed off to a human agent' }
+  ].freeze
 
   before_validation :validate_limit_keys
   after_create_commit :notify_creation
+  after_create_commit :create_default_labels
+  after_update_commit :clear_unread_conversation_counts_cache, if: :saved_change_to_feature_conversation_unread_counts?
+  after_update :handle_status_change, if: :saved_change_to_status?
   after_destroy :remove_account_sequences
 
   def agents
@@ -137,10 +199,53 @@ class Account < ApplicationRecord
     ISO_639.find(account_locale)&.english_name&.downcase || 'english'
   end
 
+  def booking_emails
+    super || []
+  end
+
+  def escalation_emails
+    super || []
+  end
+
+  def vehicle_parts_emails
+    super || []
+  end
+
+  def service_emails
+    super || []
+  end
+
+  def onboarding_step
+    step = custom_attributes['onboarding_step']
+    return nil if step.blank?
+
+    enrichment_key = format(Redis::Alfred::ACCOUNT_ONBOARDING_ENRICHMENT, account_id: id)
+    Redis::Alfred.exists?(enrichment_key) ? 'enrichment' : step
+  end
+
+  def reset_cache_keys
+    super
+    clear_unread_conversation_counts_cache
+  end
+
   private
 
   def notify_creation
     Rails.configuration.dispatcher.dispatch(ACCOUNT_CREATED, Time.zone.now, account: self)
+  end
+
+  def create_default_labels
+    DEFAULT_LABELS.each do |attrs|
+      labels.find_or_create_by(title: attrs[:title]) do |label|
+        label.color = attrs[:color]
+        label.description = attrs[:description]
+        label.show_on_sidebar = true
+      end
+    end
+  end
+
+  def clear_unread_conversation_counts_cache
+    ::Conversations::UnreadCounts::Store.clear_all_account!(id)
   end
 
   trigger.after(:insert).for_each(:row) do
@@ -155,12 +260,89 @@ class Account < ApplicationRecord
     # method overridden in enterprise module
   end
 
+  def validate_reporting_timezone
+    return if reporting_timezone.blank? || ActiveSupport::TimeZone[reporting_timezone].present?
+
+    errors.add(:reporting_timezone, I18n.t('errors.account.reporting_timezone.invalid'))
+  end
+
+  def validate_support_email_format
+    value = attributes['support_email']
+    return if value.blank?
+
+    parsed = Mail::Address.new(value).address
+    errors.add(:support_email, I18n.t('errors.account.support_email.invalid')) if parsed.blank?
+  rescue Mail::Field::ParseError, Mail::Field::IncompleteParseError
+    errors.add(:support_email, I18n.t('errors.account.support_email.invalid'))
+  end
+
   def remove_account_sequences
     ActiveRecord::Base.connection.exec_query("drop sequence IF EXISTS camp_dpid_seq_#{id}")
     ActiveRecord::Base.connection.exec_query("drop sequence IF EXISTS conv_dpid_seq_#{id}")
   end
+
+  def handle_status_change
+    if suspended?
+      # Disconnect all bots from all inboxes when account is disabled
+      agent_bot_inboxes.destroy_all
+    end
+    ActionCable.server.broadcast("account_#{id}", { event: 'page:reload', data: {} })
+  end
+
+  def validate_escalation_emails
+    return if escalation_emails.blank?
+
+    unless escalation_emails.is_a?(Array)
+      errors.add(:escalation_emails, 'must be an array')
+      return
+    end
+
+    escalation_emails.each do |email|
+      errors.add(:escalation_emails, "#{email} is not a valid email") unless email&.match?(Devise.email_regexp)
+    end
+  end
+
+  def validate_vehicle_parts_emails
+    return if vehicle_parts_emails.blank?
+
+    unless vehicle_parts_emails.is_a?(Array)
+      errors.add(:vehicle_parts_emails, 'must be an array')
+      return
+    end
+
+    vehicle_parts_emails.each do |email|
+      errors.add(:vehicle_parts_emails, "#{email} is not a valid email") unless email&.match?(Devise.email_regexp)
+    end
+  end
+
+  def validate_service_emails
+    return if service_emails.blank?
+
+    unless service_emails.is_a?(Array)
+      errors.add(:service_emails, 'must be an array')
+      return
+    end
+
+    service_emails.each do |email|
+      errors.add(:service_emails, "#{email} is not a valid email") unless email&.match?(Devise.email_regexp)
+    end
+  end
+
+  def validate_service_emails
+    return if service_emails.blank?
+
+    unless service_emails.is_a?(Array)
+      errors.add(:service_emails, 'must be an array')
+      return
+    end
+
+    service_emails.each do |email|
+      errors.add(:service_emails, "#{email} is not a valid email") unless email&.match?(Devise.email_regexp)
+    end
+  end
 end
 
 Account.prepend_mod_with('Account')
+Account.prepend_mod_with('Account::PlanUsageAndLimits')
 Account.include_mod_with('Concerns::Account')
 Account.include_mod_with('Audit::Account')

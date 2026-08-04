@@ -1,10 +1,12 @@
 import { frontendURL } from 'dashboard/helper/URLHelper';
 
-import Login from './login/Index.vue';
+import Login from './login/CustomLogin.vue';
+import SamlLogin from './login/CustomSaml.vue';
 import Signup from './auth/signup/Index.vue';
-import ResetPassword from './auth/reset/password/Index.vue';
+import ResetPassword from './auth/reset/password/CustomResetPassword.vue';
 import Confirmation from './auth/confirmation/Index.vue';
-import PasswordEdit from './auth/password/Edit.vue';
+import VerifyEmail from './auth/verify-email/Index.vue';
+import PasswordEdit from './auth/password/CustomPasswordEdit.vue';
 
 export default [
   {
@@ -18,6 +20,17 @@ export default [
       ssoAccountId: route.query.sso_account_id,
       ssoConversationId: route.query.sso_conversation_id,
       authError: route.query.error,
+      redirectUrl: route.query.redirect_url,
+    }),
+  },
+  {
+    path: frontendURL('login/sso'),
+    name: 'sso_login',
+    component: SamlLogin,
+    meta: { requireEnterprise: true },
+    props: route => ({
+      authError: route.query.error,
+      target: route.query.target,
     }),
   },
   {
@@ -35,6 +48,15 @@ export default [
       config: route.query.config,
       confirmationToken: route.query.confirmation_token,
       redirectUrl: route.query.route_url,
+    }),
+  },
+  {
+    path: frontendURL('auth/verify-email'),
+    name: 'auth_verify_email',
+    component: VerifyEmail,
+    meta: { ignoreSession: true },
+    props: () => ({
+      email: window.history.state?.email || '',
     }),
   },
   {

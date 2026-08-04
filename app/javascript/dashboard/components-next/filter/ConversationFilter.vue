@@ -9,6 +9,7 @@ import { useConversationFilterContext } from './provider.js';
 import { useSnakeCase } from 'dashboard/composables/useTransformKeys';
 
 import Button from 'next/button/Button.vue';
+import Input from 'dashboard/components-next/input/Input.vue';
 import ConditionRow from './ConditionRow.vue';
 
 const props = defineProps({
@@ -34,7 +35,7 @@ const folderNameLocal = ref(props.folderName);
 const DEFAULT_FILTER = {
   attributeKey: 'status',
   filterOperator: 'equal_to',
-  values: [],
+  values: ['open'],
   queryOperator: 'and',
 };
 
@@ -104,22 +105,19 @@ const outsideClickHandler = [
 <template>
   <div
     v-on-click-outside="outsideClickHandler"
-    class="z-40 max-w-3xl lg:w-[750px] overflow-visible w-full border border-n-weak bg-n-alpha-3 backdrop-blur-[100px] shadow-lg rounded-xl p-6 grid gap-6"
+    class="conversation-filter-panel z-40 max-w-3xl w-[calc(100vw-2rem)] sm:w-[500px] lg:w-[750px] overflow-visible border border-n-gray-4 bg-n-alpha-3 backdrop-blur-[100px] shadow-lg rounded-xl p-4 sm:p-6 grid gap-6"
   >
     <h3 class="text-base font-medium leading-6 text-n-slate-12">
       {{ filterModalHeaderTitle }}
     </h3>
     <div v-if="props.isFolderView">
-      <label class="border-b border-n-weak pb-6">
-        <div class="text-n-slate-11 text-sm mb-2">
-          {{ t('FILTER.FOLDER_LABEL') }}
-        </div>
-        <input
+      <div class="border-b border-n-weak pb-6">
+        <Input
           v-model="folderNameLocal"
-          class="py-1.5 px-3 text-n-slate-12 bg-n-alpha-1 text-sm rounded-lg reset-base w-full"
+          :label="t('FILTER.FOLDER_LABEL')"
           :placeholder="t('FILTER.INPUT_PLACEHOLDER')"
         />
-      </label>
+      </div>
     </div>
     <ul class="grid gap-4 list-none">
       <template v-for="(filter, index) in filters" :key="filter.id">
@@ -148,12 +146,12 @@ const outsideClickHandler = [
         />
       </template>
     </ul>
-    <div class="flex gap-2 justify-between">
-      <Button sm ghost blue @click="addFilter">
+    <div class="conversation-filter-actions flex gap-2 justify-between">
+      <Button sm ghost blue class="conversation-filter-action-button" @click="addFilter">
         {{ $t('FILTER.ADD_NEW_FILTER') }}
       </Button>
       <div class="flex gap-2">
-        <Button sm faded slate @click="resetFilter">
+        <Button sm faded slate class="conversation-filter-action-button" @click="resetFilter">
           {{ t('FILTER.CLEAR_BUTTON_LABEL') }}
         </Button>
         <Button
@@ -161,12 +159,13 @@ const outsideClickHandler = [
           sm
           solid
           blue
+          class="conversation-filter-action-button"
           :disabled="!folderNameLocal"
           @click="updateSavedCustomViews"
         >
           {{ t('FILTER.UPDATE_BUTTON_LABEL') }}
         </Button>
-        <Button v-else sm solid blue @click="validateAndSubmit">
+        <Button v-else sm solid blue class="conversation-filter-action-button" @click="validateAndSubmit">
           {{ t('FILTER.SUBMIT_BUTTON_LABEL') }}
         </Button>
       </div>

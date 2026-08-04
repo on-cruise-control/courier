@@ -7,13 +7,18 @@ import { useVuelidate } from '@vuelidate/core';
 import { required } from '@vuelidate/validators';
 import { LOCAL_STORAGE_KEYS } from 'dashboard/constants/localStorage';
 import { LocalStorage } from 'shared/helpers/localStorage';
+import { WIDGET_BUILDER_EDITOR_MENU_OPTIONS } from 'dashboard/constants/editor';
 import NextButton from 'dashboard/components-next/button/Button.vue';
+import Avatar from 'next/avatar/Avatar.vue';
+import Editor from 'dashboard/components-next/Editor/Editor.vue';
 
 export default {
   components: {
     Widget,
     InputRadioGroup,
     NextButton,
+    Editor,
+    Avatar,
   },
   props: {
     inbox: {
@@ -71,29 +76,25 @@ export default {
           checked: false,
         },
       ],
+      dealerName: '',
+      dealerTagline: '',
+      avatarName: '',
+      welcomeTaglineEditorMenuOptions: WIDGET_BUILDER_EDITOR_MENU_OPTIONS,
+      googleAnalyticsToken: '',
     };
   },
   computed: {
     ...mapGetters({
       uiFlags: 'inboxes/getUIFlags',
     }),
+    avatarUrl() {
+    return this.inbox?.avatar_url || '';
+  },
     storageKey() {
       return `${LOCAL_STORAGE_KEYS.WIDGET_BUILDER}${this.inbox.id}`;
     },
     widgetScript() {
-      let options = {
-        position: this.widgetBubblePosition,
-        type: this.widgetBubbleType,
-        launcherTitle: this.widgetBubbleLauncherTitle,
-      };
-      let script = this.inbox.web_widget_script;
-      return (
-        script.substring(0, 13) +
-        this.$t('INBOX_MGMT.WIDGET_BUILDER.SCRIPT_SETTINGS', {
-          options: JSON.stringify(options),
-        }) +
-        script.substring(13)
-      );
+      return this.inbox.web_widget_script;
     },
     getWidgetViewOptions() {
       return [
@@ -160,6 +161,13 @@ export default {
         widget_color,
         reply_time,
         avatar_url,
+        dealer_name,
+        dealer_tagline,
+        avatar_name,
+        google_analytics_token,
+        widget_position,
+        widget_type,
+        launcher_title,
       } = this.inbox;
       this.websiteName = name;
       this.welcomeHeading = welcome_title;
@@ -167,26 +175,23 @@ export default {
       this.color = widget_color;
       this.replyTime = reply_time;
       this.avatarUrl = avatar_url;
+      this.dealerName = dealer_name || '';
+      this.dealerTagline = dealer_tagline || '';
+      this.avatarName = avatar_name || '';
+      this.googleAnalyticsToken = google_analytics_token || '';
 
-      const savedInformation = this.getSavedInboxInformation();
-      if (savedInformation) {
-        this.widgetBubblePositions = this.widgetBubblePositions.map(item => {
-          if (item.id === savedInformation.position) {
-            item.checked = true;
-            this.widgetBubblePosition = item.id;
-          }
-          return item;
-        });
-        this.widgetBubbleTypes = this.widgetBubbleTypes.map(item => {
-          if (item.id === savedInformation.type) {
-            item.checked = true;
-            this.widgetBubbleType = item.id;
-          }
-          return item;
-        });
-        this.widgetBubbleLauncherTitle =
-          savedInformation.launcherTitle || 'Chat with us';
-      }
+      this.widgetBubblePosition = widget_position || 'right';
+      this.widgetBubbleType = widget_type || 'standard';
+      this.widgetBubbleLauncherTitle = launcher_title || 'Chat with us';
+
+      this.widgetBubblePositions = this.widgetBubblePositions.map(item => {
+        item.checked = item.id === this.widgetBubblePosition;
+        return item;
+      });
+      this.widgetBubbleTypes = this.widgetBubbleTypes.map(item => {
+        item.checked = item.id === this.widgetBubbleType;
+        return item;
+      });
     },
     handleWidgetBubblePositionChange(item) {
       this.widgetBubblePosition = item.id;
@@ -226,6 +231,7 @@ export default {
         position: this.widgetBubblePosition,
         launcherTitle: this.widgetBubbleLauncherTitle,
         type: this.widgetBubbleType,
+        avatarUrl: this.avatarUrl,
       };
 
       LocalStorage.set(this.storageKey, bubbleSettings);
@@ -239,6 +245,13 @@ export default {
             welcome_title: this.welcomeHeading,
             welcome_tagline: this.welcomeTagline,
             reply_time: this.replyTime,
+            dealer_name: this.dealerName,
+            dealer_tagline: this.dealerTagline,
+            avatar_name: this.avatarName,
+            widget_position: this.widgetBubblePosition,
+            widget_type: this.widgetBubbleType,
+            launcher_title: this.widgetBubbleLauncherTitle,
+            google_analytics_token: this.googleAnalyticsToken,
           },
         };
         if (this.avatarFile) {
@@ -272,15 +285,23 @@ export default {
       <div class="w-100 lg:w-[40%]">
         <div class="min-h-full py-4 overflow-y-scroll px-px">
           <form @submit.prevent="updateWidget">
-            <woot-avatar-uploader
-              :label="
-                $t('INBOX_MGMT.WIDGET_BUILDER.WIDGET_OPTIONS.AVATAR.LABEL')
-              "
-              :src="avatarUrl"
-              delete-avatar
-              @on-avatar-select="handleImageUpload"
-              @on-avatar-delete="handleAvatarDelete"
-            />
+            <div class="flex flex-col mb-4 items-start gap-1 w-full">
+              <label class="mb-0.5 text-sm font-medium text-n-slate-12">
+                {{
+                  $t('INBOX_MGMT.WIDGET_BUILDER.WIDGET_OPTIONS.AVATAR.LABEL')
+                }}
+              </label>
+              <Avatar
+                :src="avatarUrl"
+                :size="72"
+                icon-name="i-ri-global-fill"
+                name=""
+                allow-upload
+                rounded-full
+                @upload="handleImageUpload"
+                @delete="handleAvatarDelete"
+              />
+            </div>
             <woot-input
               v-model="websiteName"
               :class="{ error: v$.websiteName.$error }"
@@ -298,6 +319,11 @@ export default {
               @blur="v$.websiteName.$touch"
             />
             <woot-input
+              v-model="avatarName"
+              :label="$t('INBOX_MGMT.WIDGET_BUILDER.WIDGET_OPTIONS.AVATAR_NAME.LABEL')"
+              :placeholder="$t('INBOX_MGMT.WIDGET_BUILDER.WIDGET_OPTIONS.AVATAR_NAME.PLACE_HOLDER')"
+            />
+            <woot-input
               v-model="welcomeHeading"
               :label="
                 $t(
@@ -310,7 +336,7 @@ export default {
                 )
               "
             />
-            <woot-input
+            <Editor
               v-model="welcomeTagline"
               :label="
                 $t(
@@ -322,6 +348,21 @@ export default {
                   'INBOX_MGMT.WIDGET_BUILDER.WIDGET_OPTIONS.WELCOME_TAGLINE.PLACE_HOLDER'
                 )
               "
+              :max-length="255"
+              :enabled-menu-options="welcomeTaglineEditorMenuOptions"
+              class="mb-4"
+            />
+            <woot-input
+              v-model="dealerName"
+              :label="$t('INBOX_MGMT.WIDGET_BUILDER.WIDGET_OPTIONS.DEALER_NAME.LABEL')"
+              :placeholder="$t('INBOX_MGMT.WIDGET_BUILDER.WIDGET_OPTIONS.DEALER_NAME.PLACE_HOLDER')"
+            />
+            <woot-input
+              v-model="dealerTagline"
+              :label="$t('INBOX_MGMT.WIDGET_BUILDER.WIDGET_OPTIONS.DEALER_TAGLINE.LABEL')"
+              :placeholder="$t('INBOX_MGMT.WIDGET_BUILDER.WIDGET_OPTIONS.DEALER_TAGLINE.PLACE_HOLDER')"
+              channel-type="Context::InboxSettings"
+              class="mb-4"
             />
             <label>
               {{
@@ -378,6 +419,17 @@ export default {
                 )
               "
             />
+            <woot-input
+              v-model="googleAnalyticsToken"
+              :label="
+                $t('INBOX_MGMT.WIDGET_BUILDER.WIDGET_OPTIONS.GA_TOKEN.LABEL')
+              "
+              :placeholder="
+                $t(
+                  'INBOX_MGMT.WIDGET_BUILDER.WIDGET_OPTIONS.GA_TOKEN.PLACE_HOLDER'
+                )
+              "
+            />
             <NextButton
               type="submit"
               class="mt-4"
@@ -401,13 +453,17 @@ export default {
         />
         <div
           v-if="isWidgetPreview"
-          class="flex flex-col items-center justify-end min-h-[40.625rem] mx-5 mb-5 p-2.5 bg-slate-50 dark:bg-slate-900/50 rounded-lg"
+          class="flex flex-col items-center justify-end min-h-[40.625rem] mx-5 mb-5 p-2.5 bg-n-slate-3 rounded-lg"
         >
           <Widget
+            :avatar-url="avatarUrl"
             :welcome-heading="welcomeHeading"
             :welcome-tagline="welcomeTagline"
             :website-name="websiteName"
             :logo="avatarUrl"
+            :avatar-name="avatarName"
+            :dealer-name="dealerName"
+            :dealer-tagline="dealerTagline"
             is-online
             :reply-time="replyTime"
             :color="color"

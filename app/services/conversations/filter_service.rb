@@ -1,14 +1,13 @@
 class Conversations::FilterService < FilterService
   ATTRIBUTE_MODEL = 'conversation_attribute'.freeze
 
-  def initialize(params, user, filter_account = nil)
-    @account = filter_account || Current.account
+  def initialize(params, user, account)
+    @account = account
     super(params, user)
   end
 
   def perform
-    validate_query_operator
-    @conversations = query_builder(@filters['conversations'])
+    @conversations = filtered_relation
     mine_count, unassigned_count, all_count, = set_count_for_all_conversations
     assigned_count = all_count - unassigned_count
 
@@ -23,10 +22,23 @@ class Conversations::FilterService < FilterService
     }
   end
 
+  def filtered_relation
+    validate_query_operator
+    return base_relation if @params[:payload].blank?
+
+    query_builder(@filters['conversations'])
+  end
+
   def base_relation
-    @account.conversations.includes(
+    conversations = @account.conversations.includes(
       :taggings, :inbox, { assignee: { avatar_attachment: [:blob] } }, { contact: { avatar_attachment: [:blob] } }, :team, :messages, :contact_inbox
     )
+
+    Conversations::PermissionFilterService.new(
+      conversations,
+      @user,
+      @account
+    ).perform
   end
 
   def current_page

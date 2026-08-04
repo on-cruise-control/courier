@@ -1,7 +1,7 @@
 class ConversationFinder
   attr_reader :current_user, :current_account, :params
 
-  DEFAULT_STATUS = 'open'.freeze
+  DEFAULT_STATUS = %w[open pending].freeze
   SORT_OPTIONS = {
     'last_activity_at_asc' => %w[sort_on_last_activity_at asc],
     'last_activity_at_desc' => %w[sort_on_last_activity_at desc],
@@ -11,6 +11,8 @@ class ConversationFinder
     'priority_desc' => %w[sort_on_priority desc],
     'waiting_since_asc' => %w[sort_on_waiting_since asc],
     'waiting_since_desc' => %w[sort_on_waiting_since desc],
+    'priority_desc_created_at_asc' => %w[sort_on_priority_created_at desc],
+    'unread' => %w[sort_on_unread desc],
 
     # To be removed in v3.5.0
     'latest' => %w[sort_on_last_activity_at desc],
@@ -39,7 +41,7 @@ class ConversationFinder
   def perform
     set_up
 
-    mine_count, unassigned_count, all_count, = set_count_for_all_conversations
+    mine_count, unassigned_count, all_count, comments_count = set_count_for_all_conversations
     assigned_count = all_count - unassigned_count
 
     filter_by_assignee_type
@@ -50,7 +52,25 @@ class ConversationFinder
         mine_count: mine_count,
         assigned_count: assigned_count,
         unassigned_count: unassigned_count,
-        all_count: all_count
+        all_count: all_count,
+        comments_count: comments_count
+      }
+    }
+  end
+
+  def perform_meta_only
+    set_up
+
+    mine_count, unassigned_count, all_count, comments_count = set_count_for_all_conversations
+    assigned_count = all_count - unassigned_count
+
+    {
+      count: {
+        mine_count: mine_count,
+        assigned_count: assigned_count,
+        unassigned_count: unassigned_count,
+        all_count: all_count,
+        comments_count: comments_count
       }
     }
   end
@@ -72,9 +92,9 @@ class ConversationFinder
 
   def set_inboxes
     @inbox_ids = if params[:inbox_id]
-                   @current_user.assigned_inboxes.where(id: params[:inbox_id])
+                   @current_account.inboxes.where(id: params[:inbox_id])
                  else
-                   @current_user.assigned_inboxes.pluck(:id)
+                   @current_account.inboxes.pluck(:id)
                  end
   end
 
@@ -88,12 +108,25 @@ class ConversationFinder
 
   def find_conversation_by_inbox
     @conversations = current_account.conversations
-    @conversations = @conversations.where(inbox_id: @inbox_ids) unless params[:inbox_id].blank? && @is_admin
+
+    return unless params[:inbox_id]
+
+    @conversations = @conversations.where(inbox_id: @inbox_ids)
   end
 
   def find_all_conversations
     find_conversation_by_inbox
+    # Apply permission-based filtering
+    @conversations = Conversations::PermissionFilterService.new(
+      @conversations,
+      current_user,
+      current_account
+    ).perform
     filter_by_conversation_type if params[:conversation_type]
+    # Exclude spam from all views except the dedicated spam view
+    @conversations = @conversations.not_spam unless params[:conversation_type] == 'spam'
+    # Exclude blacklisted conversations from all views except the dedicated blacklist view
+    @conversations = @conversations.not_blacklisted unless params[:conversation_type] == 'blacklist'
     @conversations
   end
 
@@ -105,6 +138,8 @@ class ConversationFinder
       @conversations = @conversations.unassigned
     when 'assigned'
       @conversations = @conversations.assigned
+    when 'comments'
+      @conversations = @conversations.where("additional_attributes ->> 'type' IN (?)", %w[feed_comments instagram_comments])
     end
     @conversations
   end
@@ -115,9 +150,13 @@ class ConversationFinder
       conversation_ids = current_account.mentions.where(user: current_user).pluck(:conversation_id)
       @conversations = @conversations.where(id: conversation_ids)
     when 'participating'
-      @conversations = current_user.participating_conversations.where(account_id: current_account.id)
+      @conversations = @conversations.where(id: current_user.participating_conversations.where(account_id: current_account.id).select(:id))
     when 'unattended'
       @conversations = @conversations.unattended
+    when 'spam'
+      @conversations = @conversations.spam
+    when 'blacklist'
+      @conversations = @conversations.blacklisted
     end
     @conversations
   end
@@ -133,7 +172,8 @@ class ConversationFinder
   end
 
   def filter_by_status
-    return if params[:status] == 'all'
+    return if Array.wrap(params[:status]).include?('all')
+    return if params[:conversation_type] == 'comments'
 
     @conversations = @conversations.where(status: params[:status] || DEFAULT_STATUS)
   end
@@ -158,10 +198,23 @@ class ConversationFinder
   end
 
   def set_count_for_all_conversations
+    return legacy_count_for_all_conversations if @conversations.limit_value || @conversations.offset_value || @conversations.eager_loading?
+
+    counts = @conversations.unscope(:order).pick(
+      Arel.sql("COUNT(*) FILTER (WHERE assignee_id = #{current_user.id})"),
+      Arel.sql('COUNT(*) FILTER (WHERE assignee_id IS NULL)'),
+      Arel.sql('COUNT(*)'),
+      Arel.sql("COUNT(*) FILTER (WHERE conversations.additional_attributes ->> 'type' IN ('feed_comments', 'instagram_comments'))")
+    )
+    counts || [0, 0, 0, 0]
+  end
+
+  def legacy_count_for_all_conversations
     [
       @conversations.assigned_to(current_user).count,
       @conversations.unassigned.count,
-      @conversations.count
+      @conversations.count,
+      @conversations.where("conversations.additional_attributes ->> 'type' IN (?)", %w[feed_comments instagram_comments]).count
     ]
   end
 

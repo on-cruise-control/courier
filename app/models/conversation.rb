@@ -2,51 +2,71 @@
 #
 # Table name: conversations
 #
-#  id                     :integer          not null, primary key
-#  additional_attributes  :jsonb
-#  agent_last_seen_at     :datetime
-#  assignee_last_seen_at  :datetime
-#  cached_label_list      :text
-#  contact_last_seen_at   :datetime
-#  custom_attributes      :jsonb
-#  first_reply_created_at :datetime
-#  identifier             :string
-#  last_activity_at       :datetime         not null
-#  priority               :integer
-#  snoozed_until          :datetime
-#  status                 :integer          default("open"), not null
-#  uuid                   :uuid             not null
-#  waiting_since          :datetime
-#  created_at             :datetime         not null
-#  updated_at             :datetime         not null
-#  account_id             :integer          not null
-#  assignee_id            :integer
-#  campaign_id            :bigint
-#  contact_id             :bigint
-#  contact_inbox_id       :bigint
-#  display_id             :integer          not null
-#  inbox_id               :integer          not null
-#  sla_policy_id          :bigint
-#  team_id                :bigint
+#  id                                     :integer          not null, primary key
+#  additional_attributes                  :jsonb
+#  agent_last_seen_at                     :datetime
+#  assignee_last_seen_at                  :datetime
+#  booking_follow_up_jid                  :string
+#  cached_label_list                      :text
+#  comment_sentiment                      :string
+#  contact_last_seen_at                   :datetime
+#  conversation_summary_last_generated_at :datetime
+#  custom_attributes                      :jsonb
+#  first_reply_created_at                 :datetime
+#  follow_up_jid                          :string
+#  handoff_attended_at                    :datetime
+#  identifier                             :string
+#  is_blacklisted                         :boolean          default(FALSE)
+#  is_spam                                :boolean          default(FALSE)
+#  last_activity_at                       :datetime         not null
+#  last_handoff_at                        :datetime
+#  mark_as_not_spam                       :boolean          default(FALSE)
+#  priority                               :integer
+#  should_send_reply                      :boolean          default(TRUE)
+#  snoozed_until                          :datetime
+#  status                                 :integer          default("open"), not null
+#  stop_follow_up                         :boolean          default(FALSE)
+#  summary                                :text
+#  summary_updated_at                     :datetime
+#  uuid                                   :uuid             not null
+#  waiting_since                          :datetime
+#  created_at                             :datetime         not null
+#  updated_at                             :datetime         not null
+#  account_id                             :integer          not null
+#  assignee_agent_bot_id                  :bigint
+#  assignee_id                            :integer
+#  campaign_id                            :bigint
+#  contact_id                             :bigint
+#  contact_inbox_id                       :bigint
+#  display_id                             :integer          not null
+#  handoff_attended_by_id                 :integer
+#  inbox_id                               :integer          not null
+#  sla_policy_id                          :bigint
+#  team_id                                :bigint
 #
 # Indexes
 #
-#  conv_acid_inbid_stat_asgnid_idx                    (account_id,inbox_id,status,assignee_id)
-#  index_conversations_on_account_id                  (account_id)
-#  index_conversations_on_account_id_and_display_id   (account_id,display_id) UNIQUE
-#  index_conversations_on_assignee_id_and_account_id  (assignee_id,account_id)
-#  index_conversations_on_campaign_id                 (campaign_id)
-#  index_conversations_on_contact_id                  (contact_id)
-#  index_conversations_on_contact_inbox_id            (contact_inbox_id)
-#  index_conversations_on_first_reply_created_at      (first_reply_created_at)
-#  index_conversations_on_id_and_account_id           (account_id,id)
-#  index_conversations_on_inbox_id                    (inbox_id)
-#  index_conversations_on_priority                    (priority)
-#  index_conversations_on_status_and_account_id       (status,account_id)
-#  index_conversations_on_status_and_priority         (status,priority)
-#  index_conversations_on_team_id                     (team_id)
-#  index_conversations_on_uuid                        (uuid) UNIQUE
-#  index_conversations_on_waiting_since               (waiting_since)
+#  conv_acid_inbid_stat_asgnid_idx                       (account_id,inbox_id,status,assignee_id)
+#  index_conversations_on_account_id                     (account_id)
+#  index_conversations_on_account_id_and_display_id      (account_id,display_id) UNIQUE
+#  index_conversations_on_account_id_and_is_blacklisted  (account_id,is_blacklisted)
+#  index_conversations_on_account_id_and_is_spam         (account_id,is_spam)
+#  index_conversations_on_assignee_id_and_account_id     (assignee_id,account_id)
+#  index_conversations_on_campaign_id                    (campaign_id)
+#  index_conversations_on_contact_id                     (contact_id)
+#  index_conversations_on_contact_inbox_id               (contact_inbox_id)
+#  index_conversations_on_first_reply_created_at         (first_reply_created_at)
+#  index_conversations_on_handoff_attended_by_id         (handoff_attended_by_id)
+#  index_conversations_on_id_and_account_id              (account_id,id)
+#  index_conversations_on_identifier_and_account_id      (identifier,account_id)
+#  index_conversations_on_inbox_id                       (inbox_id)
+#  index_conversations_on_last_handoff_at                (last_handoff_at)
+#  index_conversations_on_priority                       (priority)
+#  index_conversations_on_status_and_account_id          (status,account_id)
+#  index_conversations_on_status_and_priority            (status,priority)
+#  index_conversations_on_team_id                        (team_id)
+#  index_conversations_on_uuid                           (uuid) UNIQUE
+#  index_conversations_on_waiting_since                  (waiting_since)
 #
 
 class Conversation < ApplicationRecord
@@ -64,6 +84,7 @@ class Conversation < ApplicationRecord
   validates :inbox_id, presence: true
   validates :contact_id, presence: true
   before_validation :validate_additional_attributes
+  before_validation :reset_agent_bot_when_assignee_present
   validates :additional_attributes, jsonb_attributes_length: true
   validates :custom_attributes, jsonb_attributes_length: true
   validates :uuid, uniqueness: true
@@ -72,14 +93,28 @@ class Conversation < ApplicationRecord
   enum status: { open: 0, resolved: 1, pending: 2, snoozed: 3 }
   enum priority: { low: 0, medium: 1, high: 2, urgent: 3 }
 
+  scope :not_spam, -> { where(is_spam: [false, nil]) }
+  scope :spam, -> { where(is_spam: true) }
+
+  scope :not_blacklisted, -> { where(is_blacklisted: [false, nil]) }
+  scope :blacklisted, -> { where(is_blacklisted: true) }
+
   scope :unassigned, -> { where(assignee_id: nil) }
   scope :assigned, -> { where.not(assignee_id: nil) }
   scope :assigned_to, ->(agent) { where(assignee_id: agent.id) }
+  scope :sort_on_unread, lambda { |_direction|
+    order(unread_messages_count_arel.desc).sort_on_last_activity_at('desc')
+  }
   scope :unattended, -> { where(first_reply_created_at: nil).or(where.not(waiting_since: nil)) }
-  scope :resolvable, lambda { |auto_resolve_duration|
-    return none if auto_resolve_duration.to_i.zero?
+  scope :resolvable_not_waiting, lambda { |auto_resolve_after|
+    return none if auto_resolve_after.to_i.zero?
 
-    open.where('last_activity_at < ? ', Time.now.utc - auto_resolve_duration.days)
+    open.where('last_activity_at < ? AND waiting_since IS NULL', Time.now.utc - auto_resolve_after.minutes)
+  }
+  scope :resolvable_all, lambda { |auto_resolve_after|
+    return none if auto_resolve_after.to_i.zero?
+
+    open.where('last_activity_at < ?', Time.now.utc - auto_resolve_after.minutes)
   }
 
   scope :last_user_message_at, lambda {
@@ -92,6 +127,7 @@ class Conversation < ApplicationRecord
   belongs_to :account
   belongs_to :inbox
   belongs_to :assignee, class_name: 'User', optional: true, inverse_of: :assigned_conversations
+  belongs_to :assignee_agent_bot, class_name: 'AgentBot', optional: true
   belongs_to :contact
   belongs_to :contact_inbox
   belongs_to :team, optional: true
@@ -103,6 +139,7 @@ class Conversation < ApplicationRecord
   has_many :conversation_participants, dependent: :destroy_async
   has_many :notifications, as: :primary_actor, dependent: :destroy_async
   has_many :attachments, through: :messages
+  has_many :reporting_events, dependent: :destroy_async
 
   before_save :ensure_snooze_until_reset
   before_create :determine_conversation_status
@@ -111,48 +148,32 @@ class Conversation < ApplicationRecord
   after_update_commit :execute_after_update_commit_callbacks
   after_create_commit :notify_conversation_creation
   after_create_commit :load_attributes_created_by_db_triggers
+  after_update :cancel_follow_up_on_assignment
+  before_destroy :set_unread_count_deletion_data
+  after_destroy_commit :notify_conversation_deletion
 
-  delegate :auto_resolve_duration, to: :account
+  delegate :auto_resolve_after, to: :account
 
   def can_reply?
-    channel = inbox&.channel
-
-    return can_reply_on_instagram? if additional_attributes['type'] == 'instagram_direct_message'
-
-    return true unless channel&.messaging_window_enabled?
-
-    messaging_window = inbox.api? ? channel.additional_attributes['agent_reply_time_window'].to_i : 24
-    last_message_in_messaging_window?(messaging_window)
+    Conversations::MessageWindowService.new(self).can_reply?
   end
 
   def language
     additional_attributes&.dig('conversation_language')
   end
 
+  # Be aware: The precision of created_at and last_activity_at may differ from Ruby's Time precision.
+  # Our DB column (see schema) stores timestamps with second-level precision (no microseconds), so
+  # if you assign a Ruby Time with microseconds, the DB will truncate it. This may cause subtle differences
+  # if you compare or copy these values in Ruby, also in our specs
+  # So in specs rely on to be_with(1.second) instead of to eq()
+  # TODO: Migrate to use a timestamp with microsecond precision
   def last_activity_at
     self[:last_activity_at] || created_at
   end
 
   def last_incoming_message
-    messages&.incoming&.last
-  end
-
-  def last_message_in_messaging_window?(time)
-    return false if last_incoming_message.nil?
-
-    Time.current < last_incoming_message.created_at + time.hours
-  end
-
-  def can_reply_on_instagram?
-    global_config = GlobalConfig.get('ENABLE_MESSENGER_CHANNEL_HUMAN_AGENT')
-
-    return false if last_incoming_message.nil?
-
-    if global_config['ENABLE_MESSENGER_CHANNEL_HUMAN_AGENT']
-      Time.current < last_incoming_message.created_at + 7.days
-    else
-      last_message_in_messaging_window?(24)
-    end
+    messages.where(account_id: account_id)&.incoming&.last
   end
 
   def toggle_status
@@ -168,12 +189,17 @@ class Conversation < ApplicationRecord
   end
 
   def bot_handoff!
+    update(waiting_since: Time.current) if waiting_since.blank?
     open!
     dispatcher_dispatch(CONVERSATION_BOT_HANDOFF)
   end
 
   def unread_messages
     agent_last_seen_at.present? ? messages.created_since(agent_last_seen_at) : messages
+  end
+
+  def assignee_unread_messages
+    assignee_last_seen_at.present? ? messages.created_since(assignee_last_seen_at) : messages
   end
 
   def unread_incoming_messages
@@ -192,8 +218,40 @@ class Conversation < ApplicationRecord
     true
   end
 
+  # Virtual attribute till we switch completely to polymorphic assignee
+  def assignee_type
+    return 'AgentBot' if assignee_agent_bot_id.present?
+    return 'User' if assignee_id.present?
+
+    nil
+  end
+
+  def assigned_entity
+    assignee_agent_bot || assignee
+  end
+
   def tweet?
     inbox.inbox_type == 'Twitter' && additional_attributes['type'] == 'tweet'
+  end
+
+  def self.unread_messages_count_arel
+    messages = Message.arel_table
+    conversations = arel_table
+    unread_messages = messages
+                      .project(messages[:id].count)
+                      .where(unread_messages_condition(messages, conversations))
+
+    Arel::Nodes::Grouping.new(unread_messages.ast)
+  end
+
+  def self.unread_messages_condition(messages, conversations)
+    messages[:conversation_id].eq(conversations[:id])
+                              .and(messages[:account_id].eq(conversations[:account_id]))
+                              .and(messages[:message_type].eq(Message.message_types[:incoming]))
+                              .and(
+                                conversations[:agent_last_seen_at].eq(nil)
+                                  .or(messages[:created_at].gt(conversations[:agent_last_seen_at]))
+                              )
   end
 
   def recent_messages
@@ -208,12 +266,54 @@ class Conversation < ApplicationRecord
     dispatcher_dispatch(CONVERSATION_UPDATED, previous_changes)
   end
 
+  def cancel_existing_follow_up_job
+    jids = []
+    jids << follow_up_jid if follow_up_jid.present?
+    jids.concat(Array(additional_attributes&.dig('follow_up_jids')).compact)
+    return if jids.empty?
+
+    scheduled_set = Sidekiq::ScheduledSet.new
+
+    jids.each do |jid|
+      job = scheduled_set.find_job(jid)
+      job&.delete
+    end
+
+    updated_additional_attributes = (additional_attributes || {}).merge(
+      'follow_up_jids' => nil,
+      'follow_up_base_time' => nil
+    )
+    update_columns(follow_up_jid: nil, additional_attributes: updated_additional_attributes)
+  end
+
   private
 
   def execute_after_update_commit_callbacks
+    handle_resolved_status_change
     notify_status_change
     create_activity
     notify_conversation_updation
+    send_deferred_spam_replies
+    reset_unspam_reply_sent
+    trigger_escalation_on_label_add
+  end
+
+  def handle_resolved_status_change
+    # When conversation is resolved, clear waiting_since using update_column to avoid callbacks
+    return unless saved_change_to_status? && status == 'resolved'
+
+    # rubocop:disable Rails/SkipsModelValidations
+    update_column(:waiting_since, nil)
+    # rubocop:enable Rails/SkipsModelValidations
+  end
+
+  def handle_resolved_status_change
+    # When conversation is resolved, clear waiting_since using update_column to avoid callbacks
+    return unless saved_change_to_status? && status == 'resolved'
+
+    # rubocop:disable Rails/SkipsModelValidations
+    update_column(:waiting_since, nil)
+    # rubocop:enable Rails/SkipsModelValidations
   end
 
   def ensure_snooze_until_reset
@@ -228,19 +328,34 @@ class Conversation < ApplicationRecord
     self.additional_attributes = {} unless additional_attributes.is_a?(Hash)
   end
 
+  def reset_agent_bot_when_assignee_present
+    return if assignee_id.blank?
+
+    self.assignee_agent_bot_id = nil
+  end
+
   def determine_conversation_status
     self.status = :resolved and return if contact.blocked?
 
-    # Message template hooks aren't executed for conversations from campaigns
-    # So making these conversations open for agent visibility
-    return if campaign.present?
+    return handle_campaign_status if campaign.present?
 
     # TODO: make this an inbox config instead of assuming bot conversations should start as pending
     self.status = :pending if inbox.active_bot?
   end
 
+  def handle_campaign_status
+    # If campaign has no sender (bot-initiated) and inbox has active bot, let bot handle it
+    self.status = :pending if campaign.sender_id.nil? && inbox.active_bot?
+  end
+
   def notify_conversation_creation
     dispatcher_dispatch(CONVERSATION_CREATED)
+  end
+
+  def notify_conversation_deletion
+    return if @unread_count_deletion_data.blank?
+
+    Rails.configuration.dispatcher.dispatch(CONVERSATION_DELETED, Time.zone.now, conversation_data: @unread_count_deletion_data)
   end
 
   def notify_conversation_updation
@@ -250,8 +365,8 @@ class Conversation < ApplicationRecord
   end
 
   def list_of_keys
-    %w[team_id assignee_id status snoozed_until custom_attributes label_list waiting_since first_reply_created_at
-       priority]
+    %w[team_id assignee_id assignee_agent_bot_id status snoozed_until custom_attributes label_list waiting_since
+       first_reply_created_at priority is_spam is_blacklisted comment_sentiment stop_follow_up should_send_reply]
   end
 
   def allowed_keys?
@@ -288,6 +403,17 @@ class Conversation < ApplicationRecord
                                                                        performed_by: Current.executed_by)
   end
 
+  def set_unread_count_deletion_data
+    @unread_count_deletion_data = {
+      id: id,
+      account_id: account_id,
+      inbox_id: inbox_id,
+      assignee_id: assignee_id,
+      team_id: team_id,
+      cached_label_list: cached_label_list
+    }
+  end
+
   def conversation_status_changed_to_open?
     return false unless open?
     # saved_change_to_status? method only works in case of update
@@ -300,10 +426,84 @@ class Conversation < ApplicationRecord
     previous_labels, current_labels = previous_changes[:label_list]
     return unless (previous_labels.is_a? Array) && (current_labels.is_a? Array)
 
-    dispatcher_dispatch(CONVERSATION_UPDATED, previous_changes)
-
     create_label_added(user_name, current_labels - previous_labels)
     create_label_removed(user_name, previous_labels - current_labels)
+  end
+
+  def trigger_escalation_on_label_add
+    return unless saved_change_to_label_list?
+    return unless Current.user.is_a?(User)
+
+    previous_labels, current_labels = saved_change_to_label_list
+    return unless current_labels.is_a?(Array) && previous_labels.is_a?(Array)
+
+    newly_added = current_labels - previous_labels
+    removed_labels = previous_labels - current_labels
+
+    sync_stark_human_redirect(newly_added, removed_labels)
+
+    if newly_added.include?('escalation')
+      escalation_emails = account.escalation_emails
+
+      comment_types = %w[instagram_comments feed_comments facebook_comments]
+      is_comment = comment_types.include?(additional_attributes&.dig('type'))
+
+      update!(comment_sentiment: 'Negative') if is_comment
+
+      if escalation_emails.present?
+        if is_comment
+          NegativeSentimentEscalationJob.perform_later(id, escalation_emails)
+        else
+          EscalationNotificationJob.perform_later(id, escalation_emails, nil, escalation_trigger_message)
+        end
+      end
+    end
+
+    return unless newly_added.include?('handoff')
+
+    ConversationHandoff::SendHandoffNotificationsJob.perform_later(self)
+  end
+
+  def sync_stark_human_redirect(newly_added, removed_labels)
+    human_redirect = if newly_added.include?('escalation')
+                       true
+                     elsif removed_labels.include?('escalation')
+                       false
+                     end
+    return if human_redirect.nil?
+
+    stark_message = last_outgoing_stark_message
+    return if stark_message.blank?
+
+    result = Stark::UpdateMessageService.new(stark_message).update_human_redirect(human_redirect: human_redirect)
+    return if result[:status] == 'success'
+
+    Rails.logger.error("Failed to sync Stark human_redirect for conversation #{id}: #{result[:message]}")
+  end
+
+  def last_outgoing_stark_message
+    stark_bot = inbox.agent_bot if inbox.agent_bot&.stark?
+    stark_bot ||= AgentBot.accessible_to(account).find_by(bot_type: 'stark')
+    return if stark_bot.blank?
+
+    messages.outgoing
+            .where(sender_type: 'AgentBot', sender_id: stark_bot.id)
+            .where("metadata->>'stark_message_id' IS NOT NULL AND metadata->>'stark_message_id' != ''")
+            .reorder(created_at: :desc)
+            .first
+  end
+
+  def escalation_trigger_message
+    scope = messages.where(message_type: :incoming)
+    msg = (scope.where('created_at < ?', last_handoff_at).order(created_at: :desc).last if last_handoff_at.present?)
+    msg || nil
+    msg&.content
+  end
+
+  def cancel_follow_up_on_assignment
+    return unless saved_change_to_assignee_id? && assignee_id.present?
+
+    cancel_existing_follow_up_job
   end
 
   def validate_referer_url
@@ -312,11 +512,63 @@ class Conversation < ApplicationRecord
     self['additional_attributes']['referer'] = nil unless url_valid?(additional_attributes['referer'])
   end
 
+  def send_deferred_spam_replies
+    return unless saved_change_to_is_spam? && previous_changes[:is_spam] == [true, false]
+    return if additional_attributes&.dig('unspam_reply_sent') == true
+
+    updated_additional_attributes = (additional_attributes || {}).merge(
+      'skip_follow_up_on_unspam' => true,
+      'unspam_reply_sent' => true
+    )
+    update_column(:additional_attributes, updated_additional_attributes)
+
+    # Find internal notes containing the 'deferred_spam_reply: true' flag
+    deferred_messages = messages.where(private: true).where("additional_attributes->>'deferred_spam_reply' = 'true'")
+    return if deferred_messages.blank?
+
+    # Send only the most recent deferred reply to avoid spamming on unmark.
+    stark_message = deferred_messages.order(created_at: :desc).first
+
+    new_message = messages.create!(
+      content: stark_message.content,
+      message_type: stark_message.message_type,
+      account_id: stark_message.account_id,
+      inbox_id: stark_message.inbox_id,
+      sender: stark_message.sender,
+      private: false,
+      metadata: stark_message.metadata,
+      additional_attributes: stark_message.additional_attributes.except('deferred_spam_reply').merge('skip_follow_up' => true)
+    )
+
+    stark_message.attachments.each do |attachment|
+      new_message.attachments.create!(
+        account_id: attachment.account_id,
+        file_type: attachment.file_type,
+        external_url: attachment.external_url,
+        file: attachment.file.blob
+      )
+    end
+
+    # Remove all deferred spam replies after sending the latest one
+    deferred_messages.destroy_all
+  end
+
+  def reset_unspam_reply_sent
+    return unless saved_change_to_is_spam? && is_spam
+
+    updated_additional_attributes = (additional_attributes || {}).merge(
+      'unspam_reply_sent' => false,
+      'skip_follow_up_on_unspam' => false
+    )
+    update_column(:additional_attributes, updated_additional_attributes)
+  end
+
   # creating db triggers
   trigger.before(:insert).for_each(:row) do
     "NEW.display_id := nextval('conv_dpid_seq_' || NEW.account_id);"
   end
 end
 
+Conversation.include_mod_with('Audit::Conversation')
 Conversation.include_mod_with('Concerns::Conversation')
 Conversation.prepend_mod_with('Conversation')

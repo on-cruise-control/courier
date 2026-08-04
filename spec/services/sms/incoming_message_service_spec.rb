@@ -25,7 +25,7 @@ describe Sms::IncomingMessageService do
       it 'creates appropriate conversations, message and contacts' do
         described_class.new(inbox: sms_channel.inbox, params: params).perform
         expect(sms_channel.inbox.conversations.count).not_to eq(0)
-        expect(Contact.all.first.name).to eq('+1 423-423-4234')
+        expect(sms_channel.inbox.account.contacts.last.phone_number).to eq('+14234234234')
         expect(sms_channel.inbox.messages.first.content).to eq(params[:text])
       end
 
@@ -88,7 +88,7 @@ describe Sms::IncomingMessageService do
 
         described_class.new(inbox: sms_channel.inbox, params: params.merge(media_params)).perform
         expect(sms_channel.inbox.conversations.count).not_to eq(0)
-        expect(Contact.all.first.name).to eq('+1 423-423-4234')
+        expect(sms_channel.inbox.account.contacts.last.phone_number).to eq('+14234234234')
         expect(sms_channel.inbox.messages.first.content).to eq('test message')
         expect(sms_channel.inbox.messages.first.attachments.present?).to be true
       end

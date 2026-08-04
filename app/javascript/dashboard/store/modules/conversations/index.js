@@ -6,12 +6,16 @@ import { MESSAGE_STATUS } from 'shared/constants/messages';
 import wootConstants from 'dashboard/constants/globals';
 import { BUS_EVENTS } from '../../../../shared/constants/busEvents';
 import { emitter } from 'shared/helpers/mitt';
+import { CONTENT_TYPES } from 'dashboard/components-next/message/constants.js';
 
 const state = {
   allConversations: [],
   attachments: {},
   listLoadingStatus: true,
-  chatStatusFilter: wootConstants.STATUS_TYPE.OPEN,
+  chatStatusFilter: [
+    wootConstants.STATUS_TYPE.OPEN,
+    wootConstants.STATUS_TYPE.PENDING,
+  ],
   chatSortFilter: wootConstants.SORT_BY_TYPE.LATEST,
   currentInbox: null,
   selectedChatId: null,
@@ -24,28 +28,61 @@ const state = {
   copilotAssistant: {},
 };
 
+const getConversationById = _state => conversationId => {
+  return _state.allConversations.find(c => c.id === conversationId);
+};
+
+const isDeferredSpamReply = message => {
+  return (
+    message?.private === true &&
+    message?.additional_attributes?.deferred_spam_reply === true
+  );
+};
+
+const sanitizeSpamConversation = conversation => {
+  if (!conversation?.is_spam) return conversation;
+
+  const sanitizedMessages = Array.isArray(conversation.messages)
+    ? conversation.messages.filter(message => !isDeferredSpamReply(message))
+    : conversation.messages;
+
+  const lastNonActivityMessage = isDeferredSpamReply(
+    conversation.last_non_activity_message
+  )
+    ? null
+    : conversation.last_non_activity_message;
+
+  return {
+    ...conversation,
+    messages: sanitizedMessages,
+    last_non_activity_message: lastNonActivityMessage,
+  };
+};
+
+
 // mutations
 export const mutations = {
   [types.SET_ALL_CONVERSATION](_state, conversationList) {
     const newAllConversations = [..._state.allConversations];
     conversationList.forEach(conversation => {
+      const sanitizedConversation = sanitizeSpamConversation(conversation);
       const indexInCurrentList = newAllConversations.findIndex(
-        c => c.id === conversation.id
+        c => c.id === sanitizedConversation.id
       );
       if (indexInCurrentList < 0) {
-        newAllConversations.push(conversation);
-      } else if (conversation.id !== _state.selectedChatId) {
+        newAllConversations.push(sanitizedConversation);
+      } else if (sanitizedConversation.id !== _state.selectedChatId) {
         // If the conversation is already in the list, replace it
         // Added this to fix the issue of the conversation not being updated
         // When reconnecting to the websocket. If the selectedChatId is not the same as
         // the conversation.id in the store, replace the existing conversation with the new one
-        newAllConversations[indexInCurrentList] = conversation;
+        newAllConversations[indexInCurrentList] = sanitizedConversation;
       } else {
         // If the conversation is already in the list and selectedChatId is the same,
         // replace all data except the messages array, attachments, dataFetched, allMessagesLoaded
         const existingConversation = newAllConversations[indexInCurrentList];
         newAllConversations[indexInCurrentList] = {
-          ...conversation,
+          ...sanitizedConversation,
           allMessagesLoaded: existingConversation.allMessagesLoaded,
           messages: existingConversation.messages,
           dataFetched: existingConversation.dataFetched,
@@ -58,14 +95,18 @@ export const mutations = {
     _state.allConversations = [];
     _state.selectedChatId = null;
   },
-  [types.SET_ALL_MESSAGES_LOADED](_state) {
-    const [chat] = getSelectedChatConversation(_state);
-    chat.allMessagesLoaded = true;
+  [types.SET_ALL_MESSAGES_LOADED](_state, conversationId) {
+    const chat = getConversationById(_state)(conversationId);
+    if (chat) {
+      chat.allMessagesLoaded = true;
+    }
   },
 
-  [types.CLEAR_ALL_MESSAGES_LOADED](_state) {
-    const [chat] = getSelectedChatConversation(_state);
-    chat.allMessagesLoaded = false;
+  [types.CLEAR_ALL_MESSAGES_LOADED](_state, conversationId) {
+    const chat = getConversationById(_state)(conversationId);
+    if (chat) {
+      chat.allMessagesLoaded = false;
+    }
   },
   [types.CLEAR_CURRENT_CHAT_WINDOW](_state) {
     _state.selectedChatId = null;
@@ -74,19 +115,30 @@ export const mutations = {
   [types.SET_PREVIOUS_CONVERSATIONS](_state, { id, data }) {
     if (data.length) {
       const [chat] = _state.allConversations.filter(c => c.id === id);
-      chat.messages.unshift(...data);
+      const messagesToAdd =
+        chat?.is_spam && Array.isArray(data)
+          ? data.filter(message => !isDeferredSpamReply(message))
+          : data;
+      chat.messages.unshift(...messagesToAdd);
     }
   },
   [types.SET_ALL_ATTACHMENTS](_state, { id, data }) {
-    const attachments = _state.attachments[id] || [];
-
-    attachments.push(...data);
-    _state.attachments[id] = [...attachments];
+    _state.attachments[id] = [...data];
   },
   [types.SET_MISSING_MESSAGES](_state, { id, data }) {
     const [chat] = _state.allConversations.filter(c => c.id === id);
     if (!chat) return;
-    chat.messages = data;
+    chat.messages =
+      chat?.is_spam && Array.isArray(data)
+        ? data.filter(message => !isDeferredSpamReply(message))
+        : data;
+  },
+
+  [types.SET_CHAT_DATA_FETCHED](_state, conversationId) {
+    const chat = getConversationById(_state)(conversationId);
+    if (chat) {
+      chat.dataFetched = true;
+    }
   },
 
   [types.SET_CURRENT_CHAT_WINDOW](_state, activeChat) {
@@ -95,9 +147,11 @@ export const mutations = {
     }
   },
 
-  [types.ASSIGN_AGENT](_state, assignee) {
-    const [chat] = getSelectedChatConversation(_state);
-    chat.meta.assignee = assignee;
+  [types.ASSIGN_AGENT](_state, { conversationId, assignee }) {
+    const chat = getConversationById(_state)(conversationId);
+    if (chat) {
+      chat.meta.assignee = assignee;
+    }
   },
 
   [types.ASSIGN_TEAM](_state, { team, conversationId }) {
@@ -118,10 +172,24 @@ export const mutations = {
     const [chat] = _state.allConversations.filter(c => c.id === conversationId);
     chat.priority = priority;
   },
+  [types.UPDATE_CONVERSATION_SENTIMENT](_state, { conversationId, sentiment }) {
+    const [chat] = _state.allConversations.filter(c => c.id === conversationId);
+    if (chat) chat.comment_sentiment = sentiment;
+  },
 
-  [types.UPDATE_CONVERSATION_CUSTOM_ATTRIBUTES](_state, custom_attributes) {
-    const [chat] = getSelectedChatConversation(_state);
-    chat.custom_attributes = custom_attributes;
+  [types.UPDATE_CONVERSATION_CUSTOM_ATTRIBUTES](
+    _state,
+    { conversationId, customAttributes }
+  ) {
+    const conversation = _state.allConversations.find(
+      c => c.id === conversationId
+    );
+    if (conversation) {
+      conversation.custom_attributes = {
+        ...conversation.custom_attributes,
+        ...customAttributes,
+      };
+    }
   },
 
   [types.CHANGE_CONVERSATION_STATUS](
@@ -187,6 +255,7 @@ export const mutations = {
       selectedChatId: conversationId,
     });
     if (!chat) return;
+    if (chat.is_spam && isDeferredSpamReply(message)) return;
 
     const pendingMessageIndex = findPendingMessageIndex(chat, message);
     if (pendingMessageIndex !== -1) {
@@ -197,14 +266,28 @@ export const mutations = {
       const { conversation: { unread_count: unreadCount = 0 } = {} } = message;
       chat.unread_count = unreadCount;
       if (selectedChatId === conversationId) {
-        emitter.emit(BUS_EVENTS.FETCH_LABEL_SUGGESTIONS);
         emitter.emit(BUS_EVENTS.SCROLL_TO_MESSAGE);
       }
     }
   },
 
   [types.ADD_CONVERSATION](_state, conversation) {
-    _state.allConversations.push(conversation);
+    const exists = _state.allConversations.some(c => c.id === conversation.id);
+    if (!exists) {
+      _state.allConversations.push(conversation);
+    }
+  },
+
+  [types.DELETE_CONVERSATION](_state, conversationId) {
+    _state.allConversations = _state.allConversations.filter(
+      c => c.id !== conversationId
+    );
+  },
+
+  [types.DELETE_CONVERSATION](_state, conversationId) {
+    _state.allConversations = _state.allConversations.filter(
+      c => c.id !== conversationId
+    );
   },
 
   [types.UPDATE_CONVERSATION](_state, conversation) {
@@ -219,14 +302,17 @@ export const mutations = {
         return;
       }
 
-      const { messages, ...updates } = conversation;
+      const { messages, ...updates } = sanitizeSpamConversation(conversation);
       allConversations[index] = { ...selectedConversation, ...updates };
       if (_state.selectedChatId === conversation.id) {
-        emitter.emit(BUS_EVENTS.FETCH_LABEL_SUGGESTIONS);
         emitter.emit(BUS_EVENTS.SCROLL_TO_MESSAGE);
       }
     } else {
-      _state.allConversations.push(conversation);
+      const { conversationType } = _state.conversationFilters || {};
+      const { MENTION, PARTICIPATING } = wootConstants.CONVERSATION_TYPE;
+      if (![MENTION, PARTICIPATING].includes(conversationType)) {
+        _state.allConversations.push(sanitizeSpamConversation(conversation));
+      }
     }
   },
 
@@ -258,8 +344,10 @@ export const mutations = {
 
   // Update assignee on action cable message
   [types.UPDATE_ASSIGNEE](_state, payload) {
-    const [chat] = _state.allConversations.filter(c => c.id === payload.id);
-    chat.meta.assignee = payload.assignee;
+    const chat = getConversationById(_state)(payload.id);
+    if (chat) {
+      chat.meta.assignee = payload.assignee;
+    }
   },
 
   [types.UPDATE_CONVERSATION_CONTACT](_state, { conversationId, ...payload }) {
@@ -267,6 +355,36 @@ export const mutations = {
     if (chat) {
       chat.meta.sender = payload;
     }
+  },
+
+  [types.UPDATE_CONVERSATION_CALL_STATUS](
+    _state,
+    { conversationId, callStatus }
+  ) {
+    const chat = getConversationById(_state)(conversationId);
+    if (!chat) return;
+
+    chat.additional_attributes = {
+      ...chat.additional_attributes,
+      call_status: callStatus,
+    };
+  },
+
+  [types.UPDATE_MESSAGE_CALL_STATUS](
+    _state,
+    { conversationId, callStatus, callSid }
+  ) {
+    const chat = getConversationById(_state)(conversationId);
+    if (!chat) return;
+
+    const message = (chat.messages || []).find(
+      m =>
+        m.content_type === CONTENT_TYPES.VOICE_CALL &&
+        m.call?.provider_call_id === callSid
+    );
+    if (!message?.call) return;
+
+    message.call = { ...message.call, status: callStatus };
   },
 
   [types.SET_ACTIVE_INBOX](_state, inboxId) {

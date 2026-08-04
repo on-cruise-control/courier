@@ -13,15 +13,18 @@ const isMessageInActiveConversation = (getters, message) => {
   return activeConversationId && conversationId !== activeConversationId;
 };
 
+const WIDGET_PRESENCE_INTERVAL = 60000;
+
 class ActionCableConnector extends BaseActionCableConnector {
   constructor(app, pubsubToken) {
-    super(app, pubsubToken);
+    super(app, pubsubToken, '', WIDGET_PRESENCE_INTERVAL);
     this.events = {
       'message.created': this.onMessageCreated,
       'message.updated': this.onMessageUpdated,
       'conversation.typing_on': this.onTypingOn,
       'conversation.typing_off': this.onTypingOff,
       'conversation.status_changed': this.onStatusChange,
+      'conversation.updated': this.onConversationUpdated,
       'conversation.created': this.onConversationCreated,
       'presence.update': this.onPresenceUpdate,
       'contact.merged': this.onContactMerge,
@@ -34,6 +37,9 @@ class ActionCableConnector extends BaseActionCableConnector {
 
   onReconnect = () => {
     this.syncLatestMessages();
+    // Re-fetch conversation attributes so a status change (e.g. auto-resolve)
+    // that happened while disconnected is reflected, keeping the reply box state correct.
+    this.app.$store.dispatch('conversationAttributes/getAttributes');
   };
 
   setLastMessageId = () => {
@@ -48,6 +54,10 @@ class ActionCableConnector extends BaseActionCableConnector {
     if (data.status === 'resolved') {
       this.app.$store.dispatch('campaign/resetCampaign');
     }
+    this.app.$store.dispatch('conversationAttributes/update', data);
+  };
+
+  onConversationUpdated = data => {
     this.app.$store.dispatch('conversationAttributes/update', data);
   };
 

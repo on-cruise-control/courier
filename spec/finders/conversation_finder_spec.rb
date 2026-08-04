@@ -51,11 +51,11 @@ describe ConversationFinder do
         expect(result[:conversations].map(&:id)).to include(restricted_conversation.id)
       end
 
-      it 'does not return conversations from inboxes where agent is not a member' do
+      it 'returns conversations from inboxes even if agent is not a member, since any account user can view any conversation' do
         params = { inbox_id: restricted_inbox.id }
         result = described_class.new(user_1, params).perform
 
-        expect(result[:conversations].map(&:id)).not_to include(restricted_conversation.id)
+        expect(result[:conversations].map(&:id)).to include(restricted_conversation.id)
       end
 
       it 'returns only the conversations from the inbox if inbox_id filter is passed' do
@@ -96,6 +96,67 @@ describe ConversationFinder do
       end
     end
 
+    context 'with unread sort' do
+      let(:params) { { status: 'open', sort_by: 'unread' } }
+
+      it 'returns all conversations matching the selected status with the highest unread count first' do
+        most_unread_conversation = create(:conversation, account: account, inbox: inbox,
+                                                         agent_last_seen_at: 1.hour.ago)
+        unread_conversation = create(:conversation, account: account, inbox: inbox,
+                                                    agent_last_seen_at: 1.hour.ago)
+        read_conversation = create(:conversation, account: account, inbox: inbox,
+                                                  agent_last_seen_at: 1.minute.from_now)
+        resolved_unread_conversation = create(:conversation, account: account, inbox: inbox, status: 'resolved',
+                                                             agent_last_seen_at: 1.hour.ago)
+
+        [most_unread_conversation, unread_conversation, read_conversation, resolved_unread_conversation].each do |conversation|
+          create(:message, account: account, inbox: inbox, conversation: conversation,
+                           message_type: :incoming, created_at: 5.minutes.ago)
+        end
+        create(:message, account: account, inbox: inbox, conversation: most_unread_conversation,
+                         message_type: :incoming, created_at: 4.minutes.ago)
+        resolved_unread_conversation.update!(status: 'resolved')
+        read_conversation.update!(last_activity_at: 1.minute.from_now)
+        unread_conversation.update!(last_activity_at: 2.minutes.from_now)
+
+        result = conversation_finder.perform
+        conversation_ids = result[:conversations].map(&:id)
+
+        expect(conversation_ids).to include(most_unread_conversation.id, unread_conversation.id, read_conversation.id)
+        expect(conversation_ids).not_to include(resolved_unread_conversation.id)
+        expect(conversation_ids.index(most_unread_conversation.id)).to be < conversation_ids.index(unread_conversation.id)
+        expect(conversation_ids.index(unread_conversation.id)).to be < conversation_ids.index(read_conversation.id)
+      end
+
+      it 'includes private incoming messages in unread counts used for ordering' do
+        private_unread_conversation = create(:conversation, account: account, inbox: inbox,
+                                                            agent_last_seen_at: 1.hour.ago)
+        unread_conversation = create(:conversation, account: account, inbox: inbox,
+                                                    agent_last_seen_at: 1.hour.ago)
+        read_conversation = create(:conversation, account: account, inbox: inbox,
+                                                  agent_last_seen_at: 1.minute.from_now)
+
+        2.times do
+          create(:message, account: account, inbox: inbox, conversation: private_unread_conversation,
+                           message_type: :incoming, private: true, created_at: 5.minutes.ago)
+        end
+        create(:message, account: account, inbox: inbox, conversation: unread_conversation,
+                         message_type: :incoming, created_at: 5.minutes.ago)
+        create(:message, account: account, inbox: inbox, conversation: read_conversation,
+                         message_type: :incoming, created_at: 5.minutes.ago)
+        private_unread_conversation.update!(last_activity_at: 10.minutes.ago)
+        unread_conversation.update!(last_activity_at: 2.minutes.from_now)
+        read_conversation.update!(last_activity_at: 1.minute.from_now)
+
+        result = conversation_finder.perform
+        conversation_ids = result[:conversations].map(&:id)
+
+        expect(private_unread_conversation.unread_incoming_messages.count).to eq 2
+        expect(conversation_ids.index(private_unread_conversation.id)).to be < conversation_ids.index(unread_conversation.id)
+        expect(conversation_ids.index(unread_conversation.id)).to be < conversation_ids.index(read_conversation.id)
+      end
+    end
+
     context 'with assignee_type assigned' do
       let(:params) { { assignee_type: 'assigned' } }
 
@@ -106,101 +167,178 @@ describe ConversationFinder do
 
       it 'returns the correct meta' do
         result = conversation_finder.perform
-        expect(result[:count]).to eq({
-                                       mine_count: 2,
-                                       assigned_count: 3,
-                                       unassigned_count: 1,
-                                       all_count: 4
-                                     })
+        expect(result[:count]).to include({
+                                            mine_count: 2,
+                                            assigned_count: 3,
+                                            unassigned_count: 1,
+                                            all_count: 4
+                                          })
       end
-    end
 
-    context 'with team' do
-      let(:team) { create(:team, account: account) }
-      let(:params) { { team_id: team.id } }
+      context 'with team' do
+        let(:team) { create(:team, account: account) }
+        let(:params) { { team_id: team.id } }
 
-      it 'filter conversations by team' do
-        create(:conversation, account: account, inbox: inbox, team: team)
-        result = conversation_finder.perform
-        expect(result[:conversations].length).to be 1
-      end
-    end
-
-    context 'with labels' do
-      let(:params) { { labels: ['resolved'] } }
-
-      it 'filter conversations by labels' do
-        conversation = inbox.conversations.first
-        conversation.update_labels('resolved')
-
-        result = conversation_finder.perform
-        expect(result[:conversations].length).to be 1
-      end
-    end
-
-    context 'with source_id' do
-      let(:params) { { source_id: 'testing_source_id' } }
-
-      it 'filter conversations by source id' do
-        result = conversation_finder.perform
-        expect(result[:conversations].length).to be 1
-      end
-    end
-
-    context 'without source' do
-      let(:params) { {} }
-
-      it 'returns conversations with any source' do
-        result = conversation_finder.perform
-        expect(result[:conversations].length).to be 4
-      end
-    end
-
-    context 'with updated_within' do
-      let(:params) { { updated_within: 20, assignee_type: 'unassigned', sort_by: 'created_at_asc' } }
-
-      it 'filters based on params, sort order but returns all conversations without pagination with in time range' do
-        # value of updated_within is in seconds
-        # write spec based on that
-        conversations = create_list(:conversation, 50, account: account,
-                                                       inbox: inbox, assignee: nil,
-                                                       updated_at: Time.now.utc - 30.seconds,
-                                                       created_at: Time.now.utc - 30.seconds)
-        # update updated_at of 27 conversations to be with in 20 seconds
-        conversations[0..27].each do |conversation|
-          conversation.update(updated_at: Time.now.utc - 10.seconds)
+        it 'filter conversations by team' do
+          create(:conversation, account: account, inbox: inbox, team: team)
+          result = conversation_finder.perform
+          expect(result[:conversations].length).to be 1
         end
-        result = conversation_finder.perform
-        # pagination is not applied
-        # filters are applied
-        # modified conversations + 1 conversation created during set up
-        expect(result[:conversations].length).to be 29
-        # ensure that the conversations are sorted by created_at
-        expect(result[:conversations].first.created_at).to be < result[:conversations].last.created_at
       end
-    end
 
-    context 'with pagination' do
-      let(:params) { { status: 'open', assignee_type: 'me', page: 1 } }
+      context 'with labels' do
+        let(:params) { { labels: ['resolved'] } }
 
-      it 'returns paginated conversations' do
-        create_list(:conversation, 50, account: account, inbox: inbox, assignee: user_1)
-        result = conversation_finder.perform
-        expect(result[:conversations].length).to be 25
+        it 'filter conversations by labels' do
+          conversation = inbox.conversations.first
+          conversation.update_labels('resolved')
+
+          result = conversation_finder.perform
+          expect(result[:conversations].length).to be 1
+        end
       end
-    end
 
-    context 'with unattended' do
-      let(:params) { { status: 'open', assignee_type: 'me', conversation_type: 'unattended' } }
+      context 'with source_id' do
+        let(:params) { { source_id: 'testing_source_id' } }
 
-      it 'returns unattended conversations' do
-        create(:conversation, account: account, first_reply_created_at: Time.now.utc, assignee: user_1) # attended_conversation
-        create(:conversation, account: account, first_reply_created_at: nil, assignee: user_1) # unattended_conversation_no_first_reply
-        create(:conversation, account: account, first_reply_created_at: Time.now.utc,
-                              assignee: user_1, waiting_since: Time.now.utc) # unattended_conversation_waiting_since
+        it 'filter conversations by source id' do
+          result = conversation_finder.perform
+          expect(result[:conversations].length).to be 1
+        end
+      end
 
-        result = conversation_finder.perform
-        expect(result[:conversations].length).to be 2
+      context 'with participating conversation type' do
+        let(:params) { { status: 'open', conversation_type: 'participating' } }
+
+        it 'still returns participating conversations from inboxes where the agent is no longer a member' do
+          visible_conversation = create(:conversation, account: account, inbox: inbox)
+          other_conversation = create(:conversation, account: account, inbox: restricted_inbox)
+          create(:inbox_member, user: user_1, inbox: restricted_inbox)
+          create(:conversation_participant, account: account, conversation: visible_conversation, user: user_1)
+          create(:conversation_participant, account: account, conversation: other_conversation, user: user_1)
+          InboxMember.find_by!(user: user_1, inbox: restricted_inbox).destroy!
+
+          result = conversation_finder.perform
+          conversation_ids = result[:conversations].map(&:id)
+
+          expect(conversation_ids).to include(visible_conversation.id)
+          expect(conversation_ids).to include(other_conversation.id)
+        end
+      end
+
+      context 'without source' do
+        let(:params) { {} }
+
+        it 'returns conversations with any source' do
+          result = conversation_finder.perform
+          expect(result[:conversations].length).to be 4
+        end
+      end
+
+      context 'with updated_within' do
+        let(:params) { { updated_within: 20, assignee_type: 'unassigned', sort_by: 'created_at_asc' } }
+
+        it 'filters based on params, sort order but returns all conversations without pagination with in time range' do
+          # value of updated_within is in seconds
+          # write spec based on that
+          conversations = create_list(:conversation, 50, account: account,
+                                                         inbox: inbox, assignee: nil,
+                                                         updated_at: Time.now.utc - 30.seconds,
+                                                         created_at: Time.now.utc - 30.seconds)
+          # update updated_at of 27 conversations to be with in 20 seconds
+          conversations[0..27].each do |conversation|
+            conversation.update(updated_at: Time.now.utc - 10.seconds)
+          end
+          result = conversation_finder.perform
+          # pagination is not applied
+          # filters are applied
+          # modified conversations + 1 conversation created during set up
+          expect(result[:conversations].length).to be 29
+          # ensure that the conversations are sorted by created_at
+          expect(result[:conversations].first.created_at).to be < result[:conversations].last.created_at
+        end
+      end
+
+      context 'with pagination' do
+        let(:params) { { status: 'open', assignee_type: 'me', page: 1 } }
+
+        it 'returns paginated conversations' do
+          create_list(:conversation, 50, account: account, inbox: inbox, assignee: user_1)
+          result = conversation_finder.perform
+          expect(result[:conversations].length).to be 25
+        end
+      end
+
+      context 'with perform_meta_only' do
+        let(:params) { { assignee_type: 'assigned' } }
+
+        it 'returns only count without conversations' do
+          result = conversation_finder.perform_meta_only
+          expect(result).to have_key(:count)
+          expect(result).not_to have_key(:conversations)
+        end
+
+        it 'returns the correct counts' do
+          result = conversation_finder.perform_meta_only
+          expect(result[:count]).to include({
+                                              mine_count: 2,
+                                              assigned_count: 3,
+                                              unassigned_count: 1,
+                                              all_count: 4
+                                            })
+        end
+
+        it 'returns same counts as perform' do
+          meta_result = conversation_finder.perform_meta_only
+          full_result = conversation_finder.perform
+          expect(meta_result[:count]).to eq(full_result[:count])
+        end
+      end
+
+      context 'with unattended' do
+        let(:params) { { status: 'open', assignee_type: 'me', conversation_type: 'unattended' } }
+
+        it 'returns unattended conversations' do
+          attended_conversation = create(:conversation, account: account, first_reply_created_at: Time.now.utc, assignee: user_1)
+          # waiting_since is always stamped on create (Conversation#ensure_waiting_since); clear it here the same
+          # way a real agent reply would (Message#clear_waiting_since_on_outgoing_response), so this conversation
+          # is genuinely "attended" rather than accidentally matching the unattended scope.
+          attended_conversation.update_column(:waiting_since, nil)
+          create(:conversation, account: account, first_reply_created_at: nil, assignee: user_1) # unattended_conversation_no_first_reply
+          create(:conversation, account: account, first_reply_created_at: Time.now.utc,
+                                assignee: user_1, waiting_since: Time.now.utc) # unattended_conversation_waiting_since
+
+          result = conversation_finder.perform
+          # 2 pre-existing open conversations assigned to user_1 (from the outer before block) are also
+          # unattended by default, plus the 2 unattended conversations created above.
+          expect(result[:conversations].length).to be 4
+        end
+      end
+
+      context 'with blacklist conversation type' do
+        let(:params) { { status: 'all', conversation_type: 'blacklist' } }
+
+        it 'returns only blacklisted conversations' do
+          blacklisted_conversation = create(:conversation, account: account, inbox: inbox, is_blacklisted: true)
+
+          result = conversation_finder.perform
+
+          expect(result[:conversations].map(&:id)).to eq [blacklisted_conversation.id]
+        end
+      end
+
+      context 'without blacklist conversation type' do
+        let(:params) { { status: 'all' } }
+
+        it 'excludes blacklisted conversations from the default view' do
+          create(:conversation, account: account, inbox: inbox, is_blacklisted: true)
+
+          result = conversation_finder.perform
+
+          # The 5 pre-existing conversations from the outer before block are returned,
+          # the blacklisted one created above is excluded.
+          expect(result[:conversations].length).to be 5
+        end
       end
     end
   end

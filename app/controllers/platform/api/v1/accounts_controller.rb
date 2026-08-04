@@ -1,4 +1,11 @@
 class Platform::Api::V1::AccountsController < PlatformController
+  def index
+    @resources = @platform_app.platform_app_permissibles
+                              .where(permissible_type: 'Account')
+                              .includes(:permissible)
+                              .map(&:permissible)
+  end
+
   def show; end
 
   def create
@@ -38,6 +45,6 @@ class Platform::Api::V1::AccountsController < PlatformController
   end
 
   def permitted_params
-    params.permit(:name, :locale, :domain, :support_email, :status, features: {}, limits: {}, custom_attributes: {})
+    params.permit(:name, :locale, :domain, :support_email, :status, :dealership_id, features: {}, limits: {}, custom_attributes: {})
   end
 end

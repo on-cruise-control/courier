@@ -61,6 +61,12 @@ class ReportsAPI extends ApiClient {
     });
   }
 
+  getConversationsSummaryReports({ from: since, to: until, businessHours }) {
+    return axios.get(`${this.url}/conversations_summary`, {
+      params: { since, until, business_hours: businessHours },
+    });
+  }
+
   getConversationTrafficCSV({ daysBefore = 6 } = {}) {
     return axios.get(`${this.url}/conversation_traffic`, {
       params: { timezone_offset: getTimeOffset(), days_before: daysBefore },
@@ -101,6 +107,39 @@ class ReportsAPI extends ApiClient {
         business_hours: businessHours,
       },
     });
+  }
+
+  getBookingStats({ from, to, groupBy }) {
+    return axios.get(`${this.url}/booking_stats`, {
+      params: {
+        since: from,
+        until: to,
+        group_by: groupBy,
+      },
+    });
+  }
+
+  getBookingSummary({ from, to, groupBy, metricType }) {
+    return axios.get(`${this.url}/booking_summary`, {
+      params: {
+        since: from,
+        until: to,
+        group_by: groupBy,
+        metric_type: metricType,
+      },
+    });
+  }
+
+  getTwilioUsage({ period }) {
+    return axios.get(`${this.url}/twilio_usage`, {
+      params: {
+        period,
+      },
+    });
+  }
+
+  getWalletBalance() {
+    return axios.get(`${this.url}/wallet_balance`);
   }
 }
 

@@ -1,0 +1,35 @@
+class AgentNotifications::BookingMailer < ApplicationMailer
+  def booking_notification(emails:, conversation:, booking_date:, phone:, email:, whatsapp_number: nil, text_number: nil, summary: nil)
+    @conversation = conversation
+    @account = conversation.account
+    ensure_current_account(@account)
+
+    if summary.present?
+      @summary = summary
+    else
+      Conversations::SummaryService.new(conversation: @conversation, force_refresh: true).perform rescue nil
+      @conversation.reload
+      @summary = @conversation.summary
+    end
+
+    # If account is suspended, send to SuperAdmins only
+    recipients = if @account.suspended?
+                   super_admin_emails(@account)
+                 else
+                   emails
+                 end
+
+    return if recipients.blank?
+
+    @booking_date = booking_date
+    @phone = phone
+    @customer_email = email
+    @whatsapp_number = whatsapp_number
+    @text_number = text_number
+    @platform_name = @conversation&.inbox&.platform_name
+    @instagram_profile_url = instagram_profile_url(@conversation)
+    subject = '[Sales] New booking scheduled 📆'
+
+    mail(to: recipients, subject: subject)
+  end
+end

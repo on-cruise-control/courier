@@ -45,8 +45,30 @@ class Messages::Facebook::MessageBuilder < Messages::Messenger::MessageBuilder
   end
 
   def build_message
-    @message = conversation.messages.create!(message_params)
+    template_dm_conversation = Conversation.joins(contact_inbox: { contact: :account }, inbox: :account)
+                                           .where(
+                                             "conversations.contact_id = ? AND conversations.inbox_id = ? AND inboxes.account_id = ? AND conversations.additional_attributes->>'type' = ?",
+                                             @contact_inbox.contact_id,
+                                             @inbox.id,
+                                             @inbox.account_id,
+                                             'template_dm'
+                                           )
+                                           .last
+  
+    if template_dm_conversation
+      Rails.logger.info "Found existing template_dm conversation #{template_dm_conversation.id} for contact #{@contact_inbox.contact_id} in inbox #{@inbox.id}"
+      @conversation = template_dm_conversation
+    else
+      Rails.logger.info "No existing template_dm conversation found, creating a new one for contact #{@contact_inbox.contact_id} in inbox #{@inbox.id}"
+      @conversation = set_conversation_based_on_inbox_config
+    end
+  
+    @message = @conversation.messages.create!(message_params)
 
+    additional_attributes = @conversation.additional_attributes
+    additional_attributes["type"] = "template_dm"
+    @conversation.update!(additional_attributes: additional_attributes)
+  
     @attachments.each do |attachment|
       process_attachment(attachment)
     end
@@ -92,8 +114,16 @@ class Messages::Facebook::MessageBuilder < Messages::Messenger::MessageBuilder
   def fallback_params(attachment)
     {
       fallback_title: attachment['title'],
-      external_url: attachment['url']
+      external_url: attachment['url'] || attachment.dig('payload', 'url')
     }
+  end
+
+  # Facebook shared posts point to page URLs, not downloadable media URLs.
+  # Keep this Facebook-only so Messenger/Instagram share attachments still use the parent media handling.
+  def normalize_file_type(type)
+    return :fallback if type.to_sym == :share
+
+    super
   end
 
   def conversation_params
@@ -105,16 +135,21 @@ class Messages::Facebook::MessageBuilder < Messages::Messenger::MessageBuilder
   end
 
   def message_params
+    content_attributes = {
+      in_reply_to_external_id: response.in_reply_to_external_id
+    }
+    content_attributes[:external_echo] = true if @outgoing_echo
+
     {
       account_id: conversation.account_id,
       inbox_id: conversation.inbox_id,
       message_type: @message_type,
+      status: @outgoing_echo ? :delivered : :sent,
       content: response.content,
       source_id: response.identifier,
-      content_attributes: {
-        in_reply_to_external_id: response.in_reply_to_external_id
-      },
-      sender: @outgoing_echo ? nil : @contact_inbox.contact
+      content_attributes: content_attributes,
+      sender: @outgoing_echo ? nil : @contact_inbox.contact,
+      additional_attributes: { 'delivery_status': 'sent' }
     }
   end
 

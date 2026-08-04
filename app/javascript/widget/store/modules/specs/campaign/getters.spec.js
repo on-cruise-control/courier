@@ -17,7 +17,7 @@ describe('#getters', () => {
         inbox: {
           id: 37,
           channel_id: 1,
-          name: 'Chatwoot',
+          name: 'Cruise Control',
           channel_type: 'Channel::WebWidget',
         },
         sender: {
@@ -60,7 +60,7 @@ describe('#getters', () => {
         message: 'Begin your onboarding campaign with a welcome message',
         enabled: true,
         trigger_rules: {
-          url: 'https://chatwoot.com',
+          url: 'https://getcruisecontrol.com',
           time_on_page: '20',
         },
         created_at: '2021-05-03T08:15:35.828Z',
@@ -74,7 +74,7 @@ describe('#getters', () => {
         inbox: {
           id: 37,
           channel_id: 1,
-          name: 'Chatwoot',
+          name: 'Cruise Control',
           channel_type: 'Channel::WebWidget',
         },
         sender: {
@@ -108,7 +108,7 @@ describe('#getters', () => {
       inbox: {
         id: 37,
         channel_id: 1,
-        name: 'Chatwoot',
+        name: 'Cruise Control',
         channel_type: 'Channel::WebWidget',
       },
       sender: {

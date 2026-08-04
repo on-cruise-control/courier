@@ -1,0 +1,78 @@
+<tr>
+  <td style="font-family:'Outfit','Inter',-apple-system,system-ui,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Tahoma,Arial,sans-serif;">
+    <p>Hello Team</p>
+
+    <p style="margin-bottom: 20px;">
+      The customer has a service inquiry. Please contact them as soon as possible to verify their requirements and proceed accordingly.
+    </p>
+
+    <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 20px;">
+
+      {% if account.name %}
+      <tr>
+        <td style="padding: 5px 0;"><strong>Dealership Name:</strong> {{ account.name }}</td>
+      </tr>
+      {% endif %}
+      {% if stark_customer_name %}
+      <tr>
+        <td style="padding: 5px 0;"><strong>Name:</strong> {{ stark_customer_name }}</td>
+      </tr>
+      {% endif %}
+      {% if stark_customer_phone and stark_customer_phone != "(N/A)" %}
+      <tr>
+        <td style="padding: 5px 0;"><strong>Number:</strong> {{ stark_customer_phone }}</td>
+      </tr>
+      {% endif %}
+      {% if stark_customer_email and stark_customer_email != "(N/A)" %}
+      <tr>
+        <td style="padding: 5px 0;"><strong>Email:</strong> {{ stark_customer_email }}</td>
+      </tr>
+      {% endif %}
+      {% if stark_customer_whatsapp and stark_customer_whatsapp != "(N/A)" %}
+      <tr>
+        <td style="padding: 5px 0;"><strong>WhatsApp Number:</strong> {{ stark_customer_whatsapp }}</td>
+      </tr>
+      {% endif %}
+      {% if stark_customer_sms and stark_customer_sms != "(N/A)" %}
+      <tr>
+        <td style="padding: 5px 0;"><strong>SMS Number:</strong> {{ stark_customer_sms }}</td>
+      </tr>
+      {% endif %}
+      <tr>
+        <td style="padding: 5px 0;"><strong>Platform:</strong> {{ inbox.platform_name }}(DM)</td>
+      </tr>
+      {% assign profile_url = instagram_profile_url %}
+      {% if profile_url %}
+        <tr>
+          <td style="padding: 5px 0;">
+            <strong>{% if instagram_profile_url %}Instagram Profile{% else %}Facebook Profile{% endif %}:</strong>
+            <a href="{{ profile_url }}" target="_blank" rel="noopener" style="color:#1f93ff; text-decoration:none;">
+              {{ profile_url }}
+            </a>
+          </td>
+        </tr>
+      {% endif %}
+    </table>
+
+    {% if conversation.summary %}
+      <p><strong>Conversation Summary</strong></p>
+      <div style="background-color: #f3f4f6; padding: 15px; border-radius: 6px; margin-bottom: 20px; line-height: 1.5;">
+        {{ conversation.summary | newline_to_br }}
+      </div>
+    {% endif %}
+
+    <p style="margin-bottom: 20px;">
+      <strong>Note:</strong> If the customer has not finalized the scheduling form, we recommend reaching out to them directly.
+    </p>
+
+    <table cellpadding="0" cellspacing="0" border="0" style="margin-top: 20px;">
+      <tr>
+        <td>
+          <a href="{{ action_url }}" style="display: inline-block; padding: 10px 16px; background-color: #182933; color: #ffffff; text-decoration: none; border-radius: 4px; font-weight: bold;">
+            Respond Now
+          </a>
+        </td>
+      </tr>
+    </table>
+  </td>
+</tr>

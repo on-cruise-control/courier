@@ -6,7 +6,7 @@ class SlackUploadsController < ApplicationController
     if @blob
       redirect_to blob_url
     else
-      redirect_to avatar_url
+      redirect_to avatar_url, allow_other_host: true
     end
   end
 
@@ -17,7 +17,12 @@ class SlackUploadsController < ApplicationController
   end
 
   def blob_url
-    url_for(@blob.representation(resize_to_fill: [250, nil]))
+    # Only generate representations for images
+    if @blob.content_type.start_with?('image/')
+      url_for(@blob.representation(resize_to_fill: [250, nil]))
+    else
+      url_for(@blob)
+    end
   end
 
   def avatar_url

@@ -9,12 +9,17 @@ class ConversationDrop < BaseDrop
     @obj.try(:contact).name.try(:capitalize) || 'Customer'
   end
 
+  def summary
+    @obj.try(:summary)
+  end
+
   def recent_messages
     @obj.try(:recent_messages).map do |message|
       {
         'sender' => message_sender_name(message.sender),
         'content' => render_message_content(transform_user_mention_content(message.content)),
-        'attachments' => message.attachments.map(&:file_url)
+        'attachments' => message.attachments.map(&:file_url),
+        'message_type' => message.message_type
       }
     end
   end

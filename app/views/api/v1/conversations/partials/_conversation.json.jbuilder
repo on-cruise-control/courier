@@ -7,10 +7,16 @@ json.meta do
     json.partial! 'api/v1/models/contact', formats: [:json], resource: conversation.contact
   end
   json.channel conversation.inbox.try(:channel_type)
-  if conversation.assignee&.account
+  if conversation.assigned_entity.is_a?(AgentBot)
     json.assignee do
-      json.partial! 'api/v1/models/agent', formats: [:json], resource: conversation.assignee
+      json.partial! 'api/v1/models/agent_bot_slim', formats: [:json], resource: conversation.assigned_entity
     end
+    json.assignee_type 'AgentBot'
+  elsif conversation.assigned_entity&.account
+    json.assignee do
+      json.partial! 'api/v1/models/agent', formats: [:json], resource: conversation.assigned_entity
+    end
+    json.assignee_type 'User'
   end
   if conversation.team.present?
     json.team do
@@ -21,14 +27,15 @@ json.meta do
 end
 
 json.id conversation.display_id
-if conversation.messages.where(account_id: conversation.account_id).last.blank?
-  json.messages []
-else
-  json.messages [
-    conversation.messages.where(account_id: conversation.account_id)
-                .includes([{ attachments: [{ file_attachment: [:blob] }] }]).last.try(:push_event_data)
-  ]
-end
+messages_base = conversation.messages.where(account_id: conversation.account_id)
+messages_base = messages_base.where(private: false) if conversation.is_spam?
+messages_base = messages_base.where("(additional_attributes->>'deferred_spam_reply') IS NULL OR (additional_attributes->>'deferred_spam_reply') != 'true'")
+
+last_message = messages_base
+               .includes([{ attachments: [{ file_attachment: [:blob] }] }])
+               .last
+
+json.messages(last_message.present? ? [last_message.try(:push_event_data)] : [])
 
 json.account_id conversation.account_id
 json.uuid conversation.uuid
@@ -48,9 +55,13 @@ json.updated_at conversation.updated_at.to_f
 json.timestamp conversation.last_activity_at.to_i
 json.first_reply_created_at conversation.first_reply_created_at.to_i
 json.unread_count conversation.unread_incoming_messages.count
-json.last_non_activity_message conversation.messages.where(account_id: conversation.account_id).non_activity_messages.first.try(:push_event_data)
+json.last_non_activity_message messages_base.non_activity_messages.first.try(:push_event_data)
 json.last_activity_at conversation.last_activity_at.to_i
 json.priority conversation.priority
 json.waiting_since conversation.waiting_since.to_i.to_i
 json.sla_policy_id conversation.sla_policy_id
+json.is_spam conversation.is_spam
+json.comment_sentiment conversation.comment_sentiment
+json.mark_as_not_spam conversation.mark_as_not_spam
+json.is_blacklisted conversation.is_blacklisted
 json.partial! 'enterprise/api/v1/conversations/partials/conversation', conversation: conversation if ChatwootApp.enterprise?

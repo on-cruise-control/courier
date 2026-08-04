@@ -15,7 +15,7 @@ module SuperAdmin::AccountFeaturesHelper
   end
 
   def self.filter_internal_features(features)
-    return features if GlobalConfig.get_value('DEPLOYMENT_ENV') == 'cloud'
+    return features if ChatwootApp.chatwoot_cloud?
 
     internal_features = account_features.select { |f| f['chatwoot_internal'] }.pluck('name')
     features.except(*internal_features)
@@ -24,6 +24,15 @@ module SuperAdmin::AccountFeaturesHelper
   def self.filter_deprecated_features(features)
     deprecated_features = account_features.select { |f| f['deprecated'] }.pluck('name')
     features.except(*deprecated_features)
+  end
+
+
+  def self.webhook_managed_feature_names
+    account_features.select { |f| f['webhook_managed'] }.pluck('name')
+  end
+
+  def self.filter_webhook_managed_features(features)
+    features.except(*webhook_managed_feature_names)
   end
 
   def self.sort_and_transform_features(features, display_names)
@@ -46,7 +55,7 @@ module SuperAdmin::AccountFeaturesHelper
   end
 
   def self.filtered_features(features)
-    regular, premium = partition_features(features)
+    regular, premium = partition_features(filter_webhook_managed_features(features))
     regular.merge(premium)
   end
 end

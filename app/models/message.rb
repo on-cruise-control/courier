@@ -9,6 +9,7 @@
 #  content_type              :integer          default("text"), not null
 #  external_source_ids       :jsonb
 #  message_type              :integer          not null
+#  metadata                  :jsonb
 #  private                   :boolean          default(FALSE), not null
 #  processed_message_content :text
 #  sender_type               :string
@@ -20,10 +21,11 @@
 #  conversation_id           :integer          not null
 #  inbox_id                  :integer          not null
 #  sender_id                 :bigint
-#  source_id                 :string
+#  source_id                 :text
 #
 # Indexes
 #
+#  idx_messages_account_content_created                 (account_id,content_type,created_at)
 #  index_messages_on_account_created_type               (account_id,created_at,message_type)
 #  index_messages_on_account_id                         (account_id)
 #  index_messages_on_account_id_and_inbox_id            (account_id,inbox_id)
@@ -33,11 +35,14 @@
 #  index_messages_on_conversation_id                    (conversation_id)
 #  index_messages_on_created_at                         (created_at)
 #  index_messages_on_inbox_id                           (inbox_id)
+#  index_messages_on_metadata                           (metadata) USING gin
 #  index_messages_on_sender_type_and_sender_id          (sender_type,sender_id)
 #  index_messages_on_source_id                          (source_id)
 #
 
 class Message < ApplicationRecord
+  searchkick callbacks: false if ChatwootApp.advanced_search_allowed?
+
   include MessageFilterHelpers
   include Liquidable
   NUMBER_OF_PERMITTED_ATTACHMENTS = 15
@@ -61,6 +66,7 @@ class Message < ApplicationRecord
 
   before_validation :ensure_content_type
   before_validation :prevent_message_flooding
+  before_validation :prevent_blocked_conversation_message
   before_save :ensure_processed_message_content
   before_save :ensure_in_reply_to
 
@@ -75,9 +81,12 @@ class Message < ApplicationRecord
   validates :content_type, presence: true
   validates :content, length: { maximum: 150_000 }
   validates :processed_message_content, length: { maximum: 150_000 }
+  validate :metadata_must_be_array_of_objects
 
   # when you have a temperory id in your frontend and want it echoed back via action cable
   attr_accessor :echo_id
+  # Transient flag used to skip waiting_since clearing for specific bot/system messages.
+  attr_accessor :preserve_waiting_since
 
   enum message_type: { incoming: 0, outgoing: 1, activity: 2, template: 3 }
   enum content_type: {
@@ -92,7 +101,8 @@ class Message < ApplicationRecord
     incoming_email: 8,
     input_csat: 9,
     integrations: 10,
-    sticker: 11
+    sticker: 11,
+    voice_call: 12
   }
   enum status: { sent: 0, delivered: 1, read: 2, failed: 3 }
   # [:submitted_email, :items, :submitted_values] : Used for bot message types
@@ -101,16 +111,18 @@ class Message < ApplicationRecord
   # [:deleted] : Used to denote whether the message was deleted by the agent
   # [:external_created_at] : Can specify if the message was created at a different timestamp externally
   # [:external_error : Can specify if the message creation failed due to an error at external API
+  # [:data] : Used for structured content types such as voice_call
   store :content_attributes, accessors: [:submitted_email, :items, :submitted_values, :email, :in_reply_to, :deleted,
                                          :external_created_at, :story_sender, :story_id, :external_error,
-                                         :translations, :in_reply_to_external_id, :is_unsupported], coder: JSON
+                                         :translations, :in_reply_to_external_id, :is_unsupported, :data], coder: JSON
 
   store :external_source_ids, accessors: [:slack], coder: JSON, prefix: :external_source_id
 
   scope :created_since, ->(datetime) { where('created_at > ?', datetime) }
   scope :chat, -> { where.not(message_type: :activity).where(private: false) }
-  scope :non_activity_messages, -> { where.not(message_type: :activity).reorder('id desc') }
+  scope :non_activity_messages, -> { where.not(message_type: :activity).reorder('created_at desc') }
   scope :today, -> { where("date_trunc('day', created_at) = ?", Date.current) }
+  scope :voice_calls, -> { where(content_type: :voice_call) }
 
   # TODO: Get rid of default scope
   # https://stackoverflow.com/a/1834250/939299
@@ -119,7 +131,7 @@ class Message < ApplicationRecord
 
   belongs_to :account
   belongs_to :inbox
-  belongs_to :conversation, touch: true
+  belongs_to :conversation
   belongs_to :sender, polymorphic: true, optional: true
 
   has_many :attachments, dependent: :destroy, autosave: true, before_add: :validate_attachments_limit
@@ -129,6 +141,11 @@ class Message < ApplicationRecord
   after_create_commit :execute_after_create_commit_callbacks
 
   after_update_commit :dispatch_update_event
+  after_create :schedule_follow_up_job, if: :is_outgoing?
+  after_create :cancel_follow_up_job, if: :incoming?
+  after_commit :reindex_for_search, if: :should_index?, on: [:create, :update]
+
+  store_accessor :additional_attributes, :delivery_status
 
   def channel_token
     @token ||= inbox.channel.try(:page_access_token)
@@ -138,12 +155,34 @@ class Message < ApplicationRecord
     data = attributes.symbolize_keys.merge(
       created_at: created_at.to_i,
       message_type: message_type_before_type_cast,
-      conversation_id: conversation.display_id,
-      conversation: conversation_push_event_data
+      conversation_id: conversation&.display_id,
+      conversation: conversation.present? ? conversation_push_event_data : nil
     )
     data[:echo_id] = echo_id if echo_id.present?
     data[:attachments] = attachments.map(&:push_event_data) if attachments.present?
+    data[:metadata] = metadata if metadata.present?
     merge_sender_attributes(data)
+  end
+
+  def mark_pending!
+    update!(additional_attributes: (additional_attributes || {}).merge('delivery_status' => 'pending'))
+  end
+
+  def mark_sent!
+    update!(additional_attributes: (additional_attributes || {}).merge('delivery_status' => 'sent'))
+  end
+
+  def mark_failed!(error = nil)
+    update!(
+      additional_attributes: (additional_attributes || {}).merge(
+        'delivery_status' => 'failed',
+        'error_message' => error
+      )
+    )
+  end
+
+  def delivery_status
+    additional_attributes&.dig('delivery_status') || 'pending'
   end
 
   def conversation_push_event_data
@@ -161,13 +200,20 @@ class Message < ApplicationRecord
     data
   end
 
+  def webhook_push_event_data
+    push_event_data.merge(
+      content: Messages::WebhookContentNormalizer.normalize(content),
+      processed_message_content: Messages::WebhookContentNormalizer.normalize(processed_message_content)
+    )
+  end
+
   def webhook_data
     data = {
       account: account.webhook_data,
       additional_attributes: additional_attributes,
       content_attributes: content_attributes,
       content_type: content_type,
-      content: content,
+      content: webhook_content,
       conversation: conversation.webhook_data,
       created_at: created_at,
       id: id,
@@ -175,17 +221,21 @@ class Message < ApplicationRecord
       message_type: message_type,
       private: private,
       sender: sender.try(:webhook_data),
-      source_id: source_id
+      source_id: source_id,
+      metadata: metadata
     }
     data[:attachments] = attachments.map(&:push_event_data) if attachments.present?
     data
   end
 
-  def content
-    # move this to a presenter
-    return self[:content] if !input_csat? || inbox.web_widget?
+  # Method to get content with survey URL for outgoing channel delivery
+  def outgoing_content
+    MessageContentPresenter.new(self).outgoing_content
+  end
 
-    I18n.t('conversations.survey.response', link: "#{ENV.fetch('FRONTEND_URL', nil)}/survey/responses/#{conversation.uuid}")
+  # Raw content with survey URL (no markdown rendering) for webhook consumers
+  def webhook_content
+    MessageContentPresenter.new(self).webhook_content
   end
 
   def email_notifiable_message?
@@ -196,11 +246,17 @@ class Message < ApplicationRecord
     true
   end
 
+  def auto_reply_email?
+    return false unless incoming_email? || inbox.email?
+
+    content_attributes.dig(:email, :auto_reply) == true
+  end
+
   def valid_first_reply?
-    return false unless outgoing? && human_response? && !private?
+    return false unless human_response? && !private?
     return false if conversation.first_reply_created_at.present?
     return false if conversation.messages.outgoing
-                                .where.not(sender_type: 'AgentBot')
+                                .where.not(sender_type: ['AgentBot', 'Captain::Assistant'])
                                 .where.not(private: true)
                                 .where("(additional_attributes->'campaign_id') is null").count > 1
 
@@ -208,17 +264,71 @@ class Message < ApplicationRecord
   end
 
   def save_story_info(story_info)
-    self.content_attributes = content_attributes.merge(
-      {
-        story_id: story_info['id'],
-        story_sender: inbox.channel.instagram_id,
-        story_url: story_info['url']
-      }
-    )
+    attributes_to_merge = {
+      story_id: story_info['id'],
+      story_sender: story_info['story_sender'] || inbox.channel.instagram_id,
+      story_url: story_info['url'],
+      image_type: 'story_mention'
+    }.compact
+
+    self.content_attributes = content_attributes.merge(attributes_to_merge)
     save!
   end
 
+  def send_update_event
+    Rails.configuration.dispatcher.dispatch(MESSAGE_UPDATED, Time.zone.now, message: self, performed_by: Current.executed_by,
+                                                                            previous_changes: previous_changes)
+  end
+
+  def should_index?
+    return false unless ChatwootApp.advanced_search_allowed?
+    return false unless incoming? || outgoing?
+    # For Chatwoot Cloud:
+    #   - Enable indexing only if the account is paid.
+    #   - The `advanced_search_indexing` feature flag is used only in the cloud.
+    #
+    # For Self-hosted:
+    #   - Adding an extra feature flag here would cause confusion.
+    #   - If the user has configured Elasticsearch, enabling `advanced_search`
+    #     should automatically work without any additional flags.
+    return false if ChatwootApp.chatwoot_cloud? && !account.feature_enabled?('advanced_search_indexing')
+
+    true
+  end
+
+  def search_data
+    Messages::SearchDataPresenter.new(self).search_data
+  end
+
+  # Returns message content suitable for LLM consumption
+  # Falls back to audio transcription or attachment placeholder when content is nil
+  def content_for_llm
+    return content if content.present?
+
+    audio_transcription = attachments
+                          .where(file_type: :audio)
+                          .filter_map { |att| att.meta&.dig('transcribed_text') }
+                          .join(' ')
+                          .presence
+    return "[Voice Message] #{audio_transcription}" if audio_transcription.present?
+
+    '[Attachment]' if attachments.any?
+  end
+
   private
+
+  def metadata_must_be_array_of_objects
+    return if metadata.blank?
+
+    is_valid_object = metadata.is_a?(Hash)
+    is_valid_array = metadata.is_a?(Array) && metadata.all? { |m| m.is_a?(Hash) }
+
+    errors.add(:metadata, 'must be a JSON object or array of JSON objects') unless is_valid_object || is_valid_array
+  end
+
+  def deferred_spam_reply?
+    additional_attributes&.dig('deferred_spam_reply') == true || additional_attributes&.dig('deferred_spam_reply') == 'true'
+  end
 
   def prevent_message_flooding
     # Added this to cover the validation specs in messages
@@ -230,6 +340,13 @@ class Message < ApplicationRecord
       Rails.logger.error "Too many message: Account Id - #{account_id} : Conversation id - #{conversation_id}"
       errors.add(:base, 'Too many messages')
     end
+  end
+
+  def prevent_blocked_conversation_message
+    return if conversation.blank?
+    return unless incoming?
+
+    errors.add(:base, 'Conversation is blocked') if conversation.is_blacklisted?
   end
 
   def ensure_processed_message_content
@@ -259,8 +376,9 @@ class Message < ApplicationRecord
   def execute_after_create_commit_callbacks
     # rails issue with order of active record callbacks being executed https://github.com/rails/rails/issues/20911
     reopen_conversation
-    notify_via_mail
+    mark_pending_conversation_as_open_for_human_response
     set_conversation_activity
+    track_handoff_attendance
     dispatch_create_events
     send_reply
     execute_message_template_hooks
@@ -272,26 +390,58 @@ class Message < ApplicationRecord
   end
 
   def update_waiting_since
-    if human_response? && !private && conversation.waiting_since.present?
+    clear_waiting_since_on_outgoing_response if conversation.waiting_since.present? && !private
+    set_waiting_since_on_incoming_message
+  end
+
+  def clear_waiting_since_on_outgoing_response
+    if human_response?
       Rails.configuration.dispatcher.dispatch(
         REPLY_CREATED, Time.zone.now, waiting_since: conversation.waiting_since, message: self
       )
       conversation.update(waiting_since: nil)
+      return
     end
+
+    # Bot responses also clear waiting_since (simpler than checking on next customer message)
+    conversation.update(waiting_since: nil) if bot_response? && !preserve_waiting_since
+  end
+
+  def set_waiting_since_on_incoming_message
+    # Set waiting_since when customer sends a message (if currently blank)
     conversation.update(waiting_since: created_at) if incoming? && conversation.waiting_since.blank?
+  end
+
+  def track_handoff_attendance
+    return unless human_response?
+    return unless conversation.last_handoff_at.present?
+    return if conversation.handoff_attended_at.present?
+
+    conversation.update_columns(
+      handoff_attended_at: created_at,
+      handoff_attended_by_id: sender_id
+    )
   end
 
   def human_response?
     # if the sender is not a user, it's not a human response
     # if automation rule id is present, it's not a human response
     # if campaign id is present, it's not a human response
+    # external echo messages are responses sent from the native app (WhatsApp Business, Instagram)
     outgoing? &&
       content_attributes['automation_rule_id'].blank? &&
       additional_attributes['campaign_id'].blank? &&
-      sender.is_a?(User)
+      (sender.is_a?(User) || content_attributes['external_echo'].present?)
+  end
+
+  def bot_response?
+    # Check if this is a response from AgentBot or Captain::Assistant
+    outgoing? && sender_type.in?(['AgentBot', 'Captain::Assistant'])
   end
 
   def dispatch_create_events
+    return if deferred_spam_reply?
+
     Rails.configuration.dispatcher.dispatch(MESSAGE_CREATED, Time.zone.now, message: self, performed_by: Current.executed_by)
 
     if valid_first_reply?
@@ -307,14 +457,34 @@ class Message < ApplicationRecord
     # we want to skip the update event if the message is not updated
     return if previous_changes.blank?
 
-    Rails.configuration.dispatcher.dispatch(MESSAGE_UPDATED, Time.zone.now, message: self, performed_by: Current.executed_by,
-                                                                            previous_changes: previous_changes)
+    send_update_event
   end
 
   def send_reply
-    # FIXME: Giving it few seconds for the attachment to be uploaded to the service
-    # active storage attaches the file only after commit
-    attachments.blank? ? ::SendReplyJob.perform_later(id) : ::SendReplyJob.set(wait: 2.seconds).perform_later(id)
+    return if private?
+
+    instagram_dm = inbox.channel_type == 'Channel::Instagram' && conversation.additional_attributes['type'] != 'instagram_comments'
+    facebook_dm  = inbox.channel_type == 'Channel::FacebookPage' && !%w[facebook_comments
+                                                                        feed_comments].include?(conversation.additional_attributes['type'].to_s)
+
+    if (instagram_dm || facebook_dm) && additional_attributes['delivery_status'] != 'sent' && message_type == 'outgoing'
+      mark_pending!
+
+      first_pending_id = conversation.messages
+                                     .where("additional_attributes ->> 'delivery_status' = ?", 'pending')
+                                     .where(message_type: 'outgoing')
+                                     .first.id
+
+      if first_pending_id == id
+        if attachments.blank?
+          ::SendReplyJob.perform_later(id)
+        else
+          ::SendReplyJob.set(wait: 2.seconds).perform_later(id)
+        end
+      end
+    else
+      attachments.blank? ? ::SendReplyJob.perform_later(id) : ::SendReplyJob.set(wait: 2.seconds).perform_later(id)
+    end
   end
 
   def reopen_conversation
@@ -324,6 +494,18 @@ class Message < ApplicationRecord
     conversation.open! if conversation.snoozed?
 
     reopen_resolved_conversation if conversation.resolved?
+  end
+
+  def mark_pending_conversation_as_open_for_human_response
+    return unless captain_pending_conversation?
+    return unless human_response?
+    return if private?
+
+    conversation.open!
+  end
+
+  def captain_pending_conversation?
+    false
   end
 
   def reopen_resolved_conversation
@@ -346,57 +528,87 @@ class Message < ApplicationRecord
     ::MessageTemplates::HookExecutionService.new(message: self).perform
   end
 
-  def email_notifiable_webwidget?
-    inbox.web_widget? && inbox.channel.continuity_via_email
-  end
-
-  def email_notifiable_api_channel?
-    inbox.api? && inbox.account.feature_enabled?('email_continuity_on_api_channel')
-  end
-
-  def email_notifiable_channel?
-    email_notifiable_webwidget? || %w[Email].include?(inbox.inbox_type) || email_notifiable_api_channel?
-  end
-
-  def can_notify_via_mail?
-    return unless email_notifiable_message?
-    return unless email_notifiable_channel?
-    return if conversation.contact.email.blank?
-
-    true
-  end
-
-  def notify_via_mail
-    return unless can_notify_via_mail?
-
-    trigger_notify_via_mail
-  end
-
-  def trigger_notify_via_mail
-    return EmailReplyWorker.perform_in(1.second, id) if inbox.inbox_type == 'Email'
-
-    # will set a redis key for the conversation so that we don't need to send email for every new message
-    # last few messages coupled together is sent every 2 minutes rather than one email for each message
-    # if redis key exists there is an unprocessed job that will take care of delivering the email
-    return if Redis::Alfred.get(conversation_mail_key).present?
-
-    Redis::Alfred.setex(conversation_mail_key, id)
-    ConversationReplyEmailWorker.perform_in(2.minutes, conversation.id, id)
-  end
-
-  def conversation_mail_key
-    format(::Redis::Alfred::CONVERSATION_MAILER_KEY, conversation_id: conversation.id)
-  end
-
   def validate_attachments_limit(_attachment)
     errors.add(:attachments, message: 'exceeded maximum allowed') if attachments.size >= NUMBER_OF_PERMITTED_ATTACHMENTS
   end
 
   def set_conversation_activity
     # rubocop:disable Rails/SkipsModelValidations
-    conversation.update_columns(last_activity_at: created_at)
+    conversation.update_columns(last_activity_at: created_at, updated_at: Time.current)
     # rubocop:enable Rails/SkipsModelValidations
+  end
+
+  def is_outgoing?
+    (outgoing? && !private?)
+  end
+
+  def schedule_follow_up_job
+    return if content_attributes['follow_up']
+
+    conversation.save! if conversation.changed?
+    conversation.with_lock do
+      conversation.reload
+      if conversation.additional_attributes&.dig('skip_follow_up_on_unspam') == true
+        updated_additional_attributes = (conversation.additional_attributes || {}).merge(
+          'skip_follow_up_on_unspam' => false
+        )
+        conversation.update!(additional_attributes: updated_additional_attributes)
+        return
+      end
+      return if additional_attributes&.dig('skip_follow_up') == true
+
+      last_incoming_message = conversation.messages
+                                          .incoming
+                                          .not_activity
+                                          .not_template
+                                          .reorder(created_at: :desc)
+                                          .first
+      return if last_incoming_message&.instagram_story_mention?
+
+      conversation.cancel_existing_follow_up_job
+
+      return if sender.is_a?(User) || sender.nil?
+
+      return if conversation.stop_follow_up || conversation.assignee_id.present?
+
+      message_type = conversation.additional_attributes['type']
+      return if message_type == 'feed_comments' || message_type == 'instagram_comments'
+
+      return if last_incoming_message.nil?
+
+      base_time = last_incoming_message.created_at
+
+      follow_up_1_hours = (InstallationConfig.find_by(name: 'FOLLOW_UP_FIRST_DELAY_HOURS')&.value || 1).to_i
+      follow_up_2_hours = (InstallationConfig.find_by(name: 'FOLLOW_UP_SECOND_DELAY_HOURS')&.value || 5).to_i
+      follow_up_3_hours = (InstallationConfig.find_by(name: 'FOLLOW_UP_THIRD_DELAY_HOURS')&.value || 22).to_i
+
+      follow_up_1_wait = [base_time + follow_up_1_hours.hours - Time.current, 0].max
+      jid = Conversations::FollowUpJob.set(wait: follow_up_1_wait)
+                                      .perform_later(conversation.id, 1).provider_job_id
+
+      updated_additional_attributes = (conversation.additional_attributes || {}).merge(
+        'follow_up_base_time' => base_time.to_i,
+        'follow_up_jids' => [jid].compact,
+        'follow_up_schedule_hours' => {
+          '1' => follow_up_1_hours,
+          '2' => follow_up_2_hours,
+          '3' => follow_up_3_hours
+        }
+      )
+      conversation.update!(follow_up_jid: jid, additional_attributes: updated_additional_attributes)
+    end
+  end
+
+  def cancel_follow_up_job
+    return if instagram_story_mention?
+
+    conversation.cancel_existing_follow_up_job
+  end
+
+  def reindex_for_search
+    reindex(mode: :async)
   end
 end
 
 Message.prepend_mod_with('Message')
+Message.include_mod_with('Concerns::Message')
