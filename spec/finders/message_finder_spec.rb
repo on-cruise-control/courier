@@ -25,7 +25,7 @@ describe MessageFinder do
 
       it 'filter conversations by status' do
         result = message_finder.perform
-        expect(result.count).to be 6
+        expect(result.count).to be 4
       end
     end
 
@@ -34,7 +34,7 @@ describe MessageFinder do
 
       it 'filter conversations by status' do
         result = message_finder.perform
-        expect(result.count).to be 4
+        expect(result.count).to be 2
       end
     end
 
@@ -44,7 +44,7 @@ describe MessageFinder do
 
       it 'filter conversations by status' do
         result = message_finder.perform
-        expect(result.count).to be 6
+        expect(result.count).to be 4
       end
     end
 
@@ -53,7 +53,7 @@ describe MessageFinder do
 
       it 'filter conversations by status' do
         result = message_finder.perform
-        expect(result.count).to be 5
+        expect(result.count).to be 3
         expect(result.first.id).to be conversation.messages.second.id
         expect(result.last.message_type).to eq 'outgoing'
       end
@@ -69,7 +69,7 @@ describe MessageFinder do
 
       it 'filter conversations by status' do
         result = message_finder.perform
-        expect(result.count).to be 5
+        expect(result.count).to be 3
         expect(result.last.id).to be conversation.messages[-2].id
       end
     end

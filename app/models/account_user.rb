@@ -2,32 +2,39 @@
 #
 # Table name: account_users
 #
-#  id             :bigint           not null, primary key
-#  active_at      :datetime
-#  auto_offline   :boolean          default(TRUE), not null
-#  availability   :integer          default("online"), not null
-#  role           :integer          default("agent")
-#  created_at     :datetime         not null
-#  updated_at     :datetime         not null
-#  account_id     :bigint
-#  custom_role_id :bigint
-#  inviter_id     :bigint
-#  user_id        :bigint
+#  id                       :bigint           not null, primary key
+#  active_at                :datetime
+#  auto_offline             :boolean          default(TRUE), not null
+#  availability             :integer          default("online"), not null
+#  role                     :integer          default("agent")
+#  created_at               :datetime         not null
+#  updated_at               :datetime         not null
+#  account_id               :bigint
+#  agent_capacity_policy_id :bigint
+#  custom_role_id           :bigint
+#  inviter_id               :bigint
+#  user_id                  :bigint
 #
 # Indexes
 #
-#  index_account_users_on_account_id      (account_id)
-#  index_account_users_on_custom_role_id  (custom_role_id)
-#  index_account_users_on_user_id         (user_id)
-#  uniq_user_id_per_account_id            (account_id,user_id) UNIQUE
+#  index_account_users_on_account_id                (account_id)
+#  index_account_users_on_agent_capacity_policy_id  (agent_capacity_policy_id)
+#  index_account_users_on_custom_role_id            (custom_role_id)
+#  index_account_users_on_user_id                   (user_id)
+#  uniq_user_id_per_account_id                      (account_id,user_id) UNIQUE
 #
 
 class AccountUser < ApplicationRecord
+  SESSION_ACTIVE_TIMEOUT = 2.minutes
+
   include AvailabilityStatusable
 
   belongs_to :account
   belongs_to :user
   belongs_to :inviter, class_name: 'User', optional: true
+  has_many :user_daily_sessions, lambda { |account_user|
+    where(account_id: account_user.account_id)
+  }, class_name: 'UserDailySession', foreign_key: :user_id, primary_key: :user_id, dependent: :destroy_async
 
   enum role: { agent: 0, administrator: 1 }
   enum availability: { online: 0, offline: 1, busy: 2 }
@@ -37,6 +44,7 @@ class AccountUser < ApplicationRecord
   after_create_commit :notify_creation, :create_notification_setting
   after_destroy :notify_deletion, :remove_user_from_account
   after_save :update_presence_in_redis, if: :saved_change_to_availability?
+  after_commit :notify_unread_filter_counts_changed, on: [:update, :destroy], if: :unread_filter_access_changed?
 
   validates :user_id, uniqueness: { scope: :account_id }
 
@@ -64,6 +72,23 @@ class AccountUser < ApplicationRecord
     }
   end
 
+  def record_session_activity!(timestamp = Time.current)
+    UserDailySessions::RecordActivityService.new(account_user: self, timestamp: timestamp).perform
+  end
+
+  def end_session!(timestamp = Time.current)
+    UserDailySessions::FinalizeService.new(account_user: self, timestamp: timestamp, end_timestamp: timestamp).perform
+    update!(active_at: timestamp.in_time_zone)
+  end
+
+  def expire_stale_session!(timestamp = Time.current)
+    UserDailySessions::FinalizeService.new(account_user: self, timestamp: timestamp).perform
+  end
+
+  def session_active?(timestamp = Time.current)
+    active_at.present? && active_at >= timestamp - SESSION_ACTIVE_TIMEOUT
+  end
+
   private
 
   def notify_creation
@@ -76,6 +101,14 @@ class AccountUser < ApplicationRecord
 
   def update_presence_in_redis
     OnlineStatusTracker.set_status(account.id, user.id, availability)
+  end
+
+  def unread_filter_access_changed?
+    destroyed? || previous_changes.key?('role') || previous_changes.key?('custom_role_id')
+  end
+
+  def notify_unread_filter_counts_changed
+    ::Conversations::UnreadCounts::UserFilterNotifier.new(account: account, user: user).perform
   end
 end
 

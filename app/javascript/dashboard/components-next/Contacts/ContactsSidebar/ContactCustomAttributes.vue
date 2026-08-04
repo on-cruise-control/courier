@@ -19,10 +19,10 @@ const { uiSettings } = useUISettings();
 
 const searchQuery = ref('');
 
-const contactAttributes = useMapGetter('attributes/getContactAttributes') || [];
+const contactAttributes = useMapGetter('attributes/getContactAttributes');
 
 const hasContactAttributes = computed(
-  () => contactAttributes.value?.length > 0
+  () => contactAttributes.value && contactAttributes.value.length > 0
 );
 
 const processContactAttributes = (
@@ -30,18 +30,20 @@ const processContactAttributes = (
   customAttributes,
   filterCondition
 ) => {
-  if (!attributes.length || !customAttributes) {
+  if (!attributes || !attributes.length) {
     return [];
   }
 
+  const safeCustomAttributes = customAttributes || {};
+
   return attributes.reduce((result, attribute) => {
     const { attributeKey } = attribute;
-    const meetsCondition = filterCondition(attributeKey, customAttributes);
+    const meetsCondition = filterCondition(attributeKey, safeCustomAttributes);
 
     if (meetsCondition) {
       result.push({
         ...attribute,
-        value: customAttributes[attributeKey] ?? '',
+        value: safeCustomAttributes[attributeKey] ?? '',
       });
     }
 
@@ -75,9 +77,12 @@ const sortByUISettings = attributes => {
 };
 
 const usedAttributes = computed(() => {
+  if (!contactAttributes.value || !Array.isArray(contactAttributes.value)) {
+    return [];
+  }
   const attributes = processContactAttributes(
     contactAttributes.value,
-    props.selectedContact?.customAttributes,
+    props.selectedContact?.customAttributes || {},
     (key, custom) => key in custom
   );
 
@@ -85,17 +90,18 @@ const usedAttributes = computed(() => {
 });
 
 const unusedAttributes = computed(() => {
-  const attributes = processContactAttributes(
+  if (!contactAttributes.value || !Array.isArray(contactAttributes.value)) {
+    return [];
+  }
+  return processContactAttributes(
     contactAttributes.value,
-    props.selectedContact?.customAttributes,
+    props.selectedContact?.customAttributes || {},
     (key, custom) => !(key in custom)
   );
-
-  return sortByUISettings(attributes);
 });
 
 const filteredUnusedAttributes = computed(() => {
-  return unusedAttributes.value?.filter(attribute =>
+  return unusedAttributes.value.filter(attribute =>
     attribute.attributeDisplayName
       .toLowerCase()
       .includes(searchQuery.value.toLowerCase())
@@ -108,7 +114,7 @@ const hasNoUsedAttributes = computed(() => usedAttributes.value.length === 0);
 </script>
 
 <template>
-  <div v-if="hasContactAttributes" class="flex flex-col gap-6 px-6 py-6">
+  <div v-if="hasContactAttributes" class="flex flex-col gap-6 px-6">
     <div v-if="!hasNoUsedAttributes" class="flex flex-col gap-2">
       <ContactCustomAttributeItem
         v-for="attribute in usedAttributes"

@@ -2,15 +2,17 @@ import { frontendURL } from '../../../../helper/URLHelper';
 import { FEATURE_FLAGS } from 'dashboard/featureFlags';
 
 import ReportsWrapper from './components/ReportsWrapper.vue';
-import Index from './Index.vue';
+import Index from 'dashboard/custom/reports/CustomConversationReportsWrapper.vue';
 
 import AgentReportsIndex from './AgentReportsIndex.vue';
 import InboxReportsIndex from './InboxReportsIndex.vue';
 import TeamReportsIndex from './TeamReportsIndex.vue';
+import LabelReportsIndex from './LabelReportsIndex.vue';
 
 import AgentReportsShow from './AgentReportsShow.vue';
 import InboxReportsShow from './InboxReportsShow.vue';
 import TeamReportsShow from './TeamReportsShow.vue';
+import LabelReportsShow from './LabelReportsShow.vue';
 
 import AgentReports from './AgentReports.vue';
 import InboxReports from './InboxReports.vue';
@@ -21,6 +23,9 @@ import CsatResponses from './CsatResponses.vue';
 import BotReports from './BotReports.vue';
 import LiveReports from './LiveReports.vue';
 import SLAReports from './SLAReports.vue';
+import BookingsReports from 'dashboard/custom/reports/CustomBookingsReportsWrapper.vue';
+import HandoffReports from 'dashboard/custom/reports/CustomHandoffReportsWrapper.vue';
+import TwilioUsageReports from './TwilioUsage.vue';
 
 const meta = {
   featureFlag: FEATURE_FLAGS.REPORTS,
@@ -104,6 +109,22 @@ const revisedReportRoutes = [
     },
     component: TeamReportsShow,
   },
+  {
+    path: 'labels_overview',
+    name: 'label_reports_index',
+    meta: {
+      permissions: ['administrator', 'report_manage'],
+    },
+    component: LabelReportsIndex,
+  },
+  {
+    path: 'labels/:id',
+    name: 'label_reports_show',
+    meta: {
+      permissions: ['administrator', 'report_manage'],
+    },
+    component: LabelReportsShow,
+  },
 ];
 
 export default {
@@ -149,6 +170,24 @@ export default {
           name: 'bot_reports',
           meta,
           component: BotReports,
+        },
+        {
+          path: 'bookings',
+          name: 'bookings_reports',
+          meta,
+          component: BookingsReports,
+        },
+        {
+          path: 'handoff',
+          name: 'handoff_reports',
+          meta,
+          component: HandoffReports,
+        },
+        {
+          path: 'twilio',
+          name: 'twilio_reports',
+          meta,
+          component: TwilioUsageReports,
         },
       ],
     },

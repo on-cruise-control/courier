@@ -11,7 +11,7 @@ FactoryBot.define do
     trait :instagram_story_mention do
       content_attributes { { image_type: 'story_mention' } }
       after(:build) do |message|
-        unless message.inbox.instagram?
+        unless message.inbox&.instagram?
           message.inbox = create(:inbox, account: message.account,
                                          channel: create(:channel_instagram_fb_page, account: message.account, instagram_id: 'instagram-123'))
         end
@@ -24,6 +24,13 @@ FactoryBot.define do
       after(:build) do |message|
         attachment = message.attachments.new(account_id: message.account_id, file_type: :image)
         attachment.file.attach(io: Rails.root.join('spec/assets/avatar.png').open, filename: 'avatar.png', content_type: 'image/png')
+      end
+    end
+
+    trait :bot_message do
+      message_type { 'outgoing' }
+      after(:build) do |message|
+        message.sender = nil
       end
     end
 

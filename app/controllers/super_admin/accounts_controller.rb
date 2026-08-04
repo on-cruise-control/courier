@@ -35,8 +35,22 @@ class SuperAdmin::AccountsController < SuperAdmin::ApplicationController
   #
   def resource_params
     permitted_params = super
-    permitted_params[:limits] = permitted_params[:limits].to_h.compact
-    permitted_params[:selected_feature_flags] = params[:enabled_features].keys.map(&:to_sym) if params[:enabled_features].present?
+    if params[:account].present?
+      # Ensure status is permitted if present
+      account_params = params.require(:account).permit(:status)
+      permitted_params = permitted_params.merge(account_params) if account_params[:status].present?
+      
+      if params[:account][:limits].present?
+        permitted_params[:limits] = params[:account][:limits].to_unsafe_h.compact
+      end
+    end
+    if params[:enabled_features].present?
+      all_flags = params[:enabled_features].keys.map(&:to_sym)
+      column_1_values = Featurable::FEATURES_COLUMN_1.values.to_set
+      column_2_values = Featurable::FEATURES_COLUMN_2.values.to_set
+      permitted_params[:selected_feature_flags] = all_flags.select { |f| column_1_values.include?(f) }
+      permitted_params[:selected_feature_flags_2] = all_flags.select { |f| column_2_values.include?(f) }
+    end
     permitted_params
   end
 
@@ -57,6 +71,21 @@ class SuperAdmin::AccountsController < SuperAdmin::ApplicationController
     # rubocop:enable Rails/I18nLocaleTexts
   end
 
+  # Override update to handle redirects for partial updates from index
+  def update
+    if requested_resource.update(resource_params)
+      Dealership::ActivationService.new(requested_resource).perform(active: requested_resource.active?) if requested_resource.saved_change_to_status?
+
+      # rubocop:disable Rails/I18nLocaleTexts
+      redirect_back(fallback_location: [namespace, requested_resource], notice: "#{requested_resource.class.name} was successfully updated.")
+      # rubocop:enable Rails/I18nLocaleTexts
+    else
+      render :edit, locals: {
+        page: Administrate::Page::Form.new(dashboard, requested_resource)
+      }, status: :unprocessable_entity
+    end
+  end
+
   def destroy
     account = Account.find(params[:id])
 
@@ -65,4 +94,17 @@ class SuperAdmin::AccountsController < SuperAdmin::ApplicationController
     redirect_back(fallback_location: [namespace, requested_resource], notice: 'Account deletion is in progress.')
     # rubocop:enable Rails/I18nLocaleTexts
   end
+
+  def suspend
+    requested_resource.suspended!
+    Dealership::ActivationService.new(requested_resource).perform(active: false)
+    # Disconnect all bots from all inboxes when account is disabled
+    requested_resource.agent_bot_inboxes.destroy_all
+    ActionCable.server.broadcast("account_#{requested_resource.id}", { event: 'page:reload', data: {} })
+    # rubocop:disable Rails/I18nLocaleTexts
+    redirect_back(fallback_location: [namespace, requested_resource], notice: 'Account disabled')
+    # rubocop:enable Rails/I18nLocaleTexts
+  end
 end
+
+SuperAdmin::AccountsController.prepend_mod_with('SuperAdmin::AccountsController')

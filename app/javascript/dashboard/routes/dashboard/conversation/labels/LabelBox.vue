@@ -4,12 +4,16 @@ import { mapGetters } from 'vuex';
 import { useAdmin } from 'dashboard/composables/useAdmin';
 import { useConversationLabels } from 'dashboard/composables/useConversationLabels';
 import { useKeyboardEvents } from 'dashboard/composables/useKeyboardEvents';
+import ConfirmLabelAddDialog from './ConfirmLabelAddDialog.vue';
+import ConfirmLabelDeleteDialog from './ConfirmLabelDeleteDialog.vue';
 import Spinner from 'shared/components/Spinner.vue';
 import LabelDropdown from 'shared/components/ui/label/LabelDropdown.vue';
 import AddLabel from 'shared/components/ui/dropdown/AddLabel.vue';
 
 export default {
   components: {
+    ConfirmLabelAddDialog,
+    ConfirmLabelDeleteDialog,
     Spinner,
     LabelDropdown,
     AddLabel,
@@ -22,10 +26,15 @@ export default {
       activeLabels,
       accountLabels,
       addLabelToConversation,
-      removeLabelFromConversation,
     } = useConversationLabels();
 
+    const CONFIRM_REQUIRED_LABELS = ['escalation', 'handoff'];
+
     const showSearchDropdownLabel = ref(false);
+    const confirmAddLabelDialogRef = ref(null);
+    const confirmDeleteLabelDialogRef = ref(null);
+    const labelPendingAddition = ref({});
+    const labelPendingDeletion = ref('');
 
     const toggleLabels = () => {
       showSearchDropdownLabel.value = !showSearchDropdownLabel.value;
@@ -33,6 +42,20 @@ export default {
 
     const closeDropdownLabel = () => {
       showSearchDropdownLabel.value = false;
+    };
+
+    const openConfirmDeleteLabelDialog = label => {
+      labelPendingDeletion.value = label;
+      confirmDeleteLabelDialogRef.value?.dialogRef.open();
+    };
+
+    const openConfirmAddLabelDialog = label => {
+      if (CONFIRM_REQUIRED_LABELS.includes(label.title)) {
+        labelPendingAddition.value = label;
+        confirmAddLabelDialogRef.value?.dialogRef.open();
+      } else {
+        addLabelToConversation(label);
+      }
     };
 
     const keyboardEvents = {
@@ -58,10 +81,15 @@ export default {
       activeLabels,
       accountLabels,
       addLabelToConversation,
-      removeLabelFromConversation,
+      confirmAddLabelDialogRef,
+      confirmDeleteLabelDialogRef,
+      labelPendingAddition,
+      labelPendingDeletion,
       showSearchDropdownLabel,
       closeDropdownLabel,
       toggleLabels,
+      openConfirmAddLabelDialog,
+      openConfirmDeleteLabelDialog,
     };
   },
   data() {
@@ -99,27 +127,36 @@ export default {
           :color="label.color"
           variant="smooth"
           class="max-w-[calc(100%-0.5rem)]"
-          @remove="removeLabelFromConversation"
+          @remove="openConfirmDeleteLabelDialog"
         />
 
-        <div class="dropdown-wrap">
-          <div
-            :class="{ 'dropdown-pane--open': showSearchDropdownLabel }"
-            class="dropdown-pane"
-          >
-            <LabelDropdown
-              v-if="showSearchDropdownLabel"
-              :account-labels="accountLabels"
-              :selected-labels="savedLabels"
-              :allow-creation="isAdmin"
-              @add="addLabelToConversation"
-              @remove="removeLabelFromConversation"
-            />
-          </div>
+        <div
+          :class="{
+            'block visible': showSearchDropdownLabel,
+            'hidden invisible': !showSearchDropdownLabel,
+          }"
+          class="border rounded-lg bg-n-alpha-3 top-6 backdrop-blur-[100px] absolute w-full shadow-lg border-n-strong dark:border-n-strong p-2 box-border z-[9999]"
+        >
+          <LabelDropdown
+            v-if="showSearchDropdownLabel"
+            :account-labels="accountLabels"
+            :selected-labels="savedLabels"
+            :allow-creation="isAdmin"
+            @add="addLabelToConversation"
+            @remove="removeLabelFromConversation"
+          />
         </div>
       </div>
     </div>
     <Spinner v-else />
+    <ConfirmLabelAddDialog
+      ref="confirmAddLabelDialogRef"
+      :label="labelPendingAddition"
+    />
+    <ConfirmLabelDeleteDialog
+      ref="confirmDeleteLabelDialogRef"
+      :label-title="labelPendingDeletion"
+    />
   </div>
 </template>
 
@@ -131,28 +168,8 @@ export default {
   width: 100%;
 
   .label-wrap {
-    line-height: var(--space-medium);
+    line-height: 1.5rem;
     position: relative;
-
-    .dropdown-wrap {
-      display: flex;
-      left: -1px;
-      margin-right: var(--space-medium);
-      position: absolute;
-      top: var(--space-medium);
-      width: 100%;
-
-      .dropdown-pane {
-        width: 100%;
-        box-sizing: border-box;
-      }
-    }
   }
-}
-
-.error {
-  color: var(--r-500);
-  font-size: var(--font-size-mini);
-  font-weight: var(--font-weight-medium);
 }
 </style>

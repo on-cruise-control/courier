@@ -47,11 +47,15 @@ module Filters::FilterHelper
 
   def handle_additional_attributes(query_hash, filter_operator_value, data_type)
     if data_type == 'text_case_insensitive'
-      "LOWER(#{filter_config[:table_name]}.additional_attributes ->> '#{query_hash[:attribute_key]}') " \
-        "#{filter_operator_value} #{query_hash[:query_operator]}"
+      ActiveRecord::Base.sanitize_sql_array(
+        ["LOWER(#{filter_config[:table_name]}.additional_attributes ->> ?) #{filter_operator_value} #{query_hash[:query_operator]}",
+         query_hash[:attribute_key]]
+      )
     else
-      "#{filter_config[:table_name]}.additional_attributes ->> '#{query_hash[:attribute_key]}' " \
-        "#{filter_operator_value} #{query_hash[:query_operator]} "
+      ActiveRecord::Base.sanitize_sql_array(
+        ["#{filter_config[:table_name]}.additional_attributes ->> ? #{filter_operator_value} #{query_hash[:query_operator]} ",
+         query_hash[:attribute_key]]
+      )
     end
   end
 
@@ -70,7 +74,7 @@ module Filters::FilterHelper
 
   def date_filter(current_filter, query_hash, filter_operator_value)
     "(#{filter_config[:table_name]}.#{query_hash[:attribute_key]})::#{current_filter['data_type']} " \
-      "#{filter_operator_value}#{current_filter['data_type']} #{query_hash[:query_operator]}"
+      "#{filter_operator_value} #{query_hash[:query_operator]}"
   end
 
   def text_case_insensitive_filter(query_hash, filter_operator_value)
@@ -92,8 +96,13 @@ module Filters::FilterHelper
 
   def conversation_status_values(values)
     return Conversation.statuses.values if values.include?('all')
-
-    values.map { |x| Conversation.statuses[x.to_sym] }
+  
+    values.map do |x|
+      id_value = x.is_a?(Hash) ? x['id'] : x
+      next if id_value.is_a?(Array)
+  
+      Conversation.statuses[id_value.to_sym]
+    end.compact
   end
 
   def conversation_priority_values(values)

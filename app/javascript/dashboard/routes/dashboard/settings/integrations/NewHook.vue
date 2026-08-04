@@ -4,6 +4,7 @@ import { mapGetters } from 'vuex';
 import { useAlert } from 'dashboard/composables';
 import { useIntegrationHook } from 'dashboard/composables/useIntegrationHook';
 import { FormKit } from '@formkit/vue';
+import { useBranding } from 'shared/composables/useBranding';
 
 import NextButton from 'dashboard/components-next/button/Button.vue';
 
@@ -23,8 +24,9 @@ export default {
     const { integration, isHookTypeInbox } = useIntegrationHook(
       props.integrationId
     );
+    const { replaceInstallationName } = useBranding();
 
-    return { integration, isHookTypeInbox };
+    return { integration, isHookTypeInbox, replaceInstallationName };
   },
   data() {
     return {
@@ -61,6 +63,13 @@ export default {
     isIntegrationDialogflow() {
       return this.integration.id === 'dialogflow';
     },
+    submitButtonLabel() {
+      if (this.integration.id === 'openai' && this.uiFlags.isCreatingHook) {
+        return this.$t('INTEGRATION_APPS.ADD.FORM.VALIDATING_OPENAI');
+      }
+
+      return this.$t('INTEGRATION_APPS.ADD.FORM.SUBMIT');
+    },
   },
   methods: {
     onClose() {
@@ -80,7 +89,7 @@ export default {
       }, {});
 
       this.formItems.forEach(item => {
-        if (item.validation.includes('JSON')) {
+        if (item.validation?.includes('JSON')) {
           hookPayload.settings[item.name] = JSON.parse(
             hookPayload.settings[item.name]
           );
@@ -117,7 +126,7 @@ export default {
   <div class="flex flex-col h-auto overflow-auto integration-hooks">
     <woot-modal-header
       :header-title="integration.name"
-      :header-content="integration.description"
+      :header-content="replaceInstallationName(integration.short_description)"
     />
     <FormKit
       v-model="values"
@@ -152,7 +161,7 @@ export default {
         />
         <NextButton
           type="submit"
-          :label="$t('INTEGRATION_APPS.ADD.FORM.SUBMIT')"
+          :label="submitButtonLabel"
           :is-loading="uiFlags.isCreatingHook"
         />
       </div>
@@ -169,13 +178,17 @@ export default {
   @apply hidden;
 }
 
+.formkit-form .formkit-help {
+  @apply text-n-slate-10 text-sm font-normal mt-2 w-full;
+}
+
 /* equivalent of .reset-base */
 .formkit-input {
   margin-bottom: 0px !important;
 }
 
 [data-invalid] .formkit-message {
-  @apply text-red-500 block text-xs font-normal my-1 w-full;
+  @apply text-n-ruby-9 block text-xs font-normal my-1 w-full;
 }
 
 .formkit-outer[data-type='checkbox'] .formkit-wrapper {
@@ -188,11 +201,5 @@ export default {
 
 .formkit-actions {
   @apply hidden;
-}
-
-@media (prefers-color-scheme: dark) {
-  .pre-chat-header-message .link {
-    @apply text-woot-500 underline;
-  }
 }
 </style>

@@ -8,7 +8,6 @@ ___
 The modern customer support platform, an open-source alternative to Intercom, Zendesk, Salesforce Service Cloud etc.
 
 <p>
-  <a href="https://codeclimate.com/github/chatwoot/chatwoot/maintainability"><img src="https://api.codeclimate.com/v1/badges/e6e3f66332c91e5a4c0c/maintainability" alt="Maintainability"></a>
   <img src="https://img.shields.io/circleci/build/github/chatwoot/chatwoot" alt="CircleCI Badge">
     <a href="https://hub.docker.com/r/chatwoot/chatwoot/"><img src="https://img.shields.io/docker/pulls/chatwoot/chatwoot" alt="Docker Pull Badge"></a>
   <a href="https://hub.docker.com/r/chatwoot/chatwoot/"><img src="https://img.shields.io/docker/cloud/build/chatwoot/chatwoot" alt="Docker Build Badge"></a>
@@ -92,7 +91,7 @@ Detailed documentation is available at [chatwoot.com/help-center](https://www.ch
 
 ## Translation process
 
-The translation process for Chatwoot web and mobile app is managed at [https://translate.chatwoot.com](https://translate.chatwoot.com) using Crowdin. Please read the [translation guide](https://www.chatwoot.com/docs/contributing/translating-chatwoot-to-your-language) for contributing to Chatwoot.
+The translation process for Cruise Control web and mobile app is managed at [https://getcruisecontrol.com](https://getcruisecontrol.com/) using Crowdin. Please read the [translation guide](https://getcruisecontrol.com//docs/contributing/translating-chatwoot-to-your-language) for contributing to Cruise Control.
 
 ## Branching model
 
@@ -137,4 +136,4 @@ Thanks goes to all these [wonderful people](https://www.chatwoot.com/docs/contri
 <a href="https://github.com/chatwoot/chatwoot/graphs/contributors"><img src="https://opencollective.com/chatwoot/contributors.svg?width=890&button=false" /></a>
 
 
-*Chatwoot* &copy; 2017-2025, Chatwoot Inc - Released under the MIT License.
+*Chatwoot* &copy; 2017-2026, Chatwoot Inc - Released under the MIT License.

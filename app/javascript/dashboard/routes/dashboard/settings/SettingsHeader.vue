@@ -1,21 +1,15 @@
 <script>
 import { useAdmin } from 'dashboard/composables/useAdmin';
 import BackButton from '../../../components/widgets/BackButton.vue';
+import NextButton from 'dashboard/components-next/button/Button.vue';
 
 export default {
   components: {
     BackButton,
+    NextButton,
   },
   props: {
     headerTitle: {
-      default: '',
-      type: String,
-    },
-    buttonRoute: {
-      default: '',
-      type: String,
-    },
-    buttonText: {
       default: '',
       type: String,
     },
@@ -24,7 +18,6 @@ export default {
       type: String,
     },
     showBackButton: { type: Boolean, default: false },
-    showNewButton: { type: Boolean, default: false },
     backUrl: {
       type: [String, Object],
       default: '',
@@ -32,10 +25,6 @@ export default {
     backButtonLabel: {
       type: String,
       default: '',
-    },
-    showSidemenuIcon: {
-      type: Boolean,
-      default: true,
     },
   },
   setup() {
@@ -54,31 +43,20 @@ export default {
 
 <template>
   <div
-    class="flex justify-between items-center h-20 min-h-[3.5rem] px-4 py-2 bg-n-background"
+    class="flex justify-between items-center h-20 min-h-[3.5rem] px-6 py-2 bg-n-surface-1"
   >
     <h1 class="flex items-center mb-0 text-2xl text-n-slate-12">
-      <woot-sidemenu-icon v-if="showSidemenuIcon" />
       <BackButton
         v-if="showBackButton"
         :button-label="backButtonLabel"
         :back-url="backUrl"
-        class="ml-2 mr-4"
+        class="ltr:mr-4 rtl:ml-4"
       />
 
       <slot />
-      <span class="text-xl font-medium text-slate-900 dark:text-slate-100">
+      <span class="text-xl font-medium text-n-slate-12">
         {{ headerTitle }}
       </span>
     </h1>
-    <router-link
-      v-if="showNewButton && isAdmin"
-      :to="buttonRoute"
-      class="button success button--fixed-top rounded-[5px] flex gap-2"
-    >
-      <fluent-icon icon="add-circle" />
-      <span class="button__content">
-        {{ buttonText }}
-      </span>
-    </router-link>
   </div>
 </template>

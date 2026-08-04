@@ -27,6 +27,7 @@ export const SDK_CSS = `
   height: 100% !important;
   width: 100% !important;
   max-height: 100vh !important;
+  overscroll-behavior: none;
 }
 
 .woot-widget-holder.has-unread-view {
@@ -38,6 +39,10 @@ export const SDK_CSS = `
   border: 0;
 }
 
+.woot-widget-bubble.woot-has-avatar {
+  background: transparent !important;
+}
+  
 .woot-widget-bubble {
   background: #1f93ff;
   border-radius: 100px;
@@ -51,6 +56,7 @@ export const SDK_CSS = `
   user-select: none;
   width: 64px;
   z-index: 2147483000 !important;
+  overflow: hidden;
 }
 
 .woot-widget-bubble.woot-widget-bubble--flat {
@@ -277,6 +283,27 @@ export const SDK_CSS = `
   }
 }
 
+@media only screen and (max-width: 667px) {
+  .woot-greeting-preview.woot-elements--right,
+  .woot-greeting-preview.woot-elements--left {
+    left: 8px !important;
+    right: 8px !important;
+    bottom: 240px;
+  }
+
+  .woot-greeting-input-box.woot-elements--right,
+  .woot-greeting-input-box.woot-elements--left {
+    left: 8px !important;
+    right: 8px !important;
+    bottom: 90px;
+  }
+
+  .woot-greeting-input-wrapper {
+    padding: 6px 8px;
+    margin: 8px;
+  }
+}
+
 @media only screen and (min-width: 667px) {
   .woot-widget-holder {
     border-radius: 16px;
@@ -291,4 +318,286 @@ export const SDK_CSS = `
 .woot-hidden {
   display: none !important;
 }
+
+.woot-greeting-preview {
+  position: fixed;
+  bottom: 250px;
+  z-index: 2147482999 !important;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.woot-greeting-preview.woot-elements--right {
+  right: 20px;
+}
+
+.woot-greeting-preview.woot-elements--left {
+  left: 20px;
+}
+
+.woot-greeting-preview.woot--hide {
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(20px);
+  pointer-events: none;
+}
+
+.woot-greeting-preview-box {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.08);
+  width: 390px;
+  max-width: calc(100vw - 16px);
+  box-sizing: border-box;
+  cursor: pointer;
+  border: 1px solid #e5e7eb;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  overflow: hidden;
+}
+
+.woot-greeting-preview-box:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.15), 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.woot-greeting-preview-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 16px 12px 16px;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.woot-greeting-preview-avatar-name {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.woot-greeting-preview-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  border: 2px solid #f3f4f6;
+}
+
+.woot-greeting-preview-avatar-default {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #1f93ff 0%, #1a7fd8 100%);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 600;
+  flex-shrink: 0;
+  border: 2px solid #f3f4f6;
+}
+
+.woot-greeting-preview-name-container {
+  display: flex;
+  flex-direction: column;
+}
+
+.woot-greeting-preview-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: #111827;
+  line-height: 1.3;
+}
+
+.woot-greeting-preview-dealer {
+  font-size: 13px;
+  color: #6b7280;
+  line-height: 1.3;
+  margin-top: 2px;
+}
+
+.woot-greeting-preview-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  color: #9ca3af;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s ease;
+}
+
+.woot-greeting-preview-close:hover {
+  color: #374151;
+}
+
+.woot-greeting-preview-close svg {
+  width: 20px;
+  height: 20px;
+}
+
+.woot-greeting-preview-message {
+  padding: 16px;
+  font-size: 15px;
+  color: #374151;
+  line-height: 1.6;
+  background: #f9fafb;
+}
+
+.woot-greeting-input-box {
+  position: fixed;
+  bottom: 100px;
+  z-index: 2147482998 !important;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  display: block;
+}
+
+.woot-greeting-input-box.woot-elements--right {
+  right: 20px;
+}
+
+.woot-greeting-input-box.woot-elements--left {
+  left: 20px;
+}
+
+.woot-greeting-input-box.woot--hide {
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(20px);
+  pointer-events: none;
+}
+
+.woot-greeting-input-box-container {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.08);
+  width: 390px;
+  max-width: calc(100vw - 16px);
+  box-sizing: border-box;
+  border: 1px solid #e5e7eb;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  overflow: hidden;
+}
+
+.woot-greeting-input-box-container:hover {
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.15), 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.woot-greeting-input-wrapper {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  gap: 8px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #ffffff;
+  margin: 12px;
+  box-shadow: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.woot-greeting-input-wrapper:focus-within {
+  border-color: #1f93ff;
+  box-shadow: 0 0 0 3px rgba(31, 147, 255, 0.1);
+}
+
+.woot-greeting-input-text-us {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.woot-greeting-input-text-us:hover {
+  opacity: 0.9;
+}
+
+.woot-greeting-input-text-us:active {
+  opacity: 0.8;
+}
+
+.woot-greeting-input-footer {
+  padding: 4px 2px 8px 2px;
+  text-align: center;
+}
+
+.woot-greeting-footer-text {
+  margin: 0;
+  font-size: 10px;
+  line-height: 1.4;
+  color: #6b7280;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+    'Helvetica Neue', Arial, sans-serif;
+}
+
+.woot-greeting-footer-text:first-child {
+  margin-bottom: 2px;
+}
+
+.woot-greeting-footer-link {
+  color: #6b7280;
+  text-decoration: underline;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.woot-greeting-footer-link:hover {
+  color: #374151;
+}
+
+.woot-greeting-input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  font-size: 15px;
+  color: #111827;
+  padding: 0 14px;
+  height: 40px;
+  line-height: normal;
+  background: transparent;
+  border-radius: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+    'Helvetica Neue', Arial, sans-serif;
+  transition: none;
+  box-sizing: border-box;
+  margin: 0 !important;
+}
+
+.woot-greeting-input::placeholder {
+  color: #9ca3af;
+}
+
+.woot-greeting-input:focus {
+  outline: none;
+}
+
+
+.woot-greeting-input-send {
+  min-height: 32px;
+  min-width: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: opacity 0.2s ease;
+  margin: 0;
+  padding: 0;
+}
+
+.woot-greeting-input-send:hover {
+  opacity: 0.8;
+}
+
+.woot-greeting-input-send:active {
+  opacity: 0.6;
+}
+
+.woot-greeting-input-send svg {
+  width: 20px;
+  height: 20px;
+}
+
 `;

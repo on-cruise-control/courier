@@ -7,8 +7,13 @@ export const findPendingMessageIndex = (chat, message) => {
   );
 };
 
-export const filterByStatus = (chatStatus, filterStatus) =>
-  filterStatus === 'all' ? true : chatStatus === filterStatus;
+export const filterByStatus = (chatStatus, filterStatus) => {
+  if (filterStatus === 'all') return true;
+  if (Array.isArray(filterStatus)) {
+    return filterStatus.includes(chatStatus);
+  }
+  return chatStatus === filterStatus;
+};
 
 export const filterByInbox = (shouldFilter, inboxId, chatInboxId) => {
   const isOnInbox = Number(inboxId) === chatInboxId;
@@ -35,6 +40,24 @@ export const filterByUnattended = (
     : shouldFilter;
 };
 
+export const filterBySpam = (shouldFilter, conversationType, isSpam) => {
+  if (conversationType === 'spam') {
+    return !!isSpam && shouldFilter;
+  }
+  return !isSpam && shouldFilter;
+};
+
+export const filterByBlacklist = (
+  shouldFilter,
+  conversationType,
+  isBlacklisted
+) => {
+  if (conversationType === 'blacklist') {
+    return !!isBlacklisted && shouldFilter;
+  }
+  return !isBlacklisted && shouldFilter;
+};
+
 export const applyPageFilters = (conversation, filters) => {
   const { inboxId, status, labels = [], teamId, conversationType } = filters;
   const {
@@ -44,11 +67,14 @@ export const applyPageFilters = (conversation, filters) => {
     meta = {},
     first_reply_created_at: firstReplyOn,
     waiting_since: waitingSince,
+    is_spam: isSpam,
+    is_blacklisted: isBlacklisted,
   } = conversation;
   const team = meta.team || {};
   const { id: chatTeamId } = team;
 
-  let shouldFilter = filterByStatus(chatStatus, status);
+  let shouldFilter =
+    conversationType === 'comments' ? true : filterByStatus(chatStatus, status);
   shouldFilter = filterByInbox(shouldFilter, inboxId, chatInboxId);
   shouldFilter = filterByTeam(shouldFilter, teamId, chatTeamId);
   shouldFilter = filterByLabel(shouldFilter, labels, chatLabels);
@@ -58,8 +84,59 @@ export const applyPageFilters = (conversation, filters) => {
     firstReplyOn,
     waitingSince
   );
+  shouldFilter = filterBySpam(shouldFilter, conversationType, isSpam);
+  shouldFilter = filterByBlacklist(
+    shouldFilter,
+    conversationType,
+    isBlacklisted
+  );
 
   return shouldFilter;
+};
+
+/**
+ * Filters conversations based on user role and permissions
+ *
+ * @param {Object} conversation - The conversation object to check permissions for
+ * @param {string} role - The user's role (administrator, agent, etc.)
+ * @param {Array<string>} permissions - List of permission strings the user has
+ * @param {number|string} currentUserId - The ID of the current user
+ * @returns {boolean} - Whether the user has permissions to access this conversation
+ */
+export const applyRoleFilter = (
+  conversation,
+  role,
+  permissions,
+  currentUserId
+) => {
+  // the role === "agent" check is typically not correct on it's own
+  // the backend handles this by checking the custom_role_id at the user model
+  // here however, the `getUserRole` returns "custom_role" if the id is present,
+  // so we can check the role === "agent" directly
+  if (['administrator', 'agent'].includes(role)) {
+    return true;
+  }
+
+  // Check for full conversation management permission
+  if (permissions.includes('conversation_manage')) {
+    return true;
+  }
+
+  const conversationAssignee = conversation.meta.assignee;
+  const isUnassigned = !conversationAssignee;
+  const isAssignedToUser = conversationAssignee?.id === currentUserId;
+
+  // Check unassigned management permission
+  if (permissions.includes('conversation_unassigned_manage')) {
+    return isUnassigned || isAssignedToUser;
+  }
+
+  // Check participating conversation management permission
+  if (permissions.includes('conversation_participating_manage')) {
+    return isAssignedToUser;
+  }
+
+  return false;
 };
 
 const SORT_OPTIONS = {
@@ -71,6 +148,7 @@ const SORT_OPTIONS = {
   priority_desc: ['sortOnPriority', 'desc'],
   waiting_since_asc: ['sortOnWaitingSince', 'asc'],
   waiting_since_desc: ['sortOnWaitingSince', 'desc'],
+  priority_desc_created_at_asc: ['sortOnPriorityCreatedAt', 'desc'],
 };
 const sortAscending = (valueA, valueB) => valueA - valueB;
 const sortDescending = (valueA, valueB) => valueB - valueA;
@@ -92,6 +170,14 @@ const sortConfig = {
     const p2 = CONVERSATION_PRIORITY_ORDER[b.priority] || DEFAULT_FOR_NULL;
 
     return getSortOrderFunction(sortDirection)(p1, p2);
+  },
+
+  sortOnPriorityCreatedAt: (a, b) => {
+    const DEFAULT_FOR_NULL = 0;
+    const p1 = CONVERSATION_PRIORITY_ORDER[a.priority] || DEFAULT_FOR_NULL;
+    const p2 = CONVERSATION_PRIORITY_ORDER[b.priority] || DEFAULT_FOR_NULL;
+    if (p1 !== p2) return p2 - p1;
+    return a.created_at - b.created_at;
   },
 
   sortOnWaitingSince: (a, b, sortDirection) => {

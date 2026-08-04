@@ -4,216 +4,109 @@ import { useAlert } from 'dashboard/composables';
 import { useToggle } from '@vueuse/core';
 import { useI18n } from 'vue-i18n';
 import { useStore, useStoreGetters } from 'dashboard/composables/store';
-import { useEmitter } from 'dashboard/composables/emitter';
-import { useKeyboardEvents } from 'dashboard/composables/useKeyboardEvents';
+import { useAgentsList } from 'dashboard/composables/useAgentsList';
 
-import WootDropdownItem from 'shared/components/ui/dropdown/DropdownItem.vue';
-import WootDropdownMenu from 'shared/components/ui/dropdown/DropdownMenu.vue';
-import wootConstants from 'dashboard/constants/globals';
-import {
-  CMD_REOPEN_CONVERSATION,
-  CMD_RESOLVE_CONVERSATION,
-} from 'dashboard/helper/commandbar/events';
+import MultiselectDropdownItems from 'shared/components/ui/MultiselectDropdownItems.vue';
 
+import ButtonGroup from 'dashboard/components-next/buttonGroup/ButtonGroup.vue';
 import Button from 'dashboard/components-next/button/Button.vue';
 
 const store = useStore();
 const getters = useStoreGetters();
 const { t } = useI18n();
 
-const arrowDownButtonRef = ref(null);
 const isLoading = ref(false);
 
-const [showActionsDropdown, toggleDropdown] = useToggle();
-const closeDropdown = () => toggleDropdown(false);
-const openDropdown = () => toggleDropdown(true);
+const [showAgentDropdown, toggleAgentDropdown] = useToggle();
+const closeAgentDropdown = () => toggleAgentDropdown(false);
+const openAgentDropdown = () => toggleAgentDropdown(true);
+
+const { agentsList } = useAgentsList();
 
 const currentChat = computed(() => getters.getSelectedChat.value);
 
-const isOpen = computed(
-  () => currentChat.value.status === wootConstants.STATUS_TYPE.OPEN
-);
-const isPending = computed(
-  () => currentChat.value.status === wootConstants.STATUS_TYPE.PENDING
-);
-const isResolved = computed(
-  () => currentChat.value.status === wootConstants.STATUS_TYPE.RESOLVED
-);
-const isSnoozed = computed(
-  () => currentChat.value.status === wootConstants.STATUS_TYPE.SNOOZED
-);
+const assignee = computed(() => currentChat.value?.meta?.assignee);
+const selectedAgent = computed(() => (assignee.value ? [assignee.value] : []));
 
-const showAdditionalActions = computed(
-  () => !isPending.value && !isSnoozed.value
-);
-
-const showOpenButton = computed(() => {
-  return isPending.value || isSnoozed.value;
-});
-
-const getConversationParams = () => {
-  const allConversations = document.querySelectorAll(
-    '.conversations-list .conversation'
-  );
-
-  const activeConversation = document.querySelector(
-    'div.conversations-list div.conversation.active'
-  );
-  const activeConversationIndex = [...allConversations].indexOf(
-    activeConversation
-  );
-  const lastConversationIndex = allConversations.length - 1;
-
-  return {
-    all: allConversations,
-    activeIndex: activeConversationIndex,
-    lastIndex: lastConversationIndex,
-  };
-};
-
-const openSnoozeModal = () => {
-  const ninja = document.querySelector('ninja-keys');
-  ninja.open({ parent: 'snooze_conversation' });
-};
-
-const toggleStatus = (status, snoozedUntil) => {
-  closeDropdown();
+const onUnassignAgent = async () => {
   isLoading.value = true;
-  store
-    .dispatch('toggleStatus', {
+  try {
+    await store.dispatch('assignAgent', {
       conversationId: currentChat.value.id,
-      status,
-      snoozedUntil,
-    })
-    .then(() => {
-      useAlert(t('CONVERSATION.CHANGE_STATUS'));
-      isLoading.value = false;
+      agentId: 0,
     });
+    useAlert(t('CONVERSATION.CHANGE_AGENT'));
+  } finally {
+    isLoading.value = false;
+  }
 };
 
-const onCmdOpenConversation = () => {
-  toggleStatus(wootConstants.STATUS_TYPE.OPEN);
+const onSelectAgent = async agent => {
+  closeAgentDropdown();
+  isLoading.value = true;
+  const agentId = agent ? agent.id : 0;
+
+  try {
+    await store.dispatch('assignAgent', {
+      conversationId: currentChat.value.id,
+      agentId,
+    });
+    useAlert(t('CONVERSATION.CHANGE_AGENT'));
+  } finally {
+    isLoading.value = false;
+  }
 };
-
-const onCmdResolveConversation = () => {
-  toggleStatus(wootConstants.STATUS_TYPE.RESOLVED);
-};
-
-const keyboardEvents = {
-  'Alt+KeyM': {
-    action: () => arrowDownButtonRef.value?.$el.click(),
-    allowOnFocusedInput: true,
-  },
-  'Alt+KeyE': {
-    action: async () => {
-      await toggleStatus(wootConstants.STATUS_TYPE.RESOLVED);
-    },
-  },
-  '$mod+Alt+KeyE': {
-    action: async event => {
-      const { all, activeIndex, lastIndex } = getConversationParams();
-      await toggleStatus(wootConstants.STATUS_TYPE.RESOLVED);
-
-      if (activeIndex < lastIndex) {
-        all[activeIndex + 1].click();
-      } else if (all.length > 1) {
-        all[0].click();
-        document.querySelector('.conversations-list').scrollTop = 0;
-      }
-      event.preventDefault();
-    },
-  },
-};
-
-useKeyboardEvents(keyboardEvents);
-
-useEmitter(CMD_REOPEN_CONVERSATION, onCmdOpenConversation);
-useEmitter(CMD_RESOLVE_CONVERSATION, onCmdResolveConversation);
 </script>
 
 <template>
-  <div class="relative flex items-center justify-end resolve-actions">
-    <div
-      class="rounded-lg shadow button-group outline-1 outline"
-      :class="!showOpenButton ? 'outline-n-container' : 'outline-transparent'"
+  <div class="flex relative justify-end items-center resolve-actions">
+    <ButtonGroup
+      class="flex-shrink-0 rounded-lg shadow outline-1 outline outline-n-container"
     >
       <Button
-        v-if="isOpen"
-        :label="t('CONVERSATION.HEADER.RESOLVE_ACTION')"
+        v-if="assignee"
+        :label="t('CONVERSATION.ASSIGNMENT.UNASSIGN')"
         size="sm"
         color="slate"
-        class="ltr:rounded-r-none rtl:rounded-l-none !outline-0"
+        no-animation
+        class="!outline-0"
         :is-loading="isLoading"
-        @click="onCmdResolveConversation"
+        @click="onUnassignAgent"
       />
       <Button
-        v-else-if="isResolved"
-        :label="t('CONVERSATION.HEADER.REOPEN_ACTION')"
+        v-else
+        :label="t('CONVERSATION.ASSIGN_TO_HUMAN')"
         size="sm"
         color="slate"
-        class="ltr:rounded-r-none rtl:rounded-l-none !outline-0"
+        no-animation
+        class="!outline-0"
         :is-loading="isLoading"
-        @click="onCmdOpenConversation"
+        @click="openAgentDropdown"
       />
-      <Button
-        v-else-if="showOpenButton"
-        :label="t('CONVERSATION.HEADER.OPEN_ACTION')"
-        size="sm"
-        color="slate"
-        :is-loading="isLoading"
-        @click="onCmdOpenConversation"
-      />
-      <Button
-        v-if="showAdditionalActions"
-        ref="arrowDownButtonRef"
-        icon="i-lucide-chevron-down"
-        :disabled="isLoading"
-        size="sm"
-        class="ltr:rounded-l-none rtl:rounded-r-none !outline-0"
-        color="slate"
-        trailing-icon
-        @click="openDropdown"
-      />
-    </div>
+    </ButtonGroup>
     <div
-      v-if="showActionsDropdown"
-      v-on-clickaway="closeDropdown"
-      class="dropdown-pane dropdown-pane--open left-auto top-full mt-0.5 ltr:right-0 rtl:left-0 max-w-[12.5rem] min-w-[9.75rem]"
+      v-if="showAgentDropdown"
+      v-on-clickaway="closeAgentDropdown"
+      class="border rounded-lg shadow-lg border-n-strong dark:border-n-strong box-content p-2 w-56 z-10 bg-n-alpha-3 backdrop-blur-[100px] absolute block left-auto top-full mt-0.5 start-0 xl:start-auto xl:end-0"
     >
-      <WootDropdownMenu class="mb-0">
-        <WootDropdownItem v-if="!isPending">
-          <Button
-            :label="t('CONVERSATION.RESOLVE_DROPDOWN.SNOOZE_UNTIL')"
-            ghost
-            slate
-            sm
-            start
-            icon="i-lucide-alarm-clock-minus"
-            class="w-full"
-            @click="() => openSnoozeModal()"
-          />
-        </WootDropdownItem>
-        <WootDropdownItem v-if="!isPending">
-          <Button
-            :label="t('CONVERSATION.RESOLVE_DROPDOWN.MARK_PENDING')"
-            ghost
-            slate
-            sm
-            start
-            icon="i-lucide-circle-dot-dashed"
-            class="w-full"
-            @click="() => toggleStatus(wootConstants.STATUS_TYPE.PENDING)"
-          />
-        </WootDropdownItem>
-      </WootDropdownMenu>
+      <div class="flex items-center justify-between gap-2 mb-2">
+        <span class="text-sm font-medium text-n-slate-12">
+          {{ t('CONVERSATION.ASSIGNMENT.SELECT_AGENT') }}
+        </span>
+        <Button
+          icon="i-lucide-x"
+          size="xs"
+          color="slate"
+          variant="ghost"
+          @click="closeAgentDropdown"
+        />
+      </div>
+      <MultiselectDropdownItems
+        :options="agentsList"
+        :selected-items="selectedAgent"
+        :input-placeholder="t('CONVERSATION.ASSIGNMENT.SELECT_AGENT')"
+        @select="onSelectAgent"
+      />
     </div>
   </div>
 </template>
-
-<style lang="scss" scoped>
-.dropdown-pane {
-  .dropdown-menu__item {
-    @apply mb-0;
-  }
-}
-</style>

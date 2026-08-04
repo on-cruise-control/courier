@@ -6,6 +6,7 @@ class Api::V1::AccountsController < Api::BaseController
                      only: [:create], raise: false
   before_action :check_signup_enabled, only: [:create]
   before_action :ensure_account_name, only: [:create]
+  before_action :ensure_dealership, only: [:create]
   before_action :validate_captcha, only: [:create]
   before_action :fetch_account, except: [:create]
   before_action :check_authorization, except: [:create]
@@ -28,11 +29,23 @@ class Api::V1::AccountsController < Api::BaseController
       email: account_params[:email],
       user_password: account_params[:password],
       locale: account_params[:locale],
+      dealership_id: account_params[:dealership_id],
       user: current_user
     ).perform
+    enqueue_branding_enrichment
     if @user
-      send_auth_headers(@user)
-      render 'api/v1/accounts/create', format: :json, locals: { resource: @user }
+      # Authenticated users (dashboard "add account") and api_only signups
+      # need the full response with account_id. API-only deployments have no
+      # frontend to handle the email confirmation flow, so they need auth
+      # tokens to proceed.
+      # Unauthenticated web signup returns only the email — no session is
+      # created until the user confirms via the email link.
+      if current_user || api_only_signup?
+        send_auth_headers(@user)
+        render 'api/v1/accounts/create', format: :json, locals: { resource: @user }
+      else
+        render json: { email: @user.email }
+      end
     else
       render_error_response(CustomExceptions::Account::SignupFailed.new({}))
     end
@@ -44,19 +57,36 @@ class Api::V1::AccountsController < Api::BaseController
   end
 
   def update
-    @account.assign_attributes(account_params.slice(:name, :locale, :domain, :support_email, :auto_resolve_duration))
+    @account.assign_attributes(account_params.slice(:name, :locale, :domain, :support_email, :auto_resolve_duration, :dealership_id))
     @account.custom_attributes.merge!(custom_attributes_params)
+    @account.settings.merge!(settings_params)
     @account.custom_attributes['onboarding_step'] = 'invite_team' if @account.custom_attributes['onboarding_step'] == 'account_update'
+
+    @account.booking_emails = params[:booking_emails] if params.key?(:booking_emails)
+    @account.escalation_emails = params[:escalation_emails] if params.key?(:escalation_emails)
+    @account.vehicle_parts_emails = params[:vehicle_parts_emails] if params.key?(:vehicle_parts_emails)
+    @account.service_emails = params[:service_emails] if params.key?(:service_emails)
+
     @account.save!
   end
 
   def update_active_at
-    @current_account_user.active_at = Time.now.utc
-    @current_account_user.save!
+    @current_account_user.record_session_activity!
     head :ok
   end
 
   private
+
+  def enqueue_branding_enrichment
+    email = account_params[:email].presence || @user&.email
+    return if email.blank?
+
+    Account::BrandingEnrichmentJob.perform_later(@account.id, email)
+    Redis::Alfred.set(format(Redis::Alfred::ACCOUNT_ONBOARDING_ENRICHMENT, account_id: @account.id), '1', ex: 30)
+  rescue StandardError => e
+    # Enrichment is optional — never let queue/Redis failures abort signup
+    ChatwootExceptionTracker.new(e).capture_exception
+  end
 
   def ensure_account_name
     # ensure that account_name and user_full_name is present
@@ -66,7 +96,17 @@ class Api::V1::AccountsController < Api::BaseController
     return if account_params[:account_name].present?
     return if account_params[:user_full_name].present?
 
-    raise CustomExceptions::Account::InvalidParams.new({})
+    raise CustomExceptions::Account::InvalidParams.new(
+      message: 'Account name or user full name must be present for account identification.'
+    )
+  end
+
+  def ensure_dealership
+    return if account_params[:dealership_id].present?
+
+    raise CustomExceptions::Account::InvalidParams.new(
+      message: 'Dealership ID must be present for account identification.'
+    )
   end
 
   def cache_keys_for_account
@@ -83,15 +123,37 @@ class Api::V1::AccountsController < Api::BaseController
   end
 
   def account_params
-    params.permit(:account_name, :email, :name, :password, :locale, :domain, :support_email, :auto_resolve_duration, :user_full_name)
+    params.permit(:account_name, :email, :name, :password, :locale, :domain, :support_email, :auto_resolve_duration, :user_full_name, :dealership_id)
   end
 
   def custom_attributes_params
-    params.permit(:industry, :company_size, :timezone)
+    params.permit(:industry, :company_size, :timezone, :referral_source, :user_role, :website)
+  end
+
+  def settings_params
+    params.permit(*permitted_settings_attributes)
+  end
+
+  def permitted_settings_attributes
+    [:auto_resolve_after, :auto_resolve_message, :auto_resolve_ignore_waiting, :audio_transcriptions, :auto_resolve_label]
+  end
+
+  def settings_params
+    params.permit(:auto_resolve_after, :auto_resolve_message, :auto_resolve_ignore_waiting, :audio_transcriptions, :auto_resolve_label,
+                  conversation_required_attributes: [])
   end
 
   def check_signup_enabled
-    raise ActionController::RoutingError, 'Not Found' if GlobalConfigService.load('ENABLE_ACCOUNT_SIGNUP', 'false') == 'false'
+    raise ActionController::RoutingError, 'Not Found' unless GlobalConfigService.account_signup_enabled?
+  end
+
+  def api_only_signup?
+    # CW_API_ONLY_SERVER is the canonical flag for API-only deployments.
+    # ENABLE_ACCOUNT_SIGNUP='api_only' is a legacy sentinel for the same purpose.
+    # Read ENABLE_ACCOUNT_SIGNUP raw from InstallationConfig because GlobalConfig.get
+    # typecasts it to boolean, coercing 'api_only' to true.
+    ActiveModel::Type::Boolean.new.cast(ENV.fetch('CW_API_ONLY_SERVER', false)) ||
+      InstallationConfig.find_by(name: 'ENABLE_ACCOUNT_SIGNUP')&.value.to_s == 'api_only'
   end
 
   def validate_captcha
@@ -106,3 +168,5 @@ class Api::V1::AccountsController < Api::BaseController
     }
   end
 end
+
+Api::V1::AccountsController.prepend_mod_with('Api::V1::AccountsSettings')

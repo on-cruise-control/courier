@@ -6,12 +6,8 @@ class DeviseOverrides::PasswordsController < Devise::PasswordsController
 
   def create
     @user = User.from_email(params[:email])
-    if @user
-      @user.send_reset_password_instructions
-      build_response(I18n.t('messages.reset_password_success'), 200)
-    else
-      build_response(I18n.t('messages.reset_password_failure'), 404)
-    end
+    @user&.send_reset_password_instructions
+    build_response(I18n.t('messages.reset_password'), 200)
   end
 
   def update
@@ -23,7 +19,7 @@ class DeviseOverrides::PasswordsController < Devise::PasswordsController
       send_auth_headers(@recoverable)
       render partial: 'devise/auth', formats: [:json], locals: { resource: @recoverable }
     else
-      render json: { message: 'Invalid token', redirect_url: '/' }, status: :unprocessable_entity
+      render json: { message: 'This password reset link has expired or has already been used. Please request a new one.', redirect_url: '/' }, status: :unprocessable_entity
     end
   end
 
@@ -44,3 +40,5 @@ class DeviseOverrides::PasswordsController < Devise::PasswordsController
     }, status: status
   end
 end
+
+DeviseOverrides::PasswordsController.prepend_mod_with('DeviseOverrides::PasswordsController')

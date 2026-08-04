@@ -19,10 +19,23 @@ import {
   setBubbleText,
   addUnreadClass,
   removeUnreadClass,
+  createGreetingPreview,
+  showGreetingPreview,
+  hideGreetingPreview,
+  attachGreetingPreviewHandlers,
+  createGreetingInputBox,
+  showGreetingInputBox,
+  hideGreetingInputBox,
+  updateWidgetPosition,
+  updateWidgetType,
 } from './bubbleHelpers';
 import { isWidgetColorLighter } from 'shared/helpers/colorHelper';
 import { dispatchWindowEvent } from 'shared/helpers/CustomEventHelper';
-import { CHATWOOT_ERROR, CHATWOOT_READY } from '../widget/constants/sdkEvents';
+import {
+  CHATWOOT_ERROR,
+  CHATWOOT_POSTBACK,
+  CHATWOOT_READY,
+} from '../widget/constants/sdkEvents';
 import { SET_USER_ERROR } from '../widget/constants/errorTypes';
 import { getUserCookieName, setCookieWithDomain } from './cookieHelpers';
 import {
@@ -32,11 +45,36 @@ import {
 import { isFlatWidgetStyle } from './settingsHelper';
 import { popoutChatWindow } from '../widget/helpers/popoutHelper';
 import addHours from 'date-fns/addHours';
+import { VehicleModalHelper } from './VehicleModalHelper';
 
 const updateAuthCookie = (cookieContent, baseDomain = '') =>
   setCookieWithDomain('cw_conversation', cookieContent, {
     baseDomain,
   });
+
+const injectGA = token => {
+  if (!token || window.gtag) return;
+  // eslint-disable-next-line no-console
+  console.log('Courier GA token found, injecting Google Analytics:G-XXXX');
+  const script = document.createElement('script');
+  script.async = true;
+  script.src = `https://www.googletagmanager.com/gtag/js?id=${token}`;
+  document.head.after(script);
+  window.dataLayer = window.dataLayer || [];
+  window.gtag = function gtag() {
+    // eslint-disable-next-line no-undef, prefer-rest-params
+    window.dataLayer.push(arguments);
+  };
+  window.gtag('js', new Date());
+  window.gtag('config', token);
+};
+
+export const setWebWidgetMessageSentCookie = (baseDomain = '') => {
+  setCookieWithDomain('cw_web_widget_message_sent', 'true', {
+    baseDomain,
+    expires: 365, // 1 year
+  });
+};
 
 const updateCampaignReadStatus = baseDomain => {
   const expireBy = addHours(new Date(), 1);
@@ -78,11 +116,13 @@ export const IFrameHelper = {
 
     addClasses(widgetHolder, holderClassName);
     widgetHolder.id = 'cw-widget-holder';
+    widgetHolder.dataset.turboPermanent = true;
     widgetHolder.appendChild(iframe);
     body.appendChild(widgetHolder);
     IFrameHelper.initPostMessageCommunication();
     IFrameHelper.initWindowSizeListener();
     IFrameHelper.preventDefaultScroll();
+    IFrameHelper.initMobileKeyboardFix();
   },
   getAppFrame: () => document.getElementById('chatwoot_live_chat_widget'),
   getBubbleHolder: () => document.getElementsByClassName('woot--bubble-holder'),
@@ -101,6 +141,7 @@ export const IFrameHelper = {
       ) {
         return;
       }
+
       const message = JSON.parse(e.data.replace('chatwoot-widget:', ''));
       if (typeof IFrameHelper.events[message.event] === 'function') {
         IFrameHelper.events[message.event](message);
@@ -109,6 +150,34 @@ export const IFrameHelper = {
   },
   initWindowSizeListener: () => {
     window.addEventListener('resize', () => IFrameHelper.toggleCloseButton());
+  },
+  initMobileKeyboardFix: () => {
+    if (!window.visualViewport || IFrameHelper._mobileKeyboardFixActive) return;
+
+    const mobileQuery = window.matchMedia('(max-width: 667px)');
+    let rafPending = false;
+
+    const onViewportChange = () => {
+      if (!mobileQuery.matches || rafPending) return;
+      rafPending = true;
+      requestAnimationFrame(() => {
+        rafPending = false;
+        if (!widgetHolder) return;
+        const { height, offsetTop } = window.visualViewport;
+        widgetHolder.style.height = `${height}px`;
+        widgetHolder.style.transform = `translateY(${offsetTop}px)`;
+        IFrameHelper.sendMessage('mobile-viewport-height', { height });
+      });
+    };
+
+    window.visualViewport.addEventListener('resize', onViewportChange);
+    window.visualViewport.addEventListener('scroll', onViewportChange);
+    IFrameHelper._mobileKeyboardFixActive = true;
+    IFrameHelper._mobileKeyboardFixCleanup = () => {
+      window.visualViewport.removeEventListener('resize', onViewportChange);
+      window.visualViewport.removeEventListener('scroll', onViewportChange);
+      IFrameHelper._mobileKeyboardFixActive = false;
+    };
   },
   preventDefaultScroll: () => {
     widgetHolder.addEventListener('wheel', event => {
@@ -152,6 +221,36 @@ export const IFrameHelper = {
       updateAuthCookie(message.config.authToken, window.$chatwoot.baseDomain);
       window.$chatwoot.hasLoaded = true;
       const campaignsSnoozedTill = Cookies.get('cw_snooze_campaigns_till');
+
+      const {
+        channelConfig: {
+          position: configPosition,
+          widget_position: widgetPosition,
+          widgetPosition: widgetPositionCamel,
+          widget_type: widgetType,
+          widgetType: widgetTypeAlt,
+          avatarUrl,
+          avatarName,
+          welcomeTitle,
+          welcome_title: welcomeTitleAlt,
+          welcomeTagline,
+          welcome_tagline: welcomeTaglineAlt,
+          greetingMessage,
+          greeting_message: greetingMessageAlt,
+          launcherTitle,
+          launcher_title: launcherTitleAlt,
+        },
+      } = message.config;
+
+      // Update position BEFORE onLoad so bubble is created with correct position
+      const position =
+        configPosition ||
+        widgetPosition ||
+        widgetPositionCamel ||
+        window.$chatwoot.position;
+      // Normalize position to 'left' or 'right'
+      window.$chatwoot.position = position === 'left' ? 'left' : 'right';
+
       IFrameHelper.sendMessage('config-set', {
         locale: window.$chatwoot.locale,
         position: window.$chatwoot.position,
@@ -161,11 +260,52 @@ export const IFrameHelper = {
         darkMode: window.$chatwoot.darkMode,
         showUnreadMessagesDialog: window.$chatwoot.showUnreadMessagesDialog,
         campaignsSnoozedTill,
+        welcomeTitle: window.$chatwoot.welcomeTitle,
+        welcomeDescription: window.$chatwoot.welcomeDescription,
+        welcomeTagline: window.$chatwoot.welcomeTagline,
+        greetingMessage: window.$chatwoot.greetingMessage,
+        dealerName: window.$chatwoot.dealerName,
+        avatarName: window.$chatwoot.avatarName,
+        availableMessage: window.$chatwoot.availableMessage,
+        unavailableMessage: window.$chatwoot.unavailableMessage,
+        enableFileUpload: window.$chatwoot.enableFileUpload,
+        enableEmojiPicker: window.$chatwoot.enableEmojiPicker,
+        enableEndConversation: window.$chatwoot.enableEndConversation,
       });
       IFrameHelper.onLoad({
         widgetColor: message.config.channelConfig.widgetColor,
+        channelConfig: message.config.channelConfig,
       });
       IFrameHelper.toggleCloseButton();
+
+      window.$chatwoot.avatarUrl = avatarUrl || window.$chatwoot.avatarUrl;
+      window.$chatwoot.avatarName = avatarName || window.$chatwoot.avatarName;
+      window.$chatwoot.welcomeTitle =
+        welcomeTitle || welcomeTitleAlt || window.$chatwoot.welcomeTitle;
+      window.$chatwoot.welcomeDescription =
+        welcomeTagline ||
+        welcomeTaglineAlt ||
+        window.$chatwoot.welcomeDescription;
+      window.$chatwoot.greetingMessage =
+        greetingMessage ||
+        greetingMessageAlt ||
+        window.$chatwoot.greetingMessage;
+
+      const newLauncherTitle =
+        launcherTitle || launcherTitleAlt || window.$chatwoot.launcherTitle;
+      if (newLauncherTitle !== window.$chatwoot.launcherTitle) {
+        window.$chatwoot.launcherTitle = newLauncherTitle;
+        setBubbleText(newLauncherTitle);
+      }
+
+      const newWidgetType = widgetType || widgetTypeAlt;
+      if (newWidgetType && newWidgetType !== window.$chatwoot.type) {
+        updateWidgetType(newWidgetType);
+      }
+
+      // Update position classes - always call to ensure position is applied
+      // This handles cases where bubble was created before position was updated
+      updateWidgetPosition(window.$chatwoot.position);
 
       if (window.$chatwoot.user) {
         IFrameHelper.sendMessage('set-user', window.$chatwoot.user);
@@ -176,6 +316,15 @@ export const IFrameHelper = {
       initOnEvents.forEach(e => {
         document.addEventListener(e, IFrameHelper.setupAudioListeners, false);
       });
+
+      const gaToken =
+        message.config.channelConfig.googleAnalyticsToken;
+      if (gaToken) {
+        injectGA(gaToken);
+      } else {
+        // eslint-disable-next-line no-console
+        console.log('Courier No GA token found in chatwootSettings');
+      }
 
       if (!window.$chatwoot.resetTriggered) {
         dispatchWindowEvent({ eventName: CHATWOOT_READY });
@@ -205,7 +354,7 @@ export const IFrameHelper = {
 
     postback(data) {
       dispatchWindowEvent({
-        eventName: 'chatwoot:postback',
+        eventName: CHATWOOT_POSTBACK,
         data,
       });
     },
@@ -252,7 +401,9 @@ export const IFrameHelper = {
 
     setUnreadMode: () => {
       addUnreadClass();
-      onBubbleClick({ toggleValue: true });
+      if (!window.$chatwoot?.openingForSms) {
+        onBubbleClick({ toggleValue: true });
+      }
     },
 
     resetUnreadMode: () => removeUnreadClass(),
@@ -272,6 +423,26 @@ export const IFrameHelper = {
       }
     },
 
+    'show-vehicle-loading': () => {
+      IFrameHelper._vehicleOverlay = VehicleModalHelper.showLoading();
+    },
+
+    'hide-vehicle-loading': () => {
+      IFrameHelper._vehicleOverlay?.remove();
+      IFrameHelper._vehicleOverlay = null;
+    },
+
+    'show-vehicle-details': ({ data: { vehicle, conversationId } }) => {
+      const overlay = IFrameHelper._vehicleOverlay;
+      IFrameHelper._vehicleOverlay = null;
+      const { baseUrl, websiteToken } = window.$chatwoot;
+      if (overlay && vehicle) {
+        VehicleModalHelper.updateWithVehicle(overlay, vehicle, { baseUrl, websiteToken, conversationId });
+      } else {
+        overlay?.remove();
+      }
+    },
+
     closeChat: () => {
       onBubbleClick({ toggleValue: false });
     },
@@ -279,12 +450,58 @@ export const IFrameHelper = {
     playAudio: () => {
       window.playAudioAlert();
     },
+    'has-conversations': message => {
+      window.$chatwoot.hasConversations = message.hasConversations || false;
+      window.$chatwoot.conversationStateConfirmed = true;
+
+      const storedSmsState = localStorage.getItem('chatwoot_sms_state');
+      let smsWasSent = false;
+      if (storedSmsState) {
+        try {
+          const smsState = JSON.parse(storedSmsState);
+          if (smsState.sent) {
+            const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
+            if (smsState.timestamp && smsState.timestamp >= oneDayAgo) {
+              smsWasSent = true;
+            }
+          }
+        } catch (e) {
+          // Ignore parse errors
+        }
+      }
+
+      if (message.hasConversations) {
+        hideGreetingPreview();
+        hideGreetingInputBox();
+      }
+
+      if (
+        (smsWasSent || message.hasConversations) &&
+        !window.$chatwoot.isOpen
+      ) {
+        hideGreetingPreview();
+        hideGreetingInputBox();
+        if (smsWasSent) {
+          window.$chatwoot.openingForSms = true;
+        }
+        onBubbleClick({ toggleValue: true });
+      } else if (!message.hasConversations && !smsWasSent) {
+        if (
+          !window.$chatwoot.isOpen &&
+          !window.$chatwoot.greetingPreviewShown
+        ) {
+          showGreetingPreview();
+          showGreetingInputBox();
+          window.$chatwoot.greetingPreviewShown = true;
+        }
+      }
+    },
   },
   pushEvent: eventName => {
     IFrameHelper.sendMessage('push-event', { eventName });
   },
 
-  onLoad: ({ widgetColor }) => {
+  onLoad: ({ widgetColor, channelConfig = {} }) => {
     const iframe = IFrameHelper.getAppFrame();
     iframe.style.visibility = '';
     iframe.setAttribute('id', `chatwoot_live_chat_widget`);
@@ -312,16 +529,144 @@ export const IFrameHelper = {
       className,
       path: bubbleSVG,
       target: chatBubble,
+      widgetColor,
     });
 
     addClasses(closeBubble, closeBtnClassName);
 
-    chatIcon.style.background = widgetColor;
+    const avatarUrl = window.$chatwoot.avatarUrl;
+    if (!avatarUrl) {
+      chatIcon.style.background = widgetColor;
+    }
     closeBubble.style.background = widgetColor;
 
     bubbleHolder.appendChild(chatIcon);
     bubbleHolder.appendChild(closeBubble);
     onClickChatBubble();
+
+    // Create and show greeting preview after 3 seconds
+    // Get data from channelConfig (passed from widget) or window.$chatwoot or chatwootSettings
+    const chatwootSettings = window.chatwootSettings || {};
+
+    // Try to get from widget config first, then window.$chatwoot, then chatwootSettings
+    const previewAvatarUrl =
+      channelConfig.avatarUrl ||
+      window.$chatwoot.avatarUrl ||
+      chatwootSettings.avatarUrl ||
+      '';
+    const previewAgentName =
+      channelConfig.avatarName ||
+      window.$chatwoot.avatarName ||
+      chatwootSettings.avatarName ||
+      window.$chatwoot.websiteName ||
+      channelConfig.websiteName ||
+      '';
+    const previewDealerName =
+      channelConfig.dealerName ||
+      window.$chatwoot.dealerName ||
+      chatwootSettings.dealerName ||
+      window.$chatwoot.websiteName ||
+      channelConfig.websiteName ||
+      '';
+    // Get greeting message based on greeting_enabled flag
+    const defaultGreetingMessage =
+      'Hi there! 👋 How can I help? Send me a message!';
+
+    const getGreetingMessage = () => {
+      // Check if greeting is enabled (from inbox settings)
+      let isGreetingEnabled = true; // Default to enabled if not specified
+      if (channelConfig.greetingEnabled !== undefined) {
+        isGreetingEnabled = channelConfig.greetingEnabled;
+      } else if (channelConfig.greeting_enabled !== undefined) {
+        isGreetingEnabled = channelConfig.greeting_enabled;
+      } else if (window.$chatwoot.greetingEnabled !== undefined) {
+        isGreetingEnabled = window.$chatwoot.greetingEnabled;
+      }
+
+      // If disabled, show default message
+      if (!isGreetingEnabled) {
+        return defaultGreetingMessage;
+      }
+
+      // If enabled, get the greeting message from config
+      const greetingMsg =
+        channelConfig.greetingMessage ||
+        channelConfig.greeting_message ||
+        window.$chatwoot.greetingMessage ||
+        chatwootSettings.greetingMessage;
+
+      // If message exists and is not empty, use it; otherwise use default
+      return greetingMsg && greetingMsg.trim()
+        ? greetingMsg
+        : defaultGreetingMessage;
+    };
+
+    const previewGreetingMessage = getGreetingMessage();
+
+    // Always create greeting preview (it will always have a message now)
+    createGreetingPreview({
+      avatarUrl: previewAvatarUrl,
+      agentName: previewAgentName,
+      dealerName: previewDealerName,
+      greetingMessage: previewGreetingMessage,
+      widgetColor,
+    });
+    // Attach event handlers
+    attachGreetingPreviewHandlers();
+
+    // Create input box (conditionally shows "Text Us" button)
+    createGreetingInputBox({
+      widgetColor,
+      hasSmsInbox: channelConfig.hasSmsInbox || false,
+    });
+
+    const webWidgetMessageSent =
+      Cookies.get('cw_web_widget_message_sent') === 'true';
+    window.$chatwoot.hasConversations = webWidgetMessageSent;
+    window.$chatwoot.conversationStateConfirmed = false;
+    window.$chatwoot.greetingPreviewShown = false;
+
+    const storedSmsState = localStorage.getItem('chatwoot_sms_state');
+    let smsWasSent = false;
+    if (storedSmsState) {
+      try {
+        const smsState = JSON.parse(storedSmsState);
+        if (smsState.sent) {
+          const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
+          if (smsState.timestamp && smsState.timestamp >= oneDayAgo) {
+            smsWasSent = true;
+          }
+        }
+      } catch (e) {
+        // Ignore parse errors
+      }
+    }
+
+    if ((smsWasSent || webWidgetMessageSent) && !window.$chatwoot.isOpen) {
+      hideGreetingPreview();
+      hideGreetingInputBox();
+      if (smsWasSent) {
+        window.$chatwoot.openingForSms = true;
+      }
+      setTimeout(() => {
+        if (!window.$chatwoot.isOpen) {
+          onBubbleClick({ toggleValue: true });
+        }
+      }, 500);
+    } else if (!webWidgetMessageSent) {
+      setTimeout(() => {
+        if (
+          !window.$chatwoot.isOpen &&
+          !window.$chatwoot.greetingPreviewShown &&
+          (!window.$chatwoot.conversationStateConfirmed ||
+            !window.$chatwoot.hasConversations)
+        ) {
+          showGreetingPreview();
+          showGreetingInputBox();
+          window.$chatwoot.greetingPreviewShown = true;
+        }
+      }, 3000);
+    }
   },
   toggleCloseButton: () => {
     let isMobile = false;

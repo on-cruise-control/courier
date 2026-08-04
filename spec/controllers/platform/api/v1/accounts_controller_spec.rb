@@ -23,7 +23,7 @@ RSpec.describe 'Platform Accounts API', type: :request do
       let(:platform_app) { create(:platform_app) }
 
       it 'creates an account when and its permissible relationship' do
-        post '/platform/api/v1/accounts', params: { name: 'Test Account' },
+        post '/platform/api/v1/accounts', params: { name: 'Test Account', dealership_id: '123' },
                                           headers: { api_access_token: platform_app.access_token.token }, as: :json
 
         expect(response).to have_http_status(:success)
@@ -34,7 +34,7 @@ RSpec.describe 'Platform Accounts API', type: :request do
       it 'creates an account with locale' do
         InstallationConfig.where(name: 'ACCOUNT_LEVEL_FEATURE_DEFAULTS').first_or_create!(value: [{ 'name' => 'agent_management',
                                                                                                     'enabled' => true }])
-        post '/platform/api/v1/accounts', params: { name: 'Test Account', locale: 'es' },
+        post '/platform/api/v1/accounts', params: { name: 'Test Account', locale: 'es', dealership_id: '123' },
                                           headers: { api_access_token: platform_app.access_token.token }, as: :json
 
         expect(response).to have_http_status(:success)
@@ -53,7 +53,7 @@ RSpec.describe 'Platform Accounts API', type: :request do
                                                                                                   { 'name' => 'help_center',
                                                                                                     'enabled' => false }])
 
-        post '/platform/api/v1/accounts', params: { name: 'Test Account', features: {
+        post '/platform/api/v1/accounts', params: { name: 'Test Account', dealership_id: '123', features: {
           ip_lookup: true,
           help_center: true,
           disable_branding: false
@@ -61,19 +61,55 @@ RSpec.describe 'Platform Accounts API', type: :request do
 
         json_response = response.parsed_body
         created_account = Account.find(json_response['id'])
-        expect(created_account.enabled_features.keys).to match_array(%w[inbox_management ip_lookup help_center])
+        expect(created_account.enabled_features.keys).to include(*%w[inbox_management ip_lookup help_center])
         expect(json_response['name']).to include('Test Account')
-        expect(json_response['features'].keys).to match_array(%w[inbox_management ip_lookup help_center])
+        expect(json_response['features'].keys).to include(*%w[inbox_management ip_lookup help_center])
       end
 
       it 'creates an account with limits settings' do
-        post '/platform/api/v1/accounts', params: { name: 'Test Account', limits: { agents: 5, inboxes: 10 } },
+        post '/platform/api/v1/accounts', params: { name: 'Test Account', dealership_id: '123', limits: { agents: 5, inboxes: 10 } },
                                           headers: { api_access_token: platform_app.access_token.token }, as: :json
 
         expect(response).to have_http_status(:success)
         expect(response.body).to include('Test Account')
         expect(response.body).to include('5')
         expect(response.body).to include('10')
+      end
+    end
+  end
+
+  describe 'GET /platform/api/v1/accounts' do
+    context 'when it is an unauthenticated platform app' do
+      it 'returns unauthorized' do
+        get '/platform/api/v1/accounts'
+        expect(response).to have_http_status(:unauthorized)
+      end
+    end
+
+    context 'when it is an invalid platform app token' do
+      it 'returns unauthorized' do
+        get '/platform/api/v1/accounts', headers: { api_access_token: 'invalid' }, as: :json
+        expect(response).to have_http_status(:unauthorized)
+      end
+    end
+
+    context 'when it is an authenticated platform app' do
+      let(:platform_app) { create(:platform_app) }
+      let!(:account1) { create(:account, name: 'Account A') }
+      let!(:account2) { create(:account, name: 'Account B') }
+
+      before do
+        create(:platform_app_permissible, platform_app: platform_app, permissible: account1)
+        create(:platform_app_permissible, platform_app: platform_app, permissible: account2)
+      end
+
+      it 'returns all permissible accounts' do
+        get '/platform/api/v1/accounts', headers: { api_access_token: platform_app.access_token.token }, as: :json
+
+        expect(response).to have_http_status(:success)
+        json_response = response.parsed_body
+        expect(json_response.size).to eq(2)
+        expect(json_response.map { |acc| acc['name'] }).to include('Account A', 'Account B')
       end
     end
   end
@@ -108,6 +144,7 @@ RSpec.describe 'Platform Accounts API', type: :request do
             headers: { api_access_token: platform_app.access_token.token }, as: :json
 
         expect(response).to have_http_status(:success)
+        expect(response).to conform_schema(200)
         expect(response.body).to include(account.name)
       end
     end
@@ -155,7 +192,7 @@ RSpec.describe 'Platform Accounts API', type: :request do
         expect(response).to have_http_status(:success)
         account.reload
         expect(account.name).to eq('Test Account')
-        expect(account.enabled_features.keys).to match_array(%w[inbox_management ip_lookup help_center])
+        expect(account.enabled_features.keys).to include(*%w[inbox_management ip_lookup help_center])
         expect(account.enabled_features['channel_facebook']).to be_nil
         expect(account.limits['agents']).to eq(5)
         expect(account.limits['inboxes']).to eq(10)

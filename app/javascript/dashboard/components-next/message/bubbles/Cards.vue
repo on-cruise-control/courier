@@ -1,0 +1,81 @@
+<script setup>
+import { computed, ref } from 'vue';
+import MessageMeta from '../MessageMeta.vue';
+import Icon from 'next/icon/Icon.vue';
+import { useMessageContext } from '../provider.js';
+import { ORIENTATION } from '../constants';
+
+const { contentAttributes, orientation, shouldGroupWithNext } =
+  useMessageContext();
+
+const items = computed(() => contentAttributes.value?.items ?? []);
+
+const metaClass = computed(() =>
+  orientation.value === ORIENTATION.RIGHT ? 'justify-end' : 'justify-start'
+);
+
+const imageErrors = ref({});
+
+function onImageError(title) {
+  imageErrors.value = { ...imageErrors.value, [title]: true };
+}
+
+function onWheelScroll(e) {
+  const el = e.currentTarget;
+  if (el.scrollWidth <= el.clientWidth) return;
+  if (e.deltaX !== 0) return;
+  const atRightEnd = el.scrollLeft + el.clientWidth >= el.scrollWidth;
+  const atLeftEnd = el.scrollLeft <= 0;
+  if ((e.deltaY > 0 && atRightEnd) || (e.deltaY < 0 && atLeftEnd)) return;
+  e.preventDefault();
+  el.scrollLeft += e.deltaY;
+}
+</script>
+
+<template>
+  <div class="flex flex-col gap-1 w-full min-w-0">
+    <div
+      class="flex gap-2 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+      @wheel="onWheelScroll"
+    >
+      <div
+        v-for="item in items"
+        :key="item.title"
+        class="w-44 flex-none rounded-lg overflow-hidden bg-white dark:bg-n-solid-3 border border-n-slate-3 dark:border-n-solid-4 shadow-sm"
+      >
+        <div
+          v-if="imageErrors[item.title]"
+          class="w-full h-28 flex items-center justify-center bg-n-alpha-1"
+        >
+          <Icon icon="i-lucide-image-off" class="text-n-slate-10 size-6" />
+        </div>
+        <img
+          v-else
+          :src="item.mediaUrl"
+          :alt="item.title"
+          class="w-full h-28 object-cover"
+          @error="onImageError(item.title)"
+        />
+        <div class="p-2">
+          <p class="text-xs font-medium text-n-slate-12 leading-snug line-clamp-2 mb-1">
+            {{ item.title }}
+          </p>
+          <a
+            v-if="item.actions && item.actions.length"
+            :href="item.mediaUrl"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="inline-block text-xs text-n-brand font-medium hover:underline"
+          >
+            {{ item.actions[0].text }}
+          </a>
+        </div>
+      </div>
+    </div>
+    <MessageMeta
+      v-if="!shouldGroupWithNext"
+      class="text-n-slate-11 mt-1"
+      :class="metaClass"
+    />
+  </div>
+</template>

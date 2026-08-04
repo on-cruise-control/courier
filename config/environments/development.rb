@@ -34,6 +34,8 @@ Rails.application.configure do
 
   config.active_job.queue_adapter = :sidekiq
 
+  Rails.application.secrets.secret_key_base = ENV.fetch("SECRET_KEY_BASE")
+
   Rails.application.routes.default_url_options = { host: ENV['FRONTEND_URL'] }
 
   # Print deprecation notices to the Rails logger.
@@ -62,6 +64,15 @@ Rails.application.configure do
 
   # Disable host check during development
   config.hosts = nil
+  
+  # GitHub Codespaces configuration
+  if ENV['CODESPACES']
+    # Allow web console access from any IP
+    config.web_console.allowed_ips = %w(0.0.0.0/0 ::/0)
+    # Allow CSRF from codespace URLs
+    config.force_ssl = false
+    config.action_controller.forgery_protection_origin_check = false
+  end
 
   # customize using the environment variables
   config.log_level = ENV.fetch('LOG_LEVEL', 'debug').to_sym
@@ -76,4 +87,12 @@ Rails.application.configure do
     Bullet.bullet_logger = true
     Bullet.rails_logger = true
   end
+
+  # Configure ActionMailer to use Postmark
+  config.action_mailer.delivery_method = :postmark
+  config.action_mailer.postmark_settings = {
+    api_token: ENV.fetch('POSTMARK_API_TOKEN', '')
+  }
+  config.action_mailer.raise_delivery_errors = true
+  config.action_mailer.perform_deliveries = true
 end

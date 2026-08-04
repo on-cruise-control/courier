@@ -1,0 +1,79 @@
+<p>Hello {{ account.name }},</p>
+
+<p><strong>Cruise Control Impact Report - {{ start_date | date: "%m/%d" }} - {{ end_date | date: "%m/%d" }}</strong></p>
+
+<p>Here’s a snapshot of your dealership’s performance for the month:</p>
+
+<table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 20px;">
+  <tr>
+    <td><strong>New conversations:</strong> {{ new_conversations }}</td>
+  </tr>
+  <tr>
+    <td><strong>Total messages:</strong> {{ total_messages }}</td>
+  </tr>
+  <tr>
+    <td><strong>New CRM leads pushed:</strong> {{ booking_forms_completed }}</td>
+  </tr>
+  <tr>
+    <td><strong>New handoff requests:</strong> {{ handoff_forms_completed }}</td>
+  </tr>
+  <tr>
+    <td><strong>Attended handoffs:</strong> {{ handoff_attended_count }}</td>
+  </tr>
+  <tr>
+    <td><strong>Bookings conversion rate:</strong> {{ conversion_rate }}%</td>
+  </tr>
+
+  <tr>
+    <td style="height: 12px;"></td>
+  </tr>
+
+  <tr>
+    <td>
+      <strong>Bookings Estimated value: ${{ estimated_value }}</strong>
+    </td>
+  </tr>
+</table>
+
+{% if weekly_impact_chart %}
+  <p><strong>Monthly performance chart</strong></p>
+
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 20px;">
+    <tr>
+      <td
+        style="
+          padding: 12px;
+          border: 1px solid #e5e7eb;
+          border-radius: 4px;
+          background-color: #f9fafb;
+          text-align: center;
+        "
+      >
+        <img
+          src="cid:{{ weekly_impact_chart_cid }}"
+          alt="Weekly performance chart"
+          width="420"
+          style="display:block;margin:0 auto;max-width:100%;height:auto;"
+        />
+
+      </td>
+    </tr>
+  </table>
+{% endif %}
+
+
+<p>Check out our <a href="https://courier.getcruisecontrol.com/hc/account-and-agent-setup-in-courier/articles/1765973892-weekly-impact-report-metrics-guide" style="color: #1f93ff; text-decoration: underline;">Impact reports guide</a> to understand what each of our metrics mean.</p>
+
+<p>Visit our reports dashboard for a more detailed breakdown:</p>
+
+<table cellpadding="0" cellspacing="0" border="0" style="margin-top: 10px;">
+  <tr>
+    <td>
+      <a href="{{ report_url }}" style="display: inline-block; padding: 10px 16px; background-color: #182933; color: #ffffff; text-decoration: none; border-radius: 4px; font-weight: bold;">
+        Reports Dashboard
+      </a>
+    </td>
+  </tr>
+</table>
+
+<p>Best regards,<br>The Cruise Control Team</p>

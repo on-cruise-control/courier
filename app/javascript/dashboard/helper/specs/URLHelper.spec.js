@@ -7,6 +7,8 @@ import {
   hasValidAvatarUrl,
   timeStampAppendedURL,
   getHostNameFromURL,
+  extractFilenameFromUrl,
+  sanitizeAllowedDomains,
 } from '../URLHelper';
 
 describe('#URL Helpers', () => {
@@ -38,6 +40,24 @@ describe('#URL Helpers', () => {
         '/app/accounts/1/custom_view/1'
       );
     });
+
+    it('should return url to participating conversations', () => {
+      expect(
+        conversationListPageURL({
+          accountId: 1,
+          conversationType: 'participating',
+        })
+      ).toBe('/app/accounts/1/participating/conversations');
+    });
+
+    it('should return url to blacklisted conversations', () => {
+      expect(
+        conversationListPageURL({
+          accountId: 1,
+          conversationType: 'blacklist',
+        })
+      ).toBe('/app/accounts/1/blacklist/conversations');
+    });
   });
   describe('conversationUrl', () => {
     it('should return direct conversation URL if activeInbox is nil', () => {
@@ -60,6 +80,11 @@ describe('#URL Helpers', () => {
         'accounts/1/team/1/conversations/1'
       );
     });
+    it('should return correct conversation URL if conversationType is blacklist', () => {
+      expect(
+        conversationUrl({ accountId: 1, id: 1, conversationType: 'blacklist' })
+      ).toBe('accounts/1/blacklist/conversations/1');
+    });
   });
 
   describe('frontendURL', () => {
@@ -73,7 +98,7 @@ describe('#URL Helpers', () => {
 
   describe('isValidURL', () => {
     it('should return true if valid url is passed', () => {
-      expect(isValidURL('https://chatwoot.com')).toBe(true);
+      expect(isValidURL('https://getcruisecontrol.com')).toBe(true);
     });
     it('should return false if invalid url is passed', () => {
       expect(isValidURL('alert.window')).toBe(false);
@@ -170,7 +195,9 @@ describe('#URL Helpers', () => {
 
   describe('hasValidAvatarUrl', () => {
     test('should return true for valid non-Gravatar URL', () => {
-      expect(hasValidAvatarUrl('https://chatwoot.com/avatar.jpg')).toBe(true);
+      expect(hasValidAvatarUrl('https://getcruisecontrol.com/avatar.jpg')).toBe(
+        true
+      );
     });
 
     test('should return false for a Gravatar URL (www.gravatar.com)', () => {
@@ -261,6 +288,88 @@ describe('#URL Helpers', () => {
 
     it('should correctly handle URLs with non-standard TLDs', () => {
       expect(getHostNameFromURL('https://chatwoot.help')).toBe('chatwoot.help');
+    });
+  });
+
+  describe('extractFilenameFromUrl', () => {
+    it('should extract filename from a valid URL', () => {
+      expect(
+        extractFilenameFromUrl('https://example.com/path/to/file.jpg')
+      ).toBe('file.jpg');
+      expect(extractFilenameFromUrl('https://example.com/image.png')).toBe(
+        'image.png'
+      );
+      expect(
+        extractFilenameFromUrl(
+          'https://example.com/folder/document.pdf?query=1'
+        )
+      ).toBe('document.pdf');
+      expect(
+        extractFilenameFromUrl('https://example.com/file.txt#section')
+      ).toBe('file.txt');
+    });
+
+    it('should handle URLs without filename', () => {
+      expect(extractFilenameFromUrl('https://example.com/')).toBe(
+        'https://example.com/'
+      );
+      expect(extractFilenameFromUrl('https://example.com')).toBe(
+        'https://example.com'
+      );
+    });
+
+    it('should handle invalid URLs gracefully', () => {
+      expect(extractFilenameFromUrl('not-a-url/file.txt')).toBe('file.txt');
+      expect(extractFilenameFromUrl('invalid-url')).toBe('invalid-url');
+    });
+
+    it('should handle edge cases', () => {
+      expect(extractFilenameFromUrl('')).toBe('');
+      expect(extractFilenameFromUrl(null)).toBe(null);
+      expect(extractFilenameFromUrl(undefined)).toBe(undefined);
+      expect(extractFilenameFromUrl(123)).toBe(123);
+    });
+
+    it('should handle URLs with query parameters and fragments', () => {
+      expect(
+        extractFilenameFromUrl(
+          'https://example.com/file.jpg?size=large&format=png'
+        )
+      ).toBe('file.jpg');
+      expect(
+        extractFilenameFromUrl('https://example.com/file.pdf#page=1')
+      ).toBe('file.pdf');
+      expect(
+        extractFilenameFromUrl('https://example.com/file.doc?v=1#section')
+      ).toBe('file.doc');
+    });
+  });
+
+  describe('sanitizeAllowedDomains', () => {
+    it('returns empty string for falsy input', () => {
+      expect(sanitizeAllowedDomains('')).toBe('');
+      expect(sanitizeAllowedDomains(null)).toBe('');
+      expect(sanitizeAllowedDomains(undefined)).toBe('');
+    });
+
+    it('trims whitespace and converts newlines to commas', () => {
+      const input = '  example.com  \n  foo.bar\nbar.baz  ';
+      expect(sanitizeAllowedDomains(input)).toBe('example.com,foo.bar,bar.baz');
+    });
+
+    it('handles Windows newlines and mixed spacing', () => {
+      const input = ' example.com\r\n\tfoo.bar  ,  bar.baz ';
+      expect(sanitizeAllowedDomains(input)).toBe('example.com,foo.bar,bar.baz');
+    });
+
+    it('removes empty values from repeated commas', () => {
+      const input = ',,example.com,,foo.bar,,';
+      expect(sanitizeAllowedDomains(input)).toBe('example.com,foo.bar');
+    });
+
+    it('lowercases entries and de-duplicates preserving order', () => {
+      const input = 'Example.com,FOO.bar,example.com,Bar.Baz,foo.BAR';
+      expect(sanitizeAllowedDomains(input)).toBe('example.com,foo.bar,bar.baz');
     });
   });
 });

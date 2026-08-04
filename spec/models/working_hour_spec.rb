@@ -61,11 +61,11 @@ RSpec.describe WorkingHour do
     end
 
     it 'updates open hour and close hour' do
-      expect(described_class.today.open_all_day?).to be true
-      expect(described_class.today.open_hour).to be 0
-      expect(described_class.today.open_minutes).to be 0
-      expect(described_class.today.close_hour).to be 23
-      expect(described_class.today.close_minutes).to be 59
+      expect(inbox.working_hours.today.open_all_day?).to be true
+      expect(inbox.working_hours.today.open_hour).to be 0
+      expect(inbox.working_hours.today.open_minutes).to be 0
+      expect(inbox.working_hours.today.close_hour).to be 23
+      expect(inbox.working_hours.today.close_minutes).to be 59
     end
   end
 
@@ -99,7 +99,7 @@ RSpec.describe WorkingHour do
     end
 
     it 'is considered working hour' do
-      expect(described_class.today.open_now?).to be true
+      expect(inbox.working_hours.today.open_now?).to be true
     end
   end
 end

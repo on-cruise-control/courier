@@ -45,13 +45,14 @@ export default {
       return `${this.darkMode === 'dark' ? 'dark-scheme' : 'light-scheme'}`;
     },
     showStatusIndicator() {
-      const { status } = this.conversationAttributes;
+      const { status, shouldSendReply } = this.conversationAttributes;
       const isConversationInPendingStatus = status === 'pending';
       const isLastMessageIncoming =
         this.lastMessage.message_type === MESSAGE_TYPE.INCOMING;
       return (
-        this.isAgentTyping ||
-        (isConversationInPendingStatus && isLastMessageIncoming)
+        shouldSendReply &&
+        (this.isAgentTyping ||
+          (isConversationInPendingStatus && isLastMessageIncoming))
       );
     },
   },
@@ -127,6 +128,8 @@ export default {
   flex-direction: column;
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: none;
   color-scheme: light dark;
 
   &.light-scheme {

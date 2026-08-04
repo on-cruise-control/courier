@@ -1,7 +1,7 @@
 class ApplicationMailer < ActionMailer::Base
   include ActionView::Helpers::SanitizeHelper
 
-  default from: ENV.fetch('MAILER_SENDER_EMAIL', 'Chatwoot <accounts@chatwoot.com>')
+  default from: ENV.fetch('MAILER_SENDER_EMAIL', 'Julian at Cruise Control <support@getcruisecontrol.com>')
   before_action { ensure_current_account(params.try(:[], :account)) }
   around_action :switch_locale
   layout 'mailer/base'
@@ -12,7 +12,7 @@ class ApplicationMailer < ActionMailer::Base
   helper :frontend_urls
   helper do
     def global_config
-      @global_config ||= GlobalConfig.get('BRAND_NAME', 'BRAND_URL')
+      @global_config ||= GlobalConfig.get('BRAND_NAME', 'BRAND_URL', 'FRONTEND_URL')
     end
   end
 
@@ -40,6 +40,24 @@ class ApplicationMailer < ActionMailer::Base
     end
   end
 
+  # Helper method to generate conversation URL
+  def conversation_url(conversation)
+    "#{ENV.fetch('FRONTEND_URL',
+                 nil)}/app/accounts/#{conversation.account_id}/inbox/#{conversation.inbox_id}/conversations/#{conversation.display_id}"
+  end
+
+  def instagram_profile_url(conversation)
+    return unless conversation&.inbox&.channel_type == 'Channel::Instagram'
+
+    contact = conversation.contact
+    additional_attributes = contact.additional_attributes
+    username =
+      additional_attributes['social_instagram_user_name'].presence ||
+      additional_attributes.dig('social_profiles', 'instagram').presence
+
+    "https://www.instagram.com/#{username}"
+  end
+
   def liquid_droppables
     # Merge additional objects into this in your mailer
     # liquid template handler converts these objects into drop objects
@@ -54,12 +72,14 @@ class ApplicationMailer < ActionMailer::Base
   def liquid_locals
     # expose variables you want to be exposed in liquid
     locals = {
-      global_config: GlobalConfig.get('BRAND_NAME', 'BRAND_URL'),
+      global_config: GlobalConfig.get('BRAND_NAME', 'BRAND_URL', 'FRONTEND_URL'),
       action_url: @action_url
     }
 
-    locals.merge({ attachment_url: @attachment_url }) if @attachment_url
-    locals.merge({ failed_contacts: @failed_contacts, imported_contacts: @imported_contacts })
+    locals[:attachment_url] = @attachment_url if defined?(@attachment_url) && @attachment_url
+    locals[:failed_contacts] = @failed_contacts if defined?(@failed_contacts) && @failed_contacts
+    locals[:imported_contacts] = @imported_contacts if defined?(@imported_contacts) && @imported_contacts
+    locals[:instagram_profile_url] = @instagram_profile_url if defined?(@instagram_profile_url) && @instagram_profile_url.present?
     locals
   end
 
@@ -80,5 +100,13 @@ class ApplicationMailer < ActionMailer::Base
     # ensure locale won't bleed into other requests
     # https://guides.rubyonrails.org/i18n.html#managing-the-locale-across-requests
     I18n.with_locale(locale, &)
+  end
+
+  # Get SuperAdmin emails for a specific account - used when account is suspended
+  # Returns only SuperAdmins who are associated with the given account
+  def super_admin_emails(account)
+    return [] unless account
+
+    account.users.where(type: 'SuperAdmin').pluck(:email).compact
   end
 end

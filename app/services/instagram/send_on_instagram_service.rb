@@ -3,131 +3,180 @@ class Instagram::SendOnInstagramService < Base::SendOnChannelService
 
   pattr_initialize [:message!]
 
-  base_uri 'https://graph.facebook.com/v11.0/me'
+  base_uri 'https://graph.facebook.com/v18.0'
 
   private
 
-  delegate :additional_attributes, to: :contact
-
   def channel_class
-    Channel::FacebookPage
+    Channel::Instagram
   end
 
   def perform_reply
     if message.attachments.present?
-      message.attachments.each do |attachment|
-        send_to_facebook_page attachment_message_params(attachment)
-      end
+      send_to_instagram_page attachment_message_params
+    else
+      send_to_instagram_page message_params
     end
-
-    send_to_facebook_page message_params if message.content.present?
   rescue StandardError => e
     ChatwootExceptionTracker.new(e, account: message.account, user: message.sender).capture_exception
-    # TODO : handle specific errors or else page will get disconnected
-    # channel.authorization_error!
   end
 
   def message_params
-    params = {
+    {
       recipient: { id: contact.get_source_id(inbox.id) },
       message: {
         text: message.content
       }
-    }
-
-    merge_human_agent_tag(params)
+    }.tap { |params| merge_human_agent_tag(params) }
   end
 
-  def attachment_message_params(attachment)
-    params = {
+  def attachment_message_params
+    attachment = message.attachments.first
+    # Prefer locally stored file URL over external CDN URL, which may have expired
+    url = attachment.file.attached? ? attachment.download_url : (attachment.external_url.presence || attachment.download_url)
+    {
       recipient: { id: contact.get_source_id(inbox.id) },
       message: {
         attachment: {
           type: attachment_type(attachment),
           payload: {
-            url: attachment.download_url
+            url: url
           }
         }
       }
-    }
-
-    merge_human_agent_tag(params)
+    }.tap { |params| merge_human_agent_tag(params) }
   end
 
-  # Deliver a message with the given payload.
-  # @see https://developers.facebook.com/docs/messenger-platform/instagram/features/send-message
-  def send_to_facebook_page(message_content)
-    access_token = channel.page_access_token
-    app_secret_proof = calculate_app_secret_proof(GlobalConfigService.load('FB_APP_SECRET', ''), access_token)
+  def send_to_instagram_page(message_content)
+    access_token = channel.access_token
     query = { access_token: access_token }
-    query[:appsecret_proof] = app_secret_proof if app_secret_proof
 
-    # url = "https://graph.facebook.com/v11.0/me/messages?access_token=#{access_token}"
+    if conversation.additional_attributes['type'] == 'instagram_comments'
+
+      send_reply_to_instagram_comment(query, message_content)
+    else
+      send_message_to_instagram(query, message_content)
+    end
+  end
+
+  def send_reply_to_instagram_comment(query, message_content)
+    comment_id = conversation.additional_attributes['comment_id']
+    url = "https://graph.instagram.com/v23.0/#{comment_id}/replies"
 
     response = HTTParty.post(
-      'https://graph.facebook.com/v11.0/me/messages',
+      url,
+      body: {
+        message: message_content[:message][:text],
+        access_token: query[:access_token]
+      }
+    )
+    handle_response(response)
+  end
+
+  def send_message_to_instagram(query, message_content)
+    url = 'https://graph.instagram.com/v23.0/me/messages'
+    response = HTTParty.post(
+      url,
       body: message_content,
       query: query
     )
 
-    handle_response(response, message_content)
+    handle_response(response)
   end
 
-  def handle_response(response, message_content)
-    parsed_response = response.parsed_response
-    if response.success? && parsed_response['error'].blank?
-      message.update!(source_id: parsed_response['message_id'])
-
-      parsed_response
+  def handle_response(response)
+    if response['error'].present?
+      friendly_message = external_error(response)
+      Messages::StatusUpdateService.new(message, 'failed', friendly_message).perform
+      Rails.logger.error("Instagram response: #{response['error']} : #{message.content}")
+      message.mark_failed!(friendly_message)
     else
-      external_error = external_error(parsed_response)
-      Rails.logger.error("Instagram response: #{external_error} : #{message_content}")
-      message.update!(status: :failed, external_error: external_error)
+      message.source_id = response['id'] || response['message_id'] if response['id'].present? || response['message_id'].present?
 
-      nil
+      message.mark_sent!
+      enqueue_next_message
     end
   end
 
+  def enqueue_next_message
+    next_msg = conversation.messages
+                           .where('id > ?', message.id)
+                           .where("additional_attributes ->> 'delivery_status' = ?", 'pending')
+                           .order(:id)
+                           .first
+
+    return unless next_msg.present?
+
+    SendReplyJob.perform_later(next_msg.id)
+  end
+
   def external_error(response)
-    # https://developers.facebook.com/docs/instagram-api/reference/error-codes/
-    error_message = response.dig('error', 'message')
-    error_code = response.dig('error', 'code')
+    # https://developers.facebook.com/docs/graph-api/guides/error-handling/
+    error_message = response['error']['message']
+    error_code = response['error']['code']
+    error_subcode = response['error']['error_subcode']
+    raw = "#{error_code} - #{error_message}"
 
-    "#{error_code} - #{error_message}"
+    friendly_message_for_instagram_error(raw, error_code: error_code, error_subcode: error_subcode)
   end
 
-  def calculate_app_secret_proof(app_secret, access_token)
-    Facebook::Messenger::Configuration::AppSecretProofCalculator.call(
-      app_secret, access_token
-    )
+  def friendly_message_for_instagram_error(raw_message, error_code: nil, error_subcode: nil)
+    # Prioritize subcode if available as it is more specific
+    code = error_subcode || error_code || extract_instagram_error_code(raw_message)
+    return raw_message if code.blank?
+
+    I18n.t("inbox.instagram_errors.#{code}", default: raw_message)
   end
 
-  def attachment_type(attachment)
-    return attachment.file_type if %w[image audio video file].include? attachment.file_type
+  def extract_instagram_error_code(message)
+    return nil if message.blank?
 
-    'file'
-  end
-
-  def conversation_type
-    conversation.additional_attributes['type']
-  end
-
-  def sent_first_outgoing_message_after_24_hours?
-    # we can send max 1 message after 24 hour window
-    conversation.messages.outgoing.where('id > ?', conversation.last_incoming_message.id).count == 1
-  end
-
-  def config
-    Facebook::Messenger.config
+    m = message.match(/\A(?:\(#)?(\d+)\)?\s*-?\s*/)
+    m[1] if m
   end
 
   def merge_human_agent_tag(params)
-    global_config = GlobalConfig.get('ENABLE_MESSENGER_CHANNEL_HUMAN_AGENT')
-
-    return params unless global_config['ENABLE_MESSENGER_CHANNEL_HUMAN_AGENT']
+    global_config = GlobalConfig.get('ENABLE_INSTAGRAM_CHANNEL_HUMAN_AGENT')
+    return params unless global_config['ENABLE_INSTAGRAM_CHANNEL_HUMAN_AGENT']
 
     params[:messaging_type] = 'MESSAGE_TAG'
     params[:tag] = 'HUMAN_AGENT'
     params
+  end
+
+  def attachment_type(attachment)
+    return attachment.file_type if %w[image audio video file].include?(attachment.file_type)
+
+    'file'
+  end
+
+  def contact
+    @contact ||= begin
+      conv = message.conversation
+      raise "❌ Conversation not found for message ID #{message.id}" unless conv
+      raise "❌ Contact not found for conversation ID #{conv.id}" unless conv.contact
+
+      conv.contact
+    end
+  end
+
+  def inbox
+    @inbox ||= begin
+      raise "❌ Inbox not found for message ID #{message.id}" unless message.inbox
+
+      message.inbox
+    end
+  end
+
+  def channel
+    @channel ||= inbox.channel
+  end
+
+  def conversation
+    @conversation ||= begin
+      raise "❌ Conversation not found for message ID #{message.id}" unless message.conversation
+
+      message.conversation
+    end
   end
 end

@@ -1,5 +1,6 @@
 /* eslint no-console: 0 */
 import * as types from '../mutation-types';
+import { STATUS } from '../constants';
 import Report from '../../api/reports';
 import { downloadCsvFile, generateFileName } from '../../helper/downloadHelper';
 import AnalyticsHelper from '../../helper/AnalyticsHelper';
@@ -9,6 +10,8 @@ import liveReports from '../../api/liveReports';
 
 const state = {
   fetchingStatus: false,
+  accountSummaryFetchingStatus: STATUS.FINISHED,
+  botSummaryFetchingStatus: STATUS.FINISHED,
   accountReport: {
     isFetching: {
       conversations_count: false,
@@ -20,6 +23,10 @@ const state = {
       bot_resolutions_count: false,
       bot_handoffs_count: false,
       reply_time: false,
+      booking_links_sent: false,
+      booking_forms_completed: false,
+      handoff_links_sent: false,
+      handoff_forms_completed: false,
     },
     data: {
       conversations_count: [],
@@ -31,7 +38,17 @@ const state = {
       bot_resolutions_count: [],
       bot_handoffs_count: [],
       reply_time: [],
+      booking_links_sent: [],
+      booking_forms_completed: [],
+      handoff_links_sent: [],
+      handoff_forms_completed: [],
     },
+  },
+  // Cache for booking stats to avoid duplicate API calls
+  bookingStatsCache: {
+    data: null,
+    params: null,
+    timestamp: null,
   },
   accountSummary: {
     avg_first_response_time: 0,
@@ -50,17 +67,39 @@ const state = {
     bot_handoffs_count: 0,
     previous: {},
   },
+  bookingSummary: {
+    booking_links_sent: 0,
+    booking_forms_completed: 0,
+    previous: {},
+  },
+  handoffSummary: {
+    handoff_links_sent: 0,
+    handoff_forms_completed: 0,
+    previous: {},
+  },
+  bookingSummaryFetchingStatus: STATUS.FINISHED,
+  handoffSummaryFetchingStatus: STATUS.FINISHED,
   overview: {
     uiFlags: {
       isFetchingAccountConversationMetric: false,
       isFetchingAccountConversationsHeatmap: false,
+      isFetchingAccountResolutionsHeatmap: false,
       isFetchingAgentConversationMetric: false,
       isFetchingTeamConversationMetric: false,
     },
     accountConversationMetric: {},
     accountConversationHeatmap: [],
+    accountResolutionHeatmap: [],
     agentConversationMetric: [],
     teamConversationMetric: [],
+  },
+  twilioUsage: {
+    data: null,
+    isFetching: false,
+  },
+  walletBalance: {
+    data: null,
+    isFetching: false,
   },
 };
 
@@ -74,11 +113,32 @@ const getters = {
   getBotSummary(_state) {
     return _state.botSummary;
   },
+  getAccountSummaryFetchingStatus(_state) {
+    return _state.accountSummaryFetchingStatus;
+  },
+  getBotSummaryFetchingStatus(_state) {
+    return _state.botSummaryFetchingStatus;
+  },
+  getBookingSummary(_state) {
+    return _state.bookingSummary;
+  },
+  getBookingSummaryFetchingStatus(_state) {
+    return _state.bookingSummaryFetchingStatus;
+  },
+  getHandoffSummary(_state) {
+    return _state.handoffSummary;
+  },
+  getHandoffSummaryFetchingStatus(_state) {
+    return _state.handoffSummaryFetchingStatus;
+  },
   getAccountConversationMetric(_state) {
     return _state.overview.accountConversationMetric;
   },
   getAccountConversationHeatmapData(_state) {
     return _state.overview.accountConversationHeatmap;
+  },
+  getAccountResolutionHeatmapData(_state) {
+    return _state.overview.accountResolutionHeatmap;
   },
   getAgentConversationMetric(_state) {
     return _state.overview.agentConversationMetric;
@@ -89,27 +149,105 @@ const getters = {
   getOverviewUIFlags($state) {
     return $state.overview.uiFlags;
   },
+  getTwilioUsage(_state) {
+    return _state.twilioUsage.data;
+  },
+  isFetchingTwilioUsage(_state) {
+    return _state.twilioUsage.isFetching;
+  },
+  getWalletBalance(_state) {
+    return _state.walletBalance.data;
+  },
+  isFetchingWalletBalance(_state) {
+    return _state.walletBalance.isFetching;
+  },
 };
 
 export const actions = {
-  fetchAccountReport({ commit }, reportObj) {
+  fetchAccountReport({ commit, state: currentState }, reportObj) {
     const { metric } = reportObj;
     commit(types.default.TOGGLE_ACCOUNT_REPORT_LOADING, {
       metric,
       value: true,
     });
-    Report.getReports(reportObj).then(accountReport => {
-      let { data } = accountReport;
-      data = clampDataBetweenTimeline(data, reportObj.from, reportObj.to);
-      commit(types.default.SET_ACCOUNT_REPORTS, {
-        metric,
-        data,
+
+    // Map metric to its type and field
+    const metricConfig = {
+      booking_links_sent: { type: 'booking', field: 'links_sent', group: 'booking' },
+      booking_forms_completed: { type: 'booking', field: 'forms_completed', group: 'booking' },
+      handoff_links_sent: { type: 'handoff', field: 'links_sent', group: 'handoff' },
+      handoff_forms_completed: { type: 'handoff', field: 'forms_completed', group: 'handoff' },
+    };
+
+    const config = metricConfig[metric];
+
+    // Use booking stats endpoint for new metrics
+    if (config) {
+      // Check if data already exists (already fetched for any metric)
+      const cacheKey = JSON.stringify({
+        from: reportObj.from,
+        to: reportObj.to,
+        groupBy: reportObj.groupBy
       });
-      commit(types.default.TOGGLE_ACCOUNT_REPORT_LOADING, {
-        metric,
-        value: false,
+      const cachedKey = currentState.bookingStatsCache.params;
+      const isCached = cachedKey === cacheKey && currentState.bookingStatsCache.data !== null;
+
+      if (isCached) {
+        // Extract the specific field for this metric from cached breakdown data
+        const rawBreakdownData = currentState.bookingStatsCache.data;
+        const metricData = rawBreakdownData.map(item => ({
+          timestamp: item.timestamp,
+          value: item[metric] || 0,
+          count: 0
+        }));
+
+        commit(types.default.SET_ACCOUNT_REPORTS, { metric, data: metricData });
+        commit(types.default.TOGGLE_ACCOUNT_REPORT_LOADING, { metric, value: false });
+        return;
+      }
+
+      // Make single API call that returns ALL fields in breakdown
+      Report.getBookingStats(reportObj).then(response => {
+        const rawBreakdownData = response.data; // Contains all 4 fields per data point
+
+        // Cache the full breakdown data
+        commit(types.default.SET_BOOKING_STATS_CACHE, {
+          data: rawBreakdownData,
+          params: cacheKey,
+          timestamp: Date.now(),
+        });
+
+        // Populate ALL 4 metrics from the single response
+        Object.keys(metricConfig).forEach(metricKey => {
+          const metricData = rawBreakdownData.map(item => ({
+            timestamp: item.timestamp,
+            value: item[metricKey] || 0,
+            count: 0
+          }));
+
+          commit(types.default.SET_ACCOUNT_REPORTS, { metric: metricKey, data: metricData });
+          commit(types.default.TOGGLE_ACCOUNT_REPORT_LOADING, { metric: metricKey, value: false });
+        });
+      }).catch(() => {
+        // Turn off loading for all metrics
+        Object.keys(metricConfig).forEach(metricKey => {
+          commit(types.default.TOGGLE_ACCOUNT_REPORT_LOADING, { metric: metricKey, value: false });
+        });
       });
-    });
+    } else {
+      Report.getReports(reportObj).then(accountReport => {
+        let { data } = accountReport;
+        data = clampDataBetweenTimeline(data, reportObj.from, reportObj.to);
+        commit(types.default.SET_ACCOUNT_REPORTS, {
+          metric,
+          data,
+        });
+        commit(types.default.TOGGLE_ACCOUNT_REPORT_LOADING, {
+          metric,
+          value: false,
+        });
+      });
+    }
   },
   fetchAccountConversationHeatmap({ commit }, reportObj) {
     commit(types.default.TOGGLE_HEATMAP_LOADING, true);
@@ -121,7 +259,18 @@ export const actions = {
       commit(types.default.TOGGLE_HEATMAP_LOADING, false);
     });
   },
+  fetchAccountResolutionHeatmap({ commit }, reportObj) {
+    commit(types.default.TOGGLE_RESOLUTION_HEATMAP_LOADING, true);
+    Report.getReports({ ...reportObj, groupBy: 'hour' }).then(heatmapData => {
+      let { data } = heatmapData;
+      data = clampDataBetweenTimeline(data, reportObj.from, reportObj.to);
+
+      commit(types.default.SET_RESOLUTION_HEATMAP_DATA, data);
+      commit(types.default.TOGGLE_RESOLUTION_HEATMAP_LOADING, false);
+    });
+  },
   fetchAccountSummary({ commit }, reportObj) {
+    commit(types.default.SET_ACCOUNT_SUMMARY_STATUS, STATUS.FETCHING);
     Report.getSummary(
       reportObj.from,
       reportObj.to,
@@ -132,12 +281,14 @@ export const actions = {
     )
       .then(accountSummary => {
         commit(types.default.SET_ACCOUNT_SUMMARY, accountSummary.data);
+        commit(types.default.SET_ACCOUNT_SUMMARY_STATUS, STATUS.FINISHED);
       })
       .catch(() => {
-        commit(types.default.TOGGLE_ACCOUNT_REPORT_LOADING, false);
+        commit(types.default.SET_ACCOUNT_SUMMARY_STATUS, STATUS.FAILED);
       });
   },
   fetchBotSummary({ commit }, reportObj) {
+    commit(types.default.SET_BOT_SUMMARY_STATUS, STATUS.FETCHING);
     Report.getBotSummary({
       from: reportObj.from,
       to: reportObj.to,
@@ -146,9 +297,32 @@ export const actions = {
     })
       .then(botSummary => {
         commit(types.default.SET_BOT_SUMMARY, botSummary.data);
+        commit(types.default.SET_BOT_SUMMARY_STATUS, STATUS.FINISHED);
       })
       .catch(() => {
-        commit(types.default.TOGGLE_ACCOUNT_REPORT_LOADING, false);
+        commit(types.default.SET_BOT_SUMMARY_STATUS, STATUS.FAILED);
+      });
+  },
+  fetchBookingSummary({ commit }, reportObj) {
+    commit(types.default.SET_BOOKING_SUMMARY_STATUS, STATUS.FETCHING);
+    Report.getBookingSummary({ ...reportObj, metricType: 'booking' })
+      .then(bookingSummary => {
+        commit(types.default.SET_BOOKING_SUMMARY, bookingSummary.data);
+        commit(types.default.SET_BOOKING_SUMMARY_STATUS, STATUS.FINISHED);
+      })
+      .catch(() => {
+        commit(types.default.SET_BOOKING_SUMMARY_STATUS, STATUS.FAILED);
+      });
+  },
+  fetchHandoffSummary({ commit }, reportObj) {
+    commit(types.default.SET_HANDOFF_SUMMARY_STATUS, STATUS.FETCHING);
+    Report.getBookingSummary({ ...reportObj, metricType: 'handoff' })
+      .then(handoffSummary => {
+        commit(types.default.SET_HANDOFF_SUMMARY, handoffSummary.data);
+        commit(types.default.SET_HANDOFF_SUMMARY_STATUS, STATUS.FINISHED);
+      })
+      .catch(() => {
+        commit(types.default.SET_HANDOFF_SUMMARY_STATUS, STATUS.FAILED);
       });
   },
   fetchAccountConversationMetric({ commit }, params = {}) {
@@ -199,6 +373,19 @@ export const actions = {
         downloadCsvFile(reportObj.fileName, response.data);
         AnalyticsHelper.track(REPORTS_EVENTS.DOWNLOAD_REPORT, {
           reportType: 'agent',
+          businessHours: reportObj?.businessHours,
+        });
+      })
+      .catch(error => {
+        console.error(error);
+      });
+  },
+  downloadConversationsSummaryReports(_, reportObj) {
+    return Report.getConversationsSummaryReports(reportObj)
+      .then(response => {
+        downloadCsvFile(reportObj.fileName, response.data);
+        AnalyticsHelper.track(REPORTS_EVENTS.DOWNLOAD_REPORT, {
+          reportType: 'conversations_summary',
           businessHours: reportObj?.businessHours,
         });
       })
@@ -265,6 +452,32 @@ export const actions = {
         console.error(error);
       });
   },
+  fetchTwilioUsage({ commit }, params) {
+    commit(types.default.SET_TWILIO_USAGE, { data: null, isFetching: true });
+    return Report.getTwilioUsage(params)
+      .then(response => {
+        commit(types.default.SET_TWILIO_USAGE, {
+          data: response.data,
+          isFetching: false,
+        });
+      })
+      .catch(() => {
+        commit(types.default.SET_TWILIO_USAGE, { data: null, isFetching: false });
+      });
+  },
+  fetchWalletBalance({ commit }) {
+    commit(types.default.SET_WALLET_BALANCE, { data: null, isFetching: true });
+    return Report.getWalletBalance()
+      .then(response => {
+        commit(types.default.SET_WALLET_BALANCE, {
+          data: response.data,
+          isFetching: false,
+        });
+      })
+      .catch(() => {
+        commit(types.default.SET_WALLET_BALANCE, { data: null, isFetching: false });
+      });
+  },
 };
 
 const mutations = {
@@ -274,17 +487,41 @@ const mutations = {
   [types.default.SET_HEATMAP_DATA](_state, heatmapData) {
     _state.overview.accountConversationHeatmap = heatmapData;
   },
+  [types.default.SET_RESOLUTION_HEATMAP_DATA](_state, heatmapData) {
+    _state.overview.accountResolutionHeatmap = heatmapData;
+  },
   [types.default.TOGGLE_ACCOUNT_REPORT_LOADING](_state, { metric, value }) {
     _state.accountReport.isFetching[metric] = value;
   },
+  [types.default.SET_BOT_SUMMARY_STATUS](_state, status) {
+    _state.botSummaryFetchingStatus = status;
+  },
+  [types.default.SET_ACCOUNT_SUMMARY_STATUS](_state, status) {
+    _state.accountSummaryFetchingStatus = status;
+  },
   [types.default.TOGGLE_HEATMAP_LOADING](_state, flag) {
     _state.overview.uiFlags.isFetchingAccountConversationsHeatmap = flag;
+  },
+  [types.default.TOGGLE_RESOLUTION_HEATMAP_LOADING](_state, flag) {
+    _state.overview.uiFlags.isFetchingAccountResolutionsHeatmap = flag;
   },
   [types.default.SET_ACCOUNT_SUMMARY](_state, summaryData) {
     _state.accountSummary = summaryData;
   },
   [types.default.SET_BOT_SUMMARY](_state, summaryData) {
     _state.botSummary = summaryData;
+  },
+  [types.default.SET_BOOKING_SUMMARY](_state, summaryData) {
+    _state.bookingSummary = summaryData;
+  },
+  [types.default.SET_BOOKING_SUMMARY_STATUS](_state, status) {
+    _state.bookingSummaryFetchingStatus = status;
+  },
+  [types.default.SET_HANDOFF_SUMMARY](_state, summaryData) {
+    _state.handoffSummary = summaryData;
+  },
+  [types.default.SET_HANDOFF_SUMMARY_STATUS](_state, status) {
+    _state.handoffSummaryFetchingStatus = status;
   },
   [types.default.SET_ACCOUNT_CONVERSATION_METRIC](_state, metricData) {
     _state.overview.accountConversationMetric = metricData;
@@ -303,6 +540,19 @@ const mutations = {
   },
   [types.default.TOGGLE_TEAM_CONVERSATION_METRIC_LOADING](_state, flag) {
     _state.overview.uiFlags.isFetchingTeamConversationMetric = flag;
+  },
+  [types.default.SET_BOOKING_STATS_CACHE](_state, { data, params, timestamp }) {
+    _state.bookingStatsCache.data = data;
+    _state.bookingStatsCache.params = params;
+    _state.bookingStatsCache.timestamp = timestamp;
+  },
+  [types.default.SET_TWILIO_USAGE](_state, { data, isFetching }) {
+    _state.twilioUsage.data = data;
+    _state.twilioUsage.isFetching = isFetching;
+  },
+  [types.default.SET_WALLET_BALANCE](_state, { data, isFetching }) {
+    _state.walletBalance.data = data;
+    _state.walletBalance.isFetching = isFetching;
   },
 };
 

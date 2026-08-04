@@ -6,7 +6,7 @@ import { messageStamp } from 'shared/helpers/timeHelper';
 import ImageBubble from 'widget/components/ImageBubble.vue';
 import VideoBubble from 'widget/components/VideoBubble.vue';
 import FileBubble from 'widget/components/FileBubble.vue';
-import Thumbnail from 'dashboard/components/widgets/Thumbnail.vue';
+import Avatar from 'dashboard/components-next/avatar/Avatar.vue';
 import { MESSAGE_TYPE } from 'widget/helpers/constants';
 import configMixin from '../mixins/configMixin';
 import messageMixin from '../mixins/messageMixin';
@@ -14,6 +14,7 @@ import { isASubmittedFormMessage } from 'shared/helpers/MessageTypeHelper';
 import ReplyToChip from 'widget/components/ReplyToChip.vue';
 import { BUS_EVENTS } from 'shared/constants/busEvents';
 import { emitter } from 'shared/helpers/mitt';
+import { useMessageFormatter } from 'shared/composables/useMessageFormatter';
 
 export default {
   name: 'AgentMessage',
@@ -21,7 +22,7 @@ export default {
     AgentMessageBubble,
     ImageBubble,
     VideoBubble,
-    Thumbnail,
+    Avatar,
     UserMessage,
     FileBubble,
     MessageReplyButton,
@@ -38,6 +39,12 @@ export default {
       default: () => {},
     },
   },
+  setup() {
+    const { formatMessage } = useMessageFormatter();
+    return {
+      formatMessage,
+    };
+  },
   data() {
     return {
       hasImageError: false,
@@ -52,6 +59,9 @@ export default {
         !this.message.content
       ) {
         return false;
+      }
+      if (this.contentType === 'cards') {
+        return true;
       }
       return this.message.content;
     },
@@ -68,12 +78,16 @@ export default {
       return type;
     },
     agentName() {
-      if (this.message.sender) {
-        return this.message.sender.available_name || this.message.sender.name;
+      if (this.useInboxAvatarForBot) {
+        return this.channelConfig.avatarName || this.channelConfig.websiteName;
       }
 
-      if (this.useInboxAvatarForBot) {
-        return this.channelConfig.websiteName;
+      if (this.message.sender?.name) {
+        return this.message.sender.name;
+      }
+
+      if (this.message.additional_attributes?.sender_name) {
+        return this.message.additional_attributes.sender_name;
       }
 
       return this.$t('UNREAD_VIEW.BOT');
@@ -87,9 +101,13 @@ export default {
         return displayImage;
       }
 
-      return this.message.sender
-        ? this.message.sender.avatar_url
-        : displayImage;
+      if (this.message.sender) {
+        return this.message.sender.avatar_url;
+      }
+
+      return (
+        this.message.additional_attributes?.sender_avatar_url || displayImage
+      );
     },
     hasRecordedResponse() {
       return (
@@ -163,22 +181,32 @@ export default {
       'has-response': hasRecordedResponse || isASubmittedForm,
     }"
   >
-    <div v-if="!isASubmittedForm" class="agent-message">
+    <div
+      v-if="!isASubmittedForm"
+      class="agent-message"
+      :class="{ '!max-w-full': contentType === 'cards' }"
+    >
       <div class="avatar-wrap">
-        <Thumbnail
-          v-if="message.showAvatar || hasRecordedResponse"
-          :src="avatarUrl"
-          size="24px"
-          :username="agentName"
-        />
+        <div class="user-thumbnail-box">
+          <Avatar
+            v-if="message.showAvatar || hasRecordedResponse"
+            :src="avatarUrl"
+            :size="24"
+            :name="agentName"
+            rounded-full
+          />
+        </div>
       </div>
-      <div class="message-wrap">
+      <div
+        class="message-wrap"
+        :class="{ '!max-w-full': contentType === 'cards' }"
+      >
         <div v-if="hasReplyTo" class="flex mt-2 mb-1 text-xs">
           <ReplyToChip :reply-to="replyTo" />
         </div>
         <div class="flex w-full gap-1">
           <div
-            class="space-y-2"
+            class="space-y-2 flex-1 min-w-0"
             :class="{
               'w-full':
                 contentType === 'form' &&
@@ -186,7 +214,7 @@ export default {
             }"
           >
             <AgentMessageBubble
-              v-if="shouldDisplayAgentMessage"
+              v-if="shouldDisplayAgentMessage && !hasAttachments"
               :content-type="contentType"
               :message-content-attributes="messageContentAttributes"
               :message-id="message.id"
@@ -198,6 +226,11 @@ export default {
               class="space-y-2 chat-bubble has-attachment agent bg-n-background dark:bg-n-solid-3"
               :class="wrapClass"
             >
+              <div
+                v-if="shouldDisplayAgentMessage"
+                v-dompurify-html="formatMessage(message.content, false)"
+                class="message-content prose prose-bubble text-n-slate-12 mb-2"
+              />
               <div
                 v-for="attachment in message.attachments"
                 :key="attachment.id"
@@ -228,7 +261,7 @@ export default {
               </div>
             </div>
           </div>
-          <div class="flex flex-col justify-end">
+          <div v-if="contentType !== 'cards'" class="flex flex-col justify-end">
             <MessageReplyButton
               class="transition-opacity delay-75 opacity-0 group-hover:opacity-100 sm:opacity-0"
               @click="toggleReply"

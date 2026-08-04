@@ -6,6 +6,7 @@
 #  email                     :string           not null
 #  forward_to_email          :string           not null
 #  imap_address              :string           default("")
+#  imap_authentication       :string           default("plain")
 #  imap_enable_ssl           :boolean          default(TRUE)
 #  imap_enabled              :boolean          default(FALSE)
 #  imap_login                :string           default("")
@@ -23,6 +24,7 @@
 #  smtp_openssl_verify_mode  :string           default("none")
 #  smtp_password             :string           default("")
 #  smtp_port                 :integer          default(0)
+#  verified_for_sending      :boolean          default(FALSE), not null
 #  created_at                :datetime         not null
 #  updated_at                :datetime         not null
 #  account_id                :integer          not null
@@ -39,15 +41,22 @@ class Channel::Email < ApplicationRecord
 
   AUTHORIZATION_ERROR_THRESHOLD = 10
 
+  # TODO: Remove guard once encryption keys become mandatory (target 3-4 releases out).
+  if Chatwoot.encryption_configured?
+    encrypts :imap_password
+    encrypts :smtp_password
+  end
+
   self.table_name = 'channel_email'
-  EDITABLE_ATTRS = [:email, :imap_enabled, :imap_login, :imap_password, :imap_address, :imap_port, :imap_enable_ssl,
+  EDITABLE_ATTRS = [:email, :imap_enabled, :imap_login, :imap_password, :imap_address, :imap_port, :imap_enable_ssl, :imap_authentication,
                     :smtp_enabled, :smtp_login, :smtp_password, :smtp_address, :smtp_port, :smtp_domain, :smtp_enable_starttls_auto,
-                    :smtp_enable_ssl_tls, :smtp_openssl_verify_mode, :smtp_authentication, :provider].freeze
+                    :smtp_enable_ssl_tls, :smtp_openssl_verify_mode, :smtp_authentication, :provider, :verified_for_sending].freeze
 
   validates :email, uniqueness: true
   validates :forward_to_email, uniqueness: true
 
   before_validation :ensure_forward_to_email, on: :create
+  after_commit :notify_if_reauthorization_required, on: :update
 
   def name
     'Email'
@@ -66,6 +75,13 @@ class Channel::Email < ApplicationRecord
   end
 
   private
+
+  def notify_if_reauthorization_required
+    return unless saved_change_to_imap_enabled? && imap_enabled?
+    return unless provider_config.blank? || reauthorization_required?
+
+    send_channel_reauthorization_email(:email_disconnect)
+  end
 
   def ensure_forward_to_email
     self.forward_to_email ||= "#{SecureRandom.hex}@#{account.inbound_email_domain}"

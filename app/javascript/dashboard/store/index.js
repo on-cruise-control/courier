@@ -2,7 +2,9 @@ import { createStore } from 'vuex';
 
 import accounts from './modules/accounts';
 import agentBots from './modules/agentBots';
+import agentCapacityPolicies from './modules/agentCapacityPolicies';
 import agents from './modules/agents';
+import assignmentPolicies from './modules/assignmentPolicies';
 import articles from './modules/helpCenterArticles';
 import attributes from './modules/attributes';
 import auditlogs from './modules/auditlogs';
@@ -16,6 +18,7 @@ import contactConversations from './modules/contactConversations';
 import contactLabels from './modules/contactLabels';
 import contactNotes from './modules/contactNotes';
 import contacts from './modules/contacts';
+import contests from './modules/contests';
 import conversationLabels from './modules/conversationLabels';
 import conversationMetadata from './modules/conversationMetadata';
 import conversationPage from './modules/conversationPage';
@@ -23,6 +26,7 @@ import conversations from './modules/conversations';
 import conversationSearch from './modules/conversationSearch';
 import conversationStats from './modules/conversationStats';
 import conversationTypingStatus from './modules/conversationTypingStatus';
+import conversationUnreadCounts from './modules/conversationUnreadCounts';
 import conversationWatchers from './modules/conversationWatchers';
 import csat from './modules/csat';
 import customRole from './modules/customRole';
@@ -30,6 +34,7 @@ import customViews from './modules/customViews';
 import dashboardApps from './modules/dashboardApps';
 import draftMessages from './modules/draftMessages';
 import globalConfig from 'shared/store/globalConfig';
+import bookings from './modules/bookings';
 import inboxAssignableAgents from './modules/inboxAssignableAgents';
 import inboxes from './modules/inboxes';
 import inboxMembers from './modules/inboxMembers';
@@ -41,6 +46,7 @@ import portals from './modules/helpCenterPortals';
 import reports from './modules/reports';
 import sla from './modules/sla';
 import slaReports from './modules/SLAReports';
+import sidebarSortPreferences from './modules/sidebarSortPreferences';
 import summaryReports from './modules/summaryReports';
 import teamMembers from './modules/teamMembers';
 import teams from './modules/teams';
@@ -51,13 +57,21 @@ import captainDocuments from './captain/document';
 import captainResponses from './captain/response';
 import captainInboxes from './captain/inboxes';
 import captainBulkActions from './captain/bulkActions';
+import copilotThreads from './captain/copilotThreads';
+import copilotMessages from './captain/copilotMessages';
+import captainScenarios from './captain/scenarios';
+import captainTools from './captain/tools';
+import captainCustomTools from './captain/customTools';
+
 const plugins = [];
 
 export default createStore({
   modules: {
     accounts,
     agentBots,
+    agentCapacityPolicies,
     agents,
+    assignmentPolicies,
     articles,
     attributes,
     auditlogs,
@@ -71,6 +85,7 @@ export default createStore({
     contactLabels,
     contactNotes,
     contacts,
+    contests,
     conversationLabels,
     conversationMetadata,
     conversationPage,
@@ -78,6 +93,7 @@ export default createStore({
     conversationSearch,
     conversationStats,
     conversationTypingStatus,
+    conversationUnreadCounts,
     conversationWatchers,
     csat,
     customRole,
@@ -85,6 +101,7 @@ export default createStore({
     dashboardApps,
     draftMessages,
     globalConfig,
+    bookings,
     inboxAssignableAgents,
     inboxes,
     inboxMembers,
@@ -96,6 +113,7 @@ export default createStore({
     reports,
     sla,
     slaReports,
+    sidebarSortPreferences,
     summaryReports,
     teamMembers,
     teams,
@@ -106,6 +124,11 @@ export default createStore({
     captainResponses,
     captainInboxes,
     captainBulkActions,
+    copilotThreads,
+    copilotMessages,
+    captainScenarios,
+    captainTools,
+    captainCustomTools,
   },
   plugins,
 });

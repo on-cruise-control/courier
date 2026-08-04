@@ -1,5 +1,8 @@
 class Api::V1::Widget::ConfigsController < Api::V1::Widget::BaseController
   before_action :set_global_config
+  # skip_before_action :set_contact, only: [:show]
+
+  def show; end
 
   def create
     build_contact
@@ -9,7 +12,13 @@ class Api::V1::Widget::ConfigsController < Api::V1::Widget::BaseController
   private
 
   def set_global_config
-    @global_config = GlobalConfig.get('LOGO_THUMBNAIL', 'BRAND_NAME', 'WIDGET_BRAND_URL')
+    @global_config = GlobalConfig.get(
+      'LOGO_THUMBNAIL',
+      'BRAND_NAME',
+      'WIDGET_BRAND_URL',
+      'MAXIMUM_FILE_UPLOAD_SIZE',
+      'INSTALLATION_NAME'
+    )
   end
 
   def set_contact

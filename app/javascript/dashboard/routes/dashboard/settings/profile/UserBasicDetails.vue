@@ -1,11 +1,11 @@
 <script>
 import { useAlert } from 'dashboard/composables';
-import FormButton from 'v3/components/Form/Button.vue';
+import NextButton from 'dashboard/components-next/button/Button.vue';
 import { useVuelidate } from '@vuelidate/core';
 import { required, minLength, email } from '@vuelidate/validators';
 export default {
   components: {
-    FormButton,
+    NextButton,
   },
   props: {
     name: {
@@ -17,6 +17,10 @@ export default {
       default: '',
     },
     displayName: {
+      type: String,
+      default: '',
+    },
+    phoneNumber: {
       type: String,
       default: '',
     },
@@ -34,6 +38,7 @@ export default {
       userName: this.name,
       userDisplayName: this.displayName,
       userEmail: this.email,
+      userPhoneNumber: this.phoneNumber,
       inputStyles: {
         borderRadius: '0.75rem',
         padding: '0.375rem 0.75rem',
@@ -52,6 +57,7 @@ export default {
       required,
       email,
     },
+    userPhoneNumber: {},
   },
   watch: {
     name: {
@@ -72,6 +78,12 @@ export default {
       },
       immediate: true,
     },
+    phoneNumber: {
+      handler(value) {
+        this.userPhoneNumber = value;
+      },
+      immediate: true,
+    },
   },
   methods: {
     async updateUser() {
@@ -84,6 +96,7 @@ export default {
         name: this.userName,
         displayName: this.userDisplayName,
         email: this.userEmail,
+        phoneNumber: this.userPhoneNumber,
       });
     },
   },
@@ -131,13 +144,22 @@ export default {
       @input="v$.userEmail.$touch"
       @blur="v$.userEmail.$touch"
     />
-    <FormButton
-      type="submit"
-      color-scheme="primary"
-      variant="solid"
-      size="large"
-    >
-      {{ $t('PROFILE_SETTINGS.BTN_TEXT') }}
-    </FormButton>
+    <woot-input
+      v-model="userPhoneNumber"
+      :styles="inputStyles"
+      :class="{ error: v$.userPhoneNumber.$error }"
+      :label="$t('PROFILE_SETTINGS.FORM.PHONE_NUMBER.LABEL')"
+      :placeholder="$t('PROFILE_SETTINGS.FORM.PHONE_NUMBER.PLACEHOLDER')"
+      :error="`${
+        v$.userPhoneNumber.$error
+          ? $t('PROFILE_SETTINGS.FORM.PHONE_NUMBER.ERROR')
+          : ''
+      }`"
+      @input="v$.userPhoneNumber.$touch"
+      @blur="v$.userPhoneNumber.$touch"
+    />
+    <div>
+      <NextButton type="submit" :label="$t('PROFILE_SETTINGS.BTN_TEXT')" />
+    </div>
   </form>
 </template>

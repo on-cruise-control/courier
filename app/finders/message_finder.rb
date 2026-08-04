@@ -15,9 +15,10 @@ class MessageFinder
   end
 
   def messages
-    return conversation_messages if @params[:filter_internal_messages].blank?
+    base = conversation_messages.where("(additional_attributes->>'deferred_spam_reply') IS NULL OR (additional_attributes->>'deferred_spam_reply') != 'true'")
+    return base if @params[:filter_internal_messages].blank?
 
-    conversation_messages.where.not('private = ? OR message_type = ?', true, 2)
+    base.where.not('private = ? OR message_type = ?', true, 2)
   end
 
   def current_messages
@@ -48,3 +49,5 @@ class MessageFinder
     messages.reorder('created_at desc').limit(20).reverse
   end
 end
+
+MessageFinder.prepend_mod_with('MessageFinder')

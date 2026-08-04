@@ -12,14 +12,11 @@ describe NotificationListener do
     let(:event_name) { :'conversation.created' }
 
     context 'when conversation is created' do
-      it 'creates notifications for inbox members who have notifications turned on' do
+      it 'creates notifications for account users who have notifications turned on' do
         notification_setting = first_agent.notification_settings.first
         notification_setting.selected_email_flags = [:email_conversation_creation]
         notification_setting.selected_push_flags = []
         notification_setting.save!
-
-        create(:inbox_member, user: first_agent, inbox: inbox)
-        conversation.reload
 
         event = Events::Base.new(event_name, Time.zone.now, conversation: conversation)
 
@@ -27,14 +24,11 @@ describe NotificationListener do
         expect(notification_setting.user.notifications.count).to eq(1)
       end
 
-      it 'does not create notification for inbox members who have notifications turned off' do
+      it 'does not create notification for account users who have notifications turned off' do
         notification_setting = agent_with_out_notification.notification_settings.first
         notification_setting.unselect_all_email_flags
         notification_setting.unselect_all_push_flags
         notification_setting.save!
-
-        create(:inbox_member, user: agent_with_out_notification, inbox: inbox)
-        conversation.reload
 
         event = Events::Base.new(event_name, Time.zone.now, conversation: conversation)
 
@@ -142,7 +136,24 @@ describe NotificationListener do
       expect(first_agent.notifications.first.notification_type).to eq('conversation_mention')
     end
 
-    it 'will not create duplicate new message notifications for assignment & participation' do
+    it 'will create a mention notification when a user is mentioned in a private note' do
+      create(:inbox_member, user: first_agent, inbox: inbox)
+
+      message = build(
+        :message,
+        conversation: conversation,
+        account: account,
+        content: "hey [#{first_agent.name}](mention://user/#{first_agent.id}/#{first_agent.name})",
+        private: true
+      )
+      event = Events::Base.new(event_name, Time.zone.now, message: message)
+      listener.message_created(event)
+
+      expect(first_agent.notifications.count).to eq(1)
+      expect(first_agent.notifications.first.notification_type).to eq('conversation_mention')
+    end
+
+    it 'will not create new message notifications for private messages without mentions' do
       create(:inbox_member, user: first_agent, inbox: inbox)
       conversation.update(assignee: first_agent)
       # participants is created by async job. so creating it directly for testcase
@@ -160,8 +171,7 @@ describe NotificationListener do
       listener.message_created(event)
 
       expect(conversation.conversation_participants.map(&:user)).to include(first_agent)
-      expect(first_agent.notifications.count).to eq(1)
-      expect(first_agent.notifications.first.notification_type).to eq('assigned_conversation_new_message')
+      expect(first_agent.notifications.count).to eq(0)
     end
   end
 
@@ -169,14 +179,11 @@ describe NotificationListener do
     let(:event_name) { :'conversation.bot_handoff' }
 
     context 'when conversation is bot handoff' do
-      it 'creates notifications for inbox members who have notifications turned on' do
+      it 'creates notifications for account users who have notifications turned on' do
         notification_setting = first_agent.notification_settings.first
         notification_setting.selected_email_flags = [:email_conversation_creation]
         notification_setting.selected_push_flags = []
         notification_setting.save!
-
-        create(:inbox_member, user: first_agent, inbox: inbox)
-        conversation.reload
 
         event = Events::Base.new(event_name, Time.zone.now, conversation: conversation)
 
@@ -184,14 +191,11 @@ describe NotificationListener do
         expect(notification_setting.user.notifications.count).to eq(1)
       end
 
-      it 'does not create notification for inbox members who have notifications turned off' do
+      it 'does not create notification for account users who have notifications turned off' do
         notification_setting = agent_with_out_notification.notification_settings.first
         notification_setting.unselect_all_email_flags
         notification_setting.unselect_all_push_flags
         notification_setting.save!
-
-        create(:inbox_member, user: agent_with_out_notification, inbox: inbox)
-        conversation.reload
 
         event = Events::Base.new(event_name, Time.zone.now, conversation: conversation)
 

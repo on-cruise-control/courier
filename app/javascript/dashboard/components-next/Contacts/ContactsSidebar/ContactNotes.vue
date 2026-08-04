@@ -55,7 +55,7 @@ useKeyboardEvents(keyboardEvents);
 </script>
 
 <template>
-  <div class="flex flex-col gap-6 py-6">
+  <div class="flex flex-col gap-6">
     <Editor
       v-model="state.message"
       :placeholder="t('CONTACTS_LAYOUT.SIDEBAR.NOTES.PLACEHOLDER')"
@@ -87,8 +87,10 @@ useKeyboardEvents(keyboardEvents);
       <ContactNoteItem
         v-for="note in notes"
         :key="note.id"
+        class="mx-6 py-4"
         :note="note"
         :written-by="getWrittenBy(note)"
+        allow-delete
         @delete="onDelete"
       />
     </div>

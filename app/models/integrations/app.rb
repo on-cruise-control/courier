@@ -18,12 +18,20 @@ class Integrations::App
     I18n.t("integration_apps.#{params[:i18n_key]}.description")
   end
 
+  def short_description
+    I18n.t("integration_apps.#{params[:i18n_key]}.short_description")
+  end
+
   def logo
     params[:logo]
   end
 
   def fields
     params[:fields]
+  end
+
+  def visible_properties
+    Array(params[:visible_properties]).map(&:to_s)
   end
 
   # There is no way to get the account_id from the linear callback
@@ -35,7 +43,8 @@ class Integrations::App
   def action
     case params[:id]
     when 'slack'
-      "#{params[:action]}&client_id=#{ENV.fetch('SLACK_CLIENT_ID', nil)}&redirect_uri=#{self.class.slack_integration_url}"
+      client_id = GlobalConfigService.load('SLACK_CLIENT_ID', nil)
+      "#{params[:action]}&client_id=#{client_id}&redirect_uri=#{self.class.slack_integration_url}"
     when 'linear'
       build_linear_action
     else
@@ -46,11 +55,15 @@ class Integrations::App
   def active?(account)
     case params[:id]
     when 'slack'
-      ENV['SLACK_CLIENT_SECRET'].present?
+      GlobalConfigService.load('SLACK_CLIENT_SECRET', nil).present?
     when 'linear'
-      GlobalConfigService.load('LINEAR_CLIENT_ID', nil).present?
+      account.feature_enabled?('linear_integration') && GlobalConfigService.load('LINEAR_CLIENT_ID', nil).present?
     when 'shopify'
-      account.feature_enabled?('shopify_integration') && GlobalConfigService.load('SHOPIFY_CLIENT_ID', nil).present?
+      shopify_enabled?(account)
+    when 'leadsquared'
+      account.feature_enabled?('crm_integration')
+    when 'notion'
+      notion_enabled?(account)
     else
       true
     end
@@ -64,7 +77,8 @@ class Integrations::App
       "redirect_uri=#{self.class.linear_integration_url}",
       "state=#{encode_state}",
       'scope=read,write',
-      'prompt=consent'
+      'prompt=consent',
+      'actor=app'
     ].join('&')
   end
 
@@ -105,5 +119,15 @@ class Integrations::App
     def find(params)
       all.detect { |app| app.id == params[:id] }
     end
+  end
+
+  private
+
+  def shopify_enabled?(account)
+    account.feature_enabled?('shopify_integration') && GlobalConfigService.load('SHOPIFY_CLIENT_ID', nil).present?
+  end
+
+  def notion_enabled?(account)
+    account.feature_enabled?('notion_integration') && GlobalConfigService.load('NOTION_CLIENT_ID', nil).present?
   end
 end

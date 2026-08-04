@@ -7,6 +7,9 @@ import ChatArticle from './template/Article.vue';
 import EmailInput from './template/EmailInput.vue';
 import CustomerSatisfaction from 'shared/components/CustomerSatisfaction.vue';
 import IntegrationCard from './template/IntegrationCard.vue';
+import { IFrameHelper } from 'widget/helpers/utils';
+import { API } from 'widget/helpers/axios';
+import endPoints from 'widget/api/endPoints';
 
 export default {
   name: 'AgentMessageBubble',
@@ -66,6 +69,24 @@ export default {
     },
   },
   methods: {
+    async onViewVehicle(vehicleId) {
+      const conversationId =
+        this.$store.getters['conversationAttributes/getConversationParams']?.id;
+      IFrameHelper.sendMessage({
+        event: 'show-vehicle-loading',
+        data: {},
+      });
+      try {
+        const { data } = await API.get(endPoints.getVehicleDetails(vehicleId).url);
+        const vehicle = data?.body?.data;
+        IFrameHelper.sendMessage({
+          event: 'show-vehicle-details',
+          data: { vehicle, conversationId },
+        });
+      } catch {
+        IFrameHelper.sendMessage({ event: 'hide-vehicle-loading', data: {} });
+      }
+    },
     onResponse(messageResponse) {
       this.$store.dispatch('message/update', messageResponse);
     },
@@ -85,6 +106,17 @@ export default {
         messageId: this.messageId,
       });
     },
+    onWheelScroll(e) {
+      const el = e.currentTarget;
+      if (el.scrollWidth <= el.clientWidth) return;
+      // If this is a horizontal gesture (trackpad), let the browser handle it natively
+      if (e.deltaX !== 0) return;
+      const atRightEnd = el.scrollLeft + el.clientWidth >= el.scrollWidth;
+      const atLeftEnd = el.scrollLeft <= 0;
+      if ((e.deltaY > 0 && atRightEnd) || (e.deltaY < 0 && atLeftEnd)) return;
+      e.preventDefault();
+      el.scrollLeft += e.deltaY;
+    },
   },
 };
 </script>
@@ -99,7 +131,7 @@ export default {
     >
       <div
         v-dompurify-html="formatMessage(message, false)"
-        class="message-content text-n-slate-12"
+        class="message-content prose prose-bubble text-n-slate-12"
       />
       <EmailInput
         v-if="isTemplateEmail"
@@ -128,7 +160,11 @@ export default {
       :submitted-values="messageContentAttributes.submitted_values"
       @submit="onFormSubmit"
     />
-    <div v-if="isCards">
+    <div
+      v-if="isCards"
+      class="flex gap-2 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+      @wheel="onWheelScroll"
+    >
       <ChatCard
         v-for="item in messageContentAttributes.items"
         :key="item.title"
@@ -136,6 +172,7 @@ export default {
         :title="item.title"
         :description="item.description"
         :actions="item.actions"
+        @view-vehicle="onViewVehicle"
       />
     </div>
     <div v-if="isArticle">
@@ -144,6 +181,8 @@ export default {
     <CustomerSatisfaction
       v-if="isCSAT"
       :message-content-attributes="messageContentAttributes.submitted_values"
+      :display-type="messageContentAttributes.display_type"
+      :message="message"
       :message-id="messageId"
     />
   </div>
