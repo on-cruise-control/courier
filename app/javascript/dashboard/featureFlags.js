@@ -54,6 +54,8 @@ export const FEATURE_FLAGS = {
   // CUSTOM START
   CUSTOM_UI: 'custom_ui',
   BOOKINGS: 'bookings',
+  OFFERS_AND_PROMOTIONS: 'offers_and_promotions',
+  PAYMENT_CALCULATOR: 'payment_calculator',
   // CUSTOM END
 };
 

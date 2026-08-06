@@ -660,6 +660,13 @@ const menuItems = computed(() => {
       ],
     },
     {
+      name: 'Offers',
+      label: t('SIDEBAR.OFFERS_AND_PROMOTIONS'),
+      icon: 'i-lucide-handshake',
+      to: accountScopedRoute('offers_index'),
+      activeOn: ['offers_index'],
+    },
+    {
       name: 'Bookings',
       label: t('BOOKINGS.HEADER'),
       icon: 'i-lucide-calendar-check',
