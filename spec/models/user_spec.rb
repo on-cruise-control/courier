@@ -339,6 +339,36 @@ RSpec.describe User do
     end
   end
 
+  describe 'onboarding instructions callback' do
+    let(:unconfirmed_user) { create(:user, skip_confirmation: false) }
+
+    it 'sends onboarding instructions when the user confirms via Devise' do
+      expect(unconfirmed_user).to receive(:send_onboarding_instructions)
+
+      unconfirmed_user.confirm
+    end
+
+    it 'sends onboarding instructions when confirmed_at is set directly (e.g. by Super Admin)' do
+      expect(unconfirmed_user).to receive(:send_onboarding_instructions)
+
+      unconfirmed_user.update!(confirmed_at: Time.current)
+    end
+
+    it 'does not send onboarding instructions when confirmed_at is unchanged' do
+      unconfirmed_user
+      expect(unconfirmed_user).not_to receive(:send_onboarding_instructions)
+
+      unconfirmed_user.update!(name: 'New Name')
+    end
+
+    it 'does not resend onboarding instructions on later saves after confirmation' do
+      unconfirmed_user.confirm
+      expect(unconfirmed_user).not_to receive(:send_onboarding_instructions)
+
+      unconfirmed_user.update!(name: 'New Name')
+    end
+  end
+
   describe 'after_destroy callback' do
     it 'cancels pending confirmation reminder jobs when the user is destroyed' do
       expect(user).to receive(:cancel_confirmation_reminder_jobs)
