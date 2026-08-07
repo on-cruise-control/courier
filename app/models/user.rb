@@ -125,6 +125,7 @@ class User < ApplicationRecord
   after_destroy :cancel_confirmation_reminder_jobs
   after_save :sync_user_sessions, if: :saved_change_to_tokens?
   after_save :cancel_confirmation_reminder_jobs, if: :saved_change_to_confirmed_at?
+  after_save :send_onboarding_instructions, if: :confirmed_for_first_time?
 
   scope :order_by_full_name, -> { order('lower(name) ASC') }
 
@@ -228,6 +229,19 @@ class User < ApplicationRecord
 
       job.delete if job.args.first['arguments']&.first == id
     end
+  end
+
+  # True only on the save where confirmed_at actually transitions from nil to a timestamp,
+  # so this fires once regardless of how the user got confirmed (email link, password reset,
+  # or a Super Admin editing confirmed_at directly).
+  def confirmed_for_first_time?
+    saved_change_to_confirmed_at? && saved_change_to_confirmed_at[0].nil? && confirmed_at.present?
+  end
+
+  def send_onboarding_instructions
+    return if account_users.blank?
+
+    Users::OnboardingInstructionsJob.perform_later(id)
   end
 
   def sync_user_sessions

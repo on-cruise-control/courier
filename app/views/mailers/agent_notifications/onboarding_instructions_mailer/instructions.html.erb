@@ -1,0 +1,55 @@
+<%
+  recipient_name = @user.name.presence || @user.email
+  account_name = @account.name
+
+  features = [
+    ['Handoffs', "Take over conversations when our AI assistant needs human support to continue helping the customer."],
+    ['Escalations', "Issues that require additional expertise or immediate attention are escalated to you so they can be resolved efficiently."],
+    ['Appointment Bookings', "Review confirmed appointments and follow up with customers whenever needed."],
+    ['Negative Comments', 'Conversations with negative customer sentiment are flagged so you can respond quickly and help resolve concerns.']
+  ]
+%>
+
+<%= render partial: 'devise/mailer/confirmation_body', locals: {
+  action_text: nil,
+  action_url: nil,
+  detail_rows: [],
+  eyebrow: 'Getting Started',
+  heading: "Welcome to #{account_name}!",
+  info_text: nil,
+  info_title: nil,
+  intro_text: "You've been added as an agent , here's a quick rundown of what to expect once you're in.",
+  recipient_name: recipient_name,
+  supporting_text: "Here's what to expect:"
+} %>
+
+<tr>
+  <td style="padding: 0 0 24px;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width: 100%;">
+      <% features.each_with_index do |(title, description), index| %>
+        <tr>
+          <td style="padding: <%= index.zero? ? '0' : '14px' %> 0 0; vertical-align: top;">
+            <table role="presentation" cellpadding="0" cellspacing="0">
+              <tr>
+                <td style="width: 14px; padding-top: 7px; vertical-align: top;">
+                  <span style="display: inline-block; width: 6px; height: 6px; border-radius: 999px; background-color: #2781F6;"></span>
+                </td>
+                <td style="padding-left: 4px; vertical-align: top;">
+                  <p style="margin: 0; font-size: 14px; line-height: 21px; color: #334155;">
+                    <span style="font-weight: 700; color: #0F172A;"><%= title %>:</span>
+                    <%= description %>
+                  </p>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      <% end %>
+    </table>
+  </td>
+</tr>
+<tr>
+  <td>
+    <p style="margin: 0; font-size: 14px; line-height: 21px; color: #475569;">Welcome aboard!</p>
+  </td>
+</tr>
