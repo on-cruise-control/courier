@@ -158,11 +158,17 @@
   "SMS_FORM": {
     "TITLE": "Text Us",
     "DESCRIPTION": "Enter your phone number and message, and we'll send you a text message.",
+    "NAME": {
+      "LABEL": "Name",
+      "PLACEHOLDER": "Enter your name",
+      "REQUIRED_ERROR": "Name is required"
+    },
     "PHONE_NUMBER": {
       "LABEL": "Phone Number",
-      "PLACEHOLDER": "+1234567890",
+      "PLACEHOLDER": "Enter a valid number",
       "REQUIRED_ERROR": "Phone number is required",
-      "VALID_ERROR": "Please enter a valid phone number"
+      "VALID_ERROR": "Please select a country code",
+      "INCOMPLETE_ERROR": "Please enter a valid phone number"
     },
     "MESSAGE": {
       "LABEL": "Message",

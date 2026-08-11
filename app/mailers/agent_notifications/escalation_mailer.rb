@@ -19,7 +19,7 @@ class AgentNotifications::EscalationMailer < ApplicationMailer
     @summary = @conversation.summary
     @customer_name = @customer_data['name'].presence || @conversation.contact.name
     @customer_email = @customer_data['email'].presence
-    @customer_phone = @customer_data['phone'].presence
+    @customer_phone = PhoneNumberFormatter.format(@customer_data['phone'].presence)
     @platform_name = @conversation.inbox.platform_name
     @action_url = conversation_url(@conversation)
 
@@ -51,7 +51,7 @@ class AgentNotifications::EscalationMailer < ApplicationMailer
     @summary = @conversation.summary
     @customer_name = @conversation.contact.name
     @customer_email = @conversation.contact.email
-    @customer_phone = @conversation.contact.phone_number
+    @customer_phone = PhoneNumberFormatter.format(@conversation.contact.phone_number)
     @platform_name = @conversation.inbox.platform_name
     @action_url = conversation_url(@conversation)
 

@@ -4,9 +4,9 @@ describe ConversationFinder do
   subject(:conversation_finder) { described_class.new(user_1, params) }
 
   let!(:account) { create(:account) }
-  let!(:user_1) { create(:user, account: account) }
-  let!(:user_2) { create(:user, account: account) }
-  let!(:admin) { create(:user, account: account, role: :administrator) }
+  let!(:user_1) { create(:user, account: account).tap(&:reload) }
+  let!(:user_2) { create(:user, account: account).tap(&:reload) }
+  let!(:admin) { create(:user, account: account, role: :administrator).tap(&:reload) }
   let!(:inbox) { create(:inbox, account: account, enable_auto_assignment: false) }
   let!(:contact_inbox) { create(:contact_inbox, inbox: inbox, source_id: 'testing_source_id') }
   let!(:restricted_inbox) { create(:inbox, account: account) }

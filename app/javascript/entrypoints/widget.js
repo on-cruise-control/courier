@@ -14,6 +14,7 @@ import { plugin, defaultConfig } from '@formkit/vue';
 import {
   startsWithPlus,
   isPhoneNumberValidWithDialCode,
+  isPhoneNumberComplete,
 } from 'shared/helpers/Validators';
 
 const i18n = createI18n({
@@ -35,6 +36,7 @@ app.use(
     rules: {
       startsWithPlus: ({ value }) => startsWithPlus(value),
       isValidPhoneNumber: ({ value }) => isPhoneNumberValidWithDialCode(value),
+      isCompletePhoneNumber: ({ value }) => isPhoneNumberComplete(value),
     },
   })
 );

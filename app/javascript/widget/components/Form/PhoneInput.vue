@@ -80,7 +80,22 @@ function setContextValue(code) {
 }
 
 function onChange(e) {
-  phoneNumber.value = e.target.value;
+  let digitsOnly = e.target.value.replace(/\D/g, '');
+
+  const dialDigits = activeDialCode.value.replace(/\D/g, '');
+  const localMax = Math.max(15 - dialDigits.length, 0);
+
+  if (
+    dialDigits &&
+    digitsOnly.length > localMax &&
+    digitsOnly.startsWith(dialDigits)
+  ) {
+    digitsOnly = digitsOnly.slice(dialDigits.length);
+  }
+
+  digitsOnly = digitsOnly.slice(0, localMax);
+  phoneNumber.value = digitsOnly;
+  e.target.value = digitsOnly;
   // This function is used to set the context value when the user types in the phone number field.
   setContextValue(activeDialCode.value);
 }
