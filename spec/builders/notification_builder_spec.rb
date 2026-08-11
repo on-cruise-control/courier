@@ -30,7 +30,7 @@ describe NotificationBuilder do
 
     it 'will not throw error if notification setting is not present' do
       perform_enqueued_jobs do
-        user.account_users.destroy_all
+        user.reload.account_users.destroy_all
       end
       expect(
         described_class.new(

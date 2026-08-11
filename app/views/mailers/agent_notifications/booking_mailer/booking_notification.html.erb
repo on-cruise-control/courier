@@ -10,7 +10,7 @@
         { label: 'Dealership Name', value: @account&.name },
         { label: 'Name', value: @conversation&.contact&.name },
         { label: 'Date', value: @booking_date },
-        { label: 'Platform', value: "#{@platform_name} (DM)" },
+        { label: 'Platform', value: "#{@platform_name}#{' (DM)' unless @conversation&.inbox&.sms_channel?}" },
         { label: 'Type', value: 'Sales & general inquiry' },
         { label: 'Phone', value: @phone },
         { label: 'Email', value: @customer_email },
@@ -47,6 +47,36 @@
     <% end %>
   </table>
   
+  <% is_website_lead = @source.present? || @campaign.present? || @search_term.present? || @content_variant.present? %>
+  <% if is_website_lead || @ad_title.present? %>
+    <% source_rows = if is_website_lead
+                       [
+                         { label: 'Came From (Source)', value: @source },
+                         { label: 'Campaign', value: @campaign },
+                         { label: 'Search Term', value: @search_term },
+                         { label: 'Ad/Content Variant', value: @content_variant }
+                       ]
+                     else
+                       [{ label: 'Ad Title', value: @ad_title }]
+                     end.select { |row| row[:value].present? }
+    %>
+    <div style="margin-bottom: 24px;">
+      <p style="font-size: 16px; margin-bottom: 12px;"><strong>Source Details</strong></p>
+      <table style="border-collapse: separate; border-spacing: 0; width: 100%; font-size: 15px;">
+        <% source_rows.each_with_index do |row, index| %>
+          <tr style="<%= index.even? ? 'background: #f2f3f7;' : '' %>">
+            <td style="font-weight: bold; padding: 10px 12px; <%= 'border-radius: 8px 0 0 0;' if index == 0 %> <%= 'border-radius: 0 0 0 8px;' if index == source_rows.size - 1 %>">
+              <%= row[:label] %>
+            </td>
+            <td style="padding: 10px 12px; <%= 'border-radius: 0 8px 0 0;' if index == 0 %> <%= 'border-radius: 0 0 8px 0;' if index == source_rows.size - 1 %>">
+              <%= row[:value] %>
+            </td>
+          </tr>
+        <% end %>
+      </table>
+    </div>
+  <% end %>
+
   <div style="margin-bottom: 24px;">
     <% if @summary.present? %>
       <p style="font-size: 16px; margin-bottom: 12px;"><strong>Conversation Summary</strong></p>

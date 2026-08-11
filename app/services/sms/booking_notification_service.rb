@@ -1,7 +1,8 @@
 class Sms::BookingNotificationService
   include Sms::Concerns::TwilioConfigurable
 
-  def initialize(conversation:, booking_date:, phone:, email:, whatsapp_number: nil, text_number: nil, summary: nil)
+  def initialize(conversation:, booking_date:, phone:, email:, whatsapp_number: nil, text_number: nil, summary: nil,
+                 source: nil, campaign: nil, search_term: nil, content_variant: nil, ad_title: nil)
     @conversation = conversation
     @account = conversation.account
     @booking_date = booking_date
@@ -10,6 +11,11 @@ class Sms::BookingNotificationService
     @whatsapp_number = whatsapp_number
     @text_number = text_number
     @summary_override = summary
+    @source = source
+    @campaign = campaign
+    @search_term = search_term
+    @content_variant = content_variant
+    @ad_title = ad_title
   end
 
   def perform
@@ -46,23 +52,26 @@ class Sms::BookingNotificationService
       id: @conversation.display_id,
       host: ENV.fetch('FRONTEND_URL', 'http://localhost:3000')
     )
-    platform_name = @conversation.inbox&.platform_name
+    inbox = @conversation.inbox
+    platform_name = inbox&.platform_name
     customer_name = @conversation.contact&.name
 
     body = <<~SMS
       📆 New Booking Scheduled
 
       Dealership: #{account_name}
-      #{"Platform: #{platform_name}(DM)" if platform_name.present?}
+      #{"Platform: #{platform_name}#{'(DM)' unless inbox&.sms_channel?}" if platform_name.present?}
       #{"Name: #{customer_name}" if customer_name.present?}
 
       Booking Date: #{@booking_date}
-      Customer Phone: #{@customer_phone}
+      Customer Phone: #{PhoneNumberFormatter.format(@customer_phone)}
       Customer Email: #{@customer_email}
     SMS
 
-    body += "      WhatsApp Number: #{@whatsapp_number}\n" if @whatsapp_number.present?
-    body += "      Text Number: #{@text_number}\n" if @text_number.present?
+    body += "      WhatsApp Number: #{PhoneNumberFormatter.format(@whatsapp_number)}\n" if @whatsapp_number.present?
+    body += "      Text Number: #{PhoneNumberFormatter.format(@text_number)}\n" if @text_number.present?
+
+    body += source_details_section
 
     summary = conversation_summary
     body += "\nSummary: #{summary}\n" if summary.present?
@@ -70,6 +79,24 @@ class Sms::BookingNotificationService
     body += "\nView conversation: #{conversation_url}\n"
 
     body.strip
+  end
+
+  def source_details_section
+    is_website_lead = @source.present? || @campaign.present? || @search_term.present? || @content_variant.present?
+    return '' unless is_website_lead || @ad_title.present?
+
+    lines = if is_website_lead
+              [
+                ("Came From (Source): #{@source}" if @source.present?),
+                ("Campaign: #{@campaign}" if @campaign.present?),
+                ("Search Term: #{@search_term}" if @search_term.present?),
+                ("Ad/Content Variant: #{@content_variant}" if @content_variant.present?)
+              ]
+            else
+              ["Ad Title: #{@ad_title}"]
+            end.compact
+
+    "\nSource Details\n#{lines.join("\n")}\n"
   end
 
   def send_sms_to_recipients(recipients, message_body)

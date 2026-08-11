@@ -42,6 +42,7 @@ RSpec.describe AccountBuilder do
 
       it 'links user to account as administrator' do
         user, account = account_builder.perform
+        user.reload
         expect(user.account_users.first.role).to eq('administrator')
         expect(user.accounts.first).to eq(account)
       end
