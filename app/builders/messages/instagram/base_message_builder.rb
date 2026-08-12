@@ -193,6 +193,10 @@ class Messages::Instagram::BaseMessageBuilder < Messages::Messenger::MessageBuil
 
     params[:content_attributes][:external_echo] = true if @outgoing_echo
     params[:content_attributes][:is_unsupported] = true if message_is_unsupported?
+
+    referral = ad_referral_attributes(message || {})
+    params[:content_attributes][:referral] = referral if referral.present?
+
     params
   end
 

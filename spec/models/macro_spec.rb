@@ -41,7 +41,7 @@ RSpec.describe Macro do
 
     context 'when user is agent' do
       it 'set visibility always to agent' do
-        Current.user = agent
+        Current.user = agent.reload
         Current.account = account
 
         expect(macro.visibility).to eq('personal')

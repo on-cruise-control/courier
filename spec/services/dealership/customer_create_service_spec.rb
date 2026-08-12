@@ -4,7 +4,7 @@ RSpec.describe Dealership::CustomerCreateService do
   let(:account) { create(:account, dealership_id: 'dealership_123') }
   let(:inbox) { create(:inbox, account: account) }
   let(:contact) { create(:contact, account: account, name: 'John Doe', email: 'john@test.com', phone_number: '+1234567890') }
-  let(:service) { described_class.new(contact, inbox: inbox, force: true) }
+  let(:service) { described_class.new(contact, inbox: inbox) }
 
   before do
     allow(inbox).to receive(:platform_name).and_return('Website')
@@ -40,7 +40,11 @@ RSpec.describe Dealership::CustomerCreateService do
             dealership_id: 'dealership_123',
             name: 'John Doe',
             email: 'john@test.com',
-            phone: '+1234567890'
+            phone: '+1234567890',
+            whatsapp_number: nil,
+            sms_number: nil,
+            referer_url: nil,
+            ad_title: nil
           }.to_json,
           headers: {
             'Content-Type' => 'application/json',

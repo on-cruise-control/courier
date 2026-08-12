@@ -138,7 +138,7 @@ RSpec.describe 'Agents API', type: :request do
         expect(response_data['role']).to eq('administrator')
         expect(response_data['availability_status']).to eq('busy')
         expect(response_data['auto_offline']).to be(false)
-        expect(other_agent.account_users.first.role).to eq('administrator')
+        expect(other_agent.reload.account_users.first.role).to eq('administrator')
       end
     end
   end

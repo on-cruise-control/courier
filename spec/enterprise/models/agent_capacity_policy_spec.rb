@@ -19,7 +19,7 @@ RSpec.describe AgentCapacityPolicy, type: :model do
     end
 
     it 'nullifies associated account users' do
-      account_user = user.account_users.first
+      account_user = user.reload.account_users.first
       account_user.update!(agent_capacity_policy: policy)
 
       policy.destroy

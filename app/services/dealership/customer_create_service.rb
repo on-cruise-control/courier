@@ -3,11 +3,11 @@
 class Dealership::CustomerCreateService
   include HTTParty
 
-  def initialize(contact, inbox: nil, force: false, name: nil, email: nil, phone: nil)
+  def initialize(contact, inbox: nil, conversation: nil, name: nil, email: nil, phone: nil)
     @contact = contact
     @inbox = inbox || contact.inboxes.first
+    @conversation = conversation
     @account = contact.account
-    @force = force
     @name_override  = name
     @email_override = email
     @phone_override = phone
@@ -17,10 +17,6 @@ class Dealership::CustomerCreateService
 
   def perform
     return unless enabled?
-
-    unless @force || whatsapp_or_sms?
-      return
-    end
 
     url = "#{@base_url}/api/v1/customers"
     headers = {
@@ -45,12 +41,6 @@ class Dealership::CustomerCreateService
     @base_url.present? && @api_key.present? && @account.dealership_id.present?
   end
 
-  def whatsapp_or_sms?
-    return false if @inbox.nil?
-
-    @inbox.whatsapp? || @inbox.sms? || @inbox.twilio?
-  end
-
   def payload
     {
       contact_id: @contact.id,
@@ -58,7 +48,39 @@ class Dealership::CustomerCreateService
       dealership_id: @account.dealership_id,
       name: @name_override.presence || @contact.name.presence,
       email: @email_override.presence || @contact.email.presence,
-      phone: @phone_override.presence || @contact.phone_number.presence
+      phone: @phone_override.presence || @contact.phone_number.presence,
+      whatsapp_number: whatsapp_number,
+      sms_number: sms_number,
+      referer_url: referer_url,
+      ad_title: ad_title
     }
+  end
+
+  def contact_phone_number
+    @phone_override.presence || @contact.phone_number.presence
+  end
+
+  def whatsapp_number
+    return nil unless @inbox&.whatsapp? || @inbox&.twilio_whatsapp?
+
+    contact_phone_number
+  end
+
+  def sms_number
+    return nil unless @inbox&.sms? || (@inbox&.twilio? && !@inbox.twilio_whatsapp?)
+
+    contact_phone_number
+  end
+
+  def referer_url
+    @conversation&.additional_attributes&.dig('referer').presence || referral_attributes['source_url']
+  end
+
+  def ad_title
+    referral_attributes['ad_title'] || referral_attributes['headline']
+  end
+
+  def referral_attributes
+    @referral_attributes ||= @conversation&.messages&.incoming&.first&.content_attributes&.dig('referral') || {}
   end
 end

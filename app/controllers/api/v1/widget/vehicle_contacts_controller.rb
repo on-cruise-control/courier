@@ -5,9 +5,7 @@ class Api::V1::Widget::VehicleContactsController < Api::V1::Widget::BaseControll
   def create
     account = @current_account
 
-    if account.booking_emails.blank?
-      return render json: { error: 'No booking emails configured' }, status: :unprocessable_entity
-    end
+    return render json: { error: 'No booking emails configured' }, status: :unprocessable_entity if account.booking_emails.blank?
 
     VehicleContactMailer.with(
       account: account,
@@ -30,17 +28,6 @@ class Api::V1::Widget::VehicleContactsController < Api::V1::Widget::BaseControll
   def create_booking(account)
     conversation = account.conversations.find_by(id: params[:conversation_id])
     return unless conversation
-
-    contact = conversation.contact
-
-    Dealership::CustomerCreateService.new(
-      contact,
-      inbox: conversation.inbox,
-      force: true,
-      name: params[:name],
-      email: params[:email],
-      phone: params[:phone]
-    ).perform
 
     vehicle_title = params[:vehicle_title].presence || 'a vehicle'
     summary = build_summary(vehicle_title)

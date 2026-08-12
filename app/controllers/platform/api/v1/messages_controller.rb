@@ -57,7 +57,12 @@ class Platform::Api::V1::MessagesController < PlatformController
       email: params[:email],
       whatsapp_number: params[:whatsapp_number],
       text_number: params[:text_number],
-      summary: params[:summary]
+      summary: params[:summary],
+      source: params[:source],
+      campaign: params[:campaign],
+      search_term: params[:search_term],
+      content_variant: params[:content_variant],
+      ad_title: params[:ad_title]
     ).deliver_now
 
     Rails.logger.info("Booking email sent to #{emails.size} recipients for conversation ##{conversation.id}")
@@ -69,7 +74,12 @@ class Platform::Api::V1::MessagesController < PlatformController
       email: params[:email],
       whatsapp_number: params[:whatsapp_number],
       text_number: params[:text_number],
-      summary: params[:summary]
+      summary: params[:summary],
+      source: params[:source],
+      campaign: params[:campaign],
+      search_term: params[:search_term],
+      content_variant: params[:content_variant],
+      ad_title: params[:ad_title]
     ).perform
 
     render json: {

@@ -103,7 +103,7 @@ RSpec.describe 'Devise::Mailer' do
     context 'when user already confirmed' do
       before do
         confirmable_user.confirm
-        confirmable_user.account_users.last.destroy!
+        confirmable_user.reload.account_users.last.destroy!
       end
 
       it 'send instructions with the link to login' do

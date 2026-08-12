@@ -173,6 +173,23 @@ class Messages::Messenger::MessageBuilder
     {}
   end
 
+  def ad_referral_attributes(message_hash)
+    referral = message_hash.to_h.with_indifferent_access[:referral]
+    return {} if referral.blank?
+
+    referral = referral.with_indifferent_access
+    ads_context_data = referral[:ads_context_data].to_h.with_indifferent_access
+
+    {
+      'ad_id' => referral[:ad_id],
+      'ref' => referral[:ref],
+      'ad_title' => ads_context_data[:ad_title],
+      'post_id' => ads_context_data[:post_id],
+      'photo_url' => ads_context_data[:photo_url],
+      'video_url' => ads_context_data[:video_url]
+    }.compact_blank
+  end
+
   private
 
   # Facebook may send attachment types that don't directly match our file_type enum.

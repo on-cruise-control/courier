@@ -1,5 +1,6 @@
 class AgentNotifications::BookingMailer < ApplicationMailer
-  def booking_notification(emails:, conversation:, booking_date:, phone:, email:, whatsapp_number: nil, text_number: nil, summary: nil)
+  def booking_notification(emails:, conversation:, booking_date:, phone:, email:, whatsapp_number: nil, text_number: nil, summary: nil,
+                           source: nil, campaign: nil, search_term: nil, content_variant: nil, ad_title: nil)
     @conversation = conversation
     @account = conversation.account
     ensure_current_account(@account)
@@ -7,7 +8,11 @@ class AgentNotifications::BookingMailer < ApplicationMailer
     if summary.present?
       @summary = summary
     else
-      Conversations::SummaryService.new(conversation: @conversation, force_refresh: true).perform rescue nil
+      begin
+        Conversations::SummaryService.new(conversation: @conversation, force_refresh: true).perform
+      rescue StandardError
+        nil
+      end
       @conversation.reload
       @summary = @conversation.summary
     end
@@ -22,12 +27,17 @@ class AgentNotifications::BookingMailer < ApplicationMailer
     return if recipients.blank?
 
     @booking_date = booking_date
-    @phone = phone
+    @phone = PhoneNumberFormatter.format(phone)
     @customer_email = email
-    @whatsapp_number = whatsapp_number
-    @text_number = text_number
+    @whatsapp_number = PhoneNumberFormatter.format(whatsapp_number)
+    @text_number = PhoneNumberFormatter.format(text_number)
     @platform_name = @conversation&.inbox&.platform_name
     @instagram_profile_url = instagram_profile_url(@conversation)
+    @source = source
+    @campaign = campaign
+    @search_term = search_term
+    @content_variant = content_variant
+    @ad_title = ad_title
     subject = '[Sales] New booking scheduled 📆'
 
     mail(to: recipients, subject: subject)

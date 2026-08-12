@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 require 'sidekiq/api'
 
 class DealershipListener < BaseListener
@@ -6,11 +7,7 @@ class DealershipListener < BaseListener
     conversation, _account = extract_conversation_and_account(event)
     return if conversation.contact.blank?
 
-    unless conversation.inbox.whatsapp? || conversation.inbox.sms? || conversation.inbox.twilio?
-      return
-    end
-
-    Dealership::CustomerCreateService.new(conversation.contact, inbox: conversation.inbox).perform
+    Dealership::CustomerCreateService.new(conversation.contact, inbox: conversation.inbox, conversation: conversation).perform
   end
 
   def message_created(event)
@@ -21,9 +18,8 @@ class DealershipListener < BaseListener
     conversation = message.conversation
     return if conversation.contact.blank?
 
-    unless conversation.inbox.whatsapp? || conversation.inbox.sms? || conversation.inbox.twilio?
-      return
-    end
+    inbox = conversation.inbox
+    return unless inbox.whatsapp? || inbox.sms? || inbox.twilio?
 
     conversation.with_lock do
       cancel_existing_booking_job(conversation)
