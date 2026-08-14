@@ -46,6 +46,6 @@ class AdministratorNotifications::ConversationServiceMailer < AdministratorNotif
 
   def platform_display
     inbox = @conversation.inbox
-    "#{inbox&.platform_name}#{'(DM)' unless inbox&.sms_channel?}"
+    "#{inbox&.platform_name}#{'(DM)' if inbox&.dm_channel?}"
   end
 end

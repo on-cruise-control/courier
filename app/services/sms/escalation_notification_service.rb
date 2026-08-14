@@ -48,7 +48,7 @@ class Sms::EscalationNotificationService
       🚨 Urgent Escalation Required
 
       Dealership: #{account_name}
-      #{"Platform: #{platform_name}#{' (DM)' unless inbox&.sms_channel?}" if platform_name.present?}
+      #{"Platform: #{platform_name}#{' (DM)' if inbox&.dm_channel?}" if platform_name.present?}
       #{"Name: #{customer_name}" if customer_name.present?}
 
       Please take over this conversation manually.

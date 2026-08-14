@@ -60,7 +60,7 @@ class Sms::BookingNotificationService
       📆 New Booking Scheduled
 
       Dealership: #{account_name}
-      #{"Platform: #{platform_name}#{'(DM)' unless inbox&.sms_channel?}" if platform_name.present?}
+      #{"Platform: #{platform_name}#{'(DM)' if inbox&.dm_channel?}" if platform_name.present?}
       #{"Name: #{customer_name}" if customer_name.present?}
 
       Booking Date: #{@booking_date}

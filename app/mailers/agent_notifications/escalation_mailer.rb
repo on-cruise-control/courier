@@ -54,6 +54,7 @@ class AgentNotifications::EscalationMailer < ApplicationMailer
     @customer_phone = PhoneNumberFormatter.format(@conversation.contact.phone_number)
     @platform_name = @conversation.inbox.platform_name
     @action_url = conversation_url(@conversation)
+    @post_url = @conversation.additional_attributes['post_url']
 
     subject = '[Escalation] Negative Comment Detected – High-Priority Follow-Up Required'
 

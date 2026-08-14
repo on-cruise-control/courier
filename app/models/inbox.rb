@@ -120,8 +120,8 @@ class Inbox < ApplicationRecord
     channel_type == 'Channel::Sms'
   end
 
-  def sms_channel?
-    sms? || (twilio? && channel.medium == 'sms')
+  def dm_channel?
+    instagram? || facebook?
   end
 
   def facebook?
