@@ -96,7 +96,7 @@ RSpec.describe AgentNotifications::EscalationMailer do
       end
 
       it 'uses customer phone from customer_data' do
-        expect(mail.body.encoded).to include('+1234567890')
+        expect(mail.body.encoded).to include(PhoneNumberFormatter.format(customer_data['phone']))
       end
     end
 

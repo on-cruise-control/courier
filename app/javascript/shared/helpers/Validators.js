@@ -1,9 +1,24 @@
+import { isValidPhoneNumber } from 'libphonenumber-js';
+
 /**
  * Checks if a string is a valid E.164 phone number format.
  * @param {string} value - The phone number to validate.
  * @returns {boolean} True if the number is in E.164 format, false otherwise.
  */
 export const isPhoneE164 = value => !!value.match(/^\+[1-9]\d{1,14}$/);
+
+/**
+ * @param {string} value
+ * @returns {boolean}
+ */
+export const isPhoneNumberComplete = value => {
+  if (!value) return false;
+  try {
+    return isValidPhoneNumber(value);
+  } catch (error) {
+    return false;
+  }
+};
 
 /**
  * Validates a phone number after removing the dial code.

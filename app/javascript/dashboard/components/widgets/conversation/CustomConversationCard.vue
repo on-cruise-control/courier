@@ -4,10 +4,7 @@ import { useRouter } from 'vue-router';
 import { useStore, useMapGetter } from 'dashboard/composables/store';
 import { getLastMessage } from 'dashboard/helper/conversationHelper';
 import { frontendURL, conversationUrl } from 'dashboard/helper/URLHelper';
-import Avatar from 'next/avatar/Avatar.vue';
 import CustomAvatar from 'dashboard/custom/CustomAvatar.vue';
-import MessagePreview from './MessagePreview.vue';
-import InboxName from '../InboxName.vue';
 import CustomInboxName from 'dashboard/custom/CustomInboxName.vue';
 import CustomMessagePreview from 'dashboard/custom/CustomMessagePreview.vue';
 import ConversationContextMenu from './contextMenu/Index.vue';
@@ -17,7 +14,6 @@ import PriorityMark from './PriorityMark.vue';
 import SLACardLabel from './components/SLACardLabel.vue';
 import ContextMenu from 'dashboard/components/ui/ContextMenu.vue';
 import VoiceCallStatus from './VoiceCallStatus.vue';
-import { FEATURE_FLAGS } from 'dashboard/featureFlags';
 
 const props = defineProps({
   activeLabel: { type: String, default: '' },
@@ -62,9 +58,6 @@ const currentChat = useMapGetter('getSelectedChat');
 const inboxesList = useMapGetter('inboxes/getInboxes');
 const activeInbox = useMapGetter('getSelectedInbox');
 const accountId = useMapGetter('getCurrentAccountId');
-const isFeatureEnabledonAccount = useMapGetter(
-  'accounts/isFeatureEnabledonAccount'
-);
 
 const chatMetadata = computed(() => props.chat.meta || {});
 
@@ -85,6 +78,10 @@ const isActiveChat = computed(() => {
 const unreadCount = computed(() => props.chat.unread_count);
 
 const hasUnread = computed(() => unreadCount.value > 0);
+
+const unreadCountLabel = computed(() =>
+  unreadCount.value > 9 ? '9+' : unreadCount.value
+);
 
 const isInboxNameVisible = computed(() => !activeInbox.value);
 
@@ -109,6 +106,18 @@ const showInboxName = computed(() => {
   );
 });
 
+const isCommentConversation = computed(() => {
+  const conversationType = props.chat.additional_attributes?.type;
+  return (
+    conversationType === 'instagram_comments' ||
+    conversationType === 'feed_comments'
+  );
+});
+
+const isSpamConversation = computed(() => {
+  return props.chat.is_spam && props.conversationType !== 'spam';
+});
+
 const showMetaSection = computed(() => {
   return (
     showInboxName.value ||
@@ -123,22 +132,6 @@ const hasSlaPolicyId = computed(() => props.chat?.sla_policy_id);
 
 const showLabelsSection = computed(() => {
   return props.chat.labels?.length > 0 || hasSlaPolicyId.value;
-});
-
-const isCommentConversation = computed(() => {
-  const conversationType = props.chat.additional_attributes?.type;
-  return (
-    conversationType === 'instagram_comments' ||
-    conversationType === 'feed_comments'
-  );
-});
-
-const isSpamConversation = computed(() => {
-  return props.chat.is_spam && props.conversationType !== 'spam';
-});
-
-const hasNegativeSentiment = computed(() => {
-  return props.chat.comment_sentiment === 'Negative';
 });
 
 const messagePreviewClass = computed(() => {
@@ -288,7 +281,7 @@ const deleteConversation = () => {
         <template #overlay="{ size }">
           <label
             v-if="hovered || selected"
-            class="flex items-center justify-center rounded-full cursor-pointer absolute inset-0 z-10 backdrop-blur-[2px]"
+            class="flex items-center justify-center rounded-lg cursor-pointer absolute inset-0 z-10 backdrop-blur-[2px]"
             :style="{ width: `${size}px`, height: `${size}px` }"
             @click.stop
           >
@@ -318,10 +311,7 @@ const deleteConversation = () => {
           v-if="showInboxName"
           class="flex items-center gap-1.5 flex-1 min-w-0"
         >
-          <CustomInboxName
-            :inbox="inbox"
-            class="flex-1 min-w-0"
-          />
+          <CustomInboxName :inbox="inbox" class="flex-1 min-w-0" />
         </div>
         <div
           class="flex items-center gap-2 flex-shrink-0"
@@ -333,15 +323,27 @@ const deleteConversation = () => {
             v-if="showAssignee && assignee.name"
             class="flex flex-row items-center gap-1 flex-shrink-0"
           >
-            <span class="inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-semibold border border-[#2b87c0] rounded-full bg-[#2b87c085] text-[#052a64] dark:bg-[#1d597eb3] dark:border-[#1d597e] dark:text-white leading-none">
+            <span
+              class="inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-semibold border border-[#2b87c0] rounded-full bg-[#2b87c085] text-[#052a64] dark:bg-[#1d597eb3] dark:border-[#1d597e] dark:text-white leading-none"
+            >
               {{ $t('CHAT_LIST.HUMAN') }}
             </span>
-            <span class="text-n-slate-11 font-medium inline-flex items-center gap-0.5 truncate max-w-[60px]" style="font-size: 9px;">
-              <fluent-icon icon="person" size="10" class="text-n-slate-11 flex-shrink-0" />
+            <span
+              class="text-n-slate-11 font-medium inline-flex items-center gap-0.5 truncate max-w-[60px] text-[9px]"
+            >
+              <fluent-icon
+                icon="person"
+                size="10"
+                class="text-n-slate-11 flex-shrink-0"
+              />
               <span class="truncate">{{ assignee.name }}</span>
             </span>
           </div>
-          <PriorityMark :priority="chat.priority" show-label class="flex-shrink-0" />
+          <PriorityMark
+            :priority="chat.priority"
+            show-label
+            class="flex-shrink-0"
+          />
         </div>
         <span
           v-if="isCommentConversation"
@@ -364,17 +366,19 @@ const deleteConversation = () => {
           {{ currentContact.name }}
         </h4>
         <div class="relative flex-shrink-0">
-          <span class="block font-normal mt-1 leading-4 text-xxs whitespace-nowrap">
+          <span
+            class="block font-normal mt-1 leading-4 text-xxs whitespace-nowrap"
+          >
             <TimeAgo
               :last-activity-timestamp="chat.timestamp"
               :created-at-timestamp="chat.created_at"
-            />                                                                                                                                                                                            
+            />
           </span>
           <span
             class="absolute top-full right-0 mt-0.5 shadow-lg rounded-full text-xxs font-semibold h-4 leading-4 min-w-[1rem] px-1 py-0 text-center text-white bg-n-teal-9"
             :class="hasUnread ? 'block' : 'hidden'"
           >
-            {{ unreadCount > 9 ? '9+' : unreadCount }}
+            {{ unreadCountLabel }}
           </span>
         </div>
       </div>

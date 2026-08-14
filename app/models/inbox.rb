@@ -120,6 +120,10 @@ class Inbox < ApplicationRecord
     channel_type == 'Channel::Sms'
   end
 
+  def dm_channel?
+    instagram? || facebook?
+  end
+
   def facebook?
     channel_type == 'Channel::FacebookPage'
   end
@@ -211,6 +215,7 @@ class Inbox < ApplicationRecord
     when 'Channel::Instagram' then 'Instagram'
     when 'Channel::FacebookPage' then 'Facebook'
     when 'Channel::TwilioSms' then 'SMS'
+    when 'Channel::Sms' then 'Sms'
     when 'Channel::Email' then 'Email'
     when 'Channel::Whatsapp' then 'Whatsapp'
     when 'Channel::Api' then 'Api'

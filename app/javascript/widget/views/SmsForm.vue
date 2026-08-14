@@ -8,6 +8,7 @@ import { createInput, FormKit } from '@formkit/vue';
 import { getContrastingTextColor } from '@chatwoot/utils';
 import { LocalStorage } from 'shared/helpers/localStorage';
 import { trackEvent } from 'widget/helpers/analyticsHelper';
+import { isPhoneNumberComplete } from 'shared/helpers/Validators';
 
 const SMS_STORAGE_KEY = 'chatwoot_sms_state';
 
@@ -24,6 +25,7 @@ export default {
   },
   data() {
     return {
+      name: '',
       phoneNumber: '',
       message: '',
       hasTrackedInteraction: false,
@@ -38,7 +40,9 @@ export default {
     },
     isValid() {
       return (
-        this.phoneNumber.trim().length > 0 && this.message.trim().length > 0
+        this.name.trim().length > 0 &&
+        isPhoneNumberComplete(this.phoneNumber.trim()) &&
+        this.message.trim().length > 0
       );
     },
   },
@@ -47,6 +51,9 @@ export default {
       // Restore form data when route changes (e.g., coming back from Terms page)
       if (to.name === 'sms-form') {
         this.$nextTick(() => {
+          if (to.query.name) {
+            this.name = to.query.name;
+          }
           if (to.query.phoneNumber) {
             this.phoneNumber = to.query.phoneNumber;
           }
@@ -55,6 +62,10 @@ export default {
           }
         });
       }
+    },
+    name() {
+      this.trackInteraction();
+      this.trackInput();
     },
     phoneNumber() {
       this.trackInteraction();
@@ -69,6 +80,9 @@ export default {
     // Restore form data from query params or localStorage
     this.$nextTick(() => {
       // First check query params (for navigation from Terms page)
+      if (this.$route.query.name) {
+        this.name = this.$route.query.name;
+      }
       if (this.$route.query.phoneNumber) {
         this.phoneNumber = this.$route.query.phoneNumber;
       }
@@ -77,10 +91,17 @@ export default {
       }
 
       // If no query params, check localStorage
-      if (!this.$route.query.phoneNumber && !this.$route.query.message) {
+      if (
+        !this.$route.query.name &&
+        !this.$route.query.phoneNumber &&
+        !this.$route.query.message
+      ) {
         const storedSmsState = LocalStorage.get(SMS_STORAGE_KEY);
         if (storedSmsState && !storedSmsState.sent) {
           // Only restore if SMS wasn't sent yet
+          if (storedSmsState.name) {
+            this.name = storedSmsState.name;
+          }
           if (storedSmsState.phoneNumber) {
             this.phoneNumber = storedSmsState.phoneNumber;
           }
@@ -99,6 +120,7 @@ export default {
 
       // Store form data in localStorage before navigating
       const smsState = {
+        name: this.name.trim(),
         phoneNumber: this.phoneNumber.trim(),
         message: this.message.trim(),
         sent: false,
@@ -110,6 +132,7 @@ export default {
       this.$router.push({
         name: 'terms-and-conditions',
         query: {
+          name: this.name.trim(),
           phoneNumber: this.phoneNumber.trim(),
           message: this.message.trim(),
         },
@@ -155,6 +178,22 @@ export default {
     <div class="flex flex-col gap-4">
       <div>
         <label class="block mb-2 text-sm font-medium text-n-slate-12">
+          {{ $t('SMS_FORM.NAME.LABEL') }}
+        </label>
+        <FormKit
+          v-model="name"
+          type="text"
+          name="name"
+          :placeholder="$t('SMS_FORM.NAME.PLACEHOLDER')"
+          validation="required"
+          :validation-messages="{
+            required: $t('SMS_FORM.NAME.REQUIRED_ERROR'),
+          }"
+        />
+      </div>
+
+      <div>
+        <label class="block mb-2 text-sm font-medium text-n-slate-12">
           {{ $t('SMS_FORM.PHONE_NUMBER.LABEL') }}
         </label>
         <FormKit
@@ -162,10 +201,11 @@ export default {
           :type="phoneInput"
           name="phoneNumber"
           :placeholder="$t('SMS_FORM.PHONE_NUMBER.PLACEHOLDER')"
-          validation="required|isValidPhoneNumber"
+          validation="required|startsWithPlus|isCompletePhoneNumber"
           :validation-messages="{
             required: $t('SMS_FORM.PHONE_NUMBER.REQUIRED_ERROR'),
-            isValidPhoneNumber: $t('SMS_FORM.PHONE_NUMBER.VALID_ERROR'),
+            startsWithPlus: $t('SMS_FORM.PHONE_NUMBER.VALID_ERROR'),
+            isCompletePhoneNumber: $t('SMS_FORM.PHONE_NUMBER.INCOMPLETE_ERROR'),
           }"
         />
       </div>

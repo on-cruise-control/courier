@@ -16,7 +16,7 @@ class AgentNotifications::TeamReachedOutMailer < ApplicationMailer
     @summary = @conversation.summary
     @customer_name = contact&.name.presence
     @customer_email = contact&.email.presence
-    @customer_phone = contact&.phone_number.presence
+    @customer_phone = PhoneNumberFormatter.format(contact&.phone_number.presence)
     @platform_name = @conversation.inbox.platform_name
     @action_url = conversation_url(@conversation)
 
@@ -26,6 +26,7 @@ class AgentNotifications::TeamReachedOutMailer < ApplicationMailer
   private
 
   def conversation_url(conversation)
-    "#{ENV.fetch('FRONTEND_URL', nil)}/app/accounts/#{conversation.account_id}/inbox/#{conversation.inbox_id}/conversations/#{conversation.display_id}"
+    "#{ENV.fetch('FRONTEND_URL',
+                 nil)}/app/accounts/#{conversation.account_id}/inbox/#{conversation.inbox_id}/conversations/#{conversation.display_id}"
   end
 end

@@ -10,7 +10,7 @@ RSpec.describe 'Agent Capacity Policy Users API', type: :request do
   describe 'GET /api/v1/accounts/{account.id}/agent_capacity_policies/{policy_id}/users' do
     context 'when admin' do
       it 'returns assigned users' do
-        user.account_users.first.update!(agent_capacity_policy: agent_capacity_policy)
+        user.reload.account_users.first.update!(agent_capacity_policy: agent_capacity_policy)
 
         get "/api/v1/accounts/#{account.id}/agent_capacity_policies/#{agent_capacity_policy.id}/users",
             headers: administrator.create_new_auth_token,
@@ -22,8 +22,8 @@ RSpec.describe 'Agent Capacity Policy Users API', type: :request do
 
       it 'returns each user only once without duplicates' do
         # Assign multiple users to the same policy
-        user.account_users.first.update!(agent_capacity_policy: agent_capacity_policy)
-        agent.account_users.first.update!(agent_capacity_policy: agent_capacity_policy)
+        user.reload.account_users.first.update!(agent_capacity_policy: agent_capacity_policy)
+        agent.reload.account_users.first.update!(agent_capacity_policy: agent_capacity_policy)
 
         get "/api/v1/accounts/#{account.id}/agent_capacity_policies/#{agent_capacity_policy.id}/users",
             headers: administrator.create_new_auth_token,
@@ -62,7 +62,7 @@ RSpec.describe 'Agent Capacity Policy Users API', type: :request do
              as: :json
 
         expect(response).to have_http_status(:success)
-        expect(user.account_users.first.reload.agent_capacity_policy).to eq(agent_capacity_policy)
+        expect(user.reload.account_users.first.agent_capacity_policy).to eq(agent_capacity_policy)
       end
     end
   end
@@ -70,7 +70,7 @@ RSpec.describe 'Agent Capacity Policy Users API', type: :request do
   describe 'DELETE /api/v1/accounts/{account.id}/agent_capacity_policies/{policy_id}/users/{id}' do
     context 'when admin' do
       before do
-        user.account_users.first.update!(agent_capacity_policy: agent_capacity_policy)
+        user.reload.account_users.first.update!(agent_capacity_policy: agent_capacity_policy)
       end
 
       it 'removes user from the policy' do
@@ -79,7 +79,7 @@ RSpec.describe 'Agent Capacity Policy Users API', type: :request do
                as: :json
 
         expect(response).to have_http_status(:ok)
-        expect(user.account_users.first.reload.agent_capacity_policy).to be_nil
+        expect(user.reload.account_users.first.agent_capacity_policy).to be_nil
       end
     end
   end

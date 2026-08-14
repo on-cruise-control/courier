@@ -15,6 +15,7 @@ RSpec.describe ConversationFinder do
       create(:conversation_participant, account: account, conversation: participating_conversation, user: agent)
       account.account_users.find_by!(user_id: agent.id).update!(custom_role: custom_role)
       Current.account = account
+      agent.reload
 
       result = described_class.new(agent, { status: 'open', conversation_type: 'participating' }).perform
 

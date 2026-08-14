@@ -37,7 +37,6 @@ class Sms::NegativeSentimentEscalationService
     customer_name = @conversation.contact&.name
     comment = @conversation.messages.where(message_type: :incoming).last&.content || nil
 
-    
     conversation_url = Rails.application.routes.url_helpers.app_account_conversation_url(
       account_id: @account.id,
       id: @conversation.display_id,
@@ -57,6 +56,9 @@ class Sms::NegativeSentimentEscalationService
     summary = conversation_summary
     body+= "\nNegative Comment: #{comment}\n" if comment.present?
     body += "\nSummary: #{summary}\n" if summary.present?
+
+    post_url = @conversation.additional_attributes['post_url']
+    body += "\nView post: #{post_url}\n" if post_url.present?
 
     body += "\nView conversation: #{conversation_url}\n"
 

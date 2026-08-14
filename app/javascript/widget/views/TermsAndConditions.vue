@@ -21,6 +21,7 @@ export default {
     return {
       isSending: false,
       isSuccess: false,
+      errorMessage: '',
     };
   },
   computed: {
@@ -32,6 +33,9 @@ export default {
     },
     dealerName() {
       return this.channelConfig.dealerName || 'Us';
+    },
+    name() {
+      return this.$route.query.name || '';
     },
     phoneNumber() {
       return this.$route.query.phoneNumber || '';
@@ -81,6 +85,7 @@ export default {
       }
 
       this.isSending = true;
+      this.errorMessage = '';
 
       try {
         const { websiteToken } = window.chatwootWebChannel;
@@ -94,12 +99,18 @@ export default {
           },
           body: JSON.stringify({
             website_token: websiteToken,
+            name: this.name,
             phone_number: this.phoneNumber,
             message: this.message,
           }),
         });
 
-        const data = await response.json();
+        let data;
+        try {
+          data = await response.json();
+        } catch (parseError) {
+          throw new Error(this.$t('SMS_TERMS.ERROR_SEND_FAILED'));
+        }
 
         if (!response.ok) {
           throw new Error(data.error || this.$t('SMS_TERMS.ERROR_SEND_FAILED'));
@@ -111,6 +122,7 @@ export default {
 
         // Update localStorage to mark SMS as sent
         const smsState = {
+          name: this.name,
           phoneNumber: this.phoneNumber,
           message: this.message,
           sent: true,
@@ -119,8 +131,9 @@ export default {
         LocalStorage.set(SMS_STORAGE_KEY, smsState);
         trackEvent('phone_number_form_completed');
       } catch (error) {
-        // Keep button in "Sending..." state on error
-        // Error is silently handled - user can retry by refreshing
+        this.isSending = false;
+        this.errorMessage =
+          error.message || this.$t('SMS_TERMS.ERROR_SEND_FAILED');
       }
     },
     handleDisagree() {
@@ -128,6 +141,7 @@ export default {
       this.$router.push({
         name: 'sms-form',
         query: {
+          name: this.name,
           phoneNumber: this.phoneNumber,
           message: this.message,
         },
@@ -198,6 +212,10 @@ export default {
           {{ ' ' }}{{ $t('SMS_TERMS.PERIOD') || '.' }}
         </p>
       </div>
+
+      <p v-if="errorMessage" class="text-sm mb-3 text-n-ruby-9">
+        {{ errorMessage }}
+      </p>
 
       <div class="flex flex-col gap-3">
         <CustomButton

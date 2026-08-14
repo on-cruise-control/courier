@@ -10,7 +10,7 @@ import { usePolicy } from 'dashboard/composables/usePolicy';
 import { useRouter, useRoute } from 'vue-router';
 import SidebarProfileMenu from '../components-next/sidebar/SidebarProfileMenu.vue';
 import Logo from 'next/icon/Logo.vue';
-import { getInboxIconByType } from 'dashboard/helper/inbox';
+import { getInboxIconByType, INBOX_TYPES } from 'dashboard/helper/inbox';
 import ComposeConversation from 'dashboard/components-next/NewConversation/ComposeConversation.vue';
 import { emitter } from 'shared/helpers/mitt';
 import { BUS_EVENTS } from 'shared/constants/busEvents';
@@ -122,6 +122,9 @@ const teams = useMapGetter('teams/getMyTeams');
 const contactCustomViews = useMapGetter('customViews/getContactCustomViews');
 const conversationCustomViews = useMapGetter(
   'customViews/getConversationCustomViews'
+);
+const hasTwilioSmsOrWhatsappInbox = computed(() =>
+  inboxes.value.some(inbox => inbox.channel_type === INBOX_TYPES.TWILIO)
 );
 
 onMounted(() => {
@@ -384,12 +387,16 @@ const menuItems = computed(() => {
           icon: 'i-lucide-handshake',
           to: accountScopedRoute('handoff_reports'),
         },
-        {
-          type: 'link',
-          label: t('SIDEBAR.TWILIO_USAGES'),
-          icon: 'i-lucide-phone',
-          to: accountScopedRoute('twilio_reports'),
-        },
+        ...(hasTwilioSmsOrWhatsappInbox.value
+          ? [
+              {
+                type: 'link',
+                label: t('SIDEBAR.TWILIO_USAGES'),
+                icon: 'i-lucide-phone',
+                to: accountScopedRoute('twilio_reports'),
+              },
+            ]
+          : []),
       ],
     },
     {

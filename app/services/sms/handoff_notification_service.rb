@@ -38,7 +38,8 @@ class Sms::HandoffNotificationService
       id: @conversation.display_id,
       host: ENV.fetch('FRONTEND_URL', 'https://courier.getcruisecontrol.com')
     )
-    platform_name = @conversation.inbox&.platform_name
+    inbox = @conversation.inbox
+    platform_name = inbox&.platform_name
     customer_name = @customer_data&.dig('name').presence || @conversation.contact&.name
     customer_email = @customer_data&.dig('email').presence
     customer_whatsapp = @customer_data&.dig('whatsapp_number').presence
@@ -46,12 +47,14 @@ class Sms::HandoffNotificationService
     customer_email = nil if customer_email == '(N/A)'
     customer_whatsapp = nil if customer_whatsapp == '(N/A)'
     customer_sms = nil if customer_sms == '(N/A)'
+    customer_whatsapp = PhoneNumberFormatter.format(customer_whatsapp) if customer_whatsapp.present?
+    customer_sms = PhoneNumberFormatter.format(customer_sms) if customer_sms.present?
 
     body = <<~SMS
       🔔 Conversation Vehicle Parts Alert
 
       Dealership: #{account_name}
-      #{"Platform: #{platform_name} (DM)" if platform_name.present?}
+      #{"Platform: #{platform_name}#{' (DM)' if inbox&.dm_channel?}" if platform_name.present?}
       #{"Name: #{customer_name}" if customer_name.present?}
       #{"Email: #{customer_email}" if customer_email.present?}
       #{"WhatsApp Number: #{customer_whatsapp}" if customer_whatsapp.present?}

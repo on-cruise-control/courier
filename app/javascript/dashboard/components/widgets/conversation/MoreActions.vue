@@ -29,6 +29,27 @@ const isBlacklisted = computed(() => currentChat.value.is_blacklisted);
 const blockConfirmDialogRef = ref(null);
 const unblockConfirmDialogRef = ref(null);
 
+const postUrl = computed(() => {
+  const attrs = currentChat.value?.additional_attributes || {};
+  const type = attrs.type;
+  const isComment =
+    type === 'instagram_comments' ||
+    type === 'facebook_comments' ||
+    type === 'feed_comments';
+  return isComment ? attrs.post_url || '' : '';
+});
+
+const postPlatformIcon = computed(() => {
+  const type = currentChat.value?.additional_attributes?.type;
+  return type === 'instagram_comments'
+    ? 'i-ri-instagram-line'
+    : 'i-ri-facebook-circle-fill';
+});
+
+const openPostUrl = () => {
+  window.open(postUrl.value, '_blank', 'noopener,noreferrer');
+};
+
 const setBlacklisted = async wasBlacklisted => {
   try {
     await store.dispatch('bulkActions/process', {
@@ -111,6 +132,16 @@ onUnmounted(() => {
 
 <template>
   <div class="relative flex items-center gap-2 actions--container">
+    <ButtonV4
+      v-if="postUrl"
+      :label="$t('CONTACT_PANEL.VIEW_POST')"
+      :icon="postPlatformIcon"
+      size="sm"
+      color="slate"
+      no-animation
+      class="shadow"
+      @click="openPostUrl"
+    />
     <ResolveAction
       :conversation-id="currentChat.id"
       :status="currentChat.status"
@@ -127,7 +158,7 @@ onUnmounted(() => {
       size="sm"
       color="slate"
       no-animation
-      class="!outline-0"
+      class="shadow"
       @click="toggleBlacklist"
     />
     <div

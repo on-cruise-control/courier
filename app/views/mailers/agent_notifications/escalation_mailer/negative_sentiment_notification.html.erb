@@ -42,10 +42,22 @@
     <% end %>
   </div>
 
+  <% if @post_url.present? %>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 8px;">
+    <tr>
+      <td style="vertical-align:middle;">
+        <a href="<%= @post_url %>" target="_blank" style="display:inline-block; background:#e5e7eb; color:#182933; font-size:13px; font-weight:700; padding:5px 12px; border-radius:8px; border:1px solid #d1d5db; text-transform:uppercase; text-decoration:none;">
+          View Post
+        </a>
+      </td>
+    </tr>
+  </table>
+  <% end %>
+
   <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 30px; padding-top: 16px;">
     <tr>
       <td style="vertical-align:middle;">
-        <a href="<%= @action_url %>" style="display:inline-block; padding:12px 25px; background-color:#182933; color:#ffffff; font-size:14px; font-weight:500; text-decoration:none; border-radius:6px;">
+        <a href="<%= @action_url %>" style="display:inline-block; padding:11px 24px; background-color:#182933; color:#ffffff; font-size:14px; font-weight:500; text-decoration:none; border-radius:6px;">
           View Conversation
         </a>
       </td>

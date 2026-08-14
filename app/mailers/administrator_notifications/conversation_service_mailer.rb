@@ -36,10 +36,16 @@ class AdministratorNotifications::ConversationServiceMailer < AdministratorNotif
   def liquid_locals
     super.merge({
                   stark_customer_name: @customer_data['name'],
-                  stark_customer_phone: @customer_data['phone'],
+                  stark_customer_phone: PhoneNumberFormatter.format(@customer_data['phone']),
                   stark_customer_email: @customer_data['email'],
-                  stark_customer_whatsapp: @customer_data['whatsapp_number'],
-                  stark_customer_sms: @customer_data['sms_number']
+                  stark_customer_whatsapp: PhoneNumberFormatter.format(@customer_data['whatsapp_number']),
+                  stark_customer_sms: PhoneNumberFormatter.format(@customer_data['sms_number']),
+                  platform_display: platform_display
                 })
+  end
+
+  def platform_display
+    inbox = @conversation.inbox
+    "#{inbox&.platform_name}#{'(DM)' if inbox&.dm_channel?}"
   end
 end

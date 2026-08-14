@@ -3,6 +3,7 @@ class Api::V1::Widget::Sms::SmsController < Api::V1::Widget::BaseController
   skip_before_action :set_contact, only: [:send_sms]
 
   def send_sms
+    name = permitted_params[:name]
     phone_number = permitted_params[:phone_number]
     message_content = permitted_params[:message]
 
@@ -23,24 +24,24 @@ class Api::V1::Widget::Sms::SmsController < Api::V1::Widget::BaseController
     end
 
     # Create or find contact
-    contact = find_or_create_contact(phone_number)
+    contact = find_or_create_contact(phone_number, name)
 
     # Create conversation if needed
     conversation = find_or_create_conversation(contact, sms_inbox)
 
     # Send SMS message
-    begin
-      send_sms_message(sms_inbox, phone_number, message_content, conversation)
-      render json: { success: true, message: 'SMS sent successfully' }
-    rescue StandardError => e
-      render json: { error: "Failed to send SMS: #{e.message}" }, status: :internal_server_error
-    end
+    send_sms_message(sms_inbox, phone_number, message_content, conversation)
+    render json: { success: true, message: 'SMS sent successfully' }
+  rescue ArgumentError => e
+    render json: { error: e.message }, status: :unprocessable_entity
+  rescue StandardError => e
+    render json: { error: "Failed to send SMS: #{e.message}" }, status: :internal_server_error
   end
 
   private
 
   def permitted_params
-    params.permit(:website_token, :phone_number, :message)
+    params.permit(:website_token, :name, :phone_number, :message)
   end
 
   def find_sms_inbox
@@ -60,7 +61,7 @@ class Api::V1::Widget::Sms::SmsController < Api::V1::Widget::BaseController
     end
   end
 
-  def find_or_create_contact(phone_number)
+  def find_or_create_contact(phone_number, name)
     account = @web_widget.inbox.account
 
     # Normalize phone number: remove spaces, dashes, parentheses, etc.
@@ -105,12 +106,12 @@ class Api::V1::Widget::Sms::SmsController < Api::V1::Widget::BaseController
 
     # If not found, create new contact
     if contact
-      # Update contact phone number to E.164 format if it's different
-      contact.update!(phone_number: e164_phone) if contact.phone_number != e164_phone
+      # Update contact phone number to E.164 format if it's different, and save the submitted name
+      contact.update!(phone_number: e164_phone, name: name)
     else
       contact = account.contacts.create!(
         phone_number: e164_phone,
-        name: e164_phone # Default name to phone number
+        name: name
       )
     end
 

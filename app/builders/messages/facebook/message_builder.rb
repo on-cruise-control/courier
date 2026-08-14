@@ -54,7 +54,7 @@ class Messages::Facebook::MessageBuilder < Messages::Messenger::MessageBuilder
                                              'template_dm'
                                            )
                                            .last
-  
+
     if template_dm_conversation
       Rails.logger.info "Found existing template_dm conversation #{template_dm_conversation.id} for contact #{@contact_inbox.contact_id} in inbox #{@inbox.id}"
       @conversation = template_dm_conversation
@@ -62,13 +62,13 @@ class Messages::Facebook::MessageBuilder < Messages::Messenger::MessageBuilder
       Rails.logger.info "No existing template_dm conversation found, creating a new one for contact #{@contact_inbox.contact_id} in inbox #{@inbox.id}"
       @conversation = set_conversation_based_on_inbox_config
     end
-  
+
     @message = @conversation.messages.create!(message_params)
 
     additional_attributes = @conversation.additional_attributes
-    additional_attributes["type"] = "template_dm"
+    additional_attributes['type'] = 'template_dm'
     @conversation.update!(additional_attributes: additional_attributes)
-  
+
     @attachments.each do |attachment|
       process_attachment(attachment)
     end
@@ -139,6 +139,9 @@ class Messages::Facebook::MessageBuilder < Messages::Messenger::MessageBuilder
       in_reply_to_external_id: response.in_reply_to_external_id
     }
     content_attributes[:external_echo] = true if @outgoing_echo
+
+    referral = ad_referral_attributes(response.message || {})
+    content_attributes[:referral] = referral if referral.present?
 
     {
       account_id: conversation.account_id,

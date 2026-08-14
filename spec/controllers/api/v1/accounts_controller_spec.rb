@@ -376,14 +376,14 @@ RSpec.describe 'Accounts API', type: :request do
 
     context 'when it is an authenticated user' do
       it 'modifies an account' do
-        expect(agent.account_users.first.active_at).to be_nil
+        expect(agent.reload.account_users.first.active_at).to be_nil
         post "/api/v1/accounts/#{account.id}/update_active_at",
              params: {},
              headers: agent.create_new_auth_token,
              as: :json
 
         expect(response).to have_http_status(:success)
-        expect(agent.account_users.first.active_at).not_to be_nil
+        expect(agent.reload.account_users.first.active_at).not_to be_nil
       end
     end
   end
