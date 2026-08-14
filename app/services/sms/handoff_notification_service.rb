@@ -54,7 +54,7 @@ class Sms::HandoffNotificationService
       🔔 Conversation Vehicle Parts Alert
 
       Dealership: #{account_name}
-      #{"Platform: #{platform_name}#{' (DM)' unless inbox&.sms_channel?}" if platform_name.present?}
+      #{"Platform: #{platform_name}#{' (DM)' if inbox&.dm_channel?}" if platform_name.present?}
       #{"Name: #{customer_name}" if customer_name.present?}
       #{"Email: #{customer_email}" if customer_email.present?}
       #{"WhatsApp Number: #{customer_whatsapp}" if customer_whatsapp.present?}

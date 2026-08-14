@@ -37,7 +37,7 @@
         <% end %> 
         <tr>
           <td style="padding:10px 14px; font-size:13px; color:#6b7280; border-top:1px solid #e5e7eb;">Platform</td>
-          <td style="padding:10px 14px; font-size:14px; font-weight:600; color:#111827; border-top:1px solid #e5e7eb;"><%= @platform_name %><%= '(DM)' unless @conversation&.inbox&.sms_channel? %></td>
+          <td style="padding:10px 14px; font-size:14px; font-weight:600; color:#111827; border-top:1px solid #e5e7eb;"><%= @platform_name %><%= '(DM)' if @conversation&.inbox&.dm_channel? %></td>
         </tr>
       </table>
     </td>

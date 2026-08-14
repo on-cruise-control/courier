@@ -10,7 +10,7 @@
         { label: 'Dealership Name', value: @account&.name },
         { label: 'Name', value: @conversation&.contact&.name },
         { label: 'Date', value: @booking_date },
-        { label: 'Platform', value: "#{@platform_name}#{' (DM)' unless @conversation&.inbox&.sms_channel?}" },
+        { label: 'Platform', value: "#{@platform_name}#{' (DM)' if @conversation&.inbox&.dm_channel?}" },
         { label: 'Type', value: 'Sales & general inquiry' },
         { label: 'Phone', value: @phone },
         { label: 'Email', value: @customer_email },
