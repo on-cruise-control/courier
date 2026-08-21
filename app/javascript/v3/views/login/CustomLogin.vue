@@ -7,12 +7,15 @@ import { useVuelidate } from '@vuelidate/core';
 import { SESSION_STORAGE_KEYS } from 'dashboard/constants/sessionStorage';
 import SessionStorage from 'shared/helpers/sessionStorage';
 import { useBranding } from 'shared/composables/useBranding';
+import AnalyticsHelper from 'dashboard/helper/AnalyticsHelper';
+import { SESSION_EVENTS } from 'dashboard/helper/AnalyticsHelper/events';
 
 import SimpleDivider from '../../components/Divider/SimpleDivider.vue';
 import FormInput from '../../components/Form/Input.vue';
 import GoogleOAuthButton from '../../components/GoogleOauth/Button.vue';
 import Spinner from 'shared/components/Spinner.vue';
 import MfaVerification from 'dashboard/components/auth/MfaVerification.vue';
+import SessionLimitOverlay from 'dashboard/components/auth/SessionLimitOverlay.vue';
 
 const ERROR_MESSAGES = {
   'no-account-found': 'LOGIN.OAUTH.NO_ACCOUNT_FOUND',
@@ -30,6 +33,7 @@ export default {
     Spinner,
     SimpleDivider,
     MfaVerification,
+    SessionLimitOverlay,
   },
   props: {
     ssoAuthToken: { type: String, default: '' },
@@ -55,6 +59,8 @@ export default {
       mfaToken: null,
       showPassword: false,
       rememberMe: false,
+      sessionsLimitReached: false,
+      limitedSessions: [],
     };
   },
   validations() {
@@ -132,7 +138,9 @@ export default {
       this.loginApi.hasErrored = false;
       this.loginApi.showLoading = true;
       const credentials = {
-        email: this.email ? decodeURIComponent(this.email) : this.credentials.email,
+        email: this.email
+          ? decodeURIComponent(this.email)
+          : this.credentials.email,
         password: this.credentials.password,
         sso_auth_token: this.ssoAuthToken,
         ssoAccountId: this.ssoAccountId,
@@ -147,6 +155,15 @@ export default {
             this.mfaToken = result.mfaToken;
             return;
           }
+
+          if (result?.sessionsLimitReached) {
+            this.loginApi.showLoading = false;
+            this.sessionsLimitReached = true;
+            this.limitedSessions = result.sessions;
+            AnalyticsHelper.track(SESSION_EVENTS.LIMIT_HIT);
+            return;
+          }
+
           this.handleImpersonation();
           this.showAlertMessage(this.$t('LOGIN.API.SUCCESS_MESSAGE'));
         })
@@ -155,7 +172,9 @@ export default {
             window.location = '/app/login';
           }
           this.loginApi.hasErrored = true;
-          this.showAlertMessage(response?.message || this.$t('LOGIN.API.UNAUTH'));
+          this.showAlertMessage(
+            response?.message || this.$t('LOGIN.API.UNAUTH')
+          );
         });
     },
     submitFormLogin() {
@@ -174,14 +193,63 @@ export default {
       this.mfaToken = null;
       this.credentials.password = '';
     },
+    retryLoginWithParams(extraParams) {
+      const credentials = {
+        email: this.email
+          ? decodeURIComponent(this.email)
+          : this.credentials.email,
+        password: this.credentials.password,
+        sso_auth_token: this.ssoAuthToken,
+        ssoAccountId: this.ssoAccountId,
+        ssoConversationId: this.ssoConversationId,
+        ...extraParams,
+      };
+
+      this.sessionsLimitReached = false;
+      this.limitedSessions = [];
+      this.loginApi.showLoading = true;
+      login(credentials)
+        .then(result => {
+          if (result?.sessionsLimitReached) {
+            this.loginApi.showLoading = false;
+            this.sessionsLimitReached = true;
+            this.limitedSessions = result.sessions;
+            AnalyticsHelper.track(SESSION_EVENTS.LIMIT_HIT);
+            return;
+          }
+          this.handleImpersonation();
+          this.showAlertMessage(this.$t('LOGIN.API.SUCCESS_MESSAGE'));
+        })
+        .catch(response => {
+          this.loginApi.hasErrored = true;
+          this.showAlertMessage(
+            response?.message || this.$t('LOGIN.API.UNAUTH')
+          );
+        });
+    },
+    handleSessionRevoke(sessionId) {
+      this.retryLoginWithParams({ revoke_session_id: sessionId });
+    },
+    handleSessionRevokeAll() {
+      this.retryLoginWithParams({ revoke_all_sessions: true });
+    },
+    handleSessionLimitCancel() {
+      this.sessionsLimitReached = false;
+      this.limitedSessions = [];
+      this.credentials.password = '';
+    },
   },
 };
 </script>
 
 <template>
-  <div class="flex h-screen overflow-hidden w-full font-['Outfit',sans-serif] bg-white dark:bg-n-solid-1">
+  <div
+    class="flex h-screen overflow-hidden w-full font-['Outfit',sans-serif] bg-white dark:bg-n-solid-1"
+  >
     <!-- Left panel: form -->
-    <div class="flex flex-col w-full lg:w-[48%] px-8 py-4 sm:py-8 lg:px-16 justify-between bg-white dark:bg-n-solid-1 overflow-y-auto">
+    <div
+      class="flex flex-col w-full lg:w-[48%] px-8 py-4 sm:py-8 lg:px-16 justify-between bg-white dark:bg-n-solid-1 overflow-y-auto"
+    >
       <!-- Logo -->
       <div>
         <img
@@ -198,9 +266,19 @@ export default {
       </div>
 
       <!-- Form area -->
-      <div class="flex-1 flex flex-col justify-center max-w-sm mx-auto w-full mt-4 sm:mt-8">
+      <div
+        class="flex-1 flex flex-col justify-center max-w-sm mx-auto w-full mt-4 sm:mt-8"
+      >
+        <SessionLimitOverlay
+          v-if="sessionsLimitReached"
+          :sessions="limitedSessions"
+          @revoke="handleSessionRevoke"
+          @revoke-all="handleSessionRevokeAll"
+          @cancel="handleSessionLimitCancel"
+        />
+
         <MfaVerification
-          v-if="mfaRequired"
+          v-else-if="mfaRequired"
           :mfa-token="mfaToken"
           @verified="handleMfaVerified"
           @cancel="handleMfaCancel"

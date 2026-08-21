@@ -1,5 +1,18 @@
 class SuperAdmin::InstallationConfigsController < SuperAdmin::ApplicationController
   rescue_from ActiveRecord::RecordNotUnique, :with => :invalid_action_perfomed
+  def create
+    resource = new_resource(resource_params)
+    authorize_resource(resource)
+
+    if resource.save
+      redirect_to after_resource_created_path(resource), flash: success_flash(resource)
+    else
+      render :new, locals: {
+        page: Administrate::Page::Form.new(dashboard, resource)
+      }, status: :unprocessable_entity
+    end
+  end
+
   # Overwrite any of the RESTful controller actions to implement custom behavior
   # For example, you may want to send an email after a foo is updated.
   #
@@ -29,20 +42,7 @@ class SuperAdmin::InstallationConfigsController < SuperAdmin::ApplicationControl
   # this will be used to set the records shown on the `index` action.
   #
   def scoped_resource
-    resource_class
-  end
-
-  def create
-    resource = new_resource(resource_params)
-    authorize_resource(resource)
-
-    if resource.save
-      redirect_to after_resource_created_path(resource), flash: success_flash(resource)
-    else
-      render :new, locals: {
-        page: Administrate::Page::Form.new(dashboard, resource)
-      }, status: :unprocessable_entity
-    end
+    resource_class.where.not(name: 'DEFAULT_EMAILS')
   end
 
   def update

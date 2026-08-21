@@ -10,7 +10,7 @@ class AgentNotifications::TeamReachedOutMailer < ApplicationMailer
                    emails
                  end
 
-    return if recipients.blank?
+    return if recipients.blank? && default_bcc_emails.blank?
 
     contact = @conversation.contact
     @summary = @conversation.summary
@@ -20,7 +20,7 @@ class AgentNotifications::TeamReachedOutMailer < ApplicationMailer
     @platform_name = @conversation.inbox.platform_name
     @action_url = conversation_url(@conversation)
 
-    mail(to: recipients, subject: '⚠️ Follow-Up Required: Team Has Not Reached Out to Customer')
+    mail(to: recipients, subject: '⚠️ Follow-Up Required: Team Has Not Reached Out to Customer', bcc: default_bcc_emails.presence)
   end
 
   private

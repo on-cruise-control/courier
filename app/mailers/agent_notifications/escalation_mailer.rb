@@ -14,7 +14,7 @@ class AgentNotifications::EscalationMailer < ApplicationMailer
                    emails
                  end
 
-    return if recipients.blank?
+    return if recipients.blank? && default_bcc_emails.blank?
 
     @summary = @conversation.summary
     @customer_name = @customer_data['name'].presence || @conversation.contact.name
@@ -25,7 +25,7 @@ class AgentNotifications::EscalationMailer < ApplicationMailer
 
     subject = '[Escalation] 🚨 Urgent Escalation: Customer Experience Issue – Immediate Attention Required'
 
-    mail(to: recipients, subject: subject)
+    mail(to: recipients, subject: subject, bcc: default_bcc_emails.presence)
   end
 
   def negative_sentiment_notification(emails:, conversation:, customer_data: nil)
@@ -46,7 +46,7 @@ class AgentNotifications::EscalationMailer < ApplicationMailer
                    emails
                  end
 
-    return if recipients.blank?
+    return if recipients.blank? && default_bcc_emails.blank?
 
     @summary = @conversation.summary
     @customer_name = @conversation.contact.name
@@ -58,7 +58,7 @@ class AgentNotifications::EscalationMailer < ApplicationMailer
 
     subject = '[Escalation] Negative Comment Detected – High-Priority Follow-Up Required'
 
-    mail(to: recipients, subject: subject)
+    mail(to: recipients, subject: subject, bcc: default_bcc_emails.presence)
   end
 
   private

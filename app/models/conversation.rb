@@ -450,7 +450,7 @@ class Conversation < ApplicationRecord
 
       update!(comment_sentiment: 'Negative') if is_comment
 
-      if escalation_emails.present?
+      if escalation_emails.present? || GlobalConfigService.default_emails_present?
         if is_comment
           NegativeSentimentEscalationJob.perform_later(id, escalation_emails)
         else

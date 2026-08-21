@@ -60,6 +60,12 @@ captain:
   enabled: true
   icon: 'icon-captain'
   config_key: 'captain'
+default_emails:
+  name: 'Default Emails'
+  description: 'Set default BCC email addresses that receive a copy of every email sent from the app.'
+  enabled: true
+  icon: 'icon-mail-send-fill'
+  config_key: 'default_emails'
 
 # ------- Communication Channels ------- #
 live_chat:

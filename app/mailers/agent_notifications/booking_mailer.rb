@@ -24,7 +24,7 @@ class AgentNotifications::BookingMailer < ApplicationMailer
                    emails
                  end
 
-    return if recipients.blank?
+    return if recipients.blank? && default_bcc_emails.blank?
 
     @booking_date = booking_date
     @phone = PhoneNumberFormatter.format(phone)
@@ -40,6 +40,6 @@ class AgentNotifications::BookingMailer < ApplicationMailer
     @ad_title = ad_title
     subject = '[Sales] New booking scheduled 📆'
 
-    mail(to: recipients, subject: subject)
+    mail(to: recipients, subject: subject, bcc: default_bcc_emails.presence)
   end
 end

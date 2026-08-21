@@ -16,10 +16,6 @@ import BuildInfo from './components/BuildInfo.vue';
 import AccountDelete from './components/AccountDelete.vue';
 import AudioTranscription from './components/AudioTranscription.vue';
 import SectionLayout from './components/SectionLayout.vue';
-import BookingEmails from './components/BookingEmails.vue';
-import VehiclePartsEmails from './components/VehiclePartsEmails.vue';
-import EscalationEmails from './components/EscalationEmails.vue';
-import ServiceEmails from './components/ServiceEmails.vue';
 import TwilioConfiguration from './components/TwilioConfiguration.vue';
 
 export default {
@@ -33,10 +29,6 @@ export default {
     SectionLayout,
     WithLabel,
     NextInput,
-    BookingEmails,
-    VehiclePartsEmails,
-    EscalationEmails,
-    ServiceEmails,
     TwilioConfiguration,
   },
   setup() {
@@ -259,10 +251,6 @@ export default {
     </div>
     <AudioTranscription v-if="showAudioTranscriptionConfig" />
     <TwilioConfiguration />
-    <BookingEmails />
-    <VehiclePartsEmails />
-    <EscalationEmails />
-    <ServiceEmails />
     <AccountId />
     <div v-if="!uiFlags.isFetchingItem && isOnChatwootCloud">
       <AccountDelete />
