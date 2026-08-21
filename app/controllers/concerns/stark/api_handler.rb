@@ -21,7 +21,7 @@ module Stark
 
         case status_code
         when 200
-          parse_stark_response(response, message)
+          parse_stark_response(response, conversation, message)
         when 400, 500
           log_stark_error(status_code, response, conversation)
           nil
@@ -126,9 +126,11 @@ module Stark
       }
     end
 
-    def parse_stark_response(response, message = nil)
+    def parse_stark_response(response, conversation, message = nil)
       data = response['body']['data']
       customer_data = data['customer'].is_a?(Hash) ? data['customer'] : {}
+
+      update_contact_name(conversation.contact, conversation, customer_data['name'])
 
       platform = conversation.inbox.platform_name
       handoff_customer_name = (customer_data['name'].presence ||
@@ -213,6 +215,20 @@ module Stark
       SlackNotifierService.call(
         text: message
       )
+    end
+
+    def sms_channel?(conversation)
+      conversation.inbox.twilio? || conversation.inbox.sms?
+    end
+
+    def update_contact_name(contact, conversation, new_name)
+      return if contact.nil? || new_name.blank?
+      return unless sms_channel?(conversation)
+
+      formatted_name = new_name.split.map(&:capitalize).join(' ')
+      return if contact.name.present? && contact.name.casecmp?(formatted_name)
+
+      contact.update!(name: formatted_name)
     end
 
     def extract_customer_name(contact, platform)

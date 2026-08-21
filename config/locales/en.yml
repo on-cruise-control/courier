@@ -32,7 +32,7 @@
 en:
   hello: 'Hello world'
   comment_reply: 'Thanks for dropping us a comment 💬. We replied via DM, take a look when you have a sec.'
-  dm_template: 'Hi! 👋 Thanks for engaging! Let me know if you need any specific information or have any questions!'
+  dm_template: 'Hi! 👋 Thanks for engaging!'
   inbox:
     reauthorization:
       success: 'Channel reauthorized successfully'
