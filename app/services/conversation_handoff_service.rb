@@ -2,13 +2,13 @@ class ConversationHandoffService
   HANDOFF_COOLDOWN_MINUTES = 240 # 4 hours in minutes
   HANDOFF_LABEL = 'handoff'
   ESCALATION_LABEL = 'escalation'
-  VALID_HANDOFF_REASONS = ['external_escalation', 'vehicle_parts', 'service_inquiry'].freeze
+  VALID_HANDOFF_REASONS = %w[external_escalation vehicle_parts service_inquiry].freeze
 
   def initialize(conversation)
     @conversation = conversation
   end
 
-  def process_handoff(customer_data = nil, handoff_reason = nil , message = nil)
+  def process_handoff(customer_data = nil, handoff_reason = nil, message = nil)
     return unless should_send_notification?
     return unless VALID_HANDOFF_REASONS.include?(handoff_reason)
 
@@ -22,19 +22,19 @@ class ConversationHandoffService
     case handoff_reason
 
     when 'external_escalation'
-     if @conversation.account.escalation_emails.present?
-        EscalationNotificationJob.perform_later(@conversation.id, @conversation.account.escalation_emails, customer_data , message)
+      if @conversation.account.escalation_emails.present? || GlobalConfigService.default_emails_present?
+        EscalationNotificationJob.perform_later(@conversation.id, @conversation.account.escalation_emails, customer_data, message)
       else
         Rails.logger.warn("Escalation email not configured for account #{@conversation.account.id}")
       end
     when 'vehicle_parts'
-      if @conversation.account.vehicle_parts_emails.present?
+      if @conversation.account.vehicle_parts_emails.present? || GlobalConfigService.default_emails_present?
         ConversationHandoff::SendHandoffNotificationsJob.perform_later(@conversation, customer_data, @conversation.account.vehicle_parts_emails)
       else
         Rails.logger.warn("Vehicle parts email not configured for account #{@conversation.account.id}")
       end
     when 'service_inquiry'
-      if @conversation.account.service_emails.present?
+      if @conversation.account.service_emails.present? || GlobalConfigService.default_emails_present?
         ConversationHandoff::SendServiceNotificationsJob.perform_later(@conversation, customer_data, @conversation.account.service_emails)
       else
         Rails.logger.warn("Service email not configured for account #{@conversation.account.id}")
@@ -44,17 +44,14 @@ class ConversationHandoffService
 
   private
 
- def label_for_reason(handoff_reason)
-
-   case handoff_reason
-  when 'external_escalation'
-    ESCALATION_LABEL
-  when 'vehicle_parts'
-    HANDOFF_LABEL
-  else
-    nil
+  def label_for_reason(handoff_reason)
+    case handoff_reason
+    when 'external_escalation'
+      ESCALATION_LABEL
+    when 'vehicle_parts'
+      HANDOFF_LABEL
+    end
   end
-end
 
   def should_send_notification?
     return true if @conversation.last_handoff_at.nil?
@@ -77,7 +74,7 @@ end
       last_handoff_at: Time.current,
       handoff_attended_at: nil,
       handoff_attended_by_id: nil
-    ) # rubocop:disable Rails/SkipsModelValidations
+    )
   end
 
   def schedule_label_change

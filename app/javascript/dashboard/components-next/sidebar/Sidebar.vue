@@ -732,6 +732,12 @@ const menuItems = computed(() => {
           to: accountScopedRoute('general_settings_index'),
         },
         {
+          name: 'Settings Email Settings',
+          label: t('SIDEBAR.EMAIL_SETTINGS'),
+          icon: 'i-lucide-mail',
+          to: accountScopedRoute('email_settings_index'),
+        },
+        {
           name: 'Settings Agents',
           label: t('SIDEBAR.AGENTS'),
           icon: 'i-lucide-square-user',

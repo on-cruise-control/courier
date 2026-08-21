@@ -3,7 +3,7 @@ import { ref, computed, onMounted } from 'vue';
 import { useStore, useMapGetter } from 'dashboard/composables/store';
 import { useAlert } from 'dashboard/composables';
 import { useI18n } from 'vue-i18n';
-import SectionLayout from './SectionLayout.vue';
+import SectionLayout from '../../account/components/SectionLayout.vue';
 import WithLabel from 'v3/components/Form/WithLabel.vue';
 import NextInput from 'dashboard/components-next/input/Input.vue';
 import NextButton from 'dashboard/components-next/button/Button.vue';
@@ -13,7 +13,7 @@ const store = useStore();
 
 const currentAccount = useMapGetter('getCurrentAccountId');
 
-const serviceEmails = ref([]);
+const bookingEmails = ref([]);
 const newEmail = ref('');
 const emailError = ref('');
 
@@ -26,16 +26,16 @@ const validateEmail = email => {
   return EMAIL_REGEX.test(email.trim());
 };
 
-const saveServiceEmails = async () => {
+const saveBookingEmails = async () => {
   try {
     await store.dispatch('accounts/update', {
       id: currentAccount.value,
-      service_emails: serviceEmails.value,
+      booking_emails: bookingEmails.value,
       options: { silent: true },
     });
-    useAlert(t('GENERAL_SETTINGS.FORM.SERVICE_EMAILS.API.SUCCESS'));
+    useAlert(t('GENERAL_SETTINGS.FORM.BOOKING_EMAILS.API.SUCCESS'));
   } catch (error) {
-    useAlert(t('GENERAL_SETTINGS.FORM.SERVICE_EMAILS.API.ERROR'));
+    useAlert(t('GENERAL_SETTINGS.FORM.BOOKING_EMAILS.API.ERROR'));
   }
 };
 
@@ -46,42 +46,43 @@ const addEmail = () => {
   const email = newEmail.value.trim().toLowerCase();
 
   if (!validateEmail(email)) {
-    emailError.value = t('GENERAL_SETTINGS.FORM.SERVICE_EMAILS.INVALID_EMAIL');
+    emailError.value = t('GENERAL_SETTINGS.FORM.BOOKING_EMAILS.INVALID_EMAIL');
     return;
   }
-  if (serviceEmails.value.includes(email)) {
-    emailError.value = t('GENERAL_SETTINGS.FORM.SERVICE_EMAILS.DUPLICATE_EMAIL');
+  if (bookingEmails.value.includes(email)) {
+    emailError.value = t(
+      'GENERAL_SETTINGS.FORM.BOOKING_EMAILS.DUPLICATE_EMAIL'
+    );
     return;
   }
 
-  serviceEmails.value.push(email);
+  bookingEmails.value.push(email);
   newEmail.value = '';
   emailError.value = '';
-  saveServiceEmails();
+  saveBookingEmails();
 };
 
 const removeEmail = index => {
-  serviceEmails.value.splice(index, 1);
-  saveServiceEmails();
+  bookingEmails.value.splice(index, 1);
+  saveBookingEmails();
 };
 
 onMounted(() => {
   const account = store.getters['accounts/getAccount'](currentAccount.value);
-  serviceEmails.value = account.service_emails || [];
+  bookingEmails.value = account.booking_emails || [];
 });
 
-const hasServiceEmails = computed(() => serviceEmails.value.length > 0);
+const hasBookingEmails = computed(() => bookingEmails.value.length > 0);
 </script>
 
 <template>
   <SectionLayout
-    :title="t('GENERAL_SETTINGS.FORM.SERVICE_EMAILS.TITLE')"
-    :description="t('GENERAL_SETTINGS.FORM.SERVICE_EMAILS.NOTE')"
-    with-border
+    :title="t('GENERAL_SETTINGS.FORM.BOOKING_EMAILS.TITLE')"
+    :description="t('GENERAL_SETTINGS.FORM.BOOKING_EMAILS.NOTE')"
   >
     <div class="space-y-4">
       <WithLabel
-        :label="t('GENERAL_SETTINGS.FORM.SERVICE_EMAILS.LABEL')"
+        :label="t('GENERAL_SETTINGS.FORM.BOOKING_EMAILS.LABEL')"
         :has-error="!!emailError"
         :error-message="emailError"
       >
@@ -90,22 +91,22 @@ const hasServiceEmails = computed(() => serviceEmails.value.length > 0);
             v-model="newEmail"
             type="email"
             class="flex-1"
-            :placeholder="t('GENERAL_SETTINGS.FORM.SERVICE_EMAILS.PLACEHOLDER')"
+            :placeholder="t('GENERAL_SETTINGS.FORM.BOOKING_EMAILS.PLACEHOLDER')"
             @keypress.enter="addEmail"
           />
           <NextButton blue @click="addEmail">
-            {{ t('GENERAL_SETTINGS.FORM.SERVICE_EMAILS.ADD_BUTTON') }}
+            {{ t('GENERAL_SETTINGS.FORM.BOOKING_EMAILS.ADD_BUTTON') }}
           </NextButton>
         </div>
       </WithLabel>
 
-      <div v-if="hasServiceEmails" class="space-y-2">
+      <div v-if="hasBookingEmails" class="space-y-2">
         <p class="text-sm font-medium text-slate-700 dark:text-slate-200">
-          {{ t('GENERAL_SETTINGS.FORM.SERVICE_EMAILS.CONFIGURED_EMAILS') }}
+          {{ t('GENERAL_SETTINGS.FORM.BOOKING_EMAILS.CONFIGURED_EMAILS') }}
         </p>
         <div class="flex flex-wrap gap-2">
           <div
-            v-for="(email, index) in serviceEmails"
+            v-for="(email, index) in bookingEmails"
             :key="index"
             class="inline-flex items-center gap-2 px-3 py-1.5 bg-slate-100 dark:bg-slate-700 rounded-full border border-slate-200 dark:border-slate-600 group hover:border-slate-300 dark:hover:border-slate-500 transition-colors"
           >
@@ -128,7 +129,7 @@ const hasServiceEmails = computed(() => serviceEmails.value.length > 0);
         class="p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg"
       >
         <p class="text-sm text-yellow-800 dark:text-yellow-200">
-          {{ t('GENERAL_SETTINGS.FORM.SERVICE_EMAILS.EMPTY_STATE') }}
+          {{ t('GENERAL_SETTINGS.FORM.BOOKING_EMAILS.EMPTY_STATE') }}
         </p>
       </div>
     </div>

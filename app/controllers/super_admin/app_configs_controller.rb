@@ -9,9 +9,7 @@ class SuperAdmin::AppConfigsController < SuperAdmin::ApplicationController
                                     .map { |name, serialized_value| [name, serialized_value['value']] }
                                     .to_h
     # rubocop:enable Style/HashTransformValues
-    @installation_configs = ConfigLoader.new.general_configs.each_with_object({}) do |config_hash, result|
-      result[config_hash['name']] = config_hash.except('name')
-    end
+    @installation_configs = installation_configs_meta
   end
 
   def create
@@ -19,19 +17,37 @@ class SuperAdmin::AppConfigsController < SuperAdmin::ApplicationController
     params['app_config'].each do |key, value|
       next unless @allowed_configs.include?(key)
 
+      value = normalize_value(key, value)
       i = InstallationConfig.where(name: key).first_or_create(value: value, locked: false)
       i.value = value
       errors.concat(i.errors.full_messages) unless i.save
     end
 
-    if errors.any?
-      redirect_to super_admin_app_config_path(config: @config), alert: errors.join(', ')
-    else
-      redirect_to super_admin_settings_path, flash: success_flash
+    respond_to do |format|
+      format.json { render json: { errors: errors }, status: errors.any? ? :unprocessable_entity : :ok }
+      format.html do
+        if errors.any?
+          redirect_to super_admin_app_config_path(config: @config), alert: errors.join(', ')
+        else
+          redirect_to super_admin_settings_path, flash: success_flash
+        end
+      end
     end
   end
 
   private
+
+  def installation_configs_meta
+    @installation_configs_meta ||= ConfigLoader.new.general_configs.each_with_object({}) do |config_hash, result|
+      result[config_hash['name']] = config_hash.except('name')
+    end
+  end
+
+  def normalize_value(key, value)
+    return value unless installation_configs_meta[key]&.dig('type') == 'array'
+
+    Array(value).flat_map { |v| v.to_s.split(/[\s,]+/) }.map(&:strip).reject(&:blank?)
+  end
 
   def set_config
     @config = params[:config] || 'general'
@@ -43,6 +59,7 @@ class SuperAdmin::AppConfigsController < SuperAdmin::ApplicationController
       'shopify' => %w[SHOPIFY_CLIENT_ID SHOPIFY_CLIENT_SECRET],
       'microsoft' => %w[AZURE_APP_ID AZURE_APP_SECRET],
       'email' => %w[MAILER_INBOUND_EMAIL_DOMAIN ACCOUNT_EMAILS_LIMIT ACCOUNT_EMAILS_PLAN_LIMITS],
+      'default_emails' => %w[DEFAULT_EMAILS],
       'linear' => %w[LINEAR_CLIENT_ID LINEAR_CLIENT_SECRET],
       'slack' => %w[SLACK_CLIENT_ID SLACK_CLIENT_SECRET],
       'instagram' => %w[INSTAGRAM_APP_ID INSTAGRAM_APP_SECRET INSTAGRAM_VERIFY_TOKEN INSTAGRAM_API_VERSION ENABLE_INSTAGRAM_CHANNEL_HUMAN_AGENT],
@@ -51,7 +68,7 @@ class SuperAdmin::AppConfigsController < SuperAdmin::ApplicationController
       'notion' => %w[NOTION_CLIENT_ID NOTION_CLIENT_SECRET],
       'google' => %w[GOOGLE_OAUTH_CLIENT_ID GOOGLE_OAUTH_CLIENT_SECRET GOOGLE_OAUTH_REDIRECT_URI ENABLE_GOOGLE_OAUTH_LOGIN],
       'captain' => %w[CAPTAIN_OPEN_AI_API_KEY CAPTAIN_OPEN_AI_MODEL CAPTAIN_OPEN_AI_ENDPOINT],
-      'saml'     => %w[ENABLE_SAML_SSO_LOGIN],
+      'saml' => %w[ENABLE_SAML_SSO_LOGIN]
     }
 
     @allowed_configs = mapping.fetch(

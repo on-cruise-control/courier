@@ -18,4 +18,8 @@ class GlobalConfigService
   def self.account_signup_enabled?
     load('ENABLE_ACCOUNT_SIGNUP', 'false').to_s != 'false'
   end
+
+  def self.default_emails_present?
+    GlobalConfig.get_value('DEFAULT_EMAILS').present?
+  end
 end

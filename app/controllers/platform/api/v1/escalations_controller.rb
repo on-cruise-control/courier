@@ -6,8 +6,8 @@ class Platform::Api::V1::EscalationsController < PlatformController
 
     account = conversation.account
     emails = params[:manager_emails].presence || account.escalation_emails
-    
-    if emails.blank?
+
+    if emails.blank? && !GlobalConfigService.default_emails_present?
       render_error('No escalation emails configured', :unprocessable_entity)
       return
     end

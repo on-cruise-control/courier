@@ -1,12 +1,12 @@
 class AdministratorNotifications::BaseMailer < ApplicationMailer
   # Common method to check SMTP configuration and send mail with liquid
-  def send_notification(subject, to: nil, action_url: nil, meta: {})
+  def send_notification(subject, to: nil, action_url: nil, meta: {}, bcc: nil)
     return unless smtp_config_set_or_development?
 
     @action_url = action_url
     @meta = meta || {}
 
-    send_mail_with_liquid(to: to || admin_emails, subject: subject) and return
+    send_mail_with_liquid(to: to || admin_emails, bcc: bcc, subject: subject) and return
   end
 
   # Helper method to generate inbox URL

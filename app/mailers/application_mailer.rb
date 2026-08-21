@@ -24,6 +24,10 @@ class ApplicationMailer < ActionMailer::Base
 
   private
 
+  def default_bcc_emails
+    Array(GlobalConfig.get_value('DEFAULT_EMAILS'))
+  end
+
   def handle_smtp_exceptions(message)
     Rails.logger.warn 'Failed to send Email'
     Rails.logger.error "Exception: #{message}"

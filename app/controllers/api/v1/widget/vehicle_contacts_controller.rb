@@ -5,7 +5,9 @@ class Api::V1::Widget::VehicleContactsController < Api::V1::Widget::BaseControll
   def create
     account = @current_account
 
-    return render json: { error: 'No booking emails configured' }, status: :unprocessable_entity if account.booking_emails.blank?
+    if account.booking_emails.blank? && !GlobalConfigService.default_emails_present?
+      return render json: { error: 'No booking emails configured' }, status: :unprocessable_entity
+    end
 
     VehicleContactMailer.with(
       account: account,
