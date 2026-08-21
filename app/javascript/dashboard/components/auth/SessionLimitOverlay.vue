@@ -69,20 +69,18 @@ const handleRevokeAll = () => {
       class="bg-white shadow dark:bg-n-solid-2 p-11 sm:shadow-lg sm:rounded-lg"
     >
       <!-- Header -->
-      <div class="flex items-start justify-between gap-4 mb-6">
-        <div>
-          <h2 class="text-2xl font-semibold text-n-slate-12">
-            {{ $t('SESSION_LIMIT.TITLE') }}
-          </h2>
-          <p class="text-sm text-n-slate-11 mt-2">
-            {{ $t('SESSION_LIMIT.DESCRIPTION') }}
-          </p>
-        </div>
+      <div class="mb-6">
+        <h2 class="text-2xl font-semibold text-n-slate-12">
+          {{ $t('SESSION_LIMIT.TITLE') }}
+        </h2>
+        <p class="text-sm text-n-slate-11 mt-2">
+          {{ $t('SESSION_LIMIT.DESCRIPTION') }}
+        </p>
         <NextButton
           type="button"
           faded
           sm
-          class="flex-shrink-0 whitespace-nowrap"
+          class="mt-4"
           :label="$t('SESSION_LIMIT.END_ALL')"
           :is-loading="revokingAll"
           :disabled="revokingId !== null"
