@@ -28,7 +28,7 @@ class SendCommentReplyJob < ApplicationJob
     post_url = conversation.additional_attributes['post_url']
 
     # Try to get AI generated reply from Stark
-    stark_reply = Stark::CommentAnalysisService.new.analyze(comment_text, account.dealership_id, post_url)
+    stark_reply = Stark::CommentAnalysisService.new.analyze(comment_text, account.dealership_id, post_url, conversation)
 
     unless stark_reply && stark_reply[:status] == 'success' && stark_reply[:reply].present?
       Rails.logger.warn "⚠️ Stark API failed or no reply for #{conversation.additional_attributes['type']}"
