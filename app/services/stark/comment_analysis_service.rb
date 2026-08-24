@@ -5,12 +5,12 @@ module Stark
     MAX_RETRIES = 1
     RETRY_DELAY = 3
 
-    def analyze(comment, dealership_id, post_url = nil)
+    def analyze(comment, dealership_id, post_url = nil, conversation)
       return nil if comment.blank? || dealership_id.blank?
 
       retries = 0
       begin
-        response = make_api_request(comment, dealership_id, post_url)
+        response = make_api_request(comment, dealership_id, post_url, conversation)
         Rails.logger.info "🔍 Stark API Response: #{response.inspect}"
         
         status_code = response.dig('metadata', 'status_code').to_i
@@ -45,12 +45,17 @@ module Stark
 
     private
 
-    def make_api_request(comment, dealership_id, post_url = nil)
+    def make_api_request(comment, dealership_id, post_url = nil, conversation)
       stark_endpoint = GlobalConfig.get_value('STARK_COMMENT_ANALYSIS_ENDPOINT')
 
       payload = {
         comment: comment,
-        dealership_id: dealership_id
+        dealership_id: dealership_id,
+        session_id: conversation.id,
+        customer_id: conversation.contact&.id,
+        platform: conversation.inbox.platform_name,
+        account_id: conversation.account_id,
+        customer_name: extract_customer_name(conversation.contact, conversation.inbox.platform_name)
       }
       payload[:post_url] = post_url if post_url.present?
 
@@ -78,6 +83,23 @@ module Stark
     rescue JSON::ParserError => e
       Rails.logger.error("Failed to parse Stark response: #{e.message}")
       raise StandardError, 'Invalid response format from Stark server'
+    end
+
+    def extract_customer_name(contact, platform)
+      return nil if contact.nil?
+
+      if platform == 'Instagram'
+        return contact.additional_attributes&.dig('social_instagram_user_name') ||
+               contact.additional_attributes&.dig('social_profiles', 'instagram') ||
+               contact.name
+      end
+
+      if platform == 'Facebook'
+        return contact.additional_attributes&.dig('social_profiles', 'facebook') ||
+               contact.name
+      end
+
+      contact.name
     end
   end
 end
