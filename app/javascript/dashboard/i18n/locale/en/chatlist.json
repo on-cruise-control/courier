@@ -13,7 +13,8 @@
     "SPAM_HEADING": "Spam",
     "BLACKLIST_HEADING": "Blocked",
     "SEARCH": {
-      "INPUT": "Search for People, Chats, Saved Replies .."
+      "INPUT": "Search for People, Chats, Saved Replies ..",
+      "LABEL": "Search"
     },
     "FILTER_ALL": "All",
     "ASSIGNEE_TYPE_TABS": {
