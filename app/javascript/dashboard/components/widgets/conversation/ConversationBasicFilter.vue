@@ -1,7 +1,7 @@
 <script setup>
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useToggle } from '@vueuse/core';
+import { useToggle, useWindowSize } from '@vueuse/core';
 import { vOnClickOutside } from '@vueuse/components';
 import { useUISettings } from 'dashboard/composables/useUISettings';
 import { useMapGetter, useStore } from 'dashboard/composables/store.js';
@@ -9,7 +9,7 @@ import wootConstants from 'dashboard/constants/globals';
 import SelectMenu from 'dashboard/components-next/selectmenu/SelectMenu.vue';
 import NextButton from 'dashboard/components-next/button/Button.vue';
 
-defineProps({
+const props = defineProps({
   isOnExpandedLayout: {
     type: Boolean,
     required: true,
@@ -27,6 +27,19 @@ const chatStatusFilter = useMapGetter('getChatStatusFilter');
 const chatSortFilter = useMapGetter('getChatSortFilter');
 
 const [showActionsDropdown, toggleDropdown] = useToggle();
+
+const { width: windowWidth } = useWindowSize();
+const subMenuPosition = computed(() => {
+  if (windowWidth.value <= 440) return 'bottom';
+  if (
+    !props.isOnExpandedLayout &&
+    windowWidth.value >= 768 &&
+    windowWidth.value <= 950
+  ) {
+    return 'bottom';
+  }
+  return props.isOnExpandedLayout ? 'left' : 'right';
+});
 
 const currentStatusFilter = computed(() => {
   return chatStatusFilter.value || wootConstants.STATUS_TYPE.OPEN;
@@ -165,7 +178,7 @@ const handleSortChange = value => {
           :model-value="chatStatusFilter"
           :options="chatStatusOptions"
           :label="activeChatStatusLabel"
-          :sub-menu-position="isOnExpandedLayout ? 'left' : 'right'"
+          :sub-menu-position="subMenuPosition"
           @update:model-value="handleStatusChange"
         />
       </div>
@@ -177,7 +190,7 @@ const handleSortChange = value => {
           :model-value="chatSortFilter"
           :options="chatSortOptions"
           :label="activeChatSortLabel"
-          :sub-menu-position="isOnExpandedLayout ? 'left' : 'right'"
+          :sub-menu-position="subMenuPosition"
           @update:model-value="handleSortChange"
         />
       </div>
