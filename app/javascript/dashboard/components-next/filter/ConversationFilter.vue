@@ -105,7 +105,7 @@ const outsideClickHandler = [
 <template>
   <div
     v-on-click-outside="outsideClickHandler"
-    class="conversation-filter-panel z-40 max-w-3xl w-[calc(100vw-2rem)] sm:w-[500px] lg:w-[750px] overflow-visible border border-n-gray-4 bg-n-alpha-3 backdrop-blur-[100px] shadow-lg rounded-xl p-4 sm:p-6 grid gap-6"
+    class="conversation-filter-panel z-40 max-w-3xl w-[calc(100vw-2rem)] sm:w-[500px] min-[425px]:max-[650px]:!w-[380px] min-[1440px]:w-[750px] overflow-visible border border-n-gray-4 bg-n-alpha-3 backdrop-blur-[100px] shadow-lg rounded-xl p-4 sm:p-6 grid gap-6"
   >
     <h3 class="text-base font-medium leading-6 text-n-slate-12">
       {{ filterModalHeaderTitle }}

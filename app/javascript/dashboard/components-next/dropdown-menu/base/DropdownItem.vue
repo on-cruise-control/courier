@@ -40,11 +40,11 @@ const triggerClick = () => {
 </script>
 
 <template>
-  <li class="n-dropdown-item">
+  <li class="n-dropdown-item max-[540px]:min-w-0">
     <component
       :is="componentIs"
       v-bind="$attrs"
-      class="flex text-left rtl:text-right items-center p-2 reset-base text-sm text-n-slate-12 w-full border-0"
+      class="flex text-left rtl:text-right items-center p-2 reset-base text-sm text-n-slate-12 w-full max-[540px]:min-w-0 border-0"
       :class="{
         'hover:bg-n-alpha-2 rounded-lg w-full gap-3': !$slots.default,
       }"
