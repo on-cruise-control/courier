@@ -3,12 +3,20 @@ import { mapGetters } from 'vuex';
 import format from 'date-fns/format';
 import ReportHeader from './components/ReportHeader.vue';
 import Icon from 'dashboard/components-next/icon/Icon.vue';
+import NextButton from 'dashboard/components-next/button/Button.vue';
+import { downloadCsvFile } from 'dashboard/helper/downloadHelper';
+
+const csvEscape = value => {
+  const str = String(value ?? '');
+  return /[",\n]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str;
+};
 
 export default {
   name: 'TwilioUsageReports',
   components: {
     ReportHeader,
     Icon,
+    NextButton,
   },
   data() {
     return {
@@ -110,13 +118,58 @@ export default {
       if (!date || date === 'N/A') return 'N/A';
       return format(new Date(date), 'MMM d, yyyy');
     },
+    buildCsvRows(nodes, rows = []) {
+      nodes.forEach(node => {
+        rows.push([
+          `${'  '.repeat(node.level || 0)}${node.description || node.category}`,
+          node.usage ?? '',
+          node.unit || '',
+          node.price ?? 0,
+        ]);
+        if (node.children?.length) this.buildCsvRows(node.children, rows);
+      });
+      return rows;
+    },
+    downloadCsv() {
+      const rows = [
+        ['Category', 'Usage', 'Unit', 'Cost (USD)'],
+        ...this.buildCsvRows(this.categories),
+      ];
+
+      if (this.summaryCategories.length) {
+        rows.push([]);
+        rows.push(['Summary']);
+        this.summaryCategories.forEach(category => {
+          rows.push([
+            category.description || category.category,
+            '',
+            category.unit || '',
+            category.price ?? 0,
+          ]);
+        });
+      }
+
+      const csvContent = rows
+        .map(row => row.map(csvEscape).join(','))
+        .join('\n');
+      const fileName = `twilio-usage-${this.selectedPeriod}-${format(new Date(), 'dd-MM-yyyy')}.csv`;
+      downloadCsvFile(fileName, csvContent);
+    },
   },
 };
 </script>
 
 <template>
   <div class="flex flex-col gap-4 pb-12">
-    <ReportHeader :header-title="$t('TWILIO_REPORTS.HEADER')" />
+    <ReportHeader :header-title="$t('TWILIO_REPORTS.HEADER')">
+      <NextButton
+        :label="$t('TWILIO_REPORTS.DOWNLOAD')"
+        icon="i-lucide-download"
+        size="sm"
+        :disabled="!twilioUsage || isFetching"
+        @click="downloadCsv"
+      />
+    </ReportHeader>
 
     <div
       class="px-0 flex flex-col md:flex-row justify-between items-start md:items-center gap-3 mb-2"
@@ -207,7 +260,7 @@ export default {
               class="text-xs uppercase bg-n-solid-1 text-n-slate-10 border-b border-n-weak"
             >
               <tr>
-                <th scope="col" class="px-6 py-3 w-[50%]">
+                <th scope="col" class="px-6 py-3 w-[50%] max-[330px]:pl-2">
                   {{ $t('TWILIO_REPORTS.TABLE.CATEGORY') }}
                 </th>
                 <th scope="col" class="px-6 py-3 w-[25%]">
@@ -231,10 +284,10 @@ export default {
               >
                 <th
                   scope="row"
-                  class="px-6 py-4 font-medium text-n-slate-12 w-[50%]"
+                  class="px-6 py-4 font-medium text-n-slate-12 w-[50%] max-[330px]:pl-2"
                 >
                   <div
-                    class="flex items-center gap-2"
+                    class="flex items-center gap-2 max-[425px]:min-w-0"
                     :style="{ paddingLeft: `${category.level * 20}px` }"
                   >
                     <span
@@ -251,8 +304,8 @@ export default {
                       />
                     </span>
                     <span v-else class="w-4" />
-                    <div class="flex flex-col">
-                      <p class="capitalize text-sm">
+                    <div class="flex flex-col max-[425px]:min-w-0">
+                      <p class="capitalize text-sm max-[425px]:break-normal">
                         {{ category.description || category.category }}
                       </p>
                       <p

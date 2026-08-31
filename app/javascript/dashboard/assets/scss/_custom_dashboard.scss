@@ -559,30 +559,6 @@ $active-item-bg: rgba(255, 255, 255, 0.2);
     }
 }
 
-@media (min-width: 375px) and (max-width: 768px) {
-    #conversationFilterTeleportTarget {
-        width: calc(100vw - 5rem) !important;
-        max-width: 21rem !important;
-        transform: translateX(-56%) !important;
-    }
-}
-
-@media (min-width: 426px) and (max-width: 768px) {
-    #conversationFilterTeleportTarget {
-        width: calc(100vw - 6rem) !important;
-        max-width: 20rem !important;
-        transform: translateX(-58%) !important;
-    }
-}
-
-@media (min-width: 769px) and (max-width: 1280px) {
-    #conversationFilterTeleportTarget {
-        width: calc(100vw - 9rem) !important;
-        max-width: 37rem !important;
-        transform: translateX(-53%) !important;
-    }
-}
-
 .conversation-basic-filter-menu {
     .order-by-select-menu {
         position: static !important;

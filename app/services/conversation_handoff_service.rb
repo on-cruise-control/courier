@@ -1,8 +1,17 @@
 class ConversationHandoffService
   HANDOFF_COOLDOWN_MINUTES = 240 # 4 hours in minutes
-  HANDOFF_LABEL = 'handoff'
-  ESCALATION_LABEL = 'escalation'
-  VALID_HANDOFF_REASONS = %w[external_escalation vehicle_parts service_inquiry].freeze
+  HANDOFF_LABEL = 'handoff'.freeze
+  HANDOFF_LABEL_COLOR = '#1f93ff'.freeze
+  VALID_HANDOFF_REASONS = %w[sales_escalation service_escalation vehicle_parts_escalation vehicle_parts service_inquiry].freeze
+
+  AREA_ESCALATIONS = {
+    'sales_escalation' => { emails: :sales_escalation_emails, job: 'SalesEscalationNotificationJob',
+                            label: 'sales_escalation', color: '#F97316' },
+    'service_escalation' => { emails: :service_escalation_emails, job: 'ServiceEscalationNotificationJob',
+                              label: 'service_escalation', color: '#A855F7' },
+    'vehicle_parts_escalation' => { emails: :vehicle_parts_escalation_emails, job: 'VehiclePartsEscalationNotificationJob',
+                                    label: 'vehicle_parts_escalation', color: '#0D9488' }
+  }.freeze
 
   def initialize(conversation)
     @conversation = conversation
@@ -19,14 +28,13 @@ class ConversationHandoffService
       schedule_label_change
     end
 
+    if AREA_ESCALATIONS.key?(handoff_reason)
+      enqueue_area_escalation(handoff_reason, customer_data, message)
+      return
+    end
+
     case handoff_reason
 
-    when 'external_escalation'
-      if @conversation.account.escalation_emails.present? || GlobalConfigService.default_emails_present?
-        EscalationNotificationJob.perform_later(@conversation.id, @conversation.account.escalation_emails, customer_data, message)
-      else
-        Rails.logger.warn("Escalation email not configured for account #{@conversation.account.id}")
-      end
     when 'vehicle_parts'
       if @conversation.account.vehicle_parts_emails.present? || GlobalConfigService.default_emails_present?
         ConversationHandoff::SendHandoffNotificationsJob.perform_later(@conversation, customer_data, @conversation.account.vehicle_parts_emails)
@@ -45,12 +53,21 @@ class ConversationHandoffService
   private
 
   def label_for_reason(handoff_reason)
-    case handoff_reason
-    when 'external_escalation'
-      ESCALATION_LABEL
-    when 'vehicle_parts'
-      HANDOFF_LABEL
+    return AREA_ESCALATIONS[handoff_reason][:label] if AREA_ESCALATIONS.key?(handoff_reason)
+
+    HANDOFF_LABEL if handoff_reason == 'vehicle_parts'
+  end
+
+  def enqueue_area_escalation(handoff_reason, customer_data, message)
+    config = AREA_ESCALATIONS[handoff_reason]
+    emails = @conversation.account.public_send(config[:emails])
+
+    unless emails.present? || GlobalConfigService.default_emails_present?
+      Rails.logger.warn("#{handoff_reason} email not configured for account #{@conversation.account.id}")
+      return
     end
+
+    config[:job].constantize.perform_later(@conversation.id, emails, customer_data, message)
   end
 
   def should_send_notification?
@@ -61,11 +78,15 @@ class ConversationHandoffService
   end
 
   def ensure_label_exists(label_title)
-    color = label_title == ESCALATION_LABEL ? '#FF0000' : '#1f93ff'
     Label.find_or_create_by!(account: @conversation.account, title: label_title) do |label|
       label.show_on_sidebar = true
-      label.color = color
+      label.color = color_for_label(label_title)
     end
+  end
+
+  def color_for_label(label_title)
+    area = AREA_ESCALATIONS.values.find { |config| config[:label] == label_title }
+    area ? area[:color] : HANDOFF_LABEL_COLOR
   end
 
   def update_handoff_state(label)
