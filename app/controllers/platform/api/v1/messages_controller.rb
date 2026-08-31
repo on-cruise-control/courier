@@ -7,7 +7,7 @@ class Platform::Api::V1::MessagesController < PlatformController
 
     if params[:booking_date].present?
       emails = get_booking_emails(account)
-      return if validate_recipients_presence(emails, 'booking emails', account)
+      return if validate_recipients_presence(emails, 'booking emails', account, fallback_available: GlobalConfigService.default_emails_present?)
 
       send_booking_notifications(conversation, emails)
 
@@ -30,8 +30,8 @@ class Platform::Api::V1::MessagesController < PlatformController
 
   private
 
-  def validate_recipients_presence(recipients, recipient_type, account)
-    return false if recipients.present?
+  def validate_recipients_presence(recipients, recipient_type, account, fallback_available: false)
+    return false if recipients.present? || fallback_available
 
     Rails.logger.error("No #{recipient_type} found for account ##{account.id}")
     render_error("No #{recipient_type} configured", :unprocessable_entity)

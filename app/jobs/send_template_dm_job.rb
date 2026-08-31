@@ -1,7 +1,10 @@
 class SendTemplateDmJob < ApplicationJob
   queue_as :default
 
-  def perform(contact_inbox_id, conversation, comment_id)
+  MAX_COMMENT_REPLY_RETRIES = 3
+  COMMENT_REPLY_RETRY_WAIT = 5.seconds
+
+  def perform(contact_inbox_id, conversation, comment_id, retry_count = 0)
     Rails.logger.info "=================== SendTemplateDmJob START =======comment_id #{comment_id}============"
 
     contact_inbox = ContactInbox.find_by(id: contact_inbox_id)
@@ -36,14 +39,25 @@ class SendTemplateDmJob < ApplicationJob
 
     template_message = I18n.t('dm_template', locale: lang_code)
 
-    job_key = "template_dm_job_#{contact_inbox.id}_#{contact.id}_#{comment_id}"
-
-    if Rails.cache.exist?(job_key)
-      Rails.logger.info "⏩ Duplicate template DM job skipped for contact_inbox #{contact_inbox.id}, contact #{contact.id}, comment #{comment_id}"
+    comment_reply_text = conversation.messages.outgoing.first&.content
+    if comment_reply_text.blank? && retry_count < MAX_COMMENT_REPLY_RETRIES
+      self.class.set(wait: COMMENT_REPLY_RETRY_WAIT).perform_later(contact_inbox_id, conversation, comment_id, retry_count + 1)
       return
     end
 
-    Rails.cache.write(job_key, true, expires_in: 5.minutes)
+    template_message = "#{template_message},\n#{comment_reply_text}" if comment_reply_text.present?
+
+    # Only dedup the initial enqueue - retries above reuse the same job run.
+    if retry_count.zero?
+      job_key = "template_dm_job_#{contact_inbox.id}_#{contact.id}_#{comment_id}"
+
+      if Rails.cache.exist?(job_key)
+        Rails.logger.info "⏩ Duplicate template DM job skipped for contact_inbox #{contact_inbox.id}, contact #{contact.id}, comment #{comment_id}"
+        return
+      end
+
+      Rails.cache.write(job_key, true, expires_in: 5.minutes)
+    end
 
     case conversation.additional_attributes['type']
     when 'instagram_comments', 'instagram_dm'
@@ -175,7 +189,20 @@ class SendTemplateDmJob < ApplicationJob
       return
     end
 
-    # Send the message first
+    template_dm_conversation = find_or_create_template_facebook_dm_conversation(contact_inbox, contact, inbox, account)
+    stark_bot = AgentBot.find_by(bot_type: 'stark')
+
+    message = template_dm_conversation.messages.create!(
+      content: template_message,
+      account: account,
+      inbox: inbox,
+      sender: stark_bot,
+      message_type: :outgoing,
+      private: false,
+      source_id: 'pending_delivery',
+      additional_attributes: { 'delivery_status' => 'sent' }
+    )
+
     response = HTTParty.post(
       url,
       headers: { 'Content-Type' => 'application/json' },
@@ -184,34 +211,21 @@ class SendTemplateDmJob < ApplicationJob
     )
 
     if response.code != 200 || response['error'].present?
-      Rails.logger.error "❌ Facebook DM Template API error: #{response['error'] || response.body}"
+      error = response['error'] || {}
+      Messages::StatusUpdateService.new(message, 'failed', "#{error['code']} - #{error['message']}").perform
+      Rails.logger.error "❌ Facebook DM Template API error: #{error.presence || response.body}"
       return
     end
 
-    # Create conversation and message atomically after successful API call
-    ActiveRecord::Base.transaction do
-      template_dm_conversation = find_or_create_template_facebook_dm_conversation(contact_inbox, contact, inbox, account)
-      stark_bot = AgentBot.find_by(bot_type: 'stark')
+    message.update!(source_id: response['message_id'])
 
-      template_dm_conversation.messages.create!(
-        content: template_message,
-        account: account,
-        inbox: inbox,
-        sender: stark_bot,
-        message_type: :outgoing,
-        source_id: response['message_id'] || nil,
-        private: false,
-        additional_attributes: { 'delivery_status' => 'sent' }
-      )
-
-      # Mark template DM as sent. Reload first: creating the message above can trigger
-      # Message#schedule_follow_up_job, which reloads and updates this same conversation's
-      # additional_attributes - merging from a stale in-memory copy here would clobber that write.
-      template_dm_conversation.reload
-      template_dm_conversation.update!(
-        additional_attributes: template_dm_conversation.additional_attributes.merge('template_dm_sent' => true)
-      )
-    end
+    # Mark template DM as sent. Reload first: creating the message above can trigger
+    # Message#schedule_follow_up_job, which reloads and updates this same conversation's
+    # additional_attributes - merging from a stale in-memory copy here would clobber that write.
+    template_dm_conversation.reload
+    template_dm_conversation.update!(
+      additional_attributes: template_dm_conversation.additional_attributes.merge('template_dm_sent' => true)
+    )
 
     Rails.logger.info '✅ Facebook Template DM sent successfully'
   end
@@ -239,7 +253,20 @@ class SendTemplateDmJob < ApplicationJob
       return
     end
 
-    # Send the message first
+    template_dm_conversation = find_or_create_template_insta_dm_conversation(contact_inbox, contact, inbox, account)
+    stark_bot = AgentBot.find_by(bot_type: 'stark')
+
+    message = template_dm_conversation.messages.create!(
+      content: template_message,
+      account: account,
+      inbox: inbox,
+      sender: stark_bot,
+      message_type: :outgoing,
+      private: false,
+      source_id: 'pending_delivery',
+      additional_attributes: { 'delivery_status' => 'sent' }
+    )
+
     response = HTTParty.post(
       url,
       headers: { 'Content-Type' => 'application/json' },
@@ -248,34 +275,21 @@ class SendTemplateDmJob < ApplicationJob
     )
 
     if response.code != 200 || response['error'].present?
-      Rails.logger.error "❌ Instagram DM Template API error: #{response['error'] || response.body}"
+      error = response['error'] || {}
+      Messages::StatusUpdateService.new(message, 'failed', "#{error['code']} - #{error['message']}").perform
+      Rails.logger.error "❌ Instagram DM Template API error: #{error.presence || response.body}"
       return
     end
 
-    # Create conversation and message atomically after successful API call
-    ActiveRecord::Base.transaction do
-      template_dm_conversation = find_or_create_template_insta_dm_conversation(contact_inbox, contact, inbox, account)
-      stark_bot = AgentBot.find_by(bot_type: 'stark')
+    message.update!(source_id: response['message_id'])
 
-      template_dm_conversation.messages.create!(
-        content: template_message,
-        account: account,
-        inbox: inbox,
-        sender: stark_bot,
-        message_type: :outgoing,
-        source_id: response['message_id'] || nil,
-        private: false,
-        additional_attributes: { 'delivery_status' => 'sent' }
-      )
-
-      # Mark template DM as sent. Reload first: creating the message above can trigger
-      # Message#schedule_follow_up_job, which reloads and updates this same conversation's
-      # additional_attributes - merging from a stale in-memory copy here would clobber that write.
-      template_dm_conversation.reload
-      template_dm_conversation.update!(
-        additional_attributes: template_dm_conversation.additional_attributes.merge('instagram_dm_sent' => true)
-      )
-    end
+    # Mark template DM as sent. Reload first: creating the message above can trigger
+    # Message#schedule_follow_up_job, which reloads and updates this same conversation's
+    # additional_attributes - merging from a stale in-memory copy here would clobber that write.
+    template_dm_conversation.reload
+    template_dm_conversation.update!(
+      additional_attributes: template_dm_conversation.additional_attributes.merge('instagram_dm_sent' => true)
+    )
 
     Rails.logger.info '✅ Instagram Template DM sent successfully'
   end

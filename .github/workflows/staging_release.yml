@@ -52,7 +52,7 @@ jobs:
 
       - name: Precompile assets
         run: |
-          RAILS_ENV=production bundle exec rake assets:precompile
+          NODE_OPTIONS="--max-old-space-size=4096" RAILS_ENV=production bundle exec rake assets:precompile
 
   docker-build-and-push:
     needs: build-and-test

@@ -35,3 +35,6 @@ json.booking_emails @account.booking_emails
 json.escalation_emails @account.escalation_emails
 json.vehicle_parts_emails @account.vehicle_parts_emails
 json.service_emails @account.service_emails
+json.sales_escalation_emails @account.sales_escalation_emails
+json.service_escalation_emails @account.service_escalation_emails
+json.vehicle_parts_escalation_emails @account.vehicle_parts_escalation_emails

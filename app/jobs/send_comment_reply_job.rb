@@ -28,8 +28,8 @@ class SendCommentReplyJob < ApplicationJob
     post_url = conversation.additional_attributes['post_url']
 
     # Try to get AI generated reply from Stark
-    stark_reply = Stark::CommentAnalysisService.new.analyze(comment_text, account.dealership_id, post_url)
-    
+    stark_reply = Stark::CommentAnalysisService.new.analyze(comment_text, account.dealership_id, post_url, conversation)
+
     unless stark_reply && stark_reply[:status] == 'success' && stark_reply[:reply].present?
       Rails.logger.warn "⚠️ Stark API failed or no reply for #{conversation.additional_attributes['type']}"
       return
@@ -40,13 +40,11 @@ class SendCommentReplyJob < ApplicationJob
     # Store sentiment in the dedicated field and trigger broadcast to frontend
     Rails.logger.info " Storing sentiment '#{stark_reply[:sentiment_label]}' in comment_sentiment field for conversation: #{conversation.id}"
     conversation.update!(comment_sentiment: stark_reply[:sentiment_label])
-    
-    if stark_reply[:sentiment_label] == 'Negative'
-      conversation.add_labels(['escalation'])
-    end
+
+    conversation.add_labels(['escalation']) if stark_reply[:sentiment_label] == 'Negative'
 
     # Trigger escalation if sentiment is negative
-    if stark_reply[:sentiment_label] == 'Negative' && account.escalation_emails.present?
+    if stark_reply[:sentiment_label] == 'Negative' && (account.escalation_emails.present? || GlobalConfigService.default_emails_present?)
       Rails.logger.info "🚨 Negative sentiment detected! Triggering escalation email to: #{account.escalation_emails.join(', ')}"
       NegativeSentimentEscalationJob.perform_later(conversation.id, account.escalation_emails)
     end
@@ -90,6 +88,7 @@ class SendCommentReplyJob < ApplicationJob
     Rails.logger.info "🌍 Language Detection Scores (Comment Reply) => ES: #{spanish_count}, EN: #{english_count}"
 
     return :es if spanish_count >= english_count + 1
+
     :en
   end
 

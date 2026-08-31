@@ -570,6 +570,12 @@ const menuItems = computed(() => {
         },
         {
           type: 'link',
+          label: t('SIDEBAR.EMAIL_SETTINGS'),
+          icon: 'i-lucide-mail',
+          to: accountScopedRoute('email_settings_index'),
+        },
+        {
+          type: 'link',
           label: t('SIDEBAR.AGENTS'),
           icon: 'i-lucide-square-user',
           to: accountScopedRoute('agent_list'),

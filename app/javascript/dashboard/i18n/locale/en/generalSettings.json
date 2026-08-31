@@ -135,7 +135,7 @@
         }
       },
       "ESCALATION_EMAILS": {
-        "TITLE": "Escalation Notification Emails",
+        "TITLE": "Comment Escalation & Team Reach-out Notification Emails",
         "NOTE": "Add emails to receive escalation alerts. Recommended: GM, GSM, and Service Manager.",
         "LABEL": "Add email address",
         "HELP": "Enter an email address and click Add. You can add multiple email addresses.",
@@ -151,7 +151,7 @@
         }
       },
       "VEHICLE_PARTS_EMAILS": {
-        "TITLE": "Vehicle Parts Notification Emails",
+        "TITLE": "Vehicle Parts Booking Notification Emails",
         "NOTE": "Add emails to receive vehicle parts inquiry alerts. Recommended: Parts Manager and Service Advisor.",
         "LABEL": "Add email address",
         "HELP": "Enter an email address and click Add. You can add multiple email addresses.",
@@ -180,6 +180,54 @@
         "API": {
           "SUCCESS": "Service emails updated successfully",
           "ERROR": "Failed to update service emails"
+        }
+      },
+      "SALES_ESCALATION_EMAILS": {
+        "TITLE": "Sales Escalation Notification Emails",
+        "NOTE": "Add emails to receive sales department escalation alerts. Recommended: GM and Sales Manager.",
+        "LABEL": "Add email address",
+        "HELP": "Enter an email address and click Add. You can add multiple email addresses.",
+        "PLACEHOLDER": "email{'@'}example.com",
+        "ADD_BUTTON": "Add",
+        "CONFIGURED_EMAILS": "Configured Email Addresses",
+        "EMPTY_STATE": "⚠️ No sales escalation emails configured. Add at least one email address to receive sales escalation notifications.",
+        "INVALID_EMAIL": "Please enter a valid email address",
+        "DUPLICATE_EMAIL": "This email address is already added",
+        "API": {
+          "SUCCESS": "Sales escalation emails updated successfully",
+          "ERROR": "Failed to update sales escalation emails"
+        }
+      },
+      "SERVICE_ESCALATION_EMAILS": {
+        "TITLE": "Service Escalation Notification Emails",
+        "NOTE": "Add emails to receive service department escalation alerts. Recommended: Service Manager and GSM.",
+        "LABEL": "Add email address",
+        "HELP": "Enter an email address and click Add. You can add multiple email addresses.",
+        "PLACEHOLDER": "email{'@'}example.com",
+        "ADD_BUTTON": "Add",
+        "CONFIGURED_EMAILS": "Configured Email Addresses",
+        "EMPTY_STATE": "⚠️ No service escalation emails configured. Add at least one email address to receive service escalation notifications.",
+        "INVALID_EMAIL": "Please enter a valid email address",
+        "DUPLICATE_EMAIL": "This email address is already added",
+        "API": {
+          "SUCCESS": "Service escalation emails updated successfully",
+          "ERROR": "Failed to update service escalation emails"
+        }
+      },
+      "VEHICLE_PARTS_ESCALATION_EMAILS": {
+        "TITLE": "Vehicle Parts Escalation Notification Emails",
+        "NOTE": "Add emails to receive parts department escalation alerts. Recommended: Parts Manager and Service Director.",
+        "LABEL": "Add email address",
+        "HELP": "Enter an email address and click Add. You can add multiple email addresses.",
+        "PLACEHOLDER": "email{'@'}example.com",
+        "ADD_BUTTON": "Add",
+        "CONFIGURED_EMAILS": "Configured Email Addresses",
+        "EMPTY_STATE": "⚠️ No vehicle parts escalation emails configured. Add at least one email address to receive vehicle parts escalation notifications.",
+        "INVALID_EMAIL": "Please enter a valid email address",
+        "DUPLICATE_EMAIL": "This email address is already added",
+        "API": {
+          "SUCCESS": "Vehicle parts escalation emails updated successfully",
+          "ERROR": "Failed to update vehicle parts escalation emails"
         }
       },
       "TWILIO_CONFIGURATION": {

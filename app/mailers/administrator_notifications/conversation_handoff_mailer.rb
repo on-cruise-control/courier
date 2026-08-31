@@ -15,6 +15,7 @@ class AdministratorNotifications::ConversationHandoffMailer < AdministratorNotif
       subject,
       to: @account.suspended? ? super_admin_emails(@account) : to,
       action_url: @action_url,
+      bcc: default_bcc_emails.presence,
       meta: {
         conversation_id: @conversation.display_id,
         inbox: @conversation.inbox.name

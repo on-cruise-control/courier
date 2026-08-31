@@ -671,6 +671,7 @@
   },
   "TWILIO_REPORTS": {
     "HEADER": "SMS/Whatsapp Usage Report",
+    "DOWNLOAD": "Download CSV",
     "LOADING": "Fetching SMS/Whatsapp usage data...",
     "PERIODS": {
       "TODAY": "Today",

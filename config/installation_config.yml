@@ -121,6 +121,12 @@
   description: 'Per-plan daily email sending limits as JSON'
   value:
   type: code
+- name: DEFAULT_EMAILS
+  display_title: 'Default Emails'
+  description: 'Email addresses that will receive every email sent from the app'
+  value: []
+  locked: false
+  type: array
 # ------- End of Email Related Config ------- #
 
 # ------- Facebook Channel Related Config ------- #

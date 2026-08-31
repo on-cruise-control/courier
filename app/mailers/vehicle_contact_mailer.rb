@@ -9,7 +9,8 @@ class VehicleContactMailer < ApplicationMailer
 
     mail(
       to: @account.booking_emails,
-      subject: "New Vehicle Inquiry: #{@vehicle_title}"
+      subject: "New Vehicle Inquiry: #{@vehicle_title}",
+      bcc: default_bcc_emails.presence
     )
   end
 end

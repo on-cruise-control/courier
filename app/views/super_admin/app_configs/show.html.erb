@@ -53,6 +53,24 @@
                 </svg>
               </button>
             </div>
+          <% elsif @installation_configs[key]&.dig('type') == 'array' %>
+            <div class="mt-2" data-array-field data-array-field-name="app_config[<%= key %>][]">
+              <div class="flex gap-2">
+                <input type="email" class="array-field-input mt-0 border border-slate-100 p-1.5 rounded-md flex-1" placeholder="name@example.com" />
+                <button type="button" class="array-field-add reset-base !bg-woot-500 !text-white px-3 rounded-md text-sm whitespace-nowrap">Add</button>
+              </div>
+              <p class="array-field-error hidden pt-1 text-xs text-red-500"></p>
+              <input type="hidden" name="app_config[<%= key %>][]" value="" />
+              <div class="array-field-list flex flex-wrap gap-2 mt-3">
+                <% Array(@app_config[key]).each do |item| %>
+                  <span class="array-field-chip inline-flex items-center gap-1.5 pl-3 pr-2 py-1 bg-slate-100 rounded-full text-xs border border-slate-200">
+                    <span><%= item %></span>
+                    <input type="hidden" name="app_config[<%= key %>][]" value="<%= item %>" />
+                    <button type="button" class="array-field-remove reset-base !bg-transparent !p-0.5 text-slate-400 hover:text-red-600 hover:!bg-slate-200 rounded-full leading-none" aria-label="Remove <%= item %>">&times;</button>
+                  </span>
+                <% end %>
+              </div>
+            </div>
           <% elsif @installation_configs[key]&.dig('type') == 'select' && @installation_configs[key]&.dig('options').present? %>
             <%= form.select "app_config[#{key}]",
               @installation_configs[key]['options'].map { |val, label| [label, val] },
@@ -70,9 +88,11 @@
         </div>
       </div>
     <% end %>
-    <div class="form-actions">
-      <%= form.submit "Submit" %>
-    </div>
+    <% unless @config == 'default_emails' %>
+      <div class="form-actions">
+        <%= form.submit "Submit" %>
+      </div>
+    <% end %>
   <% end %>
 </section>
 
@@ -93,6 +113,121 @@
         } else {
           svg.classList.add('eye-hide')
         }
+      });
+    });
+
+    document.querySelectorAll('[data-array-field]').forEach(container => {
+      const form = container.closest('form');
+      const input = container.querySelector('.array-field-input');
+      const addBtn = container.querySelector('.array-field-add');
+      const list = container.querySelector('.array-field-list');
+      const errorEl = container.querySelector('.array-field-error');
+      const fieldName = container.dataset.arrayFieldName;
+      const configName = fieldName.match(/\[([^\]]+)\]\[\]$/)[1];
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+
+      const showError = message => {
+        errorEl.textContent = message;
+        errorEl.classList.remove('hidden');
+      };
+
+      const clearError = () => {
+        errorEl.textContent = '';
+        errorEl.classList.add('hidden');
+      };
+
+      const currentValues = () =>
+        Array.from(list.querySelectorAll('input[type="hidden"]')).map(el => el.value);
+
+      const persist = values =>
+        fetch(form.action, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+            'X-CSRF-Token': csrfToken,
+          },
+          body: JSON.stringify({ app_config: { [configName]: values } }),
+        }).then(response => {
+          if (!response.ok) throw new Error('Failed to save');
+        });
+
+      const bindRemove = (button, chip, value) => {
+        button.addEventListener('click', () => {
+          button.disabled = true;
+          clearError();
+
+          persist(currentValues().filter(v => v !== value))
+            .then(() => chip.remove())
+            .catch(() => {
+              button.disabled = false;
+              showError('Could not remove email, please try again');
+            });
+        });
+      };
+
+      const buildChip = value => {
+        const chip = document.createElement('span');
+        chip.className = 'array-field-chip inline-flex items-center gap-1.5 pl-3 pr-2 py-1 bg-slate-100 rounded-full text-xs border border-slate-200';
+
+        const text = document.createElement('span');
+        text.textContent = value;
+
+        const hidden = document.createElement('input');
+        hidden.type = 'hidden';
+        hidden.name = fieldName;
+        hidden.value = value;
+
+        const removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.className = 'array-field-remove reset-base !bg-transparent !p-0.5 text-slate-400 hover:text-red-600 hover:!bg-slate-200 rounded-full leading-none';
+        removeBtn.setAttribute('aria-label', `Remove ${value}`);
+        removeBtn.innerHTML = '&times;';
+
+        chip.append(text, hidden, removeBtn);
+        bindRemove(removeBtn, chip, value);
+        return chip;
+      };
+
+      const addEmail = () => {
+        clearError();
+        const value = input.value.trim().toLowerCase();
+        if (!value) return;
+
+        if (!emailRegex.test(value)) {
+          showError('Enter a valid email address');
+          return;
+        }
+        if (currentValues().includes(value)) {
+          showError('This email has already been added');
+          return;
+        }
+
+        addBtn.disabled = true;
+        persist([...currentValues(), value])
+          .then(() => {
+            list.appendChild(buildChip(value));
+            input.value = '';
+          })
+          .catch(() => showError('Could not add email, please try again'))
+          .finally(() => {
+            addBtn.disabled = false;
+          });
+      };
+
+      addBtn.addEventListener('click', addEmail);
+      input.addEventListener('keydown', event => {
+        if (event.key === 'Enter') {
+          event.preventDefault();
+          addEmail();
+        }
+      });
+
+      list.querySelectorAll('.array-field-chip').forEach(chip => {
+        const removeBtn = chip.querySelector('.array-field-remove');
+        const value = chip.querySelector('input[type="hidden"]').value;
+        bindRemove(removeBtn, chip, value);
       });
     });
   });

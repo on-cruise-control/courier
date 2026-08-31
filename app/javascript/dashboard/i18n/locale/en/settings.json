@@ -362,6 +362,7 @@
     "INTEGRATIONS": "Integrations",
     "PROFILE_SETTINGS": "Profile Settings",
     "ACCOUNT_SETTINGS": "Account Settings",
+    "EMAIL_SETTINGS": "Email Settings",
     "APPLICATIONS": "Applications",
     "LABELS": "Labels",
     "CUSTOM_ATTRIBUTES": "Custom Attributes",
@@ -537,6 +538,15 @@
         "GO_BACK": "Go Back",
         "CONFIRM_PURCHASE": "Confirm Purchase"
       }
+    }
+  },
+  "EMAIL_SETTINGS": {
+    "TITLE": "Email Notifications",
+    "DESCRIPTION": "Manage email notifications for bookings, escalations, vehicle parts, and service updates.",
+    "GROUPS": {
+      "BOOKING": "📧 Booking Notifications",
+      "SERVICE": "🔧 Service Notifications",
+      "ESCALATION": "🚨 Escalation Notifications"
     }
   },
   "SECURITY_SETTINGS": {
