@@ -496,7 +496,6 @@ class Conversation < ApplicationRecord
   end
 
   def sync_stark_ai_loop_status(newly_added, removed_labels)
-    puts '---------------------------------sync ai loop called------------------------------------------------'
     status = if newly_added.include?(Stark::MessageHandler::AI_LOOP_LABEL)
                'ai_loop_detected'
              elsif removed_labels.include?(Stark::MessageHandler::AI_LOOP_LABEL)

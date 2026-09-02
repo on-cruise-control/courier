@@ -4,8 +4,15 @@ module Stark
   module MessageHandler
     extend ActiveSupport::Concern
 
+    AI_LOOP_LABEL = 'ai_loop_detected'.freeze
+
     def handle_response(response)
       return unless response_valid?(response)
+
+      if response['session_status'] == AI_LOOP_LABEL
+        flag_ai_loop_detected(current_conversation)
+        return
+      end
 
       if response['is_spam']
         current_conversation.update!(is_spam: true)
@@ -117,6 +124,19 @@ module Stark
     end
 
     private
+
+    def flag_ai_loop_detected(conversation)
+      return if conversation.additional_attributes&.dig('session_status') == AI_LOOP_LABEL
+
+      label = Label.find_or_create_by!(account: conversation.account, title: AI_LOOP_LABEL)
+      labels = conversation.label_list.include?(label.title) ? conversation.label_list : conversation.label_list + [label.title]
+
+      conversation.update!(
+        label_list: labels,
+        should_send_reply: false,
+        additional_attributes: (conversation.additional_attributes || {}).merge('session_status' => AI_LOOP_LABEL)
+      )
+    end
 
     def duplicate_outgoing?(conversation, content: nil, cards_items: nil)
       scope = conversation.messages
