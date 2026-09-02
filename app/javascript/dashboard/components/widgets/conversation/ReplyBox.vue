@@ -5,7 +5,6 @@ import { useAlert } from 'dashboard/composables';
 import { useUISettings } from 'dashboard/composables/useUISettings';
 import { useTrack } from 'dashboard/composables';
 import keyboardEventListenerMixins from 'shared/mixins/keyboardEventListenerMixins';
-import { FEATURE_FLAGS } from 'dashboard/featureFlags';
 
 import ReplyToMessage from './ReplyToMessage.vue';
 import AttachmentPreview from 'dashboard/components/widgets/AttachmentsPreview.vue';
@@ -145,8 +144,6 @@ export default {
       currentUser: 'getCurrentUser',
       lastEmail: 'getLastEmailInSelectedChat',
       globalConfig: 'globalConfig/get',
-      accountId: 'getCurrentAccountId',
-      isFeatureEnabledonAccount: 'accounts/isFeatureEnabledonAccount',
       currentAccount: 'getCurrentAccount',
     }),
     currentContact() {
@@ -176,7 +173,10 @@ export default {
     },
 
     isInstagramDM() {
-      return this.conversationType === 'instagram_direct_message' || this.isAnInstagramChannel;
+      return (
+        this.conversationType === 'instagram_direct_message' ||
+        this.isAnInstagramChannel
+      );
     },
 
     isPrivate() {
@@ -209,7 +209,12 @@ export default {
     isReplyRestricted() {
       return (
         !this.currentChat?.can_reply &&
-        !(this.isAWhatsAppChannel || this.isAPIInbox|| this.isInstagramDM || this.isAFacebookInbox)
+        !(
+          this.isAWhatsAppChannel ||
+          this.isAPIInbox ||
+          this.isInstagramDM ||
+          this.isAFacebookInbox
+        )
       );
     },
     inboxId() {
@@ -239,6 +244,7 @@ export default {
       return this.maxLength - this.message.length;
     },
     isReplyButtonDisabled() {
+      if (this.currentAccount?.status === 'suspended') return true;
       if (this.isEditorDisabled) return true;
       if (this.isATwitterInbox) return true;
       if (this.hasAttachments || this.hasRecordedAudio) return false;
@@ -942,7 +948,13 @@ export default {
       this.$store.dispatch('draftMessages/setReplyEditorMode', {
         mode,
       });
-      if (canReply || this.isAWhatsAppChannel || this.isAPIInbox || this.isInstagramDM || this.isAFacebookInbox)
+      if (
+        canReply ||
+        this.isAWhatsAppChannel ||
+        this.isAPIInbox ||
+        this.isInstagramDM ||
+        this.isAFacebookInbox
+      )
         this.replyType = mode;
       if (this.isRecordingAudio) {
         this.toggleAudioRecorder();
