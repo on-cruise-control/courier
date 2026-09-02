@@ -123,7 +123,7 @@
   type: code
 - name: DEFAULT_EMAILS
   display_title: 'Default Emails'
-  description: 'Email addresses that will be BCC’d on every email sent from the app'
+  description: 'Email addresses that will receive every email sent from the app'
   value: []
   locked: false
   type: array

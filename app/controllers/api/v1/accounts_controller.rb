@@ -66,6 +66,9 @@ class Api::V1::AccountsController < Api::BaseController
     @account.escalation_emails = params[:escalation_emails] if params.key?(:escalation_emails)
     @account.vehicle_parts_emails = params[:vehicle_parts_emails] if params.key?(:vehicle_parts_emails)
     @account.service_emails = params[:service_emails] if params.key?(:service_emails)
+    @account.sales_escalation_emails = params[:sales_escalation_emails] if params.key?(:sales_escalation_emails)
+    @account.service_escalation_emails = params[:service_escalation_emails] if params.key?(:service_escalation_emails)
+    @account.vehicle_parts_escalation_emails = params[:vehicle_parts_escalation_emails] if params.key?(:vehicle_parts_escalation_emails)
 
     @account.save!
   end

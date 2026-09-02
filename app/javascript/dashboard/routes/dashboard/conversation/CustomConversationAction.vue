@@ -2,7 +2,6 @@
 import { mapGetters } from 'vuex';
 import { useAlert } from 'dashboard/composables';
 import { useAgentsList } from 'dashboard/composables/useAgentsList';
-import ContactDetailsItem from './ContactDetailsItem.vue';
 import MultiselectDropdown from 'shared/components/ui/MultiselectDropdown.vue';
 import ConversationLabels from './labels/LabelBox.vue';
 import { CONVERSATION_PRIORITY } from '../../../../shared/constants/messages';
@@ -12,7 +11,6 @@ import NextButton from 'dashboard/components-next/button/Button.vue';
 
 export default {
   components: {
-    ContactDetailsItem,
     MultiselectDropdown,
     ConversationLabels,
     NextButton,
@@ -159,7 +157,6 @@ export default {
         ? this.$t('CONVERSATION_SIDEBAR.ENABLE_AI')
         : this.$t('CONVERSATION_SIDEBAR.DISABLE_AI');
     },
-
   },
   methods: {
     onSelfAssign() {
@@ -208,13 +205,12 @@ export default {
 
       this.assignedPriority = isSamePriority ? null : selectedPriorityItem;
     },
-
   },
 };
 </script>
 
 <template>
-  <div class="bg-white dark:bg-[#111112]">
+  <div class="bg-white dark:bg-[#1a1919]">
     <div class="p-1 space-y-6">
       <div class="p-1">
         <div class="flex items-center justify-between mb-2">
@@ -231,8 +227,10 @@ export default {
             @click="onSelfAssign"
           />
         </div>
-        
-        <p class="mb-4 text-[12px] font-medium text-slate-500 dark:text-slate-400 leading-relaxed">
+
+        <p
+          class="mb-4 text-[12px] font-medium text-slate-500 dark:text-slate-400 leading-relaxed"
+        >
           {{ assignInfoLabel }}
         </p>
 
@@ -240,7 +238,9 @@ export default {
           :options="agentsList"
           :selected-item="assignedAgent"
           :multiselector-title="$t('AGENT_MGMT.MULTI_SELECTOR.TITLE.AGENT')"
-          :multiselector-placeholder="$t('AGENT_MGMT.MULTI_SELECTOR.PLACEHOLDER_UNASSIGN')"
+          :multiselector-placeholder="
+            $t('AGENT_MGMT.MULTI_SELECTOR.PLACEHOLDER_UNASSIGN')
+          "
           :no-search-result="
             $t('AGENT_MGMT.MULTI_SELECTOR.SEARCH.NO_RESULTS.AGENT')
           "
@@ -259,7 +259,9 @@ export default {
           :options="teamsList"
           :selected-item="assignedTeam"
           :multiselector-title="$t('AGENT_MGMT.MULTI_SELECTOR.TITLE.TEAM')"
-          :multiselector-placeholder="$t('AGENT_MGMT.MULTI_SELECTOR.PLACEHOLDER')"
+          :multiselector-placeholder="
+            $t('AGENT_MGMT.MULTI_SELECTOR.PLACEHOLDER')
+          "
           :no-search-result="
             $t('AGENT_MGMT.MULTI_SELECTOR.SEARCH.NO_RESULTS.TEAM')
           "
@@ -297,7 +299,6 @@ export default {
         </h4>
         <ConversationLabels :conversation-id="conversationId" />
       </div>
-
     </div>
   </div>
 </template>

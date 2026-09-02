@@ -1,5 +1,6 @@
 <script setup>
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
+import { useElementBounding, useWindowSize } from '@vueuse/core';
 import { useUISettings } from 'dashboard/composables/useUISettings';
 import { formatNumber } from '@chatwoot/utils';
 import wootConstants from 'dashboard/constants/globals';
@@ -40,6 +41,48 @@ const { uiSettings, updateUISettings } = useUISettings();
 const { t } = useI18n();
 const { accountId, currentAccount } = useAccount();
 const currentUser = useMapGetter('getCurrentUser');
+
+
+const isSearchCompact = computed(
+  () => !props.isOnExpandedLayout && (currentAccount.value?.name?.length || 0) > 24
+);
+
+const filterButtonWrapper = ref(null);
+const { left: filterButtonLeft, bottom: filterButtonBottom } =
+  useElementBounding(filterButtonWrapper);
+const { width: windowWidth } = useWindowSize();
+
+const isSqueezedWithSidebarOpen = computed(() => {
+  const sidebarWidth = uiSettings.value?.custom_sidebar_width || 60;
+  return (
+    windowWidth.value >= 768 && windowWidth.value <= 920 && sidebarWidth >= 140
+  );
+});
+
+const filterTeleportTargetClass = computed(() =>
+  props.isOnExpandedLayout ? 'md:ltr:right-0 md:rtl:left-0' : ''
+);
+
+const filterTeleportTargetStyle = computed(() => {
+  if (props.isOnExpandedLayout || windowWidth.value < 425) {
+    return {};
+  }
+
+  let panelWidth = 500;
+  if (windowWidth.value <= 650) panelWidth = 300;
+  else if (windowWidth.value >= 1440) panelWidth = 750;
+  const left = Math.min(
+    Math.max(filterButtonLeft.value, 8),
+    windowWidth.value - panelWidth - 8
+  );
+  return {
+    position: 'fixed',
+    top: `${filterButtonBottom.value + 8}px`,
+    left: `${left}px`,
+    right: 'auto',
+    marginTop: 0,
+  };
+});
 
 const sortedAccounts = computed(() => {
   return [...(currentUser.value?.accounts || [])].sort((a, b) =>
@@ -95,20 +138,29 @@ const statusText = computed(() => {
     }"
   >
     <!-- Search bar row -->
-    <div class="flex items-center gap-2 px-3 pt-3 pb-2">
-      <div style="width: 30%">
+    <div class="flex items-center gap-3 px-3 pt-3 pb-2">
+      <div
+        class="flex-1"
+        :class="[
+          isOnExpandedLayout ? 'min-w-0' : 'min-w-[50%] max-w-[80%]',
+          isSqueezedWithSidebarOpen ? 'max-w-[40vw]' : '',
+        ]"
+      >
         <DropdownContainer>
           <template #trigger="{ toggle, isOpen }">
             <button
               class="flex items-center justify-between gap-1 w-full px-2 py-2 rounded-lg bg-n-alpha-3 dark:bg-white/8 border border-n-weak hover:border-n-slate-6 dark:hover:border-white/20 transition-colors text-sm text-n-slate-11 min-w-0"
-              :class="isOpen && 'border-n-slate-6 dark:border-white/20'"
+              :class="[
+                isOpen && 'border-n-slate-6 dark:border-white/20',
+                isSqueezedWithSidebarOpen ? '!px-1.5 !py-1.5' : '',
+              ]"
               @click="toggle"
             >
               <span class="truncate min-w-0 flex-1 text-left text-xs leading-5">{{ currentAccount.name }}</span>
               <span class="i-lucide-chevrons-up-down size-3.5 flex-shrink-0 text-n-slate-10" />
             </button>
           </template>
-          <DropdownBody class="min-w-80 z-50 shadow-2xl border-none rounded-lg outline-none">
+          <DropdownBody class="min-w-80 z-50 shadow-2xl border-none rounded-lg outline-none max-[540px]:!w-[calc(100vw-2rem)] max-[540px]:!min-w-0 max-[540px]:!max-w-[calc(100vw-2rem)]">
             <DropdownSection :title="$t('SIDEBAR_ITEMS.SWITCH_ACCOUNT')">
               <DropdownItem
                 v-for="account in sortedAccounts"
@@ -118,9 +170,9 @@ const statusText = computed(() => {
               >
                 <template #label>
                   <div class="flex items-center gap-3 text-left min-w-0 w-full">
-                    <span class="text-n-slate-12 font-medium truncate flex-grow" :title="account.name">{{ account.name }}</span>
+                    <span class="text-n-slate-12 font-medium truncate flex-grow min-w-0 max-[540px]:whitespace-normal max-[540px]:break-words max-[540px]:overflow-visible max-[540px]:text-clip" :title="account.name">{{ account.name }}</span>
                     <div class="flex-shrink-0 w-px h-3 bg-n-strong" />
-                    <span class="text-n-slate-11 text-xs capitalize whitespace-nowrap">
+                    <span class="text-n-slate-11 text-xs capitalize whitespace-nowrap flex-shrink-0">
                       {{ account.custom_role_id ? account.custom_role?.name : account.role }}
                     </span>
                   </div>
@@ -137,12 +189,20 @@ const statusText = computed(() => {
       </div>
       <router-link
         :to="{ name: 'search' }"
-        class="flex items-center gap-2 px-3 py-2 rounded-lg bg-n-alpha-3 dark:bg-white/5 border border-n-weak hover:border-n-slate-6 dark:hover:border-white/20 transition-colors group"
-        style="width: 70%"
+        class="flex items-center gap-2 px-4 py-2 min-[1536px]:px-5 rounded-lg bg-n-alpha-3 dark:bg-white/5 border border-n-weak hover:border-n-slate-6 dark:hover:border-white/20 transition-colors group max-[450px]:flex-none max-[450px]:max-w-[20%] max-[450px]:justify-center"
+        :class="[
+          isOnExpandedLayout ? 'flex-1 min-w-0' : 'flex-none',
+          isSearchCompact ? 'justify-center' : 'justify-start',
+          isSqueezedWithSidebarOpen ? '!px-2 !py-1.5 !gap-1 max-w-[40vw]' : '',
+        ]"
       >
         <span class="i-lucide-search size-4 text-n-slate-10 group-hover:text-n-slate-11 flex-shrink-0" />
-        <span class="text-sm text-n-slate-10 group-hover:text-n-slate-11 truncate">
-          {{ $t('CHAT_LIST.SEARCH.INPUT') }}
+        <span
+          v-if="!isSearchCompact"
+          class="text-sm text-n-slate-10 group-hover:text-n-slate-11 truncate max-[450px]:hidden"
+          :class="isSqueezedWithSidebarOpen ? '!text-xs' : ''"
+        >
+          {{ isOnExpandedLayout ? $t('CHAT_LIST.SEARCH.INPUT') : $t('CHAT_LIST.SEARCH.LABEL') }}
         </span>
       </router-link>
     </div>
@@ -172,7 +232,7 @@ const statusText = computed(() => {
     </div>
     <div class="flex items-center gap-1.5">
       <template v-if="hasAppliedFilters && !hasActiveFolders">
-        <div class="relative">
+        <div ref="filterButtonWrapper" class="relative">
           <NextButton
             v-tooltip.top-end="$t('FILTER.CUSTOM_VIEWS.ADD.SAVE_BUTTON')"
             icon="i-lucide-save"
@@ -185,6 +245,8 @@ const statusText = computed(() => {
           <div
             id="saveFilterTeleportTarget"
             class="absolute z-[200] mt-2"
+            :class="filterTeleportTargetClass"
+            :style="filterTeleportTargetStyle"
           />
         </div>
         <NextButton
@@ -198,7 +260,7 @@ const statusText = computed(() => {
         />
       </template>
       <template v-if="hasActiveFolders">
-        <div class="relative">
+        <div ref="filterButtonWrapper" class="relative">
           <NextButton
             id="toggleConversationFilterButton"
             v-tooltip.top-end="$t('FILTER.CUSTOM_VIEWS.EDIT.EDIT_BUTTON')"
@@ -212,6 +274,8 @@ const statusText = computed(() => {
           <div
             id="conversationFilterTeleportTarget"
             class="absolute z-[200] mt-2"
+            :class="filterTeleportTargetClass"
+            :style="filterTeleportTargetStyle"
           />
         </div>
         <NextButton
@@ -225,7 +289,7 @@ const statusText = computed(() => {
           @click="emit('deleteFolders')"
         />
       </template>
-      <div v-else class="relative">
+      <div v-else ref="filterButtonWrapper" class="relative">
         <NextButton
           id="toggleConversationFilterButton"
           v-tooltip.right="$t('FILTER.TOOLTIP_LABEL')"
@@ -239,6 +303,8 @@ const statusText = computed(() => {
         <div
           id="conversationFilterTeleportTarget"
           class="absolute z-[200] mt-2"
+          :class="filterTeleportTargetClass"
+          :style="filterTeleportTargetStyle"
         />
       </div>
       <ConversationBasicFilter

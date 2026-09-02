@@ -430,4 +430,36 @@ RSpec.describe Account do
       end
     end
   end
+
+  describe 'email list attributes' do
+    let(:account) { create(:account) }
+
+    %i[
+      escalation_emails vehicle_parts_emails service_emails
+      sales_escalation_emails service_escalation_emails vehicle_parts_escalation_emails
+    ].each do |attribute|
+      describe "##{attribute}" do
+        it 'defaults to an empty array' do
+          expect(account.public_send(attribute)).to eq([])
+        end
+
+        it 'accepts a list of valid emails' do
+          account.public_send("#{attribute}=", ['manager@example.com', 'lead@example.com'])
+          expect(account).to be_valid
+        end
+
+        it 'rejects an invalid email' do
+          account.public_send("#{attribute}=", ['not-an-email'])
+          expect(account).not_to be_valid
+          expect(account.errors[attribute]).to include('not-an-email is not a valid email')
+        end
+
+        it 'rejects a non-array value' do
+          account.public_send("#{attribute}=", 'manager@example.com')
+          expect(account).not_to be_valid
+          expect(account.errors[attribute]).to include('must be an array')
+        end
+      end
+    end
+  end
 end
