@@ -119,8 +119,8 @@
         "MESSAGE_HELP": "This message is sent to the customer when a conversation is automatically resolved by the system due to inactivity."
       },
       "BOOKING_EMAILS": {
-        "TITLE": "Booking Notification Emails",
-        "NOTE": "Configure email addresses to receive booking notifications. Only these emails will receive booking alerts. If no emails are added, no booking notifications will be sent.",
+        "TITLE": "Sales Booking Notification Emails",
+        "NOTE": "Configure email addresses to receive sales booking notifications. Only these emails will receive booking alerts. If no emails are added, no booking notifications will be sent.",
         "LABEL": "Add email address",
         "HELP": "Enter an email address and click Add. You can add multiple email addresses.",
         "PLACEHOLDER": "email{'@'}example.com",
