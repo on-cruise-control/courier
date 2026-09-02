@@ -441,6 +441,7 @@ class Conversation < ApplicationRecord
     removed_labels = previous_labels - current_labels
 
     sync_stark_human_redirect(newly_added, removed_labels)
+    sync_stark_ai_loop_status(newly_added, removed_labels)
 
     if newly_added.include?('escalation')
       escalation_emails = account.escalation_emails
@@ -459,9 +460,22 @@ class Conversation < ApplicationRecord
       end
     end
 
+    trigger_area_escalations_on_label_add(newly_added)
+
     return unless newly_added.include?('handoff')
 
     ConversationHandoff::SendHandoffNotificationsJob.perform_later(self)
+  end
+
+  def trigger_area_escalations_on_label_add(newly_added)
+    ConversationHandoffService::AREA_ESCALATIONS.each_value do |config|
+      next unless newly_added.include?(config[:label])
+
+      emails = account.public_send(config[:emails])
+      next unless emails.present? || GlobalConfigService.default_emails_present?
+
+      config[:job].constantize.perform_later(id, emails, nil, escalation_trigger_message)
+    end
   end
 
   def sync_stark_human_redirect(newly_added, removed_labels)
@@ -479,6 +493,21 @@ class Conversation < ApplicationRecord
     return if result[:status] == 'success'
 
     Rails.logger.error("Failed to sync Stark human_redirect for conversation #{id}: #{result[:message]}")
+  end
+
+  def sync_stark_ai_loop_status(newly_added, removed_labels)
+    puts '---------------------------------sync ai loop called------------------------------------------------'
+    status = if newly_added.include?(Stark::MessageHandler::AI_LOOP_LABEL)
+               'ai_loop_detected'
+             elsif removed_labels.include?(Stark::MessageHandler::AI_LOOP_LABEL)
+               'exempt'
+             end
+    return if status.nil?
+
+    result = Stark::SessionStatusService.new(self).update_status(status)
+    return unless result[:status] == 'success'
+
+    update_columns(additional_attributes: (additional_attributes || {}).merge('session_status' => status))
   end
 
   def last_outgoing_stark_message
