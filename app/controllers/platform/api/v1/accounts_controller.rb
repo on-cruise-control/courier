@@ -1,4 +1,6 @@
 class Platform::Api::V1::AccountsController < PlatformController
+  before_action :set_resource_by_dealership_id, only: [:bot_name]
+
   def index
     @resources = @platform_app.platform_app_permissibles
                               .where(permissible_type: 'Account')
@@ -7,6 +9,8 @@ class Platform::Api::V1::AccountsController < PlatformController
   end
 
   def show; end
+
+  def bot_name; end
 
   def create
     @resource = Account.create!(account_params)
@@ -30,6 +34,11 @@ class Platform::Api::V1::AccountsController < PlatformController
 
   def set_resource
     @resource = Account.find(params[:id])
+  end
+
+  def set_resource_by_dealership_id
+    @resource = Account.find_by(dealership_id: params[:dealership_id])
+    render json: { error: 'Account not found' }, status: :not_found if @resource.blank?
   end
 
   def account_params
