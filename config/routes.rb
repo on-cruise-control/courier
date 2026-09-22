@@ -597,6 +597,7 @@ Rails.application.routes.draw do
             end
           end
           resources :email_channel_migrations, only: [:create]
+          get :bot_name, on: :collection
         end
         # Add this block for messages
         post 'messages/send-message', to: 'messages#send_email_notification'
