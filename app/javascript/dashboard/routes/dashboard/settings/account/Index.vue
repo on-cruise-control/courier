@@ -18,6 +18,7 @@ import AccountDelete from './components/AccountDelete.vue';
 import AudioTranscription from './components/AudioTranscription.vue';
 import SectionLayout from './components/SectionLayout.vue';
 import TwilioConfiguration from './components/TwilioConfiguration.vue';
+import GoogleAnalyticsSettings from './components/GoogleAnalyticsSettings.vue';
 
 export default {
   components: {
@@ -32,6 +33,7 @@ export default {
     NextInput,
     Avatar,
     TwilioConfiguration,
+    GoogleAnalyticsSettings,
   },
   setup() {
     const { updateUISettings, uiSettings } = useUISettings();
@@ -326,6 +328,7 @@ export default {
     </div>
     <AudioTranscription v-if="showAudioTranscriptionConfig" />
     <TwilioConfiguration />
+    <GoogleAnalyticsSettings />
     <AccountId />
     <div v-if="!uiFlags.isFetchingItem && isOnChatwootCloud">
       <AccountDelete />

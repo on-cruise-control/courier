@@ -54,6 +54,9 @@ const updateAuthCookie = (cookieContent, baseDomain = '') =>
 
 const ASC_EVENT_OWNER = 'cruisecontrol';
 
+let gaMeasurementId = null;
+let resolveVehicleContact = null;
+
 const pushAscEvent = (name, params = {}) => {
   const payload = {
     event_owner: ASC_EVENT_OWNER,
@@ -63,18 +66,12 @@ const pushAscEvent = (name, params = {}) => {
     ...params,
   };
   window.dataLayer = window.dataLayer || [];
-  let via = 'dataLayer-queue';
-  if (typeof window.gtag === 'function') {
-    via = 'gtag';
-  } else if (window.google_tag_manager) {
-    via = 'gtm-dataLayer';
-  }
   // eslint-disable-next-line no-console
-  console.log(`Courier SDK: ASC event -> ${name} (via ${via})`, payload);
-  if (typeof window.gtag === 'function') {
+  console.log(`Courier SDK: ASC event -> ${name}`);
+  if (gaMeasurementId) {
+    window.gtag('event', name, { ...payload, send_to: gaMeasurementId });
+  } else if (typeof window.gtag === 'function') {
     window.gtag('event', name, payload);
-  } else if (window.google_tag_manager) {
-    window.dataLayer.push({ event: name, ...payload });
   } else {
     // No tag present yet; queue on dataLayer for a late-loading GTM/gtag.
     window.dataLayer.push({ event: name, ...payload });
@@ -82,9 +79,25 @@ const pushAscEvent = (name, params = {}) => {
 };
 
 const injectGA = token => {
-  if (!token || window.gtag) return;
+  if (!token) {
+    // eslint-disable-next-line no-console
+    console.log('Courier SDK: No GA measurement ID set in the widget');
+    return;
+  }
+  gaMeasurementId = token;
+  if (window.gtag) {
+    // Site already has gtag; register the widget ID without a duplicate page_view.
+    // eslint-disable-next-line no-console
+    console.log(
+      'Courier SDK: GA measurement ID G-XXXXX found, using existing site gtag'
+    );
+    window.gtag('config', token, { send_page_view: false });
+    return;
+  }
   // eslint-disable-next-line no-console
-  console.log('Courier GA token found, injecting Google Analytics:G-XXXX');
+  console.log(
+    'Courier SDK: GA measurement ID G-XXXXX found, injecting Google Analytics'
+  );
   const script = document.createElement('script');
   script.async = true;
   script.src = `https://www.googletagmanager.com/gtag/js?id=${token}`;
@@ -346,13 +359,7 @@ export const IFrameHelper = {
         document.addEventListener(e, IFrameHelper.setupAudioListeners, false);
       });
 
-      const gaToken = message.config.channelConfig.googleAnalyticsToken;
-      if (gaToken) {
-        injectGA(gaToken);
-      } else {
-        // eslint-disable-next-line no-console
-        console.log('Courier No GA token found in chatwootSettings');
-      }
+      injectGA(message.config.channelConfig.googleAnalyticsToken);
 
       if (!window.$chatwoot.resetTriggered) {
         dispatchWindowEvent({ eventName: CHATWOOT_READY });
@@ -463,12 +470,24 @@ export const IFrameHelper = {
     'show-vehicle-details': ({ data: { vehicle, conversationId } }) => {
       const overlay = IFrameHelper._vehicleOverlay;
       IFrameHelper._vehicleOverlay = null;
-      const { baseUrl, websiteToken } = window.$chatwoot;
       if (overlay && vehicle) {
-        VehicleModalHelper.updateWithVehicle(overlay, vehicle, { baseUrl, websiteToken, conversationId });
+        VehicleModalHelper.updateWithVehicle(overlay, vehicle, {
+          conversationId,
+          // The widget iframe posts the form to the API (same origin, no CORS)
+          submitContact: contact =>
+            new Promise(resolve => {
+              resolveVehicleContact = resolve;
+              IFrameHelper.sendMessage('submit-vehicle-contact', { contact });
+            }),
+        });
       } else {
         overlay?.remove();
       }
+    },
+
+    'vehicle-contact-submitted': ({ data: { success } }) => {
+      resolveVehicleContact?.(success);
+      resolveVehicleContact = null;
     },
 
     closeChat: () => {
