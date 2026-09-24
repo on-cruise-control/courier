@@ -102,7 +102,10 @@ class Integrations::Stark::ProcessorService < Integrations::BotProcessorService
       stop_follow_up: response['stop_follow_up'],
       should_send_reply: response['should_send_reply'].nil? || response['should_send_reply']
     )
-    schedule_booking_follow_up if response['is_booking_created']
+    if response['is_booking_created']
+      schedule_booking_follow_up
+      track_booking_created
+    end
     handle_response(response)
   end
 
@@ -121,6 +124,30 @@ class Integrations::Stark::ProcessorService < Integrations::BotProcessorService
                                            .perform_later(current_conversation.id)
                                            .provider_job_id
     current_conversation.update_column(:booking_follow_up_jid, jid)
+  end
+
+  def track_booking_created
+    contact = current_conversation.contact
+    return if contact.blank?
+
+    platform = Analytics::CommTypeResolver.for(current_conversation.inbox) || 'unknown'
+    # Widget bookings are already tracked client-side
+    return if platform == 'widget'
+
+    Analytics::Ga4EventService.new(
+      account: current_conversation.account,
+      event_name: 'asc_comm_submission',
+      client_id: "contact-#{contact.id}",
+      params: {
+        event_action: 'booking_created',
+        comm_type: platform,
+        event_platform: platform,
+        comm_outcome: 'appointment_scheduled',
+        form_name: 'booking',
+        form_type: 'appointment',
+        conversation_id: current_conversation.id
+      }
+    ).perform
   end
 
   def current_conversation

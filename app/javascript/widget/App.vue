@@ -1,6 +1,7 @@
 <script>
 import { mapGetters, mapActions } from 'vuex';
-import { setHeader } from 'widget/helpers/axios';
+import { API, setHeader } from 'widget/helpers/axios';
+import endPoints from 'widget/api/endPoints';
 import addHours from 'date-fns/addHours';
 import { IFrameHelper, RNHelper } from 'widget/helpers/utils';
 import configMixin from './mixins/configMixin';
@@ -158,6 +159,18 @@ export default {
       'resetCampaign',
     ]),
     ...mapActions('agent', ['fetchAvailableAgents']),
+    async submitVehicleContact(contact) {
+      let success = true;
+      try {
+        await API.post(endPoints.createVehicleContact().url, contact);
+      } catch {
+        success = false;
+      }
+      IFrameHelper.sendMessage({
+        event: 'vehicle-contact-submitted',
+        data: { success },
+      });
+    },
     checkSmsState() {
       // Check if there are conversations (which includes SMS conversations)
       // This works across logout/login because conversations are fetched from server
@@ -445,6 +458,8 @@ export default {
           this.$store.dispatch('conversationLabels/destroy', message.label);
         } else if (message.event === 'set-user') {
           this.$store.dispatch('contacts/setUser', message);
+        } else if (message.event === 'submit-vehicle-contact') {
+          this.submitVehicleContact(message.contact);
         } else if (message.event === 'send-message') {
           // Handle message sent from greeting input box
           if (message.content) {

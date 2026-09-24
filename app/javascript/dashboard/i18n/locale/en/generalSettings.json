@@ -274,6 +274,19 @@
           "ERROR_LOADING": "Failed to load Twilio settings"
         }
       },
+      "GOOGLE_ANALYTICS": {
+        "TITLE": "Google Analytics",
+        "NOTE": "Connect Google Analytics to track events. Add a Measurement ID on your website widget first.",
+        "API_SECRET": {
+          "LABEL": "Google Analytics API Secret",
+          "PLACEHOLDER": "Enter your Google Analytics API secret"
+        },
+        "SUBMIT_BUTTON": "Save",
+        "API": {
+          "SUCCESS": "Google Analytics settings updated successfully",
+          "ERROR": "Failed to update Google Analytics settings"
+        }
+      },
       "FEATURES": {
         "INBOUND_EMAIL_ENABLED": "Conversation continuity with emails is enabled for your account.",
         "CUSTOM_EMAIL_DOMAIN_ENABLED": "You can receive emails in your custom domain now."

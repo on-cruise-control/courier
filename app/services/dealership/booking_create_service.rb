@@ -34,8 +34,7 @@ class Dealership::BookingCreateService
     response = self.class.post(url, body: payload_data.to_json, headers: headers)
  
     if response.success?
-      Rails.logger.info "--Dealership booking create successful for conversation_id: #{@conversation.id}, response: #{response.body}"
-      update_last_call_timestamp
+      handle_success(response)
     else
       Rails.logger.error "--Dealership booking create failed for conversation_id: #{@conversation.id}: #{response.code} #{response.body}"
     end
@@ -44,6 +43,12 @@ class Dealership::BookingCreateService
   end
 
   private
+
+  def handle_success(response)
+    Rails.logger.info "--Dealership booking create successful for conversation_id: #{@conversation.id}, response: #{response.body}"
+    update_last_call_timestamp
+    track_booking_created
+  end
 
   def enabled?
     @base_url.present? && @api_key.present? && @account.dealership_id.present?
@@ -96,5 +101,28 @@ class Dealership::BookingCreateService
         additional_attributes: @conversation.additional_attributes.merge('last_booking_api_call_at' => Time.now.utc)
       )
     end
+  end
+
+  def track_booking_created
+    return if @contact.blank?
+
+    platform = Analytics::CommTypeResolver.for(@inbox) || 'unknown'
+    # Widget bookings are already tracked client-side (browser gtag); skip here to avoid double counting.
+    return if platform == 'widget'
+
+    Analytics::Ga4EventService.new(
+      account: @account,
+      event_name: 'asc_comm_submission',
+      client_id: "contact-#{@contact.id}",
+      params: {
+        event_action: 'booking_created',
+        comm_type: platform,
+        event_platform: platform,
+        comm_outcome: 'appointment_scheduled',
+        form_name: 'booking',
+        form_type: 'appointment',
+        conversation_id: @conversation.id
+      }
+    ).perform
   end
 end
