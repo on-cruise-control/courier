@@ -2,26 +2,34 @@
 #
 # Table name: accounts
 #
-#  id                    :integer          not null, primary key
-#  auto_resolve_duration :integer
-#  booking_emails        :jsonb
-#  custom_attributes     :jsonb
-#  domain                :string(100)
-#  escalation_emails     :jsonb
-#  feature_flags         :bigint           default(0), not null
-#  feature_flags_2       :bigint           default(0), not null
-#  internal_attributes   :jsonb            not null
-#  limits                :jsonb
-#  locale                :integer          default("en")
-#  name                  :string           not null
-#  service_emails        :jsonb
-#  settings              :jsonb
-#  status                :integer          default("active")
-#  support_email         :string(100)
-#  vehicle_parts_emails  :jsonb
-#  created_at            :datetime         not null
-#  updated_at            :datetime         not null
-#  dealership_id         :string
+#  id                                      :integer          not null, primary key
+#  auto_resolve_duration                   :integer
+#  booking_emails                          :jsonb
+#  bot_name                                :string
+#  custom_attributes                       :jsonb
+#  domain                                  :string(100)
+#  escalation_emails                       :jsonb
+#  feature_flags                           :bigint           default(0), not null
+#  feature_flags_2                         :bigint           default(0), not null
+#  internal_attributes                     :jsonb            not null
+#  limits                                  :jsonb
+#  locale                                  :integer          default("en")
+#  name                                    :string           not null
+#  sales_comment_escalation_emails         :jsonb
+#  sales_escalation_emails                 :jsonb
+#  service_comment_escalation_emails       :jsonb
+#  service_emails                          :jsonb
+#  service_escalation_emails               :jsonb
+#  settings                                :jsonb
+#  status                                  :integer          default("active")
+#  support_email                           :string(100)
+#  unsubscribed_emails                     :jsonb
+#  vehicle_parts_comment_escalation_emails :jsonb
+#  vehicle_parts_emails                    :jsonb
+#  vehicle_parts_escalation_emails         :jsonb
+#  created_at                              :datetime         not null
+#  updated_at                              :datetime         not null
+#  dealership_id                           :string
 #
 # Indexes
 #
@@ -74,6 +82,9 @@ class Account < ApplicationRecord
   validate :validate_escalation_emails
   validate :validate_vehicle_parts_emails
   validate :validate_service_emails
+  validate :validate_sales_comment_escalation_emails
+  validate :validate_service_comment_escalation_emails
+  validate :validate_vehicle_parts_comment_escalation_emails
   validates_with JsonSchemaValidator,
                  schema: SETTINGS_PARAMS_SCHEMA,
                  attribute_resolver: ->(record) { record.settings }
@@ -346,6 +357,45 @@ class Account < ApplicationRecord
 
     service_emails.each do |email|
       errors.add(:service_emails, "#{email} is not a valid email") unless email&.match?(Devise.email_regexp)
+    end
+  end
+
+  def validate_sales_comment_escalation_emails
+    return if sales_comment_escalation_emails.blank?
+
+    unless sales_comment_escalation_emails.is_a?(Array)
+      errors.add(:sales_comment_escalation_emails, 'must be an array')
+      return
+    end
+
+    sales_comment_escalation_emails.each do |email|
+      errors.add(:sales_comment_escalation_emails, "#{email} is not a valid email") unless email&.match?(Devise.email_regexp)
+    end
+  end
+
+  def validate_service_comment_escalation_emails
+    return if service_comment_escalation_emails.blank?
+
+    unless service_comment_escalation_emails.is_a?(Array)
+      errors.add(:service_comment_escalation_emails, 'must be an array')
+      return
+    end
+
+    service_comment_escalation_emails.each do |email|
+      errors.add(:service_comment_escalation_emails, "#{email} is not a valid email") unless email&.match?(Devise.email_regexp)
+    end
+  end
+
+  def validate_vehicle_parts_comment_escalation_emails
+    return if vehicle_parts_comment_escalation_emails.blank?
+
+    unless vehicle_parts_comment_escalation_emails.is_a?(Array)
+      errors.add(:vehicle_parts_comment_escalation_emails, 'must be an array')
+      return
+    end
+
+    vehicle_parts_comment_escalation_emails.each do |email|
+      errors.add(:vehicle_parts_comment_escalation_emails, "#{email} is not a valid email") unless email&.match?(Devise.email_regexp)
     end
   end
 end

@@ -428,7 +428,8 @@
       "MACROS": "Macros",
       "LINEAR_ISSUES": "Linked Linear Issues",
       "SHOPIFY_ORDERS": "Shopify Orders",
-      "SHARED_FILES": "Attachments"
+      "SHARED_FILES": "Attachments",
+      "LEAD_ATTRIBUTION": "Contact Origin Attributes"
     },
     "SHARED_FILES": {
       "EMPTY": "No attachments yet",
@@ -441,6 +442,17 @@
       "MORE_COUNT": "+{count}",
       "UNTITLED_FILE": "Untitled file",
       "JUMP_TO_MESSAGE": "Jump to message"
+    },
+    "LEAD_ATTRIBUTION": {
+      "ERROR": "Error loading contact origin attributes",
+      "NO_RECORDS_FOUND": "No origin attributes found",
+      "UTM_SOURCE": "Came From (Source)",
+      "UTM_MEDIUM": "Medium",
+      "UTM_CAMPAIGN": "Campaign",
+      "UTM_CONTENT": "Ad/Content Variant",
+      "UTM_TERM": "Search Term",
+      "REFERER_URL": "Referrer URL",
+      "AD_TITLE": "Ad Title"
     },
     "SHOPIFY": {
       "ORDER_ID": "Order #{id}",
@@ -526,17 +538,5 @@
   },
   "GALLERY_VIEW": {
     "ERROR_DOWNLOADING": "Unable to download attachment. Please try again"
-  },
-  "UPDATE_SENTIMENT": {
-    "BUTTON": "Mark as Not Negative",
-    "TITLE": "Update Comment Sentiment",
-    "DESCRIPTION": "Change the sentiment of this comment from Negative to Positive.",
-    "REASON_LABEL": "Reason (optional)",
-    "REASON_PLACEHOLDER": "Why are you changing the sentiment?",
-    "SUBMIT": "Update Sentiment",
-    "SUBMITTING": "Updating...",
-    "CANCEL": "Cancel",
-    "SUCCESS": "Comment sentiment updated to Positive.",
-    "ERROR": "Failed to update sentiment. Please try again."
   }
 }

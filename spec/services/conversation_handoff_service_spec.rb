@@ -15,7 +15,7 @@ RSpec.describe ConversationHandoffService do
     },
     'vehicle_parts_escalation' => {
       field: :vehicle_parts_escalation_emails, job: 'VehiclePartsEscalationNotificationJob',
-      label: 'vehicle_parts_escalation', color: '#0D9488'
+      label: 'parts_escalation', color: '#0D9488'
     }
   }
 

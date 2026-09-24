@@ -12,7 +12,6 @@ import ComposeConversation from 'dashboard/components-next/NewConversation/Compo
 import { BUS_EVENTS } from 'shared/constants/busEvents';
 import NextButton from 'dashboard/components-next/button/Button.vue';
 import VoiceCallButton from 'dashboard/components-next/Contacts/VoiceCallButton.vue';
-import commentSentimentAPI from 'dashboard/api/commentSentiment';
 
 import {
   isAConversationRoute,
@@ -55,9 +54,6 @@ export default {
       showMergeModal: false,
       showDeleteModal: false,
       spamStateOverride: null,
-      showSentimentModal: false,
-      sentimentReason: '',
-      isUpdatingSentiment: false,
     };
   },
   computed: {
@@ -108,14 +104,6 @@ export default {
         telegram: telegramUsername,
         ...(socialProfiles || {}),
       };
-    },
-    isNegativeCommentConversation() {
-      const type = this.currentChat?.additional_attributes?.type;
-      const isComment =
-        type === 'instagram_comments' ||
-        type === 'facebook_comments' ||
-        type === 'feed_comments';
-      return isComment && this.currentChat?.comment_sentiment === 'Negative';
     },
     // Delete Modal
     confirmDeleteMessage() {
@@ -196,33 +184,6 @@ export default {
         );
       }
     },
-    openSentimentModal() {
-      this.sentimentReason = '';
-      this.showSentimentModal = true;
-    },
-    closeSentimentModal() {
-      this.showSentimentModal = false;
-      this.sentimentReason = '';
-    },
-    async submitSentimentUpdate() {
-      this.isUpdatingSentiment = true;
-      try {
-        await commentSentimentAPI.updateSentiment(
-          this.currentChat.id,
-          this.sentimentReason || null
-        );
-        this.$store.commit('UPDATE_CONVERSATION_SENTIMENT', {
-          conversationId: this.currentChat.id,
-          sentiment: 'Positive',
-        });
-        useAlert(this.$t('CONTACT_PANEL.UPDATE_SENTIMENT.SUCCESS'));
-        this.closeSentimentModal();
-      } catch {
-        useAlert(this.$t('CONTACT_PANEL.UPDATE_SENTIMENT.ERROR'));
-      } finally {
-        this.isUpdatingSentiment = false;
-      }
-    },
     closeMergeModal() {
       this.showMergeModal = false;
     },
@@ -249,13 +210,19 @@ export default {
 
         const conversationId = this.currentChat.id;
         await this.$store.dispatch('fetchLatestMessages', { conversationId });
-        await new Promise(resolve => setTimeout(resolve, 750));
+        await new Promise(resolve => {
+          setTimeout(resolve, 750);
+        });
         await this.$store.dispatch('fetchLatestMessages', { conversationId });
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        await new Promise(resolve => {
+          setTimeout(resolve, 1500);
+        });
         await this.$store.dispatch('fetchLatestMessages', { conversationId });
 
         await this.$store.dispatch('getConversation', conversationId);
-        await new Promise(resolve => setTimeout(resolve, 750));
+        await new Promise(resolve => {
+          setTimeout(resolve, 750);
+        });
         await this.$store.dispatch('getConversation', conversationId);
         this.spamStateOverride = null;
         this.$store.dispatch('bulkActions/clearSelectedConversationIds');
@@ -301,7 +268,9 @@ export default {
 <template>
   <div class="relative flex flex-col items-center w-full px-5 py-6 text-center">
     <!-- Contact Label -->
-    <span class="absolute top-4 left-5 text-[14px] font-medium text-slate-800 dark:text-slate-100">
+    <span
+      class="absolute top-4 left-5 text-[14px] font-medium text-slate-800 dark:text-slate-100"
+    >
       {{ $t('CONVERSATION.SIDEBAR.CONTACT') || 'Contact' }}
     </span>
     <!-- Close Button -->
@@ -328,7 +297,9 @@ export default {
       </div>
       <div class="flex flex-col items-center min-w-0">
         <div class="flex items-center gap-2 mb-1">
-          <h2 class="text-xl font-black text-slate-900 dark:text-white truncate leading-tight">
+          <h2
+            class="text-xl font-black text-slate-900 dark:text-white truncate leading-tight"
+          >
             {{ contact.name }}
           </h2>
           <div class="flex items-center gap-1.5">
@@ -361,7 +332,10 @@ export default {
         >
           <span>{{ socialProfiles.instagram }}</span>
         </a>
-        <p v-if="additionalAttributes.description" class="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-[240px] break-words">
+        <p
+          v-if="additionalAttributes.description"
+          class="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-[240px] break-words"
+        >
           {{ additionalAttributes.description }}
         </p>
       </div>
@@ -408,8 +382,13 @@ export default {
         emoji="🌍"
         :title="$t('CONTACT_PANEL.LOCATION')"
       />
-      <div v-if="Object.values(socialProfiles).some(v => v)" class="flex items-center gap-2">
-        <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 whitespace-nowrap">
+      <div
+        v-if="Object.values(socialProfiles).some(v => v)"
+        class="flex items-center gap-2"
+      >
+        <span
+          class="text-xs font-semibold text-slate-500 dark:text-slate-400 whitespace-nowrap"
+        >
           {{ $t('CONTACT_PANEL.SOCIAL_PROFILES') }}:
         </span>
         <SocialIcons :social-profiles="socialProfiles" />
@@ -417,7 +396,9 @@ export default {
     </div>
 
     <!-- Action Buttons -->
-    <div class="flex flex-wrap items-center justify-center w-full mt-8 gap-3 px-2">
+    <div
+      class="flex flex-wrap items-center justify-center w-full mt-8 gap-3 px-2"
+    >
       <ComposeConversation
         :contact-id="String(contact.id)"
         is-modal
@@ -444,7 +425,7 @@ export default {
         faded
         class="!rounded-full shadow-sm hover:!bg-slate-100 dark:hover:!bg-white/10 !size-[38px] flex items-center justify-center"
       />
-      
+
       <NextButton
         v-tooltip.top="$t('EDIT_CONTACT.BUTTON_LABEL')"
         icon="i-ph-pencil-simple"
@@ -485,16 +466,6 @@ export default {
       />
 
       <NextButton
-        v-if="isNegativeCommentConversation"
-        v-tooltip.top="$t('CONTACT_PANEL.UPDATE_SENTIMENT.BUTTON')"
-        icon="i-lucide-messages-square"
-        slate
-        faded
-        class="!rounded-full !bg-amber-50 hover:!bg-amber-100 dark:!bg-amber-500/10 dark:hover:!bg-amber-500/20 shadow-sm !text-amber-600 dark:!text-amber-400"
-        @click="openSentimentModal"
-      />
-
-      <NextButton
         v-if="isAdmin"
         v-tooltip.top="$t('DELETE_CONTACT.BUTTON_LABEL')"
         icon="i-ph-trash"
@@ -531,68 +502,5 @@ export default {
       :confirm-text="$t('DELETE_CONTACT.CONFIRM.YES')"
       :reject-text="$t('DELETE_CONTACT.CONFIRM.NO')"
     />
-
   </div>
-
-  <!-- Update Sentiment Modal — teleported to body to escape panel overflow clipping -->
-  <Teleport to="body">
-    <div
-      v-if="showSentimentModal"
-      class="fixed inset-0 z-[9999] flex items-center justify-center"
-      @click.self="closeSentimentModal"
-    >
-      <div class="absolute inset-0 bg-black/50 dark:bg-black/70" />
-      <div class="relative bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-md mx-4 p-6">
-        <!-- Header -->
-        <div class="flex items-start justify-between mb-4">
-          <div>
-            <h3 class="text-base font-bold text-slate-900 dark:text-white">
-              {{ $t('CONTACT_PANEL.UPDATE_SENTIMENT.TITLE') }}
-            </h3>
-            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
-              {{ $t('CONTACT_PANEL.UPDATE_SENTIMENT.DESCRIPTION') }}
-            </p>
-          </div>
-          <button
-            class="ml-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
-            @click="closeSentimentModal"
-          >
-            <span class="i-lucide-x size-5" />
-          </button>
-        </div>
-
-        <!-- Reason input -->
-        <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-          {{ $t('CONTACT_PANEL.UPDATE_SENTIMENT.REASON_LABEL') }}
-        </label>
-        <textarea
-          v-model="sentimentReason"
-          :placeholder="$t('CONTACT_PANEL.UPDATE_SENTIMENT.REASON_PLACEHOLDER')"
-          rows="3"
-          class="w-full text-sm rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-amber-400 dark:focus:ring-amber-500"
-        />
-
-        <!-- Actions -->
-        <div class="flex items-center justify-end gap-3 mt-5">
-          <button
-            type="button"
-            class="px-4 py-2 rounded-lg text-sm font-medium bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 transition-colors"
-            @click="closeSentimentModal"
-          >
-            {{ $t('CONTACT_PANEL.UPDATE_SENTIMENT.CANCEL') }}
-          </button>
-          <button
-            type="button"
-            :disabled="isUpdatingSentiment"
-            class="px-4 py-2 rounded-lg text-sm font-semibold bg-n-blue-10 hover:bg-n-blue-9 active:bg-n-blue-8 text-white shadow-sm disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            @click="submitSentimentUpdate"
-          >
-            {{ isUpdatingSentiment
-              ? $t('CONTACT_PANEL.UPDATE_SENTIMENT.SUBMITTING')
-              : $t('CONTACT_PANEL.UPDATE_SENTIMENT.SUBMIT') }}
-          </button>
-        </div>
-      </div>
-    </div>
-  </Teleport>
 </template>

@@ -24,7 +24,7 @@ RSpec.describe AgentNotifications::EscalationMailer do
     end
 
     it 'renders the subject' do
-      expect(mail.subject).to eq('[Escalation] 🚨 Urgent Escalation: Customer Experience Issue – Immediate Attention Required')
+      expect(mail.subject).to eq('[Escalation] 🚨 Conversation requires attention')
     end
 
     it 'renders the receiver email' do
@@ -113,13 +113,13 @@ RSpec.describe AgentNotifications::EscalationMailer do
           emails: [agent.email],
           conversation: conversation,
           customer_data: nil,
-          message: message
+          message: message.content
         ).deliver_now
       end
 
       it 'sends the email successfully' do
         expect(mail).to be_present
-        expect(mail.subject).to eq('[Escalation] 🚨 Urgent Escalation: Customer Experience Issue – Immediate Attention Required')
+        expect(mail.subject).to eq('[Escalation] 🚨 Conversation requires attention')
       end
     end
   end
@@ -141,7 +141,7 @@ RSpec.describe AgentNotifications::EscalationMailer do
     end
 
     it 'renders the subject' do
-      expect(mail.subject).to eq('[Escalation] Negative Comment Detected – High-Priority Follow-Up Required')
+      expect(mail.subject).to eq('[Escalation] Customer comment needs attention')
     end
 
     it 'renders the receiver email' do
@@ -203,7 +203,7 @@ RSpec.describe AgentNotifications::EscalationMailer do
 
       it 'sends the email successfully with customer data' do
         expect(mail).to be_present
-        expect(mail.subject).to eq('[Escalation] Negative Comment Detected – High-Priority Follow-Up Required')
+        expect(mail.subject).to eq('[Escalation] Customer comment needs attention')
       end
     end
 

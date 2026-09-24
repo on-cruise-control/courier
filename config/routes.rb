@@ -180,7 +180,6 @@ Rails.application.routes.draw do
               post :update_last_seen
               post :unread
               post :custom_attributes
-              post :update_comment_sentiment
               get :attachments
               get :inbox_assistant
               get :reporting_events if ChatwootApp.enterprise?
@@ -224,6 +223,7 @@ Rails.application.routes.draw do
             end
             member do
               get :contactable_inboxes
+              get :lead_attribution
               post :destroy_custom_attributes
               delete :avatar
             end

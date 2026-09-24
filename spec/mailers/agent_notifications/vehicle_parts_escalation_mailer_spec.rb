@@ -22,15 +22,15 @@ RSpec.describe AgentNotifications::VehiclePartsEscalationMailer do
     end
 
     it 'renders the subject' do
-      expect(mail.subject).to eq('[Vehicle Parts Escalation] 🚨 Urgent Parts Escalation: Customer Experience Issue – Immediate Attention Required')
+      expect(mail.subject).to eq('[Parts Escalation] 🚨 Customer request needs attention')
     end
 
     it 'renders the receiver email' do
       expect(mail.to).to eq([agent.email])
     end
 
-    it 'mentions the vehicle parts department in the body' do
-      expect(mail.body.encoded).to include('vehicle parts department')
+    it 'mentions the parts department in the body' do
+      expect(mail.body.encoded).to include('parts department')
     end
 
     context 'when account is suspended' do

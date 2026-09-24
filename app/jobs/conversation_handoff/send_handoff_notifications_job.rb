@@ -11,7 +11,7 @@ class ConversationHandoff::SendHandoffNotificationsJob < ApplicationJob
         AdministratorNotifications::ConversationHandoffMailer.notify_handoff(conversation, customer_data, to: emails).deliver_later
         Sms::HandoffNotificationService.new(conversation, emails: emails, customer_data: customer_data).perform if emails.present?
       else
-        Rails.logger.warn("Vehicle parts email not configured for account #{conversation.account.id}")
+        Rails.logger.warn("Parts email not configured for account #{conversation.account.id}")
       end
     rescue StandardError => e
       Rails.logger.error("Failed to send handoff notifications: #{e.message}")

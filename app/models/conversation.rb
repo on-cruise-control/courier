@@ -307,15 +307,6 @@ class Conversation < ApplicationRecord
     # rubocop:enable Rails/SkipsModelValidations
   end
 
-  def handle_resolved_status_change
-    # When conversation is resolved, clear waiting_since using update_column to avoid callbacks
-    return unless saved_change_to_status? && status == 'resolved'
-
-    # rubocop:disable Rails/SkipsModelValidations
-    update_column(:waiting_since, nil)
-    # rubocop:enable Rails/SkipsModelValidations
-  end
-
   def ensure_snooze_until_reset
     self.snoozed_until = nil unless snoozed?
   end
@@ -443,23 +434,6 @@ class Conversation < ApplicationRecord
     sync_stark_human_redirect(newly_added, removed_labels)
     sync_stark_ai_loop_status(newly_added, removed_labels)
 
-    if newly_added.include?('escalation')
-      escalation_emails = account.escalation_emails
-
-      comment_types = %w[instagram_comments feed_comments facebook_comments]
-      is_comment = comment_types.include?(additional_attributes&.dig('type'))
-
-      update!(comment_sentiment: 'Negative') if is_comment
-
-      if escalation_emails.present? || GlobalConfigService.default_emails_present?
-        if is_comment
-          NegativeSentimentEscalationJob.perform_later(id, escalation_emails)
-        else
-          EscalationNotificationJob.perform_later(id, escalation_emails, nil, escalation_trigger_message)
-        end
-      end
-    end
-
     trigger_area_escalations_on_label_add(newly_added)
 
     return unless newly_added.include?('handoff')
@@ -468,20 +442,29 @@ class Conversation < ApplicationRecord
   end
 
   def trigger_area_escalations_on_label_add(newly_added)
-    ConversationHandoffService::AREA_ESCALATIONS.each_value do |config|
+    comment_types = %w[instagram_comments feed_comments facebook_comments]
+    is_comment = comment_types.include?(additional_attributes&.dig('type'))
+
+    ConversationHandoffService::AREA_ESCALATIONS.each_pair do |reason, config|
       next unless newly_added.include?(config[:label])
 
-      emails = account.public_send(config[:emails])
-      next unless emails.present? || GlobalConfigService.default_emails_present?
+      if is_comment
+        NegativeSentimentEscalationJob.perform_later(id, reason)
+      else
+        emails = account.public_send(config[:emails])
+        next unless emails.present? || GlobalConfigService.default_emails_present?
 
-      config[:job].constantize.perform_later(id, emails, nil, escalation_trigger_message)
+        config[:job].constantize.perform_later(id, emails, nil, escalation_trigger_message)
+      end
     end
   end
 
   def sync_stark_human_redirect(newly_added, removed_labels)
-    human_redirect = if newly_added.include?('escalation')
+    escalation_labels = ConversationHandoffService::AREA_ESCALATIONS.values.map { |config| config[:label] }
+
+    human_redirect = if (newly_added & escalation_labels).any?
                        true
-                     elsif removed_labels.include?('escalation')
+                     elsif (removed_labels & escalation_labels).any?
                        false
                      end
     return if human_redirect.nil?

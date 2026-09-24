@@ -51,7 +51,7 @@ class Sms::HandoffNotificationService
     customer_sms = PhoneNumberFormatter.format(customer_sms) if customer_sms.present?
 
     body = <<~SMS
-      🔔 Conversation Vehicle Parts Alert
+      🔔 Conversation Parts Inquiry Alert
 
       Dealership: #{account_name}
       #{"Platform: #{platform_name}#{' (DM)' if inbox&.dm_channel?}" if platform_name.present?}
@@ -61,7 +61,7 @@ class Sms::HandoffNotificationService
       #{"SMS Number: #{customer_sms}" if customer_sms.present?}
 
 
-      The customer has requested vehicle parts. Please contact them as soon as possible to verify their requirements and proceed accordingly.
+      The customer has requested parts Inquiry. Please contact them as soon as possible to verify their requirements and proceed accordingly.
     SMS
 
     summary = conversation_summary
