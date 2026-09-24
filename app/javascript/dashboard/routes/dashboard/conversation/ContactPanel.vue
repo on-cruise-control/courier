@@ -5,6 +5,7 @@ import {
   useFunctionGetter,
   useStore,
 } from 'dashboard/composables/store';
+import ContactAPI from 'dashboard/api/contacts';
 import { useUISettings } from 'dashboard/composables/useUISettings';
 import { FEATURE_FLAGS } from 'dashboard/featureFlags';
 
@@ -26,6 +27,7 @@ import SharedFiles from './SharedFiles.vue';
 import Draggable from 'vuedraggable';
 import MacrosList from './Macros/List.vue';
 import ShopifyOrdersList from 'dashboard/components/widgets/conversation/ShopifyOrdersList.vue';
+import LeadAttribution from 'dashboard/components/widgets/conversation/LeadAttribution.vue';
 import LinearIssuesList from 'dashboard/components/widgets/conversation/linear/IssuesList.vue';
 import LinearSetupCTA from 'dashboard/components/widgets/conversation/linear/LinearSetupCTA.vue';
 
@@ -44,7 +46,6 @@ const {
   updateUISettings,
   isContactSidebarItemOpen,
   conversationSidebarItemsOrder,
-  toggleSidebarUIState,
 } = useUISettings();
 
 const ACCORDION_KEYS = [
@@ -58,6 +59,7 @@ const ACCORDION_KEYS = [
   'is_shopify_orders_open',
   'is_contact_notes_open',
   'is_shared_files_open',
+  'is_lead_attribution_open',
 ];
 
 const toggleAccordionItem = key => {
@@ -71,10 +73,15 @@ const dragging = ref(false);
 const conversationSidebarItems = ref([]);
 
 const currentAccountId = useMapGetter('getCurrentAccountId');
-const isFeatureEnabledonAccount = useMapGetter('accounts/isFeatureEnabledonAccount');
+const isFeatureEnabledonAccount = useMapGetter(
+  'accounts/isFeatureEnabledonAccount'
+);
 
 const isCustomUIEnabled = computed(() =>
-  isFeatureEnabledonAccount.value(currentAccountId.value, FEATURE_FLAGS.CUSTOM_UI)
+  isFeatureEnabledonAccount.value(
+    currentAccountId.value,
+    FEATURE_FLAGS.CUSTOM_UI
+  )
 );
 
 const AccordionComponent = computed(() =>
@@ -102,7 +109,6 @@ const linearIntegration = useFunctionGetter(
   'integrations/getIntegration',
   'linear'
 );
-
 
 const isLinearClientIdConfigured = computed(() => {
   return !!linearIntegration.value?.id;
@@ -140,10 +146,28 @@ const getContactDetails = () => {
   }
 };
 
+const leadAttribution = ref({});
+const leadAttributionLoading = ref(false);
+const leadAttributionError = ref(false);
+
+const fetchLeadAttribution = async () => {
+  if (!contactId.value) return;
+  try {
+    leadAttributionLoading.value = true;
+    leadAttributionError.value = false;
+    const response = await ContactAPI.getLeadAttribution(contactId.value);
+    leadAttribution.value = response.data.lead_attribution || {};
+  } catch (e) {
+    leadAttributionError.value = true;
+  } finally {
+    leadAttributionLoading.value = false;
+  }
+};
 
 watch(contactId, (newContactId, prevContactId) => {
   if (newContactId && newContactId !== prevContactId) {
     getContactDetails();
+    fetchLeadAttribution();
   }
 });
 
@@ -164,6 +188,7 @@ const closeContactPanel = () => {
 onMounted(() => {
   conversationSidebarItems.value = conversationSidebarItemsOrder.value;
   getContactDetails();
+  fetchLeadAttribution();
   store.dispatch('attributes/get', 0);
   // Load integrations to ensure linear integration state is available
   store.dispatch('integrations/get', 'linear');
@@ -264,6 +289,22 @@ onMounted(() => {
                 :empty-state-message="
                   $t('CONVERSATION_CUSTOM_ATTRIBUTES.NO_RECORDS_FOUND')
                 "
+              />
+            </component>
+          </div>
+          <div v-else-if="element.name === 'lead_attribution'">
+            <component
+              :is="AccordionComponent"
+              :title="$t('CONVERSATION_SIDEBAR.ACCORDION.LEAD_ATTRIBUTION')"
+              :is-open="isContactSidebarItemOpen('is_lead_attribution_open')"
+              compact
+              @toggle="() => toggleAccordionItem('is_lead_attribution_open')"
+            >
+              <LeadAttribution
+                :lead-attribution="leadAttribution"
+                :channel-type="channelType"
+                :loading="leadAttributionLoading"
+                :error="leadAttributionError"
               />
             </component>
           </div>
