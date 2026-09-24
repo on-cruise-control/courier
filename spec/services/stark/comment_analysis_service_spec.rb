@@ -3,20 +3,22 @@ require 'rails_helper'
 RSpec.describe Stark::CommentAnalysisService do
   let(:service) { described_class.new }
   let(:stark_endpoint) { 'https://api.stark.example.com/analyze' }
+  let(:conversation) { create(:conversation) }
 
   before do
     allow(GlobalConfig).to receive(:get_value).with('STARK_COMMENT_ANALYSIS_ENDPOINT').and_return(stark_endpoint)
+    allow(ENV).to receive(:fetch).and_call_original
     allow(ENV).to receive(:fetch).with('STARK_API_KEY').and_return('fake_api_key')
   end
 
   describe '#analyze' do
     context 'when comment or dealership_id is blank' do
       it 'returns nil when comment is blank' do
-        expect(service.analyze('', 'dealership_123')).to be_nil
+        expect(service.analyze('', 'dealership_123', conversation)).to be_nil
       end
 
       it 'returns nil when dealership_id is blank' do
-        expect(service.analyze('Great!', '')).to be_nil
+        expect(service.analyze('Great!', '', conversation)).to be_nil
       end
     end
 
@@ -26,8 +28,7 @@ RSpec.describe Stark::CommentAnalysisService do
           'metadata' => { 'status_code' => 200 },
           'body' => {
             'data' => {
-              'sentiment_label' => 'Positive',
-              'reply' => 'Thanks!',
+              'answer' => 'Thanks!',
               'comment_id' => 'stark_123'
             }
           }
@@ -40,10 +41,9 @@ RSpec.describe Stark::CommentAnalysisService do
       end
 
       it 'returns success with parsed data' do
-        result = service.analyze('Awesome!', 'dealership_123')
+        result = service.analyze('Awesome!', 'dealership_123', conversation)
 
         expect(result[:status]).to eq('success')
-        expect(result[:sentiment_label]).to eq('Positive')
         expect(result[:reply]).to eq('Thanks!')
         expect(result[:stark_comment_id]).to eq('stark_123')
       end
@@ -63,7 +63,7 @@ RSpec.describe Stark::CommentAnalysisService do
       end
 
       it 'returns error status' do
-        result = service.analyze('Awesome!', 'dealership_123')
+        result = service.analyze('Awesome!', 'dealership_123', conversation)
         expect(result[:status]).to eq('error')
         expect(result[:message]).to eq('Invalid data')
       end
@@ -78,7 +78,7 @@ RSpec.describe Stark::CommentAnalysisService do
       it 'retries and returns error status' do
         expect(HTTParty).to receive(:post).twice
 
-        result = service.analyze('Awesome!', 'dealership_123')
+        result = service.analyze('Awesome!', 'dealership_123', conversation)
         expect(result[:status]).to eq('error')
         expect(result[:message]).to eq('Connection failed')
       end

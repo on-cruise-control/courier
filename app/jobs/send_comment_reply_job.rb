@@ -37,16 +37,14 @@ class SendCommentReplyJob < ApplicationJob
 
     message_content = stark_reply[:reply]
     Rails.logger.info "🤖 AI Generated Reply from Stark (#{conversation.additional_attributes['type']}): #{message_content}"
-    # Store sentiment in the dedicated field and trigger broadcast to frontend
-    Rails.logger.info " Storing sentiment '#{stark_reply[:sentiment_label]}' in comment_sentiment field for conversation: #{conversation.id}"
-    conversation.update!(comment_sentiment: stark_reply[:sentiment_label])
+    needs_escalation = stark_reply[:human_redirect]
 
-    conversation.add_labels(['escalation']) if stark_reply[:sentiment_label] == 'Negative'
+    conversation.add_labels(escalation_labels_for(stark_reply[:handoff_reason])) if needs_escalation
 
-    # Trigger escalation if sentiment is negative
-    if stark_reply[:sentiment_label] == 'Negative' && (account.escalation_emails.present? || GlobalConfigService.default_emails_present?)
-      Rails.logger.info "🚨 Negative sentiment detected! Triggering escalation email to: #{account.escalation_emails.join(', ')}"
-      NegativeSentimentEscalationJob.perform_later(conversation.id, account.escalation_emails)
+    # Trigger escalation if Stark flagged this comment for human redirect
+    if needs_escalation
+      Rails.logger.info "🚨 Escalation needed for conversation #{conversation.id} (reason: #{stark_reply[:handoff_reason]})"
+      NegativeSentimentEscalationJob.perform_later(conversation.id, stark_reply[:handoff_reason], stark_reply[:customer_data])
     end
 
     # Persist stark_comment_id on the conversation so it is always retrievable
@@ -58,18 +56,25 @@ class SendCommentReplyJob < ApplicationJob
       Rails.logger.info " Saved stark_comment_id '#{stark_comment_id}' to conversation #{conversation.id}"
     end
 
+    stark_message_id = stark_reply[:stark_message_id]
+
     # Check type of comment (Instagram or Facebook)
     case conversation.additional_attributes['type']
     when 'instagram_comments'
-      send_to_instagram_page(contact_inbox, conversation, message_content, stark_comment_id)
+      send_to_instagram_page(contact_inbox, conversation, message_content, stark_comment_id, stark_message_id)
     when 'facebook_comments', 'feed_comments'
-      send_to_facebook_page(contact_inbox, conversation, message_content, stark_comment_id)
+      send_to_facebook_page(contact_inbox, conversation, message_content, stark_comment_id, stark_message_id)
     else
       Rails.logger.warn "⚠️ Unsupported comment type: #{conversation.additional_attributes['type']}"
     end
   end
 
   private
+
+  def escalation_labels_for(handoff_reason)
+    config = ConversationHandoffService::AREA_ESCALATIONS[handoff_reason.to_s.strip.downcase]
+    config ? [config[:label]] : []
+  end
 
   def detect_comment_language(text)
     spanish_keywords = /\b(hola|gracias|buenos|dias|lindo|tarde|noche|muy|nuevo|interesad[ao]|buen|auto|este|se|ve|excelente|grande|producto|servicio|trabajo|buena|genial|soy|eres|gusta|tengo|puedo|necesito|deseo|quiero|informacion|detalles|carro|motor|rueda|puerta|ventana|asiento|volante|freno|precio|costo|venta|comprar|vender|oferta|descuento|credito|seguro|garantia|kilometraje|usado|seminuevo|agencia|sedan|hatchback|suv|coupe|convertible|camioneta|pickup|furgoneta|deportivo|estado|condicion|optimo|impecable|danado|roto|accidentado|gps|bluetooth|camara|sensores|alarma|piel|tela|sunroof|color|rojo|azul|verde|negro|blanco|gris|plateado|amarillo|disponible|stock|reservar|cotizar|cuanto|que|como|donde|cuando|tienen|hay|km|millas|gasolina|diesel|electrico|hibrido|automatica|manual|traccion|bonito|elegante|estilo|esto|hermoso|fascina|poderoso|encanta|perfecto|tremendo|pregunta|mensaje|coche|comentario|fenomenal|magnifico|espectacular|fantastico|impresionante|increible|probar|conducir|manejar|velocidad|potencia|consumo|rendimiento|seguridad|confort|lujo|equipamiento|accesorios|llantas|faros|tecnologia|audio|sonido|piloto|crucero|control|clima|asientos|cuero|madera|carbono|edicion|especial|modelo|matricula|revision|mantenimiento|taller|mecanico|presupuesto|financiacion|entrada|cuotas|pago|contado|transferencia|documentacion|papeles|multas|deudas|historial|propietario|particular|profesional|empresa|flota|ocasion|demostracion|catalogo|ficha|tecnica|emisiones|impuesto|circulacion|terceros|robo|incendio|granizo|vidrios|responsabilidad|civil|asistencia|carretera|grua|averia|cobertura|prima|deducible|franquicia|peritaje|chasis|carroceria|pintura|oxido|chocado|reparado|original|piezas|recambios|desguace|despiece|subasta|remate|liquidacion|saldo|existencias|unidades|oportunidad|promocion|campana|rebaja|navidad|reyes|verano|invierno|temporada|outlet|adios|buenas|vale|claro|amigo|amiga|usted|nosotros|vosotros|ellos|ellas|porque|tambien|pero|aunque|entonces|ahora|despues|antes|ayer|hoy|manana|aqui|alla|alli|ese|aquel|mucho|poco|algun|ningun|siempre|nunca|todavia|ya|asi|solo|bien|mal|mas|menos|quien|cual|cuales|cuantos|cuantas|por|para|sobre|favor|ayuda|respuesta|saludos|encantado|placer)\b/ix
@@ -92,7 +97,7 @@ class SendCommentReplyJob < ApplicationJob
     :en
   end
 
-  def send_to_facebook_page(contact_inbox, conversation, message_content, stark_comment_id = nil)
+  def send_to_facebook_page(contact_inbox, conversation, message_content, stark_comment_id = nil, stark_message_id = nil)
     channel = contact_inbox.inbox.channel
     access_token = channel.page_access_token
     app_secret_proof = calculate_app_secret_proof(GlobalConfigService.load('FB_APP_SECRET', ''), access_token)
@@ -114,6 +119,7 @@ class SendCommentReplyJob < ApplicationJob
     end
     stark_bot = AgentBot.find_by(bot_type: 'stark')
     message_attrs = { stark_comment_id: stark_comment_id }.compact
+    message_metadata = { stark_message_id: stark_message_id }.compact
     conversation.messages.create!(
       content: message_content,
       account: contact_inbox.inbox.account,
@@ -122,6 +128,7 @@ class SendCommentReplyJob < ApplicationJob
       message_type: :outgoing,
       source_id: response['id'] || response['message_id'],
       content_attributes: message_attrs,
+      metadata: message_metadata,
       private: false
     )
 
@@ -146,7 +153,7 @@ class SendCommentReplyJob < ApplicationJob
   end
 
   # New method for Instagram reply
-  def send_to_instagram_page(contact_inbox, conversation, message_content, stark_comment_id = nil)
+  def send_to_instagram_page(contact_inbox, conversation, message_content, stark_comment_id = nil, stark_message_id = nil)
     channel = contact_inbox.inbox.channel
     access_token = channel.access_token
 
@@ -174,6 +181,7 @@ class SendCommentReplyJob < ApplicationJob
     end
     stark_bot = AgentBot.find_by(bot_type: 'stark')
     message_attrs = { stark_comment_id: stark_comment_id }.compact
+    message_metadata = { stark_message_id: stark_message_id }.compact
     conversation.messages.create!(
       content: message_content,
       account: contact_inbox.inbox.account,
@@ -182,6 +190,7 @@ class SendCommentReplyJob < ApplicationJob
       message_type: :outgoing,
       source_id: response['id'] || response['message_id'],
       content_attributes: message_attrs,
+      metadata: message_metadata,
       private: false
     )
 

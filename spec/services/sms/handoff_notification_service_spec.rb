@@ -38,7 +38,7 @@ RSpec.describe Sms::HandoffNotificationService do
         expect(messages).to receive(:create).with(
           from: '+1098765432',
           to: '+1234567890',
-          body: include('Conversation Vehicle Parts Alert').and(include('John Doe'))
+          body: include('Conversation Parts Inquiry Alert').and(include('John Doe'))
         )
         service.perform
       end

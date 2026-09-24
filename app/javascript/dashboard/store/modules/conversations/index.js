@@ -59,7 +59,6 @@ const sanitizeSpamConversation = conversation => {
   };
 };
 
-
 // mutations
 export const mutations = {
   [types.SET_ALL_CONVERSATION](_state, conversationList) {
@@ -172,11 +171,6 @@ export const mutations = {
     const [chat] = _state.allConversations.filter(c => c.id === conversationId);
     chat.priority = priority;
   },
-  [types.UPDATE_CONVERSATION_SENTIMENT](_state, { conversationId, sentiment }) {
-    const [chat] = _state.allConversations.filter(c => c.id === conversationId);
-    if (chat) chat.comment_sentiment = sentiment;
-  },
-
   [types.UPDATE_CONVERSATION_CUSTOM_ATTRIBUTES](
     _state,
     { conversationId, customAttributes }

@@ -34,6 +34,7 @@ class AgentNotifications::EscalationMailer < ApplicationMailer
     @conversation = conversation
     @account = conversation.account
     @dealership_name = conversation.account.name
+    @customer_data = customer_data || {}
 
     # either or the message
     @comment_body = @conversation.messages.where(message_type: :incoming).last || ''
@@ -52,9 +53,9 @@ class AgentNotifications::EscalationMailer < ApplicationMailer
     return if recipients.blank? && default_bcc_emails.blank?
 
     @summary = @conversation.summary
-    @customer_name = @conversation.contact.name
-    @customer_email = @conversation.contact.email
-    @customer_phone = PhoneNumberFormatter.format(@conversation.contact.phone_number)
+    @customer_name = @customer_data['name'].presence || @conversation.contact.name
+    @customer_email = @customer_data['email'].presence || @conversation.contact.email
+    @customer_phone = PhoneNumberFormatter.format(@customer_data['phone'].presence || @conversation.contact.phone_number)
     @platform_name = @conversation.inbox.platform_name
     @action_url = conversation_url(@conversation)
     @post_url = @conversation.additional_attributes['post_url']

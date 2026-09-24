@@ -1,11 +1,12 @@
 require 'rails_helper'
 
 RSpec.describe NegativeSentimentEscalationJob do
-  let(:account) { create(:account) }
+  let(:emails) { ['agent1@example.com', 'agent2@example.com'] }
+  let(:account) { create(:account, escalation_emails: emails) }
   let(:inbox) { create(:inbox, account: account) }
   let(:contact) { create(:contact, account: account) }
   let(:conversation) { create(:conversation, account: account, inbox: inbox, contact: contact) }
-  let(:emails) { ['agent1@example.com', 'agent2@example.com'] }
+  let(:handoff_reason) { 'non_department_escalation' }
 
   let(:summary_service) { instance_double(Conversations::SummaryService) }
   let(:sms_service) { instance_double(Sms::NegativeSentimentEscalationService) }
@@ -23,19 +24,21 @@ RSpec.describe NegativeSentimentEscalationJob do
 
         allow(AgentNotifications::EscalationMailer).to receive(:negative_sentiment_notification).with(
           emails: emails,
-          conversation: conversation
+          conversation: conversation,
+          customer_data: nil
         ).and_return(mailer_double)
         allow(mailer_double).to receive(:deliver_now)
 
         allow(Sms::NegativeSentimentEscalationService).to receive(:new).with(
           conversation: conversation,
-          emails: emails
+          emails: emails,
+          customer_data: nil
         ).and_return(sms_service)
         allow(sms_service).to receive(:perform)
       end
 
       it 'calls Conversations::SummaryService with correct arguments' do
-        described_class.perform_now(conversation.id, emails)
+        described_class.perform_now(conversation.id, handoff_reason)
         expect(Conversations::SummaryService).to have_received(:new).with(
           conversation: conversation,
           force_refresh: true,
@@ -45,19 +48,21 @@ RSpec.describe NegativeSentimentEscalationJob do
       end
 
       it 'sends negative sentiment notification email via mailer' do
-        described_class.perform_now(conversation.id, emails)
+        described_class.perform_now(conversation.id, handoff_reason)
         expect(AgentNotifications::EscalationMailer).to have_received(:negative_sentiment_notification).with(
           emails: emails,
-          conversation: conversation
+          conversation: conversation,
+          customer_data: nil
         )
         expect(mailer_double).to have_received(:deliver_now)
       end
 
       it 'calls Sms::NegativeSentimentEscalationService' do
-        described_class.perform_now(conversation.id, emails)
+        described_class.perform_now(conversation.id, handoff_reason)
         expect(Sms::NegativeSentimentEscalationService).to have_received(:new).with(
           conversation: conversation,
-          emails: emails
+          emails: emails,
+          customer_data: nil
         )
         expect(sms_service).to have_received(:perform)
       end
@@ -70,7 +75,7 @@ RSpec.describe NegativeSentimentEscalationJob do
         expect(Sms::NegativeSentimentEscalationService).not_to receive(:new)
 
         expect do
-          described_class.perform_now(999_999, emails)
+          described_class.perform_now(999_999, handoff_reason)
         end.not_to raise_error
       end
     end

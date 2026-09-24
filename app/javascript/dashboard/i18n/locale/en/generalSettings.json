@@ -145,8 +145,8 @@
         }
       },
       "ESCALATION_EMAILS": {
-        "TITLE": "Comment Escalation & Team Reach-out Notification Emails",
-        "NOTE": "Add emails to receive escalation alerts. Recommended: GM, GSM, and Service Manager.",
+        "TITLE": "Non-Department Escalation Notification Emails",
+        "NOTE": "Add emails to receive non-department escalation and team reach-out alerts. Recommended: GM, GSM.",
         "LABEL": "Add email address",
         "HELP": "Enter an email address and click Add. You can add multiple email addresses.",
         "PLACEHOLDER": "email{'@'}example.com",
@@ -161,19 +161,19 @@
         }
       },
       "VEHICLE_PARTS_EMAILS": {
-        "TITLE": "Vehicle Parts Booking Notification Emails",
-        "NOTE": "Add emails to receive vehicle parts inquiry alerts. Recommended: Parts Manager and Service Advisor.",
+        "TITLE": "Parts Inquiry Notification Emails",
+        "NOTE": "Add emails to receive parts inquiry alerts. Recommended: Parts Manager and Service Advisor.",
         "LABEL": "Add email address",
         "HELP": "Enter an email address and click Add. You can add multiple email addresses.",
         "PLACEHOLDER": "email{'@'}example.com",
         "ADD_BUTTON": "Add",
         "CONFIGURED_EMAILS": "Configured Email Addresses",
-        "EMPTY_STATE": "⚠️ No vehicle parts notification emails configured. Add at least one email address to receive vehicle parts notifications.",
+        "EMPTY_STATE": "⚠️ No parts notification emails configured. Add at least one email address to receive parts notifications.",
         "INVALID_EMAIL": "Please enter a valid email address",
         "DUPLICATE_EMAIL": "This email address is already added",
         "API": {
-          "SUCCESS": "Vehicle parts emails updated successfully",
-          "ERROR": "Failed to update vehicle parts emails"
+          "SUCCESS": "Parts emails updated successfully",
+          "ERROR": "Failed to update parts emails"
         }
       },
       "SERVICE_EMAILS": {
@@ -225,19 +225,67 @@
         }
       },
       "VEHICLE_PARTS_ESCALATION_EMAILS": {
-        "TITLE": "Vehicle Parts Escalation Notification Emails",
+        "TITLE": "Parts Inquiry Escalation Notification Emails",
         "NOTE": "Add emails to receive parts department escalation alerts. Recommended: Parts Manager and Service Director.",
         "LABEL": "Add email address",
         "HELP": "Enter an email address and click Add. You can add multiple email addresses.",
         "PLACEHOLDER": "email{'@'}example.com",
         "ADD_BUTTON": "Add",
         "CONFIGURED_EMAILS": "Configured Email Addresses",
-        "EMPTY_STATE": "⚠️ No vehicle parts escalation emails configured. Add at least one email address to receive vehicle parts escalation notifications.",
+        "EMPTY_STATE": "⚠️ No parts escalation emails configured. Add at least one email address to receive parts escalation notifications.",
         "INVALID_EMAIL": "Please enter a valid email address",
         "DUPLICATE_EMAIL": "This email address is already added",
         "API": {
-          "SUCCESS": "Vehicle parts escalation emails updated successfully",
-          "ERROR": "Failed to update vehicle parts escalation emails"
+          "SUCCESS": "Parts escalation emails updated successfully",
+          "ERROR": "Failed to update parts escalation emails"
+        }
+      },
+      "SALES_COMMENT_ESCALATION_EMAILS": {
+        "TITLE": "Sales Comment Escalation Notification Emails",
+        "NOTE": "Add emails to receive alerts for negative customer comments related to sales. Recommended: GM and Sales Manager.",
+        "LABEL": "Add email address",
+        "HELP": "Enter an email address and click Add. You can add multiple email addresses.",
+        "PLACEHOLDER": "email{'@'}example.com",
+        "ADD_BUTTON": "Add",
+        "CONFIGURED_EMAILS": "Configured Email Addresses",
+        "EMPTY_STATE": "⚠️ No sales comment escalation emails configured. Add at least one email address to receive sales comment escalation notifications.",
+        "INVALID_EMAIL": "Please enter a valid email address",
+        "DUPLICATE_EMAIL": "This email address is already added",
+        "API": {
+          "SUCCESS": "Sales comment escalation emails updated successfully",
+          "ERROR": "Failed to update sales comment escalation emails"
+        }
+      },
+      "SERVICE_COMMENT_ESCALATION_EMAILS": {
+        "TITLE": "Service Comment Escalation Notification Emails",
+        "NOTE": "Add emails to receive alerts for negative customer comments related to service. Recommended: Service Manager and GSM.",
+        "LABEL": "Add email address",
+        "HELP": "Enter an email address and click Add. You can add multiple email addresses.",
+        "PLACEHOLDER": "email{'@'}example.com",
+        "ADD_BUTTON": "Add",
+        "CONFIGURED_EMAILS": "Configured Email Addresses",
+        "EMPTY_STATE": "⚠️ No service comment escalation emails configured. Add at least one email address to receive service comment escalation notifications.",
+        "INVALID_EMAIL": "Please enter a valid email address",
+        "DUPLICATE_EMAIL": "This email address is already added",
+        "API": {
+          "SUCCESS": "Service comment escalation emails updated successfully",
+          "ERROR": "Failed to update service comment escalation emails"
+        }
+      },
+      "VEHICLE_PARTS_COMMENT_ESCALATION_EMAILS": {
+        "TITLE": "Parts Inquiry Comment Escalation Notification Emails",
+        "NOTE": "Add emails to receive alerts for negative customer comments related to parts inquiry. Recommended: Parts Manager and Service Director.",
+        "LABEL": "Add email address",
+        "HELP": "Enter an email address and click Add. You can add multiple email addresses.",
+        "PLACEHOLDER": "email{'@'}example.com",
+        "ADD_BUTTON": "Add",
+        "CONFIGURED_EMAILS": "Configured Email Addresses",
+        "EMPTY_STATE": "⚠️ No parts comment escalation emails configured. Add at least one email address to receive parts comment escalation notifications.",
+        "INVALID_EMAIL": "Please enter a valid email address",
+        "DUPLICATE_EMAIL": "This email address is already added",
+        "API": {
+          "SUCCESS": "Parts comment escalation emails updated successfully",
+          "ERROR": "Failed to update parts comment escalation emails"
         }
       },
       "TWILIO_CONFIGURATION": {

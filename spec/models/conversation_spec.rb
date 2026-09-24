@@ -1194,19 +1194,19 @@ RSpec.describe Conversation do
     before { Current.user = agent }
 
     {
-      'sales_escalation' => { field: :sales_escalation_emails, job: SalesEscalationNotificationJob },
-      'service_escalation' => { field: :service_escalation_emails, job: ServiceEscalationNotificationJob },
-      'vehicle_parts_escalation' => { field: :vehicle_parts_escalation_emails, job: VehiclePartsEscalationNotificationJob }
-    }.each do |label, config|
-      it "enqueues #{config[:job]} when the #{label} label is added manually and emails are configured" do
+      'sales_escalation' => { label: 'sales_escalation', field: :sales_escalation_emails, job: SalesEscalationNotificationJob },
+      'service_escalation' => { label: 'service_escalation', field: :service_escalation_emails, job: ServiceEscalationNotificationJob },
+      'vehicle_parts_escalation' => { label: 'parts_escalation', field: :vehicle_parts_escalation_emails, job: VehiclePartsEscalationNotificationJob }
+    }.each do |reason, config|
+      it "enqueues #{config[:job]} when the #{reason} label is added manually and emails are configured" do
         account.update!(config[:field] => ['dept@example.com'])
 
-        expect { conversation.update!(label_list: [label]) }
+        expect { conversation.update!(label_list: [config[:label]]) }
           .to have_enqueued_job(config[:job]).with(conversation.id, ['dept@example.com'], nil, nil)
       end
 
       it "does not enqueue #{config[:job]} when no #{config[:field]} are configured" do
-        expect { conversation.update!(label_list: [label]) }
+        expect { conversation.update!(label_list: [config[:label]]) }
           .not_to have_enqueued_job(config[:job])
       end
     end
