@@ -141,6 +141,34 @@ class ReportsAPI extends ApiClient {
   getWalletBalance() {
     return axios.get(`${this.url}/wallet_balance`);
   }
+
+  getAttributionValues() {
+    return axios.get(`${this.url}/attribution_values`);
+  }
+
+  getAttributionReport({
+    fromDate,
+    toDate,
+    adTitle,
+    utmSource,
+    utmMedium,
+    utmCampaign,
+    utmTerm,
+    utmContent,
+  } = {}) {
+    return axios.get(`${this.url}/attribution_report`, {
+      params: {
+        from_date: fromDate,
+        to_date: toDate,
+        ad_title: adTitle,
+        utm_source: utmSource,
+        utm_medium: utmMedium,
+        utm_campaign: utmCampaign,
+        utm_term: utmTerm,
+        utm_content: utmContent,
+      },
+    });
+  }
 }
 
 export default new ReportsAPI();

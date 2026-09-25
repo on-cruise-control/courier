@@ -144,8 +144,7 @@ class Integrations::Stark::ProcessorService < Integrations::BotProcessorService
         event_platform: platform,
         comm_outcome: 'appointment_scheduled',
         form_name: 'booking',
-        form_type: 'appointment',
-        conversation_id: current_conversation.id
+        form_type: 'appointment'
       }
     ).perform
   end

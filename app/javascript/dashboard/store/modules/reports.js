@@ -101,6 +101,15 @@ const state = {
     data: null,
     isFetching: false,
   },
+  attributionValues: {
+    data: null,
+    isFetching: false,
+  },
+  attributionReport: {
+    data: null,
+    params: null,
+    isFetching: false,
+  },
 };
 
 const getters = {
@@ -161,6 +170,18 @@ const getters = {
   isFetchingWalletBalance(_state) {
     return _state.walletBalance.isFetching;
   },
+  getAttributionValues(_state) {
+    return _state.attributionValues.data;
+  },
+  isFetchingAttributionValues(_state) {
+    return _state.attributionValues.isFetching;
+  },
+  getAttributionReport(_state) {
+    return _state.attributionReport.data;
+  },
+  isFetchingAttributionReport(_state) {
+    return _state.attributionReport.isFetching;
+  },
 };
 
 export const actions = {
@@ -173,10 +194,26 @@ export const actions = {
 
     // Map metric to its type and field
     const metricConfig = {
-      booking_links_sent: { type: 'booking', field: 'links_sent', group: 'booking' },
-      booking_forms_completed: { type: 'booking', field: 'forms_completed', group: 'booking' },
-      handoff_links_sent: { type: 'handoff', field: 'links_sent', group: 'handoff' },
-      handoff_forms_completed: { type: 'handoff', field: 'forms_completed', group: 'handoff' },
+      booking_links_sent: {
+        type: 'booking',
+        field: 'links_sent',
+        group: 'booking',
+      },
+      booking_forms_completed: {
+        type: 'booking',
+        field: 'forms_completed',
+        group: 'booking',
+      },
+      handoff_links_sent: {
+        type: 'handoff',
+        field: 'links_sent',
+        group: 'handoff',
+      },
+      handoff_forms_completed: {
+        type: 'handoff',
+        field: 'forms_completed',
+        group: 'handoff',
+      },
     };
 
     const config = metricConfig[metric];
@@ -187,10 +224,11 @@ export const actions = {
       const cacheKey = JSON.stringify({
         from: reportObj.from,
         to: reportObj.to,
-        groupBy: reportObj.groupBy
+        groupBy: reportObj.groupBy,
       });
       const cachedKey = currentState.bookingStatsCache.params;
-      const isCached = cachedKey === cacheKey && currentState.bookingStatsCache.data !== null;
+      const isCached =
+        cachedKey === cacheKey && currentState.bookingStatsCache.data !== null;
 
       if (isCached) {
         // Extract the specific field for this metric from cached breakdown data
@@ -198,42 +236,56 @@ export const actions = {
         const metricData = rawBreakdownData.map(item => ({
           timestamp: item.timestamp,
           value: item[metric] || 0,
-          count: 0
+          count: 0,
         }));
 
         commit(types.default.SET_ACCOUNT_REPORTS, { metric, data: metricData });
-        commit(types.default.TOGGLE_ACCOUNT_REPORT_LOADING, { metric, value: false });
+        commit(types.default.TOGGLE_ACCOUNT_REPORT_LOADING, {
+          metric,
+          value: false,
+        });
         return;
       }
 
       // Make single API call that returns ALL fields in breakdown
-      Report.getBookingStats(reportObj).then(response => {
-        const rawBreakdownData = response.data; // Contains all 4 fields per data point
+      Report.getBookingStats(reportObj)
+        .then(response => {
+          const rawBreakdownData = response.data; // Contains all 4 fields per data point
 
-        // Cache the full breakdown data
-        commit(types.default.SET_BOOKING_STATS_CACHE, {
-          data: rawBreakdownData,
-          params: cacheKey,
-          timestamp: Date.now(),
-        });
+          // Cache the full breakdown data
+          commit(types.default.SET_BOOKING_STATS_CACHE, {
+            data: rawBreakdownData,
+            params: cacheKey,
+            timestamp: Date.now(),
+          });
 
-        // Populate ALL 4 metrics from the single response
-        Object.keys(metricConfig).forEach(metricKey => {
-          const metricData = rawBreakdownData.map(item => ({
-            timestamp: item.timestamp,
-            value: item[metricKey] || 0,
-            count: 0
-          }));
+          // Populate ALL 4 metrics from the single response
+          Object.keys(metricConfig).forEach(metricKey => {
+            const metricData = rawBreakdownData.map(item => ({
+              timestamp: item.timestamp,
+              value: item[metricKey] || 0,
+              count: 0,
+            }));
 
-          commit(types.default.SET_ACCOUNT_REPORTS, { metric: metricKey, data: metricData });
-          commit(types.default.TOGGLE_ACCOUNT_REPORT_LOADING, { metric: metricKey, value: false });
+            commit(types.default.SET_ACCOUNT_REPORTS, {
+              metric: metricKey,
+              data: metricData,
+            });
+            commit(types.default.TOGGLE_ACCOUNT_REPORT_LOADING, {
+              metric: metricKey,
+              value: false,
+            });
+          });
+        })
+        .catch(() => {
+          // Turn off loading for all metrics
+          Object.keys(metricConfig).forEach(metricKey => {
+            commit(types.default.TOGGLE_ACCOUNT_REPORT_LOADING, {
+              metric: metricKey,
+              value: false,
+            });
+          });
         });
-      }).catch(() => {
-        // Turn off loading for all metrics
-        Object.keys(metricConfig).forEach(metricKey => {
-          commit(types.default.TOGGLE_ACCOUNT_REPORT_LOADING, { metric: metricKey, value: false });
-        });
-      });
     } else {
       Report.getReports(reportObj).then(accountReport => {
         let { data } = accountReport;
@@ -462,7 +514,10 @@ export const actions = {
         });
       })
       .catch(() => {
-        commit(types.default.SET_TWILIO_USAGE, { data: null, isFetching: false });
+        commit(types.default.SET_TWILIO_USAGE, {
+          data: null,
+          isFetching: false,
+        });
       });
   },
   fetchWalletBalance({ commit }) {
@@ -475,7 +530,65 @@ export const actions = {
         });
       })
       .catch(() => {
-        commit(types.default.SET_WALLET_BALANCE, { data: null, isFetching: false });
+        commit(types.default.SET_WALLET_BALANCE, {
+          data: null,
+          isFetching: false,
+        });
+      });
+  },
+  fetchAttributionValues({ commit, state: currentState }) {
+    if (currentState.attributionValues.data) {
+      return Promise.resolve();
+    }
+
+    commit(types.default.SET_ATTRIBUTION_VALUES, {
+      data: null,
+      isFetching: true,
+    });
+    return Report.getAttributionValues()
+      .then(response => {
+        commit(types.default.SET_ATTRIBUTION_VALUES, {
+          data: response.data,
+          isFetching: false,
+        });
+      })
+      .catch(() => {
+        commit(types.default.SET_ATTRIBUTION_VALUES, {
+          data: null,
+          isFetching: false,
+        });
+      });
+  },
+  fetchAttributionReport({ commit, state: currentState }, payload = {}) {
+    const { force = false, ...filters } = payload;
+    const cacheKey = JSON.stringify(filters);
+    if (
+      !force &&
+      currentState.attributionReport.params === cacheKey &&
+      currentState.attributionReport.data !== null
+    ) {
+      return Promise.resolve();
+    }
+
+    commit(types.default.SET_ATTRIBUTION_REPORT, {
+      data: currentState.attributionReport.data,
+      params: currentState.attributionReport.params,
+      isFetching: true,
+    });
+    return Report.getAttributionReport(filters)
+      .then(response => {
+        commit(types.default.SET_ATTRIBUTION_REPORT, {
+          data: response.data,
+          params: cacheKey,
+          isFetching: false,
+        });
+      })
+      .catch(() => {
+        commit(types.default.SET_ATTRIBUTION_REPORT, {
+          data: null,
+          params: null,
+          isFetching: false,
+        });
       });
   },
 };
@@ -553,6 +666,15 @@ const mutations = {
   [types.default.SET_WALLET_BALANCE](_state, { data, isFetching }) {
     _state.walletBalance.data = data;
     _state.walletBalance.isFetching = isFetching;
+  },
+  [types.default.SET_ATTRIBUTION_VALUES](_state, { data, isFetching }) {
+    _state.attributionValues.data = data;
+    _state.attributionValues.isFetching = isFetching;
+  },
+  [types.default.SET_ATTRIBUTION_REPORT](_state, { data, params, isFetching }) {
+    _state.attributionReport.data = data;
+    _state.attributionReport.params = params;
+    _state.attributionReport.isFetching = isFetching;
   },
 };
 

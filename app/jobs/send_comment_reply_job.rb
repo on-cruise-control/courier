@@ -39,7 +39,11 @@ class SendCommentReplyJob < ApplicationJob
     Rails.logger.info "🤖 AI Generated Reply from Stark (#{conversation.additional_attributes['type']}): #{message_content}"
     needs_escalation = stark_reply[:human_redirect]
 
-    conversation.add_labels(escalation_labels_for(stark_reply[:handoff_reason])) if needs_escalation
+    if needs_escalation
+      labels = escalation_labels_for(stark_reply[:handoff_reason])
+      labels.each { |label| ensure_label_exists(account, label) }
+      conversation.add_labels(labels)
+    end
 
     # Trigger escalation if Stark flagged this comment for human redirect
     if needs_escalation
@@ -73,7 +77,18 @@ class SendCommentReplyJob < ApplicationJob
 
   def escalation_labels_for(handoff_reason)
     config = ConversationHandoffService::AREA_ESCALATIONS[handoff_reason.to_s.strip.downcase]
+    Rails.logger.warn "⚠️ No escalation config found for handoff_reason: #{handoff_reason.inspect}" unless config
     config ? [config[:label]] : []
+  end
+
+  def ensure_label_exists(account, title)
+    Label.find_or_create_by!(account: account, title: title) do |label|
+      label.show_on_sidebar = true
+      config = ConversationHandoffService::AREA_ESCALATIONS.values.find { |c| c[:label] == title }
+      label.color = config ? config[:color] : ConversationHandoffService::HANDOFF_LABEL_COLOR
+    end
+  rescue ActiveRecord::RecordInvalid => e
+    Rails.logger.error "❌ Failed to create label '#{title}' for account #{account.id}: #{e.message}"
   end
 
   def detect_comment_language(text)
