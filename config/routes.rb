@@ -538,6 +538,8 @@ Rails.application.routes.draw do
               get :booking_summary
               get :twilio_usage
               get :wallet_balance
+              get :attribution_values
+              get :attribution_report
               get :inbox_label_matrix
               get :first_response_time_distribution
               get :outgoing_messages_count

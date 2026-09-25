@@ -97,6 +97,14 @@ class Api::V2::Accounts::ReportsController < Api::V1::Accounts::BaseController
     end
   end
 
+  def attribution_values
+    render json: Dealership::AttributionValuesService.new(Current.account.dealership_id).fetch_values
+  end
+
+  def attribution_report
+    render json: Dealership::AttributionReportService.new(Current.account.dealership_id, attribution_report_params).fetch_report
+  end
+
   def wallet_balance
     balance_data = Dealership::WalletBalanceService.new(
       Current.account.dealership_id,
@@ -179,12 +187,12 @@ class Api::V2::Accounts::ReportsController < Api::V1::Accounts::BaseController
 
   def format_booking_breakdown_data(booking_data, period)
     data_array = booking_data[:data] || booking_data['data'] || []
-    
+
     data_array.map do |item|
       breakdown = item['booking_type_breakdown'] || {}
       booking_data = breakdown['booking'] || {}
       handoff_data = breakdown['handoff'] || {}
-      
+
       {
         timestamp: parse_timestamp(item, period),
         booking_links_sent: booking_data['links_sent'] || 0,
@@ -218,7 +226,7 @@ class Api::V2::Accounts::ReportsController < Api::V1::Accounts::BaseController
   def generate_placeholder_data(since_timestamp, until_timestamp, period)
     since_date = Time.at(since_timestamp.to_i).to_date
     until_date = Time.at(until_timestamp.to_i).to_date
-    
+
     case period
     when 'weekly'
       generate_weekly_placeholders(since_date, until_date)
@@ -232,7 +240,7 @@ class Api::V2::Accounts::ReportsController < Api::V1::Accounts::BaseController
   def generate_placeholder_breakdown_data(since_timestamp, until_timestamp, period)
     since_date = Time.at(since_timestamp.to_i).to_date
     until_date = Time.at(until_timestamp.to_i).to_date
-    
+
     case period
     when 'weekly'
       generate_weekly_breakdown_placeholders(since_date, until_date)
@@ -292,13 +300,13 @@ class Api::V2::Accounts::ReportsController < Api::V1::Accounts::BaseController
 
     # Generate all expected timestamps for the range
     expected_timestamps = case period
-                         when 'weekly'
-                           generate_weekly_timestamps(since_timestamp, until_timestamp)
-                         when 'monthly'
-                           generate_monthly_timestamps(since_timestamp, until_timestamp)
-                         else
-                           generate_daily_timestamps(since_timestamp, until_timestamp)
-                         end
+                          when 'weekly'
+                            generate_weekly_timestamps(since_timestamp, until_timestamp)
+                          when 'monthly'
+                            generate_monthly_timestamps(since_timestamp, until_timestamp)
+                          else
+                            generate_daily_timestamps(since_timestamp, until_timestamp)
+                          end
 
     # If no data exists, generate all zeros for the range
     if formatted_data.empty?
@@ -315,7 +323,7 @@ class Api::V2::Accounts::ReportsController < Api::V1::Accounts::BaseController
 
     # Create hash map of existing data by timestamp
     data_map = formatted_data.index_by { |item| item[:timestamp] }
-    
+
     # Fill in missing dates with zeros
     expected_timestamps.map do |timestamp|
       data_map[timestamp] || {
@@ -502,6 +510,10 @@ class Api::V2::Accounts::ReportsController < Api::V1::Accounts::BaseController
       since: params[:since],
       until: params[:until]
     }
+  end
+
+  def attribution_report_params
+    params.permit(:from_date, :to_date, :ad_title, :utm_source, :utm_medium, :utm_campaign, :utm_term, :utm_content)
   end
 
   def outgoing_messages_count_params

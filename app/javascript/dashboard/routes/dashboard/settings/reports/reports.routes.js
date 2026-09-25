@@ -25,6 +25,8 @@ import LiveReports from './LiveReports.vue';
 import SLAReports from './SLAReports.vue';
 import BookingsReports from 'dashboard/custom/reports/CustomBookingsReportsWrapper.vue';
 import HandoffReports from 'dashboard/custom/reports/CustomHandoffReportsWrapper.vue';
+import AttributionReports from './AttributionReports.vue';
+import AttributionReportDetail from './AttributionReportDetail.vue';
 import TwilioUsageReports from './TwilioUsage.vue';
 
 const meta = {
@@ -182,6 +184,18 @@ export default {
           name: 'handoff_reports',
           meta,
           component: HandoffReports,
+        },
+        {
+          path: 'attribution',
+          name: 'attribution_reports',
+          meta,
+          component: AttributionReports,
+        },
+        {
+          path: 'attribution/:dimension',
+          name: 'attribution_report_detail',
+          meta,
+          component: AttributionReportDetail,
         },
         {
           path: 'twilio',

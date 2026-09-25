@@ -392,6 +392,7 @@
     "REPORTS_BOT": "Bot",
     "REPORTS_BOOKINGS": "Bookings Requests",
     "REPORTS_HANDOFF": "Handoff Requests",
+    "REPORTS_ATTRIBUTION": "Origin Attribution",
     "TWILIO_USAGES": "SMS/Whatsapp Usage",
     "REPORTS_AGENT": "Agents",
     "REPORTS_LABEL": "Labels",

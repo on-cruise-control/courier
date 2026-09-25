@@ -33,6 +33,7 @@ const trackBookingCreated = message => {
   trackEvent('asc_comm_submission', {
     event_action: 'booking_created',
     comm_type: 'chat',
+    event_platform: 'widget',
     comm_outcome: 'appointment_scheduled',
     form_name: 'booking',
     form_type: 'appointment',

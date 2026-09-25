@@ -387,6 +387,12 @@ const menuItems = computed(() => {
           icon: 'i-lucide-handshake',
           to: accountScopedRoute('handoff_reports'),
         },
+        {
+          type: 'link',
+          label: t('SIDEBAR.REPORTS_ATTRIBUTION'),
+          icon: 'i-lucide-target',
+          to: accountScopedRoute('attribution_reports'),
+        },
         ...(hasTwilioSmsOrWhatsappInbox.value
           ? [
               {
