@@ -20,7 +20,8 @@ class AsyncDispatcher < BaseDispatcher
       Conversations::UnreadCounts::Listener.instance,
       ReportingEventListener.instance,
       WebhookListener.instance,
-      DealershipListener.instance
+      DealershipListener.instance,
+      Ga4AnalyticsListener.instance
     ]
   end
 end

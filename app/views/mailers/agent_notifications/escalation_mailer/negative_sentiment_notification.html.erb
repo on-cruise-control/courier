@@ -16,9 +16,14 @@
         <td style="padding:5px 0;"><strong>Name:</strong> <%= @customer_name %></td>
       </tr>
       <% end %>
-      <% if (@customer_phone.present? && @customer_phone != "(N/A)") || (@customer_email.present? && @customer_email != "(N/A)") %>
+      <% if @customer_phone.present? && @customer_phone != "(N/A)" %>
       <tr>
-        <td style="padding:5px 0;"><strong>Contact:</strong> <%= [@customer_phone, @customer_email].compact_blank.join(' / ') %></td>
+        <td style="padding:5px 0;"><strong>Contact:</strong> <%= @customer_phone %></td>
+      </tr>
+      <% end %>
+      <% if @customer_email.present? && @customer_email != "(N/A)" %>
+      <tr>
+        <td style="padding:5px 0;"><strong>Email:</strong> <%= @customer_email %></td>
       </tr>
       <% end %>
       <tr>

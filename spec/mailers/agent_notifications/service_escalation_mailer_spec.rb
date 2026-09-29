@@ -22,7 +22,7 @@ RSpec.describe AgentNotifications::ServiceEscalationMailer do
     end
 
     it 'renders the subject' do
-      expect(mail.subject).to eq('[Service Escalation] 🚨 Urgent Service Escalation: Customer Experience Issue – Immediate Attention Required')
+      expect(mail.subject).to eq('[Service Escalation] 🚨 Service conversation needs attention')
     end
 
     it 'renders the receiver email' do

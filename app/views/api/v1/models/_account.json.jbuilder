@@ -40,3 +40,6 @@ json.service_emails @account.service_emails
 json.sales_escalation_emails @account.sales_escalation_emails
 json.service_escalation_emails @account.service_escalation_emails
 json.vehicle_parts_escalation_emails @account.vehicle_parts_escalation_emails
+json.sales_comment_escalation_emails @account.sales_comment_escalation_emails
+json.service_comment_escalation_emails @account.service_comment_escalation_emails
+json.vehicle_parts_comment_escalation_emails @account.vehicle_parts_comment_escalation_emails

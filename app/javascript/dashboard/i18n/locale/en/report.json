@@ -658,6 +658,48 @@
   "HANDOFF_REPORTS": {
     "HEADER": "Handoff"
   },
+  "ATTRIBUTION_REPORTS": {
+    "HEADER": "Origin Attribution",
+    "FILTERS": {
+      "LABEL": "Filters",
+      "TITLE": "Filter Attribution Report",
+      "CLEAR": "Clear filters",
+      "APPLY": "Apply filters",
+      "ADD_FILTER": "Add filter",
+      "EQUAL_TO": "Equal to",
+      "DATE_RANGE": "Date Range"
+    },
+    "TOTALS": {
+      "CUSTOMERS": "Total Customers",
+      "BOOKINGS": "Total Bookings"
+    },
+    "DIMENSIONS": {
+      "UTM_SOURCE": "Came From (Source)",
+      "UTM_MEDIUM": "Medium",
+      "UTM_CAMPAIGN": "Campaign",
+      "UTM_TERM": "Search Term",
+      "UTM_CONTENT": "Ad/Content Variant",
+      "AD_TITLE": "Ad Title"
+    },
+    "OVERVIEW": {
+      "VALUE_COUNT": "{n} value | {n} values",
+      "CUSTOMERS": "customers",
+      "BOOKINGS": "bookings"
+    },
+    "DETAIL": {
+      "BACK": "Back to Attribution Parameters",
+      "CUSTOMERS": "Customers:",
+      "BOOKINGS": "Bookings:",
+      "TABLE": {
+        "CUSTOMERS": "Customers",
+        "CUSTOMER_PCT": "Customer %",
+        "BOOKINGS": "Bookings",
+        "BOOKING_PCT": "Booking %"
+      }
+    },
+    "EMPTY": "No attribution data for the selected filters",
+    "FETCHING_FAILED": "Failed to fetch attribution report"
+  },
   "SUMMARY_REPORTS": {
     "INBOX": "Inbox",
     "AGENT": "Agent",

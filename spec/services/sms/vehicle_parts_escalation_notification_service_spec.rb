@@ -28,11 +28,11 @@ RSpec.describe Sms::VehiclePartsEscalationNotificationService do
   end
 
   describe '#perform' do
-    it 'sends the vehicle parts escalation sms' do
+    it 'sends the parts escalation sms' do
       expect(messages).to receive(:create).with(
         from: '+1098765432',
         to: '+1234567890',
-        body: include('Urgent Vehicle Parts Escalation Required').and(include('John Doe'))
+        body: include('🚨 Urgent Parts inquiry Escalation Required').and(include('John Doe'))
       )
       service.perform
     end

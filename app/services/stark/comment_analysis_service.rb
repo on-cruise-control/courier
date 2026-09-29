@@ -12,15 +12,18 @@ module Stark
       begin
         response = make_api_request(comment, dealership_id, post_url, conversation)
         Rails.logger.info "🔍 Stark API Response: #{response.inspect}"
-        
+
         status_code = response.dig('metadata', 'status_code').to_i
 
         case status_code
         when 200
           {
-            sentiment_label: response.dig('body', 'data', 'sentiment_label'),
-            reply: response.dig('body', 'data', 'reply'),
+            reply: Array(response.dig('body', 'data', 'answer')).join("\n\n"),
             stark_comment_id: response.dig('body', 'data', 'comment_id'),
+            stark_message_id: response.dig('body', 'data', 'metadata', 'stark_message_id'),
+            human_redirect: response.dig('body', 'data', 'human_redirect'),
+            handoff_reason: response.dig('body', 'data', 'handoff_reason'),
+            customer_data: refined_customer_data(response.dig('body', 'data', 'customer'), conversation),
             status: 'success'
           }
         when 400, 500
@@ -55,6 +58,7 @@ module Stark
         customer_id: conversation.contact&.id,
         platform: conversation.inbox.platform_name,
         account_id: conversation.account_id,
+        agent_name: conversation.account&.bot_display_name,
         customer_name: extract_customer_name(conversation.contact, conversation.inbox.platform_name)
       }
       payload[:post_url] = post_url if post_url.present?
@@ -83,6 +87,20 @@ module Stark
     rescue JSON::ParserError => e
       Rails.logger.error("Failed to parse Stark response: #{e.message}")
       raise StandardError, 'Invalid response format from Stark server'
+    end
+
+    def refined_customer_data(customer, conversation)
+      customer_data = customer.is_a?(Hash) ? customer : {}
+      platform = conversation.inbox.platform_name
+      name = (customer_data['name'].presence || extract_customer_name(conversation.contact, platform))&.titleize
+
+      {
+        'name' => name,
+        'phone' => customer_data['phone'].presence || '(N/A)',
+        'email' => customer_data['email'].presence || '(N/A)',
+        'whatsapp_number' => customer_data['whatsapp_number'].presence || '(N/A)',
+        'sms_number' => customer_data['sms_number'].presence || '(N/A)'
+      }
     end
 
     def extract_customer_name(contact, platform)

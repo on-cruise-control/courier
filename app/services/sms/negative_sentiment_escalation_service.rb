@@ -1,10 +1,11 @@
 class Sms::NegativeSentimentEscalationService
   include Sms::Concerns::TwilioConfigurable
 
-  def initialize(conversation:, emails:)
+  def initialize(conversation:, emails:, customer_data: nil)
     @conversation = conversation
     @account = conversation.account
     @emails = emails
+    @customer_data = customer_data
   end
 
   def perform
@@ -34,7 +35,7 @@ class Sms::NegativeSentimentEscalationService
   def build_message_body
     account_name = @account.name
     platform_name = @conversation.inbox&.platform_name
-    customer_name = @conversation.contact&.name
+    customer_name = @customer_data&.dig('name').presence || @conversation.contact&.name
     comment = @conversation.messages.where(message_type: :incoming).last&.content || nil
 
     conversation_url = Rails.application.routes.url_helpers.app_account_conversation_url(

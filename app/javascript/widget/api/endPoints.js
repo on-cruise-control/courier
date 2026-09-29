@@ -128,6 +128,10 @@ const getVehicleDetails = vehicleId => ({
   url: `/api/v1/widget/vehicles/${vehicleId}${window.location.search}`,
 });
 
+const createVehicleContact = () => ({
+  url: `/api/v1/widget/vehicle_contacts${window.location.search}`,
+});
+
 export default {
   createConversation,
   sendMessage,
@@ -139,4 +143,5 @@ export default {
   triggerCampaign,
   getMostReadArticles,
   getVehicleDetails,
+  createVehicleContact,
 };

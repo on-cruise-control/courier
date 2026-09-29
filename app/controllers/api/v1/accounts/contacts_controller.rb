@@ -13,7 +13,7 @@ class Api::V1::Accounts::ContactsController < Api::V1::Accounts::BaseController
 
   before_action :check_authorization
   before_action :set_current_page, only: [:index, :active, :search, :filter]
-  before_action :fetch_contact, only: [:show, :update, :destroy, :avatar, :contactable_inboxes, :destroy_custom_attributes]
+  before_action :fetch_contact, only: [:show, :update, :destroy, :avatar, :contactable_inboxes, :destroy_custom_attributes, :lead_attribution]
   before_action :set_include_contact_inboxes, only: [:index, :active, :search, :filter, :show, :update]
 
   def index
@@ -74,6 +74,10 @@ class Api::V1::Accounts::ContactsController < Api::V1::Accounts::BaseController
   def contactable_inboxes
     @all_contactable_inboxes = Contacts::ContactableInboxesService.new(contact: @contact).get
     @contactable_inboxes = @all_contactable_inboxes.select { |contactable_inbox| policy(contactable_inbox[:inbox]).show? }
+  end
+
+  def lead_attribution
+    @lead_attribution = Dealership::CustomerFetchService.new(@contact).perform
   end
 
   # TODO : refactor this method into dedicated contacts/custom_attributes controller class and routes

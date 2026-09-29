@@ -17,7 +17,7 @@ class Sms::VehiclePartsEscalationNotificationService
     message_body = build_message_body
     send_sms_to_recipients(recipients, message_body)
   rescue StandardError => e
-    Rails.logger.error("Failed to send vehicle parts escalation SMS notifications: #{e.message}")
+    Rails.logger.error("Failed to send parts escalation SMS notifications: #{e.message}")
   end
 
   private
@@ -43,7 +43,7 @@ class Sms::VehiclePartsEscalationNotificationService
     )
 
     body = <<~SMS
-      🚨 Urgent Vehicle Parts Escalation Required
+      🚨 Urgent Parts inquiry Escalation Required
 
       Dealership: #{account_name}
       #{"Platform: #{platform_name}#{' (DM)' if inbox&.dm_channel?}" if platform_name.present?}
@@ -70,9 +70,9 @@ class Sms::VehiclePartsEscalationNotificationService
         body: message_body
       )
     rescue Twilio::REST::TwilioError => e
-      Rails.logger.error("Failed to send vehicle parts escalation SMS to #{recipient.name} (#{recipient.phone_number}): #{e.message}")
+      Rails.logger.error("Failed to send parts escalation SMS to #{recipient.name} (#{recipient.phone_number}): #{e.message}")
     rescue StandardError => e
-      Rails.logger.error("Unexpected error sending vehicle parts escalation SMS to #{recipient.name}: #{e.message}")
+      Rails.logger.error("Unexpected error sending parts escalation SMS to #{recipient.name}: #{e.message}")
     end
   end
 end

@@ -96,7 +96,6 @@ export default {
         telegram,
       };
     },
-
   },
   watch: {
     'contact.id': {
@@ -191,13 +190,19 @@ export default {
 
         const conversationId = this.currentChat.id;
         await this.$store.dispatch('fetchLatestMessages', { conversationId });
-        await new Promise(resolve => setTimeout(resolve, 750));
+        await new Promise(resolve => {
+          setTimeout(resolve, 750);
+        });
         await this.$store.dispatch('fetchLatestMessages', { conversationId });
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        await new Promise(resolve => {
+          setTimeout(resolve, 1500);
+        });
         await this.$store.dispatch('fetchLatestMessages', { conversationId });
 
         await this.$store.dispatch('getConversation', conversationId);
-        await new Promise(resolve => setTimeout(resolve, 750));
+        await new Promise(resolve => {
+          setTimeout(resolve, 750);
+        });
         await this.$store.dispatch('getConversation', conversationId);
         this.spamStateOverride = null;
         this.$store.dispatch('bulkActions/clearSelectedConversationIds');
@@ -243,7 +248,6 @@ export default {
           :status="contact.availability_status"
           :size="48"
           hide-offline-status
-
         />
       </div>
 
@@ -425,60 +429,4 @@ export default {
       />
     </div>
   </div>
-
-  <Teleport to="body">
-    <div
-      v-if="showSentimentModal"
-      class="fixed inset-0 z-[9999] flex items-center justify-center"
-      @click.self="closeSentimentModal"
-    >
-      <div class="absolute inset-0 bg-black/50 dark:bg-black/70" />
-      <div class="relative bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-md mx-4 p-6">
-        <div class="flex items-start justify-between mb-4">
-          <div>
-            <h3 class="text-base font-bold text-slate-900 dark:text-white">
-              {{ $t('CONTACT_PANEL.UPDATE_SENTIMENT.TITLE') }}
-            </h3>
-            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
-              {{ $t('CONTACT_PANEL.UPDATE_SENTIMENT.DESCRIPTION') }}
-            </p>
-          </div>
-          <button
-            class="ml-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
-            @click="closeSentimentModal"
-          >
-            <span class="i-lucide-x size-5" />
-          </button>
-        </div>
-        <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-          {{ $t('CONTACT_PANEL.UPDATE_SENTIMENT.REASON_LABEL') }}
-        </label>
-        <textarea
-          v-model="sentimentReason"
-          :placeholder="$t('CONTACT_PANEL.UPDATE_SENTIMENT.REASON_PLACEHOLDER')"
-          rows="3"
-          class="w-full text-sm rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-amber-400 dark:focus:ring-amber-500"
-        />
-        <div class="flex items-center justify-end gap-3 mt-5">
-          <button
-            type="button"
-            class="px-4 py-2 rounded-lg text-sm font-medium bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 transition-colors"
-            @click="closeSentimentModal"
-          >
-            {{ $t('CONTACT_PANEL.UPDATE_SENTIMENT.CANCEL') }}
-          </button>
-          <button
-            type="button"
-            :disabled="isUpdatingSentiment"
-            class="px-4 py-2 rounded-lg text-sm font-semibold bg-n-blue-10 hover:bg-n-blue-7 active:bg-blue-800 text-white shadow-sm disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            @click="submitSentimentUpdate"
-          >
-            {{ isUpdatingSentiment
-              ? $t('CONTACT_PANEL.UPDATE_SENTIMENT.SUBMITTING')
-              : $t('CONTACT_PANEL.UPDATE_SENTIMENT.SUBMIT') }}
-          </button>
-        </div>
-      </div>
-    </div>
-  </Teleport>
 </template>

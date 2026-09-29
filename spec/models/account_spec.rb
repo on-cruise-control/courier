@@ -447,7 +447,12 @@ RSpec.describe Account do
           account.public_send("#{attribute}=", ['manager@example.com', 'lead@example.com'])
           expect(account).to be_valid
         end
+      end
+    end
 
+    # Only these attributes have format/array validations defined on the model.
+    %i[escalation_emails vehicle_parts_emails service_emails].each do |attribute|
+      describe "##{attribute}" do
         it 'rejects an invalid email' do
           account.public_send("#{attribute}=", ['not-an-email'])
           expect(account).not_to be_valid

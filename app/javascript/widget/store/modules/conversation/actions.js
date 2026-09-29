@@ -31,8 +31,9 @@ export const actions = {
       });
       emitter.emit(ON_CONVERSATION_CREATED);
       trackEvent('asc_comm_engagement', {
-        event_action: 'chat_conversation_created',
-        comm_type: 'chat',
+        event_action: 'conversation_created',
+        comm_type: 'widget',
+        event_platform: 'widget',
         comm_status: 'engaged',
       });
     } catch (error) {
@@ -89,8 +90,9 @@ export const actions = {
       });
       if (isNewConversation) {
         trackEvent('asc_comm_engagement', {
-          event_action: 'chat_conversation_created',
-          comm_type: 'chat',
+          event_action: 'conversation_created',
+          comm_type: 'widget',
+          event_platform: 'widget',
           comm_status: 'engaged',
         });
       }

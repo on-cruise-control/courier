@@ -49,6 +49,7 @@ RSpec.describe AdministratorNotifications::BaseMailer do
       # Mock the send_mail_with_liquid method
       expect(mailer).to receive(:send_mail_with_liquid).with(
         to: contain_exactly(admin1.email, admin2.email),
+        bcc: nil,
         subject: subject
       ).and_return(true)
 
@@ -65,6 +66,7 @@ RSpec.describe AdministratorNotifications::BaseMailer do
 
       expect(mailer).to receive(:send_mail_with_liquid).with(
         to: custom_email,
+        bcc: nil,
         subject: subject
       ).and_return(true)
 

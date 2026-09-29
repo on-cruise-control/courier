@@ -2,7 +2,8 @@ class ConversationHandoffService
   HANDOFF_COOLDOWN_MINUTES = 240 # 4 hours in minutes
   HANDOFF_LABEL = 'handoff'.freeze
   HANDOFF_LABEL_COLOR = '#1f93ff'.freeze
-  VALID_HANDOFF_REASONS = %w[sales_escalation service_escalation vehicle_parts_escalation vehicle_parts service_inquiry].freeze
+  VALID_HANDOFF_REASONS = %w[sales_escalation service_escalation vehicle_parts_escalation vehicle_parts service_inquiry
+                             non_department_escalation].freeze
 
   AREA_ESCALATIONS = {
     'sales_escalation' => { emails: :sales_escalation_emails, job: 'SalesEscalationNotificationJob',
@@ -10,7 +11,9 @@ class ConversationHandoffService
     'service_escalation' => { emails: :service_escalation_emails, job: 'ServiceEscalationNotificationJob',
                               label: 'service_escalation', color: '#A855F7' },
     'vehicle_parts_escalation' => { emails: :vehicle_parts_escalation_emails, job: 'VehiclePartsEscalationNotificationJob',
-                                    label: 'vehicle_parts_escalation', color: '#0D9488' }
+                                    label: 'parts_escalation', color: '#0D9488' },
+    'non_department_escalation' => { emails: :escalation_emails, job: 'EscalationNotificationJob',
+                                     label: 'escalation', color: '#EF4444' }
   }.freeze
 
   def initialize(conversation)

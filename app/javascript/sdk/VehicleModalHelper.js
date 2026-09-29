@@ -103,7 +103,7 @@ const VehicleModalHelper = {
   updateWithVehicle(
     overlay,
     vehicle,
-    { baseUrl = '', websiteToken = '', conversationId = null } = {}
+    { conversationId = null, submitContact } = {}
   ) {
     const images = vehicle.vehicle_images || [];
     let idx = 0;
@@ -630,22 +630,15 @@ const VehicleModalHelper = {
         msgEl.style.display = 'none';
 
         try {
-          const res = await fetch(
-            `${baseUrl}/api/v1/widget/vehicle_contacts?website_token=${websiteToken}`,
-            {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                name,
-                phone,
-                email,
-                message,
-                vehicle_title: vehicleTitle,
-                conversation_id: conversationId,
-              }),
-            }
-          );
-          if (res.ok) {
+          const success = await submitContact({
+            name,
+            phone,
+            email,
+            message,
+            vehicle_title: vehicleTitle,
+            conversation_id: conversationId,
+          });
+          if (success) {
             contactOverlay.style.display = 'none';
             resetContactForm();
             overlay.querySelector('#cw-thankyou-msg').textContent =

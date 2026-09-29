@@ -71,6 +71,11 @@ class Api::V1::AccountsController < Api::BaseController
     @account.sales_escalation_emails = params[:sales_escalation_emails] if params.key?(:sales_escalation_emails)
     @account.service_escalation_emails = params[:service_escalation_emails] if params.key?(:service_escalation_emails)
     @account.vehicle_parts_escalation_emails = params[:vehicle_parts_escalation_emails] if params.key?(:vehicle_parts_escalation_emails)
+    @account.sales_comment_escalation_emails = params[:sales_comment_escalation_emails] if params.key?(:sales_comment_escalation_emails)
+    @account.service_comment_escalation_emails = params[:service_comment_escalation_emails] if params.key?(:service_comment_escalation_emails)
+    if params.key?(:vehicle_parts_comment_escalation_emails)
+      @account.vehicle_parts_comment_escalation_emails = params[:vehicle_parts_comment_escalation_emails]
+    end
 
     @account.save!
     process_bot_avatar_from_url
@@ -156,7 +161,7 @@ class Api::V1::AccountsController < Api::BaseController
 
   def settings_params
     params.permit(:auto_resolve_after, :auto_resolve_message, :auto_resolve_ignore_waiting, :audio_transcriptions, :auto_resolve_label,
-                  conversation_required_attributes: [])
+                  :ga4_api_secret, conversation_required_attributes: [])
   end
 
   def check_signup_enabled

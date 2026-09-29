@@ -10,6 +10,9 @@ import ServiceEmails from './components/ServiceEmails.vue';
 import SalesEscalationEmails from './components/SalesEscalationEmails.vue';
 import ServiceEscalationEmails from './components/ServiceEscalationEmails.vue';
 import VehiclePartsEscalationEmails from './components/VehiclePartsEscalationEmails.vue';
+import SalesCommentEscalationEmails from './components/SalesCommentEscalationEmails.vue';
+import ServiceCommentEscalationEmails from './components/ServiceCommentEscalationEmails.vue';
+import VehiclePartsCommentEscalationEmails from './components/VehiclePartsCommentEscalationEmails.vue';
 
 const { t } = useI18n();
 
@@ -35,6 +38,15 @@ const notificationGroups = [
       SalesEscalationEmails,
       ServiceEscalationEmails,
       VehiclePartsEscalationEmails,
+    ],
+  },
+  {
+    key: 'COMMENT_ESCALATION',
+    title: t('EMAIL_SETTINGS.GROUPS.COMMENT_ESCALATION'),
+    sections: [
+      SalesCommentEscalationEmails,
+      ServiceCommentEscalationEmails,
+      VehiclePartsCommentEscalationEmails,
     ],
   },
 ];
