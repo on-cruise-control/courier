@@ -83,7 +83,12 @@ class Offers::OfferService
     body[:title] = params[:title] if params[:title].present?
     body[:start_date] = params[:start_date] if params[:start_date].present?
     body[:end_date] = params[:end_date] if params[:end_date].present?
-    body[:offer_document] = params[:offer_document] if params[:offer_document].present?
+    if params[:offer_document].present?
+      body[:offer_document] = params[:offer_document]
+    elsif ActiveModel::Type::Boolean.new.cast(params[:remove_offer_document])
+      body[:offer_document] = ''
+    end
+    body[:source_url] = params[:source_url] if params.key?(:source_url)
     body
   end
 
@@ -105,8 +110,8 @@ class Offers::OfferService
       raise ApiError.new('Unauthorized: Invalid API Key', 401, response)
     when 404
       raise ApiError.new('Offer not found', 404, response)
-    when 422
-      raise ApiError.new(validation_error_message(response), 422, response)
+    when 400, 422
+      raise ApiError.new(validation_error_message(response), response.code, response)
     when 500..599
       raise ApiError.new('Dealership API server error', response.code, response)
     else
@@ -116,7 +121,12 @@ class Offers::OfferService
 
   def validation_error_message(response)
     body = response.parsed_response
-    body.is_a?(Hash) ? (body['message'] || body['error'] || 'Validation failed') : 'Validation failed'
+    return 'Validation failed' unless body.is_a?(Hash)
+
+    payload = body['body'].is_a?(Hash) ? body['body'] : body
+    field_errors = payload['error']
+    field_errors = field_errors.values.flatten.compact.first if field_errors.is_a?(Hash)
+    field_errors || payload['message'] || 'Validation failed'
   end
 
   def parse_list(response)

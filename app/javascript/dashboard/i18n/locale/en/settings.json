@@ -1055,6 +1055,8 @@
       "PDF": "Document",
       "VIEW_DOCUMENT": "View Document",
       "NO_PDF": "No document",
+      "SOURCE_URL": "Source URL",
+      "VIEW_SOURCE": "View Source",
       "OFFER_DETAILS": "Offer Details",
       "EDIT_ACTION": "Edit",
       "DELETE_ACTION": "Delete"
@@ -1065,6 +1067,8 @@
       "CANCEL": "Cancel",
       "VALIDATION_REQUIRED": "This field is required",
       "VALIDATION_REQUIRED_FILE": "Please upload the document",
+      "VALIDATION_REQUIRED_URL": "Please enter a source URL",
+      "VALIDATION_INVALID_URL": "Please enter a valid URL",
       "VALIDATION_DATE_ORDER": "End date must be after the start date",
       "VALIDATION_FILE_SIZE": "File size must not exceed 50 MB",
       "TITLE": {
@@ -1077,6 +1081,8 @@
       "END_DATE": {
         "LABEL": "End Date"
       },
+      "SOURCE_LABEL": "Offer Source",
+      "SOURCE_HELP": "Choose either a document or a source URL.",
       "PDF": {
         "LABEL": "Document",
         "CHOOSE_FILE": "Choose a file",
@@ -1085,7 +1091,13 @@
         "HELP_TEXT": "Upload a file (Up to 50 MB)",
         "REPLACE_HELP": "Choose a file to replace the current document",
         "VIEW_CURRENT": "View current document",
-        "REMOVE": "Remove selected file"
+        "REMOVE": "Remove selected file",
+        "REMOVE_CURRENT": "Remove document"
+      },
+      "SOURCE_URL": {
+        "LABEL": "Source URL",
+        "PLACEHOLDER": "https://example.com/why-buy",
+        "REMOVE": "Remove URL"
       }
     }
   }

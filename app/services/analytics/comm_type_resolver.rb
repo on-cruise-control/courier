@@ -2,7 +2,7 @@
 
 class Analytics::CommTypeResolver
   RESOLVERS = {
-    'instagram' => ->(inbox) { inbox.instagram? },
+    'instagram' => ->(inbox) { inbox.instagram_direct? },
     'facebook' => ->(inbox) { inbox.facebook? },
     'whatsapp' => ->(inbox) { inbox.whatsapp? || inbox.twilio_whatsapp? },
     'sms' => ->(inbox) { inbox.sms? || (inbox.twilio? && !inbox.twilio_whatsapp?) },

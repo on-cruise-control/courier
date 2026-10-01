@@ -24,6 +24,7 @@ const formatDate = value => {
 };
 
 const hasDocument = computed(() => !!props.offer?.offer_document);
+const hasSourceUrl = computed(() => !!props.offer?.source_url);
 const hasDocumentText = computed(() => !!props.offer?.offer_document_text);
 
 const handleEdit = () => emit('edit', props.offer);
@@ -89,6 +90,24 @@ const handleEdit = () => emit('edit', props.offer);
         >
           <i class="i-lucide-file-text size-4" />
           {{ t('OFFERS_MGMT.TABLE.VIEW_DOCUMENT') }}
+        </a>
+      </section>
+
+      <section
+        v-if="hasSourceUrl"
+        class="flex items-center justify-between rounded-xl border border-n-gray-5 px-4 py-2.5"
+      >
+        <h3 class="text-xs uppercase tracking-wide text-n-slate-9">
+          {{ t('OFFERS_MGMT.TABLE.SOURCE_URL') }}
+        </h3>
+        <a
+          :href="offer.source_url"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="inline-flex items-center gap-2 text-sm text-n-brand hover:underline"
+        >
+          <i class="i-lucide-link size-4" />
+          {{ t('OFFERS_MGMT.TABLE.VIEW_SOURCE') }}
         </a>
       </section>
 
