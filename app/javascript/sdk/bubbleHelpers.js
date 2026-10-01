@@ -281,7 +281,7 @@ export const createGreetingInputBox = (config = {}) => {
   footerText.className = 'woot-greeting-input-footer';
   footerText.innerHTML = `
     <p class="woot-greeting-footer-text">Chats may be monitored, stored, and/or shared as described in our <a href="https://getcruisecontrol.com/privacy-policy/" target="_blank" rel="noopener noreferrer" class="woot-greeting-footer-link">Privacy Policy</a>.
-    Powered by <a href="https://getcruisecontrol.com" target="_blank" rel="noopener noreferrer" class="woot-greeting-footer-link">Cruise Control</a>. Use is subject to <a href="https://getcruisecontrol.com/sms-terms-and-conditions" target="_blank" rel="noopener noreferrer" class="woot-greeting-footer-link">Terms</a>.</p>
+    Powered by <a href="https://getcruisecontrol.com" target="_blank" rel="noopener noreferrer" class="woot-greeting-footer-link">Spin Mgmt Get Cruise Control</a>. Use is subject to <a href="https://getcruisecontrol.com/sms-terms-and-conditions" target="_blank" rel="noopener noreferrer" class="woot-greeting-footer-link">Terms</a>.</p>
   `;
 
   inputBoxContainer.appendChild(footerText);

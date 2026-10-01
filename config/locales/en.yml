@@ -44,7 +44,7 @@ en:
       '100': "The message couldn't be sent due to invalid parameters or missing permissions. Check the recipient and message format."
       '190': "The Facebook page connection has expired or is invalid. Please reconnect the page in channel settings."
     instagram_errors:
-      '10': "This message couldn't be sent because the messaging window has closed. The customer needs to send a new message first. Learn more in the Messenger policy."
+      '2534022': "This message couldn't be sent because the messaging window has closed. The customer needs to send a new message first. Learn more in the Messenger policy."
       '2': "The message couldn't be delivered. The customer may have blocked the business is temporarily unavailable. Try again later."
       '190': "The Instagram account connection has expired or is invalid. Please reconnect the account in channel settings."
       '2207001': "Instagram server error. Please try again later."
