@@ -1212,7 +1212,7 @@
         "USER_MESSAGE": "Hi",
         "AGENT_MESSAGE": "Hello"
       },
-      "BRANDING_TEXT": "Powered by Cruise Control",
+      "BRANDING_TEXT": "Powered by Spin Mgmt Get Cruise Control",
       "SCRIPT_SETTINGS": "\n      window.chatwootSettings = {options};"
     },
     "EMAIL_PROVIDERS": {
