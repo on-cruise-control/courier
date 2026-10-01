@@ -1,12 +1,12 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 import Icon from 'next/icon/Icon.vue';
 import { useSnakeCase } from 'dashboard/composables/useTransformKeys';
 import { useMessageContext } from '../provider.js';
 
 import GalleryView from 'dashboard/components/widgets/conversation/components/GalleryView.vue';
 
-defineProps({
+const props = defineProps({
   attachment: {
     type: Object,
     required: true,
@@ -20,6 +20,13 @@ const { filteredCurrentChatAttachments } = useMessageContext();
 const handleError = () => {
   hasError.value = true;
 };
+
+watch(
+  () => props.attachment.dataUrl,
+  () => {
+    hasError.value = false;
+  }
+);
 </script>
 
 <template>

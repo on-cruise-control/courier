@@ -477,15 +477,21 @@ class Message < ApplicationRecord
                                      .first.id
 
       if first_pending_id == id
-        if attachments.blank?
+        if attachments.blank? && !pending_card_media?
           ::SendReplyJob.perform_later(id)
         else
           ::SendReplyJob.set(wait: 2.seconds).perform_later(id)
         end
       end
+    elsif attachments.blank? && !pending_card_media?
+      ::SendReplyJob.perform_later(id)
     else
-      attachments.blank? ? ::SendReplyJob.perform_later(id) : ::SendReplyJob.set(wait: 2.seconds).perform_later(id)
+      ::SendReplyJob.set(wait: 2.seconds).perform_later(id)
     end
+  end
+
+  def pending_card_media?
+    content_type == 'cards' && Array(content_attributes&.dig('items')).any? { |item| item['media_url'].present? }
   end
 
   def reopen_conversation

@@ -13,7 +13,7 @@ const items = computed(() => {
   const attachmentList = attachments?.value ?? [];
   return rawItems.map((item, index) => ({
     ...item,
-    resolvedMediaUrl: attachmentList[index]?.dataUrl || item.media_url,
+    resolvedMediaUrl: attachmentList[index]?.dataUrl || item.mediaUrl,
   }));
 });
 
@@ -23,8 +23,8 @@ const metaClass = computed(() =>
 
 const imageErrors = ref({});
 
-function onImageError(title) {
-  imageErrors.value = { ...imageErrors.value, [title]: true };
+function onImageError(index) {
+  imageErrors.value = { ...imageErrors.value, [index]: true };
 }
 
 function onWheelScroll(e) {
@@ -46,23 +46,26 @@ function onWheelScroll(e) {
       @wheel="onWheelScroll"
     >
       <div
-        v-for="item in items"
-        :key="item.title"
+        v-for="(item, index) in items"
+        :key="index"
         class="w-44 flex-none rounded-lg overflow-hidden bg-white dark:bg-n-solid-3 border border-n-slate-3 dark:border-n-solid-4 shadow-sm"
       >
         <img
-          v-if="item.resolvedMediaUrl && !imageErrors[item.title]"
+          v-if="item.resolvedMediaUrl && !imageErrors[index]"
           :src="item.resolvedMediaUrl"
           :alt="item.title"
           class="w-full h-28 object-cover"
-          @error="onImageError(item.title)"
+          @error="onImageError(index)"
         />
-        <div
-          v-else
-          class="w-full h-28 flex items-center justify-center bg-n-alpha-1"
+        <a
+          v-else-if="item.mediaUrl"
+          :href="item.mediaUrl"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="w-full h-28 flex items-center justify-center bg-n-alpha-1 cursor-pointer"
         >
           <Icon icon="i-lucide-image-off" class="text-n-slate-10 size-6" />
-        </div>
+        </a>
         <div class="p-2 flex flex-col gap-1">
           <p
             class="text-xs font-medium text-n-slate-12 leading-snug line-clamp-2"
@@ -82,10 +85,10 @@ function onWheelScroll(e) {
             <a
               v-for="(action, actionIndex) in item.actions"
               :key="actionIndex"
-              :href="action.uri || undefined"
+              :href="action.uri || item.mediaUrl || undefined"
               target="_blank"
               rel="noopener noreferrer"
-              class="text-center text-xs text-n-brand font-medium py-1.5 rounded-md border border-n-slate-4 dark:border-n-solid-4 hover:bg-n-alpha-1"
+              class="text-xs text-n-brand font-medium hover:underline"
             >
               {{ action.text }}
             </a>
