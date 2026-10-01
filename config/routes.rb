@@ -301,6 +301,9 @@ Rails.application.routes.draw do
                 post :submit_approval
               end
             end
+
+            resources :meta_templates, only: [:index, :create, :update, :destroy],
+                                       controller: 'inboxes/meta_templates'
           end
 
           resources :inbox_members, only: [:create, :show], param: :inbox_id do

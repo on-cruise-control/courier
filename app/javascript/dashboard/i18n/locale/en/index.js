@@ -28,6 +28,7 @@ import integrations from './integrations.json';
 import labelsMgmt from './labelsMgmt.json';
 import login from './login.json';
 import macros from './macros.json';
+import metaTemplates from './metaTemplates.json';
 import report from './report.json';
 import resetPassword from './resetPassword.json';
 import search from './search.json';
@@ -89,6 +90,7 @@ export default {
   ...whatsappTemplates,
   ...contentTemplates,
   ...twilioTemplates,
+  ...metaTemplates,
   ...mfa,
   ...onboarding,
   ...yearInReview,
