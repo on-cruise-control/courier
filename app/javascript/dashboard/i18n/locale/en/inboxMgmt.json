@@ -649,7 +649,8 @@
       "BOT_CONFIGURATION": "Bot Configuration",
       "ACCOUNT_HEALTH": "Account Health",
       "CSAT": "CSAT",
-      "TWILIO_TEMPLATES": "Templates"
+      "TWILIO_TEMPLATES": "Templates",
+      "META_TEMPLATES": "Templates"
     },
     "VOICE": "Voice",
     "CALLS": "Calls",

@@ -3,6 +3,7 @@
 # Table name: channel_facebook_pages
 #
 #  id                :integer          not null, primary key
+#  content_templates :jsonb
 #  facebook_page_url :string
 #  page_access_token :text             not null
 #  user_access_token :text             not null

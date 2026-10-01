@@ -71,6 +71,10 @@ const attachmentMessageContent = computed(() => {
 const isMessageSticker = computed(() => {
   return props.message && props.message.content_type === 'sticker';
 });
+
+const isMessageCards = computed(() => {
+  return props.message && props.message.content_type === 'cards';
+});
 </script>
 
 <template>
@@ -128,6 +132,14 @@ const isMessageSticker = computed(() => {
       >
         <Icon icon="i-lucide-image" class="size-3.5" />
         {{ $t('CHAT_LIST.ATTACHMENTS.image.CONTENT') }}
+      </span>
+
+      <span
+        v-else-if="isMessageCards"
+        class="inline-grid grid-flow-col auto-cols-max items-center gap-1"
+      >
+        <Icon v-if="showMessageType" icon="i-lucide-image" class="size-3.5" />
+        {{ $t('CHAT_LIST.ATTACHMENTS.cards.CONTENT') }}
       </span>
 
       <template v-else-if="message.content">
