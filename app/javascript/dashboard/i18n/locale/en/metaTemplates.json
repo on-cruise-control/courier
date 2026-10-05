@@ -72,7 +72,7 @@
       "BUTTON_TITLE": "Button text",
       "BUTTON_TYPE_WEB_URL": "Website Link",
       "BUTTON_TYPE_POSTBACK": "Reply",
-      "BUTTON_VALUE_PLACEHOLDER": "https://example.com or a postback value",
+      "BUTTON_VALUE_PLACEHOLDER": "https://example.com",
       "BUTTON_URL_PLACEHOLDER": "https://example.com",
       "CARDS": "Cards",
       "CARD": "Card",
