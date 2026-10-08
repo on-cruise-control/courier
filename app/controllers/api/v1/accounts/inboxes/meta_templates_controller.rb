@@ -3,6 +3,8 @@ class Api::V1::Accounts::Inboxes::MetaTemplatesController < Api::V1::Accounts::B
   before_action :validate_meta_channel
   before_action :check_admin_authorization?, only: [:create, :update, :destroy]
 
+  include DefaultTemplateEntryTracking
+
   CATEGORIES = %w[text quick_reply media call_to_action card].freeze
 
   class TemplateValidationError < StandardError; end
@@ -20,7 +22,7 @@ class Api::V1::Accounts::Inboxes::MetaTemplatesController < Api::V1::Accounts::B
   end
 
   def update
-    entry = build_entry(template_params, id: params[:id])
+    entry = carry_default_markers(find_cached(params[:id]), build_entry(template_params, id: params[:id]))
     updated = cached_templates.map { |t| t['id'] == params[:id] ? entry : t }
     persist_cache(updated)
     render json: { template: entry }
@@ -29,6 +31,7 @@ class Api::V1::Accounts::Inboxes::MetaTemplatesController < Api::V1::Accounts::B
   end
 
   def destroy
+    exclude_default_template(find_cached(params[:id]))
     persist_cache(cached_templates.reject { |t| t['id'] == params[:id] })
     head :ok
   end
@@ -55,6 +58,10 @@ class Api::V1::Accounts::Inboxes::MetaTemplatesController < Api::V1::Accounts::B
 
   def cached_templates
     @inbox.channel.content_templates&.dig('templates') || []
+  end
+
+  def find_cached(id)
+    cached_templates.find { |t| t['id'] == id }
   end
 
   def persist_cache(templates)

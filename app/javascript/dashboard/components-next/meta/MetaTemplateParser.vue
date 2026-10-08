@@ -6,6 +6,7 @@ import {
   collectTemplateTexts,
   extractVariableKeys,
   renderTemplateText,
+  toDisplayVars,
 } from 'dashboard/helper/metaTemplateHelper';
 
 const props = defineProps({
@@ -148,7 +149,9 @@ defineExpose({ sendMessage, resetTemplate, isFormInvalid });
           v-model="values[key]"
           type="text"
           :placeholder="
-            t('META_TEMPLATES.PARSER.VARIABLE_PLACEHOLDER', { variable: key })
+            t('META_TEMPLATES.PARSER.VARIABLE_PLACEHOLDER', {
+              variable: toDisplayVars(`{{${key}}}`),
+            })
           "
         />
       </div>

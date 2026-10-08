@@ -31,7 +31,7 @@ defineEmits(['update:modelValue']);
       @input="$emit('update:modelValue', $event.target.value)"
     />
     <span
-      class="absolute right-2.5 text-[10px] text-n-slate-9 pointer-events-none"
+      class="mb-2 absolute right-2.5 text-[10px] text-n-slate-9 pointer-events-none"
       :class="multiline ? 'bottom-2' : 'top-1/2 -translate-y-1/2'"
     >
       {{ (modelValue || '').length }}/{{ props.maxlength }}

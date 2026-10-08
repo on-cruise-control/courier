@@ -3,9 +3,11 @@ import { ref, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useAlert } from 'dashboard/composables';
 import metaTemplatesApi from 'dashboard/api/metaTemplates';
+import defaultTemplatesApi from 'dashboard/api/defaultTemplates';
 import { templatePreviewText } from 'dashboard/helper/metaTemplateHelper';
 import Icon from 'dashboard/components-next/icon/Icon.vue';
 import TemplateModal from './TemplateModal.vue';
+import TemplateViewModal from './TemplateViewModal.vue';
 import Dialog from 'dashboard/components-next/dialog/Dialog.vue';
 
 const props = defineProps({
@@ -17,8 +19,11 @@ const { t } = useI18n();
 const templates = ref([]);
 const isLoading = ref(false);
 const isSaving = ref(false);
+const isSyncingDefaults = ref(false);
 const showTemplateModal = ref(false);
 const editingTemplate = ref(null);
+const showViewModal = ref(false);
+const viewingTemplate = ref(null);
 const deleteTarget = ref(null);
 const deleteDialogRef = ref(null);
 
@@ -47,9 +52,27 @@ async function fetchTemplates() {
   }
 }
 
+async function syncDefaults() {
+  isSyncingDefaults.value = true;
+  try {
+    const { data } = await defaultTemplatesApi.sync(props.inbox.id);
+    templates.value = data.templates || [];
+    useAlert(t('META_TEMPLATES.LIST.SYNC_DEFAULTS_SUCCESS'));
+  } catch {
+    useAlert(t('META_TEMPLATES.LIST.SYNC_DEFAULTS_ERROR'));
+  } finally {
+    isSyncingDefaults.value = false;
+  }
+}
+
 function openCreate() {
   editingTemplate.value = null;
   showTemplateModal.value = true;
+}
+
+function openView(tpl) {
+  viewingTemplate.value = tpl;
+  showViewModal.value = true;
 }
 
 function openEdit(tpl) {
@@ -118,13 +141,32 @@ onMounted(fetchTemplates);
           {{ t('META_TEMPLATES.LIST.SUBTITLE') }}
         </p>
       </div>
-      <button
-        class="flex items-center gap-1.5 px-3 py-2 text-sm bg-n-brand hover:bg-n-brand/90 text-white rounded-lg transition-colors"
-        @click="openCreate"
-      >
-        <Icon icon="i-lucide-plus" class="size-4" />
-        {{ t('META_TEMPLATES.LIST.NEW_BUTTON') }}
-      </button>
+      <div class="flex items-center gap-2 shrink-0">
+        <button
+          class="flex items-center gap-1.5 px-3 py-2 text-sm border border-n-weak text-n-slate-11 hover:bg-n-slate-2 rounded-lg transition-colors disabled:opacity-50"
+          :disabled="isSyncingDefaults"
+          @click="syncDefaults"
+        >
+          <Icon
+            icon="i-lucide-refresh-cw"
+            class="size-4"
+            :class="{ 'animate-spin': isSyncingDefaults }"
+          />
+          {{
+            isSyncingDefaults
+              ? t('META_TEMPLATES.LIST.SYNCING_DEFAULTS')
+              : t('META_TEMPLATES.LIST.SYNC_DEFAULTS')
+          }}
+        </button>
+        <button
+          v-tooltip.top="t('META_TEMPLATES.TOOLTIPS.NEW_TEMPLATE')"
+          class="flex items-center gap-1.5 px-3 py-2 text-sm bg-n-brand hover:bg-n-brand/90 text-white rounded-lg transition-colors"
+          @click="openCreate"
+        >
+          <Icon icon="i-lucide-plus" class="size-4" />
+          {{ t('META_TEMPLATES.LIST.NEW_BUTTON') }}
+        </button>
+      </div>
     </div>
 
     <div v-if="isLoading" class="flex justify-center py-16">
@@ -149,7 +191,8 @@ onMounted(fetchTemplates);
       <div
         v-for="tpl in templates"
         :key="tpl.id"
-        class="flex items-center justify-between gap-3 p-4 bg-n-slate-1 border border-n-strong rounded-xl"
+        class="flex items-center justify-between gap-3 p-4 bg-n-slate-1 border border-n-strong rounded-xl cursor-pointer hover:border-n-brand/40"
+        @click="openView(tpl)"
       >
         <div class="min-w-0">
           <div class="flex items-center gap-2">
@@ -160,6 +203,12 @@ onMounted(fetchTemplates);
               class="text-xs px-2 py-0.5 bg-n-slate-2 text-n-slate-10 rounded-md font-medium"
             >
               {{ categoryLabel(tpl.category) }}
+            </span>
+            <span
+              v-if="tpl.is_default"
+              class="text-xs px-2 py-0.5 bg-n-brand/10 text-n-brand rounded-md font-medium"
+            >
+              {{ t('META_TEMPLATES.LIST.DEFAULT_BADGE') }}
             </span>
           </div>
           <p
@@ -173,20 +222,25 @@ onMounted(fetchTemplates);
           <button
             class="p-1.5 rounded-lg text-n-slate-9 hover:text-n-brand hover:bg-n-brand/10"
             :title="t('META_TEMPLATES.LIST.EDIT')"
-            @click="openEdit(tpl)"
+            @click.stop="openEdit(tpl)"
           >
             <Icon icon="i-lucide-pencil" class="size-3.5" />
           </button>
           <button
             class="p-1.5 rounded-lg text-n-slate-9 hover:text-red-600"
             :title="t('META_TEMPLATES.LIST.DELETE')"
-            @click="handleDelete(tpl)"
+            @click.stop="handleDelete(tpl)"
           >
             <Icon icon="i-lucide-trash-2" class="size-3.5" />
           </button>
         </div>
       </div>
     </div>
+
+    <TemplateViewModal
+      v-model:show="showViewModal"
+      :template="viewingTemplate"
+    />
 
     <TemplateModal
       v-model:show="showTemplateModal"

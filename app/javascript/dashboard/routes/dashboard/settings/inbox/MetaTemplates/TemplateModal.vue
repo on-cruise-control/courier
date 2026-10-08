@@ -4,6 +4,12 @@ import { useI18n } from 'vue-i18n';
 import Icon from 'dashboard/components-next/icon/Icon.vue';
 import Select from 'dashboard/components-next/select/Select.vue';
 import CounterInput from './CounterInput.vue';
+import InfoTip from './InfoTip.vue';
+import {
+  mapStrings,
+  toDisplayVars,
+  toStorageVars,
+} from 'dashboard/helper/metaTemplateHelper';
 import uploadApi from 'dashboard/api/upload';
 import { useAlert } from 'dashboard/composables';
 
@@ -90,10 +96,18 @@ const emptyForm = () => ({
   ctaButtons: [],
 });
 
+const emptyCard = () => ({
+  title: '',
+  description: '',
+  media_url: '',
+  actions: [],
+  default_action_url: '',
+});
+
 const form = ref(emptyForm());
 
 function applySource(tpl) {
-  const content = tpl.content || {};
+  const content = mapStrings(tpl.content || {}, toDisplayVars);
   const base = { name: tpl.name || '', category: tpl.category || 'text' };
 
   if (tpl.category === 'quick_reply') {
@@ -152,7 +166,12 @@ watch(
 );
 
 function selectCategory(key) {
-  form.value = { ...emptyForm(), name: form.value.name, category: key };
+  form.value = {
+    ...emptyForm(),
+    name: form.value.name,
+    category: key,
+    items: key === 'card' ? [emptyCard()] : [],
+  };
 }
 
 const nameError = computed(() => {
@@ -283,14 +302,7 @@ function removeCtaButton(idx) {
 
 // Card items
 function addCard() {
-  if (form.value.items.length < 10)
-    form.value.items.push({
-      title: '',
-      description: '',
-      media_url: '',
-      actions: [],
-      default_action_url: '',
-    });
+  if (form.value.items.length < 10) form.value.items.push(emptyCard());
 }
 function removeCard(idx) {
   form.value.items.splice(idx, 1);
@@ -393,24 +405,13 @@ function buildContent() {
   return {};
 }
 
-function deepTrimStrings(value) {
-  if (typeof value === 'string') return value.trim();
-  if (Array.isArray(value)) return value.map(deepTrimStrings);
-  if (value && typeof value === 'object') {
-    return Object.fromEntries(
-      Object.entries(value).map(([key, val]) => [key, deepTrimStrings(val)])
-    );
-  }
-  return value;
-}
-
 function handleSave() {
   if (!canSave.value) return;
 
   emit('onSave', {
     name: form.value.name.trim(),
     category: form.value.category,
-    content: deepTrimStrings(buildContent()),
+    content: mapStrings(buildContent(), value => toStorageVars(value.trim())),
   });
 }
 
@@ -519,9 +520,10 @@ function close() {
 
         <!-- Text -->
         <div v-if="form.category === 'text'" class="flex flex-col gap-1">
-          <label class="text-xs font-medium text-n-slate-11">{{
-            t('META_TEMPLATES.FORM.BODY')
-          }}</label>
+          <label class="text-xs font-medium text-n-slate-11">
+            {{ t('META_TEMPLATES.FORM.BODY') }}
+            <InfoTip :text="t('META_TEMPLATES.TOOLTIPS.VARIABLES')" />
+          </label>
           <CounterInput
             v-model="form.body"
             multiline
@@ -537,9 +539,10 @@ function close() {
         <!-- Quick Reply -->
         <div v-if="form.category === 'quick_reply'" class="flex flex-col gap-3">
           <div class="flex flex-col gap-1">
-            <label class="text-xs font-medium text-n-slate-11">{{
-              t('META_TEMPLATES.FORM.BODY')
-            }}</label>
+            <label class="text-xs font-medium text-n-slate-11">
+              {{ t('META_TEMPLATES.FORM.BODY') }}
+              <InfoTip :text="t('META_TEMPLATES.TOOLTIPS.VARIABLES')" />
+            </label>
             <CounterInput
               v-model="form.body"
               multiline
@@ -562,6 +565,7 @@ function close() {
                 }}
               </label>
               <button
+                v-tooltip.top="t('META_TEMPLATES.TOOLTIPS.ADD_QUICK_REPLY')"
                 type="button"
                 class="text-xs text-n-brand font-medium disabled:opacity-40"
                 :disabled="form.items.length >= 13"
@@ -582,6 +586,7 @@ function close() {
                 :placeholder="t('META_TEMPLATES.FORM.QUICK_REPLY_TITLE')"
               />
               <button
+                v-tooltip.top="t('META_TEMPLATES.TOOLTIPS.REMOVE_QUICK_REPLY')"
                 type="button"
                 class="shrink-0 text-n-slate-9 hover:text-red-600"
                 @click="removeQuickReply(idx)"
@@ -600,6 +605,7 @@ function close() {
             }}</label>
             <div class="flex items-center gap-3">
               <label
+                v-tooltip.top="t('META_TEMPLATES.TOOLTIPS.SELECT_FILE')"
                 class="inline-flex items-center px-3 py-1.5 rounded-lg bg-n-slate-3 text-n-slate-12 text-sm font-medium cursor-pointer hover:bg-n-slate-4"
                 :class="{ 'opacity-50 cursor-not-allowed': isUploadingMedia }"
               >
@@ -643,9 +649,10 @@ function close() {
             />
           </div>
           <div class="flex flex-col gap-1">
-            <label class="text-xs font-medium text-n-slate-11">{{
-              t('META_TEMPLATES.FORM.BODY')
-            }}</label>
+            <label class="text-xs font-medium text-n-slate-11">
+              {{ t('META_TEMPLATES.FORM.BODY') }}
+              <InfoTip :text="t('META_TEMPLATES.TOOLTIPS.VARIABLES')" />
+            </label>
             <CounterInput v-model="form.caption" multiline :maxlength="1000" />
             <p class="text-xs text-n-slate-9">
               {{ t('META_TEMPLATES.FORM.BODY_HINT') }}
@@ -659,9 +666,10 @@ function close() {
           class="flex flex-col gap-3"
         >
           <div class="flex flex-col gap-1">
-            <label class="text-xs font-medium text-n-slate-11">{{
-              t('META_TEMPLATES.FORM.BODY')
-            }}</label>
+            <label class="text-xs font-medium text-n-slate-11">
+              {{ t('META_TEMPLATES.FORM.BODY') }}
+              <InfoTip :text="t('META_TEMPLATES.TOOLTIPS.VARIABLES')" />
+            </label>
             <CounterInput
               v-model="form.ctaText"
               multiline
@@ -684,6 +692,7 @@ function close() {
                 }}
               </label>
               <button
+                v-tooltip.top="t('META_TEMPLATES.TOOLTIPS.ADD_BUTTON')"
                 type="button"
                 class="text-xs text-n-brand font-medium disabled:opacity-40"
                 :disabled="form.ctaButtons.length >= 3"
@@ -700,6 +709,7 @@ function close() {
               <div class="flex items-center justify-between">
                 <Select v-model="button.type" :options="BUTTON_TYPE_OPTIONS" />
                 <button
+                  v-tooltip.top="t('META_TEMPLATES.TOOLTIPS.REMOVE_BUTTON')"
                   type="button"
                   class="text-n-slate-9 hover:text-red-600"
                   @click="removeCtaButton(idx)"
@@ -725,9 +735,6 @@ function close() {
 
         <!-- Card -->
         <div v-if="form.category === 'card'" class="flex flex-col gap-3">
-          <p class="text-xs text-n-slate-9">
-            {{ t('META_TEMPLATES.FORM.BODY_HINT') }}
-          </p>
           <div class="flex items-center justify-between">
             <label class="text-xs font-medium text-n-slate-11">
               {{ t('META_TEMPLATES.FORM.CARDS') }}
@@ -739,6 +746,7 @@ function close() {
               }}
             </label>
             <button
+              v-tooltip.top="t('META_TEMPLATES.TOOLTIPS.ADD_CARD')"
               type="button"
               class="text-xs text-n-brand font-medium disabled:opacity-40"
               :disabled="form.items.length >= 10"
@@ -757,6 +765,8 @@ function close() {
                 {{ t('META_TEMPLATES.FORM.CARD') }} {{ idx + 1 }}
               </span>
               <button
+                v-if="form.items.length > 1"
+                v-tooltip.top="t('META_TEMPLATES.TOOLTIPS.REMOVE_CARD')"
                 type="button"
                 class="text-n-slate-9 hover:text-red-600"
                 @click="removeCard(idx)"
@@ -776,6 +786,7 @@ function close() {
             />
             <div class="flex items-center gap-3">
               <label
+                v-tooltip.top="t('META_TEMPLATES.TOOLTIPS.SELECT_CARD_IMAGE')"
                 class="inline-flex items-center px-3 py-1.5 rounded-lg bg-n-slate-3 text-n-slate-12 text-sm font-medium cursor-pointer hover:bg-n-slate-4"
                 :class="{
                   'opacity-50 cursor-not-allowed': cardMediaUploading[idx],
@@ -839,6 +850,7 @@ function close() {
                   }}
                 </span>
                 <button
+                  v-tooltip.top="t('META_TEMPLATES.TOOLTIPS.ADD_CARD_BUTTON')"
                   type="button"
                   class="text-xs text-n-brand font-medium disabled:opacity-40"
                   :disabled="item.actions.length >= 3"
@@ -858,6 +870,7 @@ function close() {
                     :options="BUTTON_TYPE_OPTIONS"
                   />
                   <button
+                    v-tooltip.top="t('META_TEMPLATES.TOOLTIPS.REMOVE_BUTTON')"
                     type="button"
                     class="text-n-slate-9 hover:text-red-600"
                     @click="removeCardAction(idx, aIdx)"

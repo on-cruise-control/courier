@@ -23,8 +23,25 @@ export function collectTemplateTexts(content, category) {
   return [];
 }
 
+// Users see and type `{var1}`; templates are stored as `{{1}}`.
+export const toDisplayVars = text => text.replace(/{{(\d+)}}/g, '{var$1}');
+export const toStorageVars = text => text.replace(/{var(\d+)}/g, '{{$1}}');
+
+export function mapStrings(value, fn) {
+  if (typeof value === 'string') return fn(value);
+  if (Array.isArray(value)) return value.map(item => mapStrings(item, fn));
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(
+      Object.entries(value).map(([key, val]) => [key, mapStrings(val, fn)])
+    );
+  }
+  return value;
+}
+
 export function templatePreviewText(content, category) {
-  return collectTemplateTexts(content, category).find(Boolean) || '';
+  return toDisplayVars(
+    collectTemplateTexts(content, category).find(Boolean) || ''
+  );
 }
 
 export function extractVariableKeys(texts) {
@@ -38,6 +55,6 @@ export function renderTemplateText(text, values) {
   if (!text) return text;
   return text.replace(
     /{{([^}]+)}}/g,
-    (match, key) => values[key.trim()] || match
+    (match, key) => values[key.trim()] || toDisplayVars(match)
   );
 }
