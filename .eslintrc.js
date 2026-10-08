@@ -28,6 +28,14 @@ module.exports = {
         'no-console': 'off',
       },
     },
+    {
+      // The Super Admin console is English-only and has no i18n setup.
+      files: ['app/javascript/superadmin_pages/**/*.vue'],
+      rules: {
+        'vue/no-bare-strings-in-template': 'off',
+        '@intlify/vue-i18n/no-raw-text': 'off',
+      },
+    },
   ],
   plugins: ['html', 'prettier'],
   parserOptions: {

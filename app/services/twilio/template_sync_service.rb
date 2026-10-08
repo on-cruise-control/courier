@@ -17,7 +17,11 @@ class Twilio::TemplateSyncService
   end
 
   def update_channel_templates
-    formatted_templates = @templates.map { |template| format_template(template) }
+    previous = (channel.content_templates&.dig('templates') || []).index_by { |t| t['content_sid'] }
+    defaults = DefaultTemplate.where(platform: %w[whatsapp all]).index_by(&:name)
+    formatted_templates = @templates.map do |template|
+      format_template(template).merge(default_markers(previous[template.sid], defaults[template.friendly_name]))
+    end
 
     channel.update!(
       content_templates: { templates: formatted_templates },
@@ -41,6 +45,13 @@ class Twilio::TemplateSyncService
       created_at: template.date_created,
       updated_at: template.date_updated
     }
+  end
+
+  def default_markers(previous_entry, default_template)
+    carried = previous_entry&.slice(*DefaultTemplate::ENTRY_MARKERS)
+    return carried if carried.present?
+
+    default_template&.entry_markers || {}
   end
 
   def mark_templates_updated

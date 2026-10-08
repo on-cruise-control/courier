@@ -4,6 +4,11 @@
       "TITLE": "Template Messages",
       "SUBTITLE": "Manage reusable templates for Facebook and Instagram messages",
       "NEW_BUTTON": "New Template",
+      "DEFAULT_BADGE": "Default",
+      "SYNC_DEFAULTS": "Sync default templates",
+      "SYNCING_DEFAULTS": "Syncing...",
+      "SYNC_DEFAULTS_SUCCESS": "Default templates synced",
+      "SYNC_DEFAULTS_ERROR": "Unable to sync default templates",
       "EMPTY": "No templates found.",
       "LOADING": "Loading templates...",
       "EDIT": "Edit",
@@ -18,6 +23,15 @@
       "DELETE_CANCEL_BUTTON": "Cancel",
       "DELETE_SUCCESS": "Template deleted successfully.",
       "DELETE_ERROR": "Failed to delete template. Please try again."
+    },
+    "VIEW": {
+      "MESSAGE": "Message",
+      "QUICK_REPLIES": "Quick replies",
+      "BUTTONS": "Buttons",
+      "DEFAULT_ACTION": "Default action",
+      "CARD_NUMBER": "Card {number}",
+      "REPLY_BUTTON": "Reply",
+      "CLOSE": "Close"
     },
     "MODAL": {
       "CREATE_TITLE": "New Template",
@@ -56,8 +70,8 @@
       "NAME_INVALID": "Only lowercase letters, numbers, and underscores are allowed.",
       "CATEGORY": "Category",
       "BODY": "Message Body",
-      "BODY_PLACEHOLDER": "Hello {'{{'}1{'}}'}, your order is ready!",
-      "BODY_HINT": "Use {'{{'}1{'}}'}, {'{{'}2{'}}'}, etc. as placeholders for dynamic variables.",
+      "BODY_PLACEHOLDER": "Hello {'{'}var1{'}'}, your order is ready!",
+      "BODY_HINT": "Use {'{'}var1{'}'}, {'{'}var2{'}'}, etc. for dynamic values in your message. Example: Hi {'{'}var1{'}'}, your car is ready. → Hi john, your car is ready.",
       "QUICK_REPLIES": "Quick Replies",
       "QUICK_REPLY_TITLE": "Button text",
       "MEDIA_FILE": "Media File",
@@ -86,6 +100,20 @@
       "CANCEL": "Cancel",
       "SAVE": "Save",
       "SAVING": "Saving..."
+    },
+    "TOOLTIPS": {
+      "NEW_TEMPLATE": "Create a new reusable template",
+      "NAME": "A unique name to find this template later. Only lowercase letters, numbers and underscores.",
+      "VARIABLES": "Add {'{'}var1{'}'}, {'{'}var2{'}'}, etc. for values that change.\nAdd the values when sending.",
+      "ADD_QUICK_REPLY": "Add a quick reply option",
+      "ADD_BUTTON": "Add a button",
+      "ADD_CARD": "Add a new card",
+      "ADD_CARD_BUTTON": "Add a button to this card",
+      "SELECT_FILE": "Select an image or video from your device",
+      "SELECT_CARD_IMAGE": "Select an image for this card",
+      "REMOVE_QUICK_REPLY": "Remove this quick reply",
+      "REMOVE_BUTTON": "Remove this button",
+      "REMOVE_CARD": "Remove this card"
     }
   }
 }

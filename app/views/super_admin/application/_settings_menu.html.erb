@@ -18,6 +18,15 @@
             <span class="ml-2 text-sm"><%= attrs['name'] %></span>
           <% end %>
         </li>
+        <% if attrs['config_key'] == 'default_emails' %>
+          <li class="px-4 mb-1">
+            <% default_templates_url = super_admin_default_templates_url %>
+            <% text_class = current_page?(default_templates_url) ? 'text-woot-500 bg-slate-25' : 'text-slate-800' %>
+            <%= link_to default_templates_url, class: text_class + ' -ml-1 flex items-center px-2 py-1.5 hover:text-woot-500 hover:bg-slate-25 rounded-lg' do %>
+              <span class="ml-2 text-sm">Default Templates</span>
+            <% end %>
+          </li>
+        <% end %>
       <% end %>
     </ul>
   </details>

@@ -304,6 +304,9 @@ Rails.application.routes.draw do
 
             resources :meta_templates, only: [:index, :create, :update, :destroy],
                                        controller: 'inboxes/meta_templates'
+            resource :default_templates, only: [], controller: 'inboxes/default_templates' do
+              post :sync
+            end
           end
 
           resources :inbox_members, only: [:create, :show], param: :inbox_id do
@@ -755,6 +758,10 @@ Rails.application.routes.draw do
       end
       resources :platform_apps, only: [:index, :new, :create, :show, :edit, :update, :destroy]
       resources :platform_banners
+      resources :default_templates, only: [:index, :create, :update, :destroy] do
+        put :settings, on: :collection, action: :update_settings
+        post :upload, on: :collection
+      end
       resource :instance_status, only: [:show]
       resources :email_templates do
         collection do

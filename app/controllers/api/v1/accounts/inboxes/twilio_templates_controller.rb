@@ -3,6 +3,8 @@ class Api::V1::Accounts::Inboxes::TwilioTemplatesController < Api::V1::Accounts:
   before_action :validate_twilio_whatsapp_channel
   before_action :check_admin_authorization?, only: [:create, :update, :destroy, :submit_approval, :sync]
 
+  include DefaultTemplateEntryTracking
+
   TWILIO_TYPE_MAP = {
     'twilio/text' => 'text',
     'twilio/quick-reply' => 'quick_reply',
@@ -32,7 +34,7 @@ class Api::V1::Accounts::Inboxes::TwilioTemplatesController < Api::V1::Accounts:
   def update
     tp = template_params
     result = service.update_template(params[:id], **tp)
-    entry = build_cache_entry(result['sid'], tp)
+    entry = carry_default_markers(find_cached(params[:id]), build_cache_entry(result['sid'], tp))
     replace_in_cache(params[:id], entry)
     render json: { success: true, template: entry }
   rescue StandardError => e
@@ -41,6 +43,7 @@ class Api::V1::Accounts::Inboxes::TwilioTemplatesController < Api::V1::Accounts:
 
   def destroy
     service.delete_template(params[:id])
+    exclude_default_template(find_cached(params[:id]))
     remove_from_cache(params[:id])
     head :ok
   rescue StandardError => e
@@ -67,7 +70,7 @@ class Api::V1::Accounts::Inboxes::TwilioTemplatesController < Api::V1::Accounts:
         name: name,
         category: category
       )
-      entry = rebuild_cache_from_twilio(result)
+      entry = carry_default_markers(find_cached(params[:id]), rebuild_cache_from_twilio(result), modified: false)
       replace_in_cache(params[:id], entry)
       render json: { success: true, new_content_sid: result['sid'] }
     else
@@ -137,7 +140,9 @@ class Api::V1::Accounts::Inboxes::TwilioTemplatesController < Api::V1::Accounts:
     body = params[:body] || ''
     case type
     when 'twilio/quick-reply'
-      { type => { 'body' => body, 'actions' => (params[:buttons] || []).map { |b| { 'type' => 'QUICK_REPLY', 'title' => b[:title], 'id' => b[:id] } } } }
+      { type => { 'body' => body, 'actions' => (params[:buttons] || []).map do |b|
+        { 'type' => 'QUICK_REPLY', 'title' => b[:title], 'id' => b[:id] }
+      end } }
     when 'twilio/call-to-action'
       { type => { 'body' => body, 'actions' => (params[:actions] || []).map(&:stringify_keys) } }
     when 'twilio/card'
@@ -155,6 +160,10 @@ class Api::V1::Accounts::Inboxes::TwilioTemplatesController < Api::V1::Accounts:
     else
       { type => { 'body' => body } }
     end
+  end
+
+  def find_cached(sid)
+    cached_templates.find { |t| t['content_sid'] == sid }
   end
 
   def cached_templates
