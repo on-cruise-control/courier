@@ -6,6 +6,7 @@
 #  content_templates :jsonb
 #  facebook_page_url :string
 #  page_access_token :text             not null
+#  page_name         :string
 #  user_access_token :text             not null
 #  created_at        :datetime         not null
 #  updated_at        :datetime         not null
@@ -31,6 +32,14 @@ class Channel::FacebookPage < ApplicationRecord
 
   self.table_name = 'channel_facebook_pages'
 
+  MESSENGER_FIELDS = %w[
+    messages messaging_postbacks message_deliveries message_echoes message_reads standby messaging_handovers feed
+  ].freeze
+
+  has_many :lead_forms, class_name: 'FacebookLeadForm', foreign_key: :channel_facebook_page_id,
+                        dependent: :destroy, inverse_of: :channel_facebook_page
+  has_many :leads, through: :lead_forms
+
   validates :page_id, uniqueness: { scope: :account_id }
 
   before_save :ensure_facebook_page_url
@@ -52,15 +61,21 @@ class Channel::FacebookPage < ApplicationRecord
 
   def subscribe
     # ref https://developers.facebook.com/docs/messenger-platform/reference/webhook-events
-    Facebook::Messenger::Subscriptions.subscribe(
-      access_token: page_access_token,
-      subscribed_fields: %w[
-        messages messaging_postbacks message_deliveries message_echoes message_reads standby messaging_handovers feed
-      ]
-    )
+    # leadgen needs leads_retrieval; if the page token lacks it, keep the messenger fields working
+    begin
+      subscribe_fields(MESSENGER_FIELDS + %w[leadgen])
+    rescue StandardError => e
+      Rails.logger.warn "Leadgen subscription failed for page #{page_id}: #{e.message}"
+      subscribe_fields(MESSENGER_FIELDS)
+    end
   rescue StandardError => e
     Rails.logger.debug { "Rescued: #{e.inspect}" }
     true
+  end
+
+  # Tells open dashboards to reload their Leads pages
+  def broadcast_leads_changed(form_id = nil)
+    ActionCableBroadcastJob.perform_later(["account_#{account_id}"], 'facebook_lead.created', { account_id: account_id, form_id: form_id })
   end
 
   def unsubscribe
@@ -71,6 +86,10 @@ class Channel::FacebookPage < ApplicationRecord
   end
 
   private
+
+  def subscribe_fields(fields)
+    Facebook::Messenger::Subscriptions.subscribe(access_token: page_access_token, subscribed_fields: fields)
+  end
 
   def ensure_facebook_page_url
     return if facebook_page_url.present?

@@ -137,6 +137,12 @@ Rails.application.routes.draw do
           end
           resources :bookings, only: [:index, :show]
           resources :offers, only: [:index, :create, :update, :destroy]
+          resources :facebook_leads, only: [:index] do
+            collection do
+              get :pages
+              post :sync
+            end
+          end
           resources :sla_policies, only: [:index, :create, :show, :update, :destroy]
           resources :custom_roles, only: [:index, :create, :show, :update, :destroy]
           resources :agent_capacity_policies, only: [:index, :create, :show, :update, :destroy] do

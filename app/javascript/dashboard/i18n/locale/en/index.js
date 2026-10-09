@@ -18,6 +18,7 @@ import csatMgmt from './csatMgmt.json';
 import customRole from './customRole.json';
 import datePicker from './datePicker.json';
 import emoji from './emoji.json';
+import facebookLeads from './facebookLeads.json';
 import general from './general.json';
 import generalSettings from './generalSettings.json';
 import helpCenter from './helpCenter.json';
@@ -67,6 +68,7 @@ export default {
   ...customRole,
   ...datePicker,
   ...emoji,
+  ...facebookLeads,
   ...general,
   ...generalSettings,
   ...helpCenter,

@@ -54,6 +54,7 @@ class ActionCableConnector extends BaseActionCableConnector {
       'voice_call.outbound_connected': this.onVoiceCallOutboundConnected,
       'voice_call.outbound_accepted': this.onVoiceCallOutboundAccepted,
       'voice_call.ended': this.onVoiceCallEnded,
+      'facebook_lead.created': this.onFacebookLeadCreated,
     };
   }
 
@@ -268,13 +269,17 @@ class ActionCableConnector extends BaseActionCableConnector {
     this.app.$store.dispatch('accounts/get', { silent: true });
   };
 
-
   onCacheInvalidate = data => {
     const keys = data.cache_keys;
     this.app.$store.dispatch('labels/revalidate', { newKey: keys.label });
     this.app.$store.dispatch('inboxes/revalidate', { newKey: keys.inbox });
     this.app.$store.dispatch('teams/revalidate', { newKey: keys.team });
     emitter.emit(BUS_EVENTS.ACCOUNT_CACHE_INVALIDATED, data);
+  };
+
+  // eslint-disable-next-line class-methods-use-this
+  onFacebookLeadCreated = data => {
+    emitter.emit(BUS_EVENTS.FACEBOOK_LEAD_CREATED, data);
   };
 
   onVoiceCallIncoming = data => {

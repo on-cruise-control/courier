@@ -1,0 +1,53 @@
+{
+  "FACEBOOK_LEADS": {
+    "FILTERS": {
+      "ALL_PAGES": "All Pages",
+      "DATE_RANGES": {
+        "7": "Last 7 days",
+        "30": "Last 30 days",
+        "90": "Last 3 months",
+        "180": "Last 6 months",
+        "365": "Last year",
+        "ALL": "All time"
+      }
+    },
+    "SEARCH_PLACEHOLDER": "Search leads...",
+    "BACK_TO_FORMS": "Back to Lead Forms",
+    "SYNC": "Sync leads",
+    "SYNC_STARTED": "Sync started. New leads will appear shortly.",
+    "SYNC_ERROR": "Could not start the sync. Please try again.",
+    "FETCH_ERROR": "Could not load leads. Please try again.",
+    "EMPTY": {
+      "TITLE": "No leads yet",
+      "DESCRIPTION": "Leads from your Facebook Lead Ads forms will show up here. Click \"Sync leads\" to fetch them from your connected Facebook Pages.",
+      "NO_RESULTS": "No leads match your search."
+    },
+    "CARD": {
+      "UNKNOWN_NAME": "Unnamed lead",
+      "VIEW_ANSWERS": "View answers",
+      "ORGANIC": "Organic lead",
+      "AD": "Ad",
+      "CAMPAIGN": "Campaign",
+      "ADSET": "Ad set"
+    },
+    "PAGINATION_FOOTER": {
+      "SHOWING": "Showing {startItem} - {endItem} of {totalItems} lead | Showing {startItem} - {endItem} of {totalItems} leads",
+      "FORMS_SHOWING": "Showing {startItem} - {endItem} of {totalItems} form | Showing {startItem} - {endItem} of {totalItems} forms"
+    },
+    "FORMS": {
+      "HEADING": "Lead Forms",
+      "LEADS_COUNT": "{count} leads",
+      "CREATED": "Created {date}",
+      "LAST_SYNCED": "Synced {time}",
+      "NEVER_SYNCED": "Not synced yet",
+      "FORM_ID": "Form ID",
+      "LOCALE": "Locale",
+      "META_LEADS": "Leads on Facebook",
+      "SYNCED_LEADS": "Leads synced",
+      "QUESTIONS": "Questions",
+      "EMPTY_TITLE": "No lead forms yet",
+      "EMPTY_DESCRIPTION": "Click \"Sync leads\" to fetch the Lead Ads forms of your connected Facebook Pages.",
+      "EMPTY_IN_RANGE": "No lead forms were created in this period. Choose a longer date range to see older forms."
+    }
+  }
+}

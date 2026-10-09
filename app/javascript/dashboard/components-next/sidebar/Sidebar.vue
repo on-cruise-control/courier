@@ -292,6 +292,10 @@ const hasTwilioInbox = computed(() =>
   inboxes.value.some(inbox => inbox.channel_type === 'Channel::TwilioSms')
 );
 
+const hasFacebookInbox = computed(() =>
+  inboxes.value.some(inbox => inbox.channel_type === 'Channel::FacebookPage')
+);
+
 const closeMobileSidebar = () => {
   if (!props.isMobileSidebarOpen) return;
   emit('closeMobileSidebar');
@@ -671,6 +675,20 @@ const menuItems = computed(() => {
       to: accountScopedRoute('offers_index'),
       activeOn: ['offers_index'],
     },
+    ...(hasFacebookInbox.value
+      ? [
+          {
+            name: 'Leads',
+            label: t('SIDEBAR.FACEBOOK_LEADS'),
+            icon: 'i-lucide-clipboard-list',
+            to: accountScopedRoute('facebook_lead_forms_index'),
+            activeOn: [
+              'facebook_lead_forms_index',
+              'facebook_form_leads_index',
+            ],
+          },
+        ]
+      : []),
     {
       name: 'Bookings',
       label: t('BOOKINGS.HEADER'),
