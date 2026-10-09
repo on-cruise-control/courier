@@ -6,6 +6,8 @@ export const FACEBOOK_PAGE_SCOPES = [
   'pages_read_engagement',
   'pages_manage_engagement',
   'pages_read_user_content',
+  'leads_retrieval',
+  'pages_manage_ads',
 ];
 
 export const INSTAGRAM_SCOPES = [

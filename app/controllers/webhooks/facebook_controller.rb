@@ -26,6 +26,7 @@ class Webhooks::FacebookController < ActionController::API
   def handle_entries(entries)
     entries.each do |entry|
       if entry['changes'.freeze]
+        handle_leadgen_changes(entry)
         handle_changes(entry)
       elsif entry['messaging'.freeze]
         handle_messaging(entry)
@@ -60,6 +61,13 @@ class Webhooks::FacebookController < ActionController::API
       end
 
       handle_conversation_and_message(changes, page, contact_inbox, entry[:id])
+    end
+  end
+
+  def handle_leadgen_changes(entry)
+    entry['changes'.freeze].select { |change| change['field'] == 'leadgen' }.each do |change|
+      value = change['value']
+      Facebook::LeadAds::LeadgenJob.perform_later(value['page_id'], value['form_id'], value['leadgen_id'])
     end
   end
 
