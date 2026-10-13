@@ -17,6 +17,12 @@ import { BUS_EVENTS } from 'shared/constants/busEvents';
 import { useSidebarKeyboardShortcuts } from 'dashboard/components-next/sidebar/useSidebarKeyboardShortcuts';
 import { FEATURE_FLAGS } from 'dashboard/featureFlags';
 import Icon from 'next/icon/Icon.vue';
+import {
+  DropdownContainer,
+  DropdownBody,
+  DropdownSection,
+  DropdownItem,
+} from 'next/dropdown-menu/base';
 
 const props = defineProps({
   isMobileSidebarOpen: {
@@ -37,7 +43,8 @@ const emit = defineEmits([
 
 const { t } = useI18n();
 const store = useStore();
-const { accountId, accountScopedRoute } = useAccount();
+const { accountId, accountScopedRoute, currentAccount } = useAccount();
+const currentUser = useMapGetter('getCurrentUser');
 const notificationsMeta = useMapGetter('notifications/getMeta');
 
 const { shouldShow } = usePolicy();
@@ -114,6 +121,17 @@ const isAllowed = to => {
 
   return shouldShow(featureFlag, permissions, installationType);
 };
+
+// Block pages the sidebar hides (feature flag, installation type) when opened via URL
+watch(
+  () => route.fullPath,
+  () => {
+    if (route.name && route.name !== 'home' && !isAllowed(route)) {
+      router.replace(accountScopedRoute('home'));
+    }
+  },
+  { immediate: true }
+);
 
 // Dynamic data for sidebars
 const inboxes = useMapGetter('inboxes/getInboxes');
@@ -207,6 +225,14 @@ const isGroupActive = item => {
 
 const hasFacebookInbox = computed(() =>
   inboxes.value.some(inbox => inbox.channel_type === 'Channel::FacebookPage')
+);
+const showLeads = computed(
+  () =>
+    hasFacebookInbox.value &&
+    isFeatureEnabledonAccount.value(
+      accountId.value,
+      FEATURE_FLAGS.FACEBOOK_LEADS
+    )
 );
 
 const menuItems = computed(() => {
@@ -511,7 +537,7 @@ const menuItems = computed(() => {
       to: accountScopedRoute('offers_index'),
       activeOn: ['offers_index'],
     },
-    ...(hasFacebookInbox.value
+    ...(showLeads.value
       ? [
           {
             name: 'Leads',
@@ -975,6 +1001,22 @@ const toggleSidebarCollapse = () => {
   }
 };
 
+const sortedAccounts = computed(() =>
+  [...(currentUser.value.accounts || [])].sort((a, b) =>
+    a.name.localeCompare(b.name)
+  )
+);
+
+const onChangeAccount = newId => {
+  const hasIdParams = Object.keys(route.params).length > 1;
+  window.location.href = hasIdParams
+    ? `/app/accounts/${newId}/dashboard`
+    : `${window.location.pathname}${window.location.search}`.replace(
+        /accounts\/\d+/,
+        `accounts/${newId}`
+      );
+};
+
 useEventListener(document, 'mousemove', onResizeMove);
 useEventListener(document, 'mouseup', onResizeEnd);
 useEventListener(document, 'touchmove', onResizeMove, { passive: false });
@@ -1020,6 +1062,98 @@ useEventListener(document, 'touchend', onResizeEnd);
             >{{ t('SIDEBAR.BRAND_NAME') }}</span
           >
         </div>
+      </div>
+
+      <!-- Account switcher -->
+      <div
+        class="px-2 pb-2 w-full"
+        :class="isCollapsed ? 'flex justify-center' : ''"
+      >
+        <DropdownContainer
+          class="!space-y-0"
+          :class="isCollapsed ? '' : 'w-full'"
+        >
+          <template #trigger="{ toggle, isOpen }">
+            <button
+              v-tooltip="{
+                content: isCollapsed
+                  ? t('SIDEBAR_ITEMS.SWITCH_ACCOUNT')
+                  : currentAccount.name,
+                placement: 'right',
+              }"
+              class="flex items-center gap-2 rounded-xl text-white hover:bg-white/25 transition-all cursor-pointer"
+              :class="[
+                isOpen ? 'bg-white/25' : 'bg-white/15',
+                isCollapsed ? 'size-10 justify-center' : 'w-full px-3 h-10',
+              ]"
+              @click="toggle"
+            >
+              <svg
+                v-if="isCollapsed"
+                class="size-5 flex-shrink-0"
+                viewBox="0 0 64 64"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="6"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M7 25 A25 25 0 0 1 49 13" />
+                <path d="M43 13 L49 13 L49 7" />
+                <path d="M57 39 A25 25 0 0 1 15 51" />
+                <path d="M21 51 L15 51 L15 57" />
+              </svg>
+              <template v-if="!isCollapsed">
+                <span
+                  class="flex-1 min-w-0 truncate text-start text-sm font-medium"
+                >
+                  {{ currentAccount.name }}
+                </span>
+                <span
+                  class="i-lucide-chevrons-up-down size-4 flex-shrink-0 text-white/70"
+                />
+              </template>
+            </button>
+          </template>
+          <DropdownBody
+            class="top-full z-50 mt-2 w-max min-w-80 max-w-[calc(100vw-1.5rem)] ltr:left-0 rtl:right-0"
+          >
+            <DropdownSection :title="t('SIDEBAR_ITEMS.SWITCH_ACCOUNT')">
+              <DropdownItem
+                v-for="account in sortedAccounts"
+                :key="account.id"
+                class="cursor-pointer"
+                @click="onChangeAccount(account.id)"
+              >
+                <template #label>
+                  <div class="flex gap-2 items-center text-left min-w-0 w-full">
+                    <span
+                      class="flex-grow min-w-0 break-words text-n-slate-12"
+                      :title="account.name"
+                    >
+                      {{ account.name }}
+                    </span>
+                    <div class="flex-shrink-0 w-px h-3 bg-n-strong" />
+                    <span
+                      class="capitalize text-n-slate-11 flex-shrink-0 whitespace-nowrap"
+                    >
+                      {{
+                        account.custom_role_id
+                          ? account.custom_role.name
+                          : account.role
+                      }}
+                    </span>
+                  </div>
+                  <Icon
+                    v-show="account.id === accountId"
+                    icon="i-lucide-check"
+                    class="text-n-teal-11 size-5 ml-2 flex-shrink-0"
+                  />
+                </template>
+              </DropdownItem>
+            </DropdownSection>
+          </DropdownBody>
+        </DropdownContainer>
       </div>
 
       <!-- Expanded: compose button beside the expand/collapse toggle -->

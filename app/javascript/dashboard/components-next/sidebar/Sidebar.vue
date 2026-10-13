@@ -295,6 +295,14 @@ const hasTwilioInbox = computed(() =>
 const hasFacebookInbox = computed(() =>
   inboxes.value.some(inbox => inbox.channel_type === 'Channel::FacebookPage')
 );
+const showLeads = computed(
+  () =>
+    hasFacebookInbox.value &&
+    isFeatureEnabledonAccount.value(
+      accountId.value,
+      FEATURE_FLAGS.FACEBOOK_LEADS
+    )
+);
 
 const closeMobileSidebar = () => {
   if (!props.isMobileSidebarOpen) return;
@@ -675,7 +683,7 @@ const menuItems = computed(() => {
       to: accountScopedRoute('offers_index'),
       activeOn: ['offers_index'],
     },
-    ...(hasFacebookInbox.value
+    ...(showLeads.value
       ? [
           {
             name: 'Leads',
