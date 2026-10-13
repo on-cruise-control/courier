@@ -42,6 +42,8 @@ import CSATBubble from './bubbles/CSAT.vue';
 import FormBubble from './bubbles/Form.vue';
 import VoiceCallBubble from './bubbles/VoiceCall.vue';
 import CardsBubble from './bubbles/Cards.vue';
+import CallToActionBubble from './bubbles/CallToAction.vue';
+import QuickReplyBubble from './bubbles/QuickReply.vue';
 
 import MessageError from './MessageError.vue';
 import ContextMenu from 'dashboard/modules/conversations/components/MessageContextMenu.vue';
@@ -300,13 +302,19 @@ const componentToRender = computed(() => {
     return CardsBubble;
   }
 
+  if (props.contentType === CONTENT_TYPES.CALL_TO_ACTION) {
+    return CallToActionBubble;
+  }
+
   if (props.contentType === CONTENT_TYPES.INPUT_CSAT) {
     return CSATBubble;
   }
 
-  if (
-    [CONTENT_TYPES.INPUT_SELECT, CONTENT_TYPES.FORM].includes(props.contentType)
-  ) {
+  if (props.contentType === CONTENT_TYPES.INPUT_SELECT) {
+    return QuickReplyBubble;
+  }
+
+  if (props.contentType === CONTENT_TYPES.FORM) {
     return FormBubble;
   }
 
@@ -412,6 +420,7 @@ const shouldRenderMessage = computed(() => {
   const isFailedMessage = props.status === MESSAGE_STATUS.FAILED;
   const hasExternalError = !!props.contentAttributes?.externalError;
   const isCards = props.contentType === CONTENT_TYPES.CARDS;
+  const isCallToAction = props.contentType === CONTENT_TYPES.CALL_TO_ACTION;
 
   return (
     hasAttachments ||
@@ -421,7 +430,8 @@ const shouldRenderMessage = computed(() => {
     isAnIntegrationMessage ||
     isFailedMessage ||
     hasExternalError ||
-    isCards
+    isCards ||
+    isCallToAction
   );
 });
 

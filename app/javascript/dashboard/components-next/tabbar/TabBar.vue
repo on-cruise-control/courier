@@ -55,6 +55,7 @@ onMounted(() => {
 });
 
 const selectTab = index => {
+  if (props.tabs[index]?.disabled) return;
   emit('tabChanged', props.tabs[index]);
 };
 
@@ -82,7 +83,8 @@ const showDivider = index => {
       <button
         :ref="el => (tabRefs[index] = el)"
         type="button"
-        class="relative z-10 px-4 truncate py-1.5 text-sm border-0 outline-1 outline-transparent rounded-lg transition-all duration-200 ease-out hover:text-n-brand active:scale-[1.02]"
+        :disabled="tab.disabled"
+        class="relative z-10 px-4 truncate py-1.5 text-sm border-0 outline-1 outline-transparent rounded-lg transition-all duration-200 ease-out hover:text-n-brand active:scale-[1.02] disabled:pointer-events-none disabled:opacity-40 disabled:hover:text-n-slate-10"
         :class="[
           activeTab === index
             ? 'text-n-blue-11 scale-100'

@@ -5,6 +5,7 @@ import { useAlert } from 'dashboard/composables';
 import { useEmitter } from 'dashboard/composables/emitter';
 import { BUS_EVENTS } from 'shared/constants/busEvents';
 import twilioTemplatesApi from 'dashboard/api/twilioTemplates';
+import defaultTemplatesApi from 'dashboard/api/defaultTemplates';
 import Icon from 'dashboard/components-next/icon/Icon.vue';
 import TemplateModal from './TemplateModal.vue';
 import SubmitApprovalModal from './SubmitApprovalModal.vue';
@@ -20,6 +21,7 @@ const { t } = useI18n();
 const templates = ref([]);
 const isLoading = ref(false);
 const isSyncing = ref(false);
+const isSyncingDefaults = ref(false);
 const showTemplateModal = ref(false);
 const showApprovalModal = ref(false);
 const editingTemplate = ref(null);
@@ -112,7 +114,7 @@ async function fetchTemplates() {
     templates.value = data.templates || [];
     if (activeTab.value !== 'all') {
       const stillHasItems = templates.value.some(
-        t => (t.status || 'unsubmitted') === activeTab.value
+        tpl => (tpl.status || 'unsubmitted') === activeTab.value
       );
       if (!stillHasItems) activeTab.value = 'all';
     }
@@ -155,6 +157,19 @@ async function handleSync() {
     useAlert(t('TWILIO_TEMPLATES.LIST.SYNC_ERROR'));
   } finally {
     isSyncing.value = false;
+  }
+}
+
+async function handleSyncDefaults() {
+  isSyncingDefaults.value = true;
+  try {
+    const { data } = await defaultTemplatesApi.sync(props.inbox.id);
+    templates.value = data.templates || [];
+    useAlert(t('META_TEMPLATES.LIST.SYNC_DEFAULTS_SUCCESS'));
+  } catch {
+    useAlert(t('META_TEMPLATES.LIST.SYNC_DEFAULTS_ERROR'));
+  } finally {
+    isSyncingDefaults.value = false;
   }
 }
 
@@ -303,6 +318,24 @@ onBeforeUnmount(() => {
             </span>
           </button>
           <button
+            class="flex items-center gap-1.5 px-3 py-2 text-sm border border-n-weak text-n-slate-11 hover:bg-n-slate-2 rounded-lg transition-colors disabled:opacity-50"
+            :disabled="isSyncingDefaults"
+            @click="handleSyncDefaults"
+          >
+            <Icon
+              icon="i-lucide-copy-plus"
+              class="size-4"
+              :class="{ 'animate-pulse': isSyncingDefaults }"
+            />
+            <span class="hidden sm:inline">
+              {{
+                isSyncingDefaults
+                  ? t('META_TEMPLATES.LIST.SYNCING_DEFAULTS')
+                  : t('META_TEMPLATES.LIST.SYNC_DEFAULTS')
+              }}
+            </span>
+          </button>
+          <button
             class="flex items-center gap-1.5 px-3 py-2 text-sm bg-[#182933] hover:bg-[#182933]/90 text-white rounded-lg transition-colors"
             @click="openCreate"
           >
@@ -345,9 +378,19 @@ onBeforeUnmount(() => {
             {{ tab.label }}
             <span
               class="ml-1.5 text-xs px-1.5 py-0.5 rounded-full"
-              :class="activeTab === tab.key ? 'bg-[#182933]/10 text-[#182933] dark:bg-[#396681]/20 dark:text-[#7eb8d4]' : 'bg-n-slate-3 text-n-slate-9'"
+              :class="
+                activeTab === tab.key
+                  ? 'bg-[#182933]/10 text-[#182933] dark:bg-[#396681]/20 dark:text-[#7eb8d4]'
+                  : 'bg-n-slate-3 text-n-slate-9'
+              "
             >
-              {{ tab.key === 'all' ? templates.length : templates.filter(t => (t.status || 'unsubmitted') === tab.key).length }}
+              {{
+                tab.key === 'all'
+                  ? templates.length
+                  : templates.filter(
+                      t => (t.status || 'unsubmitted') === tab.key
+                    ).length
+              }}
             </span>
           </button>
         </div>
@@ -379,7 +422,11 @@ onBeforeUnmount(() => {
         class="flex flex-col items-center justify-center py-16 gap-4 border-2 border-dashed border-n-weak rounded-2xl bg-n-slate-1"
       >
         <p class="text-lg text-n-slate-9">
-          {{ activeTab === 'all' ? t('TWILIO_TEMPLATES.LIST.EMPTY') : t('TWILIO_TEMPLATES.LIST.EMPTY_FILTERED') }}
+          {{
+            activeTab === 'all'
+              ? t('TWILIO_TEMPLATES.LIST.EMPTY')
+              : t('TWILIO_TEMPLATES.LIST.EMPTY_FILTERED')
+          }}
         </p>
         <button
           v-if="activeTab === 'all'"
@@ -397,7 +444,9 @@ onBeforeUnmount(() => {
           :key="tpl.content_sid"
           class="group relative flex flex-col gap-3 p-4 bg-n-slate-1 border border-n-strong rounded-xl hover:border-[#182933]/40 hover:shadow-sm transition-all"
         >
-          <div class="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between sm:gap-2">
+          <div
+            class="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between sm:gap-2"
+          >
             <div class="flex items-center gap-2 min-w-0">
               <button
                 class="text-sm font-semibold text-n-slate-12 truncate hover:text-[#182933] transition-colors text-left"
@@ -406,6 +455,12 @@ onBeforeUnmount(() => {
                 {{ tpl.friendly_name }}
               </button>
               <span
+                v-if="tpl.is_default"
+                class="hidden sm:inline-flex text-xs px-2 py-0.5 bg-n-brand/10 text-n-brand rounded-md shrink-0 font-medium"
+              >
+                {{ t('META_TEMPLATES.LIST.DEFAULT_BADGE') }}
+              </span>
+              <span
                 class="hidden sm:inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full capitalize shrink-0 font-medium"
                 :class="statusConfig(tpl.status).classes"
               >
@@ -413,7 +468,9 @@ onBeforeUnmount(() => {
                 {{ statusLabel(tpl.status) }}
               </span>
             </div>
-            <div class="flex items-center justify-between sm:justify-end gap-2 shrink-0">
+            <div
+              class="flex items-center justify-between sm:justify-end gap-2 shrink-0"
+            >
               <span
                 class="sm:hidden inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full capitalize shrink-0 font-medium"
                 :class="statusConfig(tpl.status).classes"

@@ -177,4 +177,11 @@ export default {
 .v-popper--theme-tooltip .v-popper__arrow-container {
   display: none;
 }
+
+.meta-template-category-tooltip .v-popper__inner {
+  font-size: 0.8125rem !important;
+  line-height: 1.25rem;
+  max-width: 16rem;
+  padding: 8px 10px !important;
+}
 </style>

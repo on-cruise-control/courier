@@ -18,6 +18,7 @@ import csatMgmt from './csatMgmt.json';
 import customRole from './customRole.json';
 import datePicker from './datePicker.json';
 import emoji from './emoji.json';
+import facebookLeads from './facebookLeads.json';
 import general from './general.json';
 import generalSettings from './generalSettings.json';
 import helpCenter from './helpCenter.json';
@@ -28,6 +29,7 @@ import integrations from './integrations.json';
 import labelsMgmt from './labelsMgmt.json';
 import login from './login.json';
 import macros from './macros.json';
+import metaTemplates from './metaTemplates.json';
 import report from './report.json';
 import resetPassword from './resetPassword.json';
 import search from './search.json';
@@ -66,6 +68,7 @@ export default {
   ...customRole,
   ...datePicker,
   ...emoji,
+  ...facebookLeads,
   ...general,
   ...generalSettings,
   ...helpCenter,
@@ -89,6 +92,7 @@ export default {
   ...whatsappTemplates,
   ...contentTemplates,
   ...twilioTemplates,
+  ...metaTemplates,
   ...mfa,
   ...onboarding,
   ...yearInReview,

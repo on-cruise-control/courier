@@ -68,6 +68,7 @@ class Inbox < ApplicationRecord
   has_many :conversations, dependent: :destroy_async
   has_many :messages, dependent: :destroy_async
 
+  has_many :default_template_exclusions, dependent: :delete_all
   has_one :inbox_assignment_policy, dependent: :destroy
   has_one :assignment_policy, through: :inbox_assignment_policy
   has_one :agent_bot_inbox, dependent: :destroy_async
@@ -81,6 +82,7 @@ class Inbox < ApplicationRecord
 
   after_create_commit :dispatch_create_event
   after_create_commit :assign_stark_as_default_bot
+  after_create_commit :sync_default_templates
   after_update_commit :dispatch_update_event
   after_save :ensure_instagram_profile_url
 
@@ -285,6 +287,10 @@ class Inbox < ApplicationRecord
 
   def check_channel_type?
     ['Channel::Email', 'Channel::Api', 'Channel::WebWidget'].include?(channel_type)
+  end
+
+  def sync_default_templates
+    DefaultTemplates::SyncJob.perform_later(id) if DefaultTemplates::Settings.enabled?(:auto_sync_on_inbox_create)
   end
 
   # Assigns the default Stark bot to the inbox if it exists

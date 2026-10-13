@@ -87,8 +87,8 @@ describe Instagram::SendOnInstagramService do
           allow(service).to receive(:send_to_instagram_page)
           service.perform
 
-          # Verify the service was called (note: service only sends first attachment)
-          expect(service).to have_received(:send_to_instagram_page).once
+          # Verify the service sends every attachment, not just the first
+          expect(service).to have_received(:send_to_instagram_page).twice
         end
 
         it 'if message with attachment is sent from chatwoot and is outgoing' do

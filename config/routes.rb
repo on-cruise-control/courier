@@ -137,6 +137,12 @@ Rails.application.routes.draw do
           end
           resources :bookings, only: [:index, :show]
           resources :offers, only: [:index, :create, :update, :destroy]
+          resources :facebook_leads, only: [:index] do
+            collection do
+              get :pages
+              post :sync
+            end
+          end
           resources :sla_policies, only: [:index, :create, :show, :update, :destroy]
           resources :custom_roles, only: [:index, :create, :show, :update, :destroy]
           resources :agent_capacity_policies, only: [:index, :create, :show, :update, :destroy] do
@@ -300,6 +306,12 @@ Rails.application.routes.draw do
               member do
                 post :submit_approval
               end
+            end
+
+            resources :meta_templates, only: [:index, :create, :update, :destroy],
+                                       controller: 'inboxes/meta_templates'
+            resource :default_templates, only: [], controller: 'inboxes/default_templates' do
+              post :sync
             end
           end
 
@@ -752,6 +764,10 @@ Rails.application.routes.draw do
       end
       resources :platform_apps, only: [:index, :new, :create, :show, :edit, :update, :destroy]
       resources :platform_banners
+      resources :default_templates, only: [:index, :create, :update, :destroy] do
+        put :settings, on: :collection, action: :update_settings
+        post :upload, on: :collection
+      end
       resource :instance_status, only: [:show]
       resources :email_templates do
         collection do

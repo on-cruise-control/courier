@@ -1,9 +1,11 @@
 class ContentAttributeValidator < ActiveModel::Validator
-  ALLOWED_SELECT_ITEM_KEYS = [:title, :value].freeze
-  ALLOWED_CARD_ITEM_KEYS = [:title, :description, :media_url, :actions, :vehicle_id].freeze
+  ALLOWED_SELECT_ITEM_KEYS = [:title, :value, :content_type].freeze
+  ALLOWED_CARD_ITEM_KEYS = [:title, :description, :media_url, :actions, :vehicle_id, :default_action].freeze
   ALLOWED_CARD_ITEM_ACTION_KEYS = [:text, :type, :payload, :uri].freeze
   ALLOWED_FORM_ITEM_KEYS = [:type, :placeholder, :label, :name, :options, :default, :required, :pattern, :title, :pattern_error].freeze
   ALLOWED_ARTICLE_KEYS = [:title, :description, :link].freeze
+  ALLOWED_CTA_ITEM_KEYS = [:text, :buttons].freeze
+  ALLOWED_CTA_BUTTON_KEYS = [:type, :title, :payload, :uri].freeze
 
   def validate(record)
     case record.content_type
@@ -20,6 +22,10 @@ class ContentAttributeValidator < ActiveModel::Validator
     when 'article'
       validate_items!(record)
       validate_item_attributes!(record, ALLOWED_ARTICLE_KEYS)
+    when 'call_to_action'
+      validate_items!(record)
+      validate_item_attributes!(record, ALLOWED_CTA_ITEM_KEYS)
+      validate_item_buttons!(record)
     end
   end
 
@@ -37,16 +43,22 @@ class ContentAttributeValidator < ActiveModel::Validator
   end
 
   def validate_item_actions!(record)
-    if record.items.select { |item| item[:actions].blank? }.present?
-      record.errors.add(:content_attributes, 'contains items missing actions') && return
-    end
-
-    validate_item_action_attributes!(record)
-  end
-
-  def validate_item_action_attributes!(record)
-    item_action_keys = record.items.collect { |item| item[:actions].collect(&:keys) }
+    item_action_keys = record.items.collect { |item| item[:actions].to_a.collect(&:keys) }
     invalid_keys = item_action_keys.flatten.compact.map(&:to_sym) - ALLOWED_CARD_ITEM_ACTION_KEYS
     record.errors.add(:content_attributes, "contains invalid keys for actions:  #{invalid_keys}") if invalid_keys.present?
+  end
+
+  def validate_item_buttons!(record)
+    if record.items.select { |item| item[:buttons].blank? }.present?
+      record.errors.add(:content_attributes, 'contains items missing buttons') && return
+    end
+
+    validate_item_button_attributes!(record)
+  end
+
+  def validate_item_button_attributes!(record)
+    item_button_keys = record.items.collect { |item| item[:buttons].collect(&:keys) }
+    invalid_keys = item_button_keys.flatten.compact.map(&:to_sym) - ALLOWED_CTA_BUTTON_KEYS
+    record.errors.add(:content_attributes, "contains invalid keys for buttons: #{invalid_keys}") if invalid_keys.present?
   end
 end

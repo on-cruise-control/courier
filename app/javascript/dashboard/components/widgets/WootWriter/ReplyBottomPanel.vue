@@ -93,6 +93,10 @@ export default {
       type: Boolean,
       default: false,
     },
+    enableMetaTemplates: {
+      type: Boolean,
+      default: false,
+    },
     conversationId: {
       type: Number,
       required: true,
@@ -131,6 +135,7 @@ export default {
     'toggleInsertArticle',
     'selectWhatsappTemplate',
     'selectContentTemplate',
+    'selectMetaTemplate',
     'toggleQuotedReply',
   ],
   setup(props) {
@@ -372,6 +377,17 @@ export default {
         faded
         sm
         @click="$emit('selectContentTemplate')"
+      />
+      <NextButton
+        v-if="enableMetaTemplates"
+        v-tooltip.top-end="$t('CONVERSATION.FOOTER.META_TEMPLATES')"
+        :icon="
+          isAnInstagramChannel ? 'i-ph-instagram-logo' : 'i-ph-facebook-logo'
+        "
+        slate
+        faded
+        sm
+        @click="$emit('selectMetaTemplate')"
       />
       <VideoCallButton
         v-if="

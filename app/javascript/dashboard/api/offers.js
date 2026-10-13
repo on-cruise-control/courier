@@ -6,12 +6,16 @@ const buildFormData = ({
   start_date: startDate,
   end_date: endDate,
   offer_document: offerDocument,
+  source_url: sourceUrl,
+  remove_offer_document: removeOfferDocument,
 }) => {
   const formData = new FormData();
   if (title !== undefined) formData.append('title', title);
   if (startDate !== undefined) formData.append('start_date', startDate);
   if (endDate !== undefined) formData.append('end_date', endDate);
   if (offerDocument) formData.append('offer_document', offerDocument);
+  if (sourceUrl !== undefined) formData.append('source_url', sourceUrl);
+  if (removeOfferDocument) formData.append('remove_offer_document', 'true');
   return formData;
 };
 

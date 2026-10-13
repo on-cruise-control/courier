@@ -94,9 +94,9 @@ describe Offers::OfferService do
         allow(described_class).to receive(:post).and_return(mock_response)
       end
 
-      it 'returns the error message and status from the API' do
+      it 'returns the field-specific error message and status from the API' do
         result = service.create_offer(params)
-        expect(result[:error]).to eq('Invalid data')
+        expect(result[:error]).to eq('This field is required.')
         expect(result[:status]).to eq(422)
       end
     end

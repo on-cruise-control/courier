@@ -60,9 +60,8 @@ RSpec.describe ContentAttributeValidator, type: :validator do
     context 'with items missing actions' do
       let(:items) { [{ title: 'Card 1', description: 'Desc' }] }
 
-      it 'fails validation' do
-        expect(model.valid?).to be false
-        expect(model.errors[:content_attributes]).to include(a_string_matching('missing actions'))
+      it 'passes validation since actions are optional' do
+        expect(model.valid?).to be true
       end
     end
   end

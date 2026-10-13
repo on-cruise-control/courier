@@ -206,8 +206,8 @@ describe Facebook::SendOnFacebookService do
                                                       message: {
                                                         text: message.content,
                                                         quick_replies: [
-                                                          { content_type: 'text', payload: 'text 1', title: 'text 1' },
-                                                          { content_type: 'text', payload: 'text 2', title: 'text 2' }
+                                                          { content_type: 'text', payload: 'value 1', title: 'text 1' },
+                                                          { content_type: 'text', payload: 'value 2', title: 'text 2' }
                                                         ]
                                                       },
                                                       messaging_type: 'RESPONSE'

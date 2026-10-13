@@ -3,7 +3,7 @@
 class Integrations::Facebook::MessageParser
   def initialize(response_json)
     @response = JSON.parse(response_json)
-  
+
     # Support both formats:
     # - Wrapped inside "messaging"/"standby" array
     # - Wrapped inside "messaging"/"standby" object (non-standard but sometimes happens)
@@ -21,14 +21,17 @@ class Integrations::Facebook::MessageParser
         @response
       end
   end
-  
 
   def message
-    @messaging["message"]
-  end  
+    @messaging['message']
+  end
+
+  def postback
+    @messaging['postback']
+  end
 
   def read
-    @messaging["read"]
+    @messaging['read']
   end
 
   def sender_id
@@ -44,7 +47,7 @@ class Integrations::Facebook::MessageParser
   end
 
   def content
-    @messaging.dig('message', 'text')
+    @messaging.dig('message', 'text') || postback&.dig('title')
   end
 
   def sequence

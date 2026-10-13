@@ -51,6 +51,10 @@ Rails.application.reloader.to_prepare do
     Webhooks::FacebookEventsJob.perform_later(message.to_json)
   end
 
+  Facebook::Messenger::Bot.on :postback do |postback|
+    Webhooks::FacebookEventsJob.perform_later(postback.to_json)
+  end
+
   Facebook::Messenger::Bot.on :delivery do |delivery|
     Rails.logger.info "Recieved delivery status #{delivery.to_json}"
     Webhooks::FacebookDeliveryJob.perform_later(delivery.to_json)

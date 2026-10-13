@@ -80,6 +80,7 @@ class Api::V1::Accounts::CallbacksController < Api::V1::Accounts::BaseController
       fb_page&.update!(user_access_token: @user_access_token, page_access_token: access_token)
       set_instagram_id(access_token, fb_page)
       fb_page&.reauthorized!
+      fb_page&.subscribe
     rescue StandardError => e
       ChatwootExceptionTracker.new(e).capture_exception
       Rails.logger.error "Error in update_fb_page: #{e.message}"

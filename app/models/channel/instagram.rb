@@ -4,6 +4,7 @@
 #
 #  id                    :bigint           not null, primary key
 #  access_token          :string           not null
+#  content_templates     :jsonb
 #  expires_at            :datetime         not null
 #  instagram_profile_url :string
 #  created_at            :datetime         not null

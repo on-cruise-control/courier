@@ -12,26 +12,141 @@ class Instagram::SendOnInstagramService < Base::SendOnChannelService
   end
 
   def perform_reply
-    if message.attachments.present?
-      send_to_instagram_page attachment_message_params
-    else
-      send_to_instagram_page message_params
+    if send_reply_for_content_type
+      message.mark_sent!
+      enqueue_next_message
     end
   rescue StandardError => e
     ChatwootExceptionTracker.new(e, account: message.account, user: message.sender).capture_exception
   end
 
+  def send_reply_for_content_type
+    case message.content_type
+    when 'cards' then send_cards_reply
+    when 'call_to_action' then send_call_to_action_reply
+    else send_default_reply
+    end
+  end
+
+  def send_cards_reply
+    items = message.content_attributes&.dig('items')
+    return true unless items.is_a?(Array) && items.any?
+
+    send_to_instagram_page(ig_cards_template_params(items))
+  end
+
+  def send_call_to_action_reply
+    item = message.content_attributes&.dig('items')&.first
+    return true if item.blank?
+
+    send_to_instagram_page(ig_button_template_params(item))
+  end
+
+  def send_default_reply
+    success = true
+    success = send_to_instagram_page(message_params) if message.content.present?
+
+    message.attachments.each do |attachment|
+      result = send_to_instagram_page(attachment_message_params(attachment))
+      success = false if result == false
+    end
+
+    success
+  end
+
   def message_params
     {
       recipient: { id: contact.get_source_id(inbox.id) },
+      message: ig_text_message_payload
+    }.tap { |params| merge_human_agent_tag(params) }
+  end
+
+  def ig_text_message_payload
+    if message.content_type == 'input_select' && message.content_attributes['items'].any?
+      {
+        text: message.content,
+        quick_replies: message.content_attributes['items'].first(13).map { |item| ig_quick_reply(item) }
+      }
+    else
+      { text: message.content }
+    end
+  end
+
+  def ig_quick_reply(item)
+    {
+      content_type: item['content_type'].presence || 'text',
+      title: item['title'].to_s.truncate(20),
+      payload: (item['value'].presence || item['title']).to_s
+    }
+  end
+
+  def ig_cards_template_params(items)
+    elements = items.first(10).filter_map { |item| ig_card_element(item) }
+
+    {
+      recipient: { id: contact.get_source_id(inbox.id) },
       message: {
-        text: message.content
+        attachment: {
+          type: 'template',
+          payload: {
+            template_type: 'generic',
+            elements: elements
+          }
+        }
       }
     }.tap { |params| merge_human_agent_tag(params) }
   end
 
-  def attachment_message_params
-    attachment = message.attachments.first
+  def ig_card_element(item)
+    title = item['title'].presence
+    return unless title
+
+    element = { title: title.truncate(80) }
+    element[:image_url] = item['media_url'] if item['media_url'].present?
+    element[:subtitle] = item['description'].truncate(80) if item['description'].present?
+
+    buttons = item['actions'].to_a.first(3).filter_map { |action| ig_template_button(action) }
+    element[:buttons] = buttons if buttons.any?
+    element[:default_action] = ig_default_action(item) if ig_default_action(item)
+
+    element
+  end
+
+  def ig_default_action(item)
+    url = item['default_action']&.[]('url')
+    { type: 'web_url', url: url } if url.present?
+  end
+
+  def ig_button_template_params(item)
+    buttons = item['buttons'].to_a.first(3).filter_map { |button| ig_template_button(button) }
+
+    {
+      recipient: { id: contact.get_source_id(inbox.id) },
+      message: {
+        attachment: {
+          type: 'template',
+          payload: {
+            template_type: 'button',
+            text: item['text'].to_s.truncate(640),
+            buttons: buttons
+          }
+        }
+      }
+    }.tap { |params| merge_human_agent_tag(params) }
+  end
+
+  def ig_template_button(button)
+    return if button.blank?
+
+    title = (button['title'].presence || button['text'].presence || 'View Details').truncate(20)
+    if button['type'] == 'web_url'
+      { type: 'web_url', title: title, url: button['uri'].to_s }
+    else
+      { type: 'postback', title: title, payload: (button['payload'] || button['uri']).to_s.truncate(1000) }
+    end
+  end
+
+  def attachment_message_params(attachment)
     # Prefer locally stored file URL over external CDN URL, which may have expired
     url = attachment.file.attached? ? attachment.download_url : (attachment.external_url.presence || attachment.download_url)
     {
@@ -77,7 +192,8 @@ class Instagram::SendOnInstagramService < Base::SendOnChannelService
     url = 'https://graph.instagram.com/v23.0/me/messages'
     response = HTTParty.post(
       url,
-      body: message_content,
+      body: message_content.to_json,
+      headers: { 'Content-Type' => 'application/json' },
       query: query
     )
 
@@ -90,11 +206,11 @@ class Instagram::SendOnInstagramService < Base::SendOnChannelService
       Messages::StatusUpdateService.new(message, 'failed', friendly_message).perform
       Rails.logger.error("Instagram response: #{response['error']} : #{message.content}")
       message.mark_failed!(friendly_message)
+      false
     else
-      message.source_id = response['id'] || response['message_id'] if response['id'].present? || response['message_id'].present?
-
-      message.mark_sent!
-      enqueue_next_message
+      source_id = response['id'] || response['message_id']
+      message.update!(source_id: source_id) if source_id.present?
+      true
     end
   end
 

@@ -29,6 +29,7 @@ import {
 } from '@chatwoot/utils';
 import WhatsappTemplates from './WhatsappTemplates/Modal.vue';
 import ContentTemplates from './ContentTemplates/ContentTemplatesModal.vue';
+import MetaTemplates from './MetaTemplates/Modal.vue';
 import { MESSAGE_MAX_LENGTH } from 'shared/helpers/MessageTypeHelper';
 import inboxMixin, { INBOX_FEATURES } from 'shared/mixins/inboxMixin';
 import { trimContent, debounce, getRecipients } from '@chatwoot/utils';
@@ -74,6 +75,7 @@ export default {
     ReplyToMessage,
     ReplyTopPanel,
     ContentTemplates,
+    MetaTemplates,
     WhatsappTemplates,
     WootMessageEditor,
     QuotedEmailPreview,
@@ -125,6 +127,7 @@ export default {
       doAutoSaveDraft: () => {},
       showWhatsAppTemplatesModal: false,
       showContentTemplatesModal: false,
+      showMetaTemplatesModal: false,
       updateEditorSelectionWith: '',
       undefinedVariableMessage: '',
       showMentions: false,
@@ -170,6 +173,11 @@ export default {
     },
     showContentTemplates() {
       return this.isATwilioWhatsAppChannel && !this.isPrivate;
+    },
+    showMetaTemplates() {
+      return (
+        (this.isAFacebookInbox || this.isAnInstagramChannel) && !this.isPrivate
+      );
     },
 
     isInstagramDM() {
@@ -784,6 +792,12 @@ export default {
     hideContentTemplatesModal() {
       this.showContentTemplatesModal = false;
     },
+    openMetaTemplateModal() {
+      this.showMetaTemplatesModal = true;
+    },
+    hideMetaTemplatesModal() {
+      this.showMetaTemplatesModal = false;
+    },
     confirmOnSendReply() {
       if (this.isReplyButtonDisabled) {
         return;
@@ -938,6 +952,13 @@ export default {
         ...messagePayload,
       });
       this.hideContentTemplatesModal();
+    },
+    async onSendMetaReply(messagePayload) {
+      this.sendMessage({
+        conversationId: this.currentChat.id,
+        ...messagePayload,
+      });
+      this.hideMetaTemplatesModal();
     },
     setReplyMode(mode = REPLY_EDITOR_MODES.REPLY) {
       // Clear attachments when switching between private note and reply modes
@@ -1431,6 +1452,7 @@ export default {
         :enable-multiple-file-upload="enableMultipleFileUpload"
         :enable-whats-app-templates="showWhatsappTemplates"
         :enable-content-templates="showContentTemplates"
+        :enable-meta-templates="showMetaTemplates"
         :inbox="inbox"
         :is-on-private-note="isOnPrivateNote"
         :is-recording-audio="isRecordingAudio"
@@ -1456,6 +1478,7 @@ export default {
         :new-conversation-modal-active="newConversationModalActive"
         @select-whatsapp-template="openWhatsappTemplateModal"
         @select-content-template="openContentTemplateModal"
+        @select-meta-template="openMetaTemplateModal"
         @toggle-insert-article="toggleInsertArticle"
         @toggle-quoted-reply="toggleQuotedReply"
       />
@@ -1475,6 +1498,14 @@ export default {
       @close="hideContentTemplatesModal"
       @on-send="onSendContentTemplateReply"
       @cancel="hideContentTemplatesModal"
+    />
+
+    <MetaTemplates
+      :inbox-id="inbox.id"
+      :show="showMetaTemplatesModal"
+      @update:show="showMetaTemplatesModal = $event"
+      @on-send="onSendMetaReply"
+      @cancel="hideMetaTemplatesModal"
     />
 
     <woot-confirm-modal

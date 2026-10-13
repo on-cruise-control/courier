@@ -102,7 +102,8 @@ class Message < ApplicationRecord
     input_csat: 9,
     integrations: 10,
     sticker: 11,
-    voice_call: 12
+    voice_call: 12,
+    call_to_action: 13
   }
   enum status: { sent: 0, delivered: 1, read: 2, failed: 3 }
   # [:submitted_email, :items, :submitted_values] : Used for bot message types
@@ -476,15 +477,21 @@ class Message < ApplicationRecord
                                      .first.id
 
       if first_pending_id == id
-        if attachments.blank?
+        if attachments.blank? && !pending_card_media?
           ::SendReplyJob.perform_later(id)
         else
           ::SendReplyJob.set(wait: 2.seconds).perform_later(id)
         end
       end
+    elsif attachments.blank? && !pending_card_media?
+      ::SendReplyJob.perform_later(id)
     else
-      attachments.blank? ? ::SendReplyJob.perform_later(id) : ::SendReplyJob.set(wait: 2.seconds).perform_later(id)
+      ::SendReplyJob.set(wait: 2.seconds).perform_later(id)
     end
+  end
+
+  def pending_card_media?
+    content_type == 'cards' && Array(content_attributes&.dig('items')).any? { |item| item['media_url'].present? }
   end
 
   def reopen_conversation

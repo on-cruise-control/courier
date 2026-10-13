@@ -76,7 +76,7 @@ const handleCreate = async payload => {
     closeCreateDialog();
     setTimeout(refreshOffersSilently, DOCUMENT_TEXT_REFRESH_DELAY_MS);
   } catch (error) {
-    useAlert(t('OFFERS_MGMT.ERROR_CREATE'));
+    useAlert(error?.response?.data?.error || t('OFFERS_MGMT.ERROR_CREATE'));
   }
 };
 
@@ -100,7 +100,7 @@ const handleEdit = async payload => {
     useAlert(t('OFFERS_MGMT.EDIT_SUCCESS'));
     closeEditDialog();
   } catch (error) {
-    useAlert(t('OFFERS_MGMT.ERROR_UPDATE'));
+    useAlert(error?.response?.data?.error || t('OFFERS_MGMT.ERROR_UPDATE'));
   }
 };
 
@@ -227,6 +227,17 @@ const formatDate = value => {
               >
                 <i class="i-lucide-file-text size-3.5" />
                 {{ t('OFFERS_MGMT.TABLE.VIEW_DOCUMENT') }}
+              </a>
+              <a
+                v-else-if="offer.source_url"
+                :href="offer.source_url"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="inline-flex items-center gap-1 text-n-brand hover:underline"
+                @click.stop
+              >
+                <i class="i-lucide-link size-3.5" />
+                {{ t('OFFERS_MGMT.TABLE.VIEW_SOURCE') }}
               </a>
               <span v-else>{{ t('OFFERS_MGMT.TABLE.NO_PDF') }}</span>
             </div>

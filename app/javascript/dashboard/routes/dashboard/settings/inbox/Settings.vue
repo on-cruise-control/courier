@@ -41,6 +41,7 @@ import Widget from 'dashboard/modules/widget-preview/components/Widget.vue';
 import AccessToken from 'dashboard/routes/dashboard/settings/profile/AccessToken.vue';
 import { copyTextToClipboard } from 'shared/helpers/clipboard';
 import TwilioTemplates from './TwilioTemplates/index.vue';
+import MetaTemplates from './MetaTemplates/index.vue';
 
 export default {
   components: {
@@ -74,6 +75,7 @@ export default {
     SelectInput,
     AccountHealth,
     TwilioTemplates,
+    MetaTemplates,
     Widget,
     AccessToken,
   },
@@ -244,6 +246,16 @@ export default {
           {
             key: 'twilio-templates',
             name: this.$t('INBOX_MGMT.TABS.TWILIO_TEMPLATES'),
+          },
+        ];
+      }
+
+      if (this.isAFacebookInbox || this.isAnInstagramChannel) {
+        visibleToAllChannelTabs = [
+          ...visibleToAllChannelTabs,
+          {
+            key: 'meta-templates',
+            name: this.$t('INBOX_MGMT.TABS.META_TEMPLATES'),
           },
         ];
       }
@@ -995,7 +1007,9 @@ export default {
 
               <SettingsFieldSection
                 :label="
-                  $t('INBOX_MGMT.WIDGET_BUILDER.WIDGET_OPTIONS.AVATAR_NAME.LABEL')
+                  $t(
+                    'INBOX_MGMT.WIDGET_BUILDER.WIDGET_OPTIONS.AVATAR_NAME.LABEL'
+                  )
                 "
               >
                 <woot-input
@@ -1011,7 +1025,9 @@ export default {
 
               <SettingsFieldSection
                 :label="
-                  $t('INBOX_MGMT.WIDGET_BUILDER.WIDGET_OPTIONS.DEALER_NAME.LABEL')
+                  $t(
+                    'INBOX_MGMT.WIDGET_BUILDER.WIDGET_OPTIONS.DEALER_NAME.LABEL'
+                  )
                 "
               >
                 <woot-input
@@ -1393,6 +1409,9 @@ export default {
         </div>
         <div v-if="selectedTabKey === 'twilio-templates'" class="mx-8">
           <TwilioTemplates :inbox="inbox" />
+        </div>
+        <div v-if="selectedTabKey === 'meta-templates'" class="mx-8">
+          <MetaTemplates :inbox="inbox" />
         </div>
       </div>
     </section>

@@ -24,11 +24,13 @@ class Messages::MessageBuilder
   def perform
     @message = @conversation.messages.build(message_params)
     process_attachments
+    process_remote_media_attachment
     process_emails
     # When the message has no quoted content, it will just be rendered as a regular message
     # The frontend is equipped to handle this case
     process_email_content
     @message.save!
+    process_remote_card_media
     @message
   end
 
@@ -39,13 +41,12 @@ class Messages::MessageBuilder
   # - Attempts to parse a JSON string if content is a string.
   # - Returns an empty hash if content is not present, if there's a parsing error, or if it's an unexpected type.
   def content_attributes
-    params = convert_to_hash(@params)
-    content_attributes = params.fetch(:content_attributes, {})
-
-    return safe_parse_json(content_attributes) if content_attributes.is_a?(String)
-    return content_attributes if content_attributes.is_a?(Hash)
-
-    {}
+    @content_attributes ||= begin
+      params = convert_to_hash(@params)
+      attrs = params.fetch(:content_attributes, {})
+      attrs = safe_parse_json(attrs) if attrs.is_a?(String)
+      attrs.is_a?(Hash) ? attrs.with_indifferent_access : {}.with_indifferent_access
+    end
   end
 
   def process_attachments
@@ -60,6 +61,49 @@ class Messages::MessageBuilder
       attachment.file_type = attachment_file_type(uploaded_attachment)
       tag_voice_message(attachment)
     end
+  end
+
+  def process_remote_media_attachment
+    url = content_attributes[:remote_media_url]
+    return if url.blank?
+
+    download_and_attach(url, remote_media_file_type)
+  end
+
+  def process_remote_card_media
+    return unless @message.content_type == 'cards'
+
+    items = @message.content_attributes&.dig('items')
+    return if items.blank?
+
+    updated_items = items.map { |item| rehost_card_item_media(item) }
+    @message.update!(content_attributes: @message.content_attributes.merge('items' => updated_items))
+  end
+
+  def rehost_card_item_media(item)
+    item = item.with_indifferent_access
+    url = item[:media_url]
+    return item.to_h if url.blank?
+
+    attachment = download_and_attach(url, 'image', save: true)
+    item[:media_url] = attachment.public_file_url if attachment
+    item.to_h
+  end
+
+  def download_and_attach(url, file_type, save: false)
+    file = Down.download(url)
+    attachment = @message.attachments.build(account_id: @message.account_id, file_type: file_type)
+    attachment.file.attach(io: file, filename: file.original_filename, content_type: file.content_type)
+    attachment.save! if save
+    attachment
+  rescue Down::Error, StandardError => e
+    Rails.logger.warn "Failed to download remote media from #{url}: #{e.message}"
+    nil
+  end
+
+  def remote_media_file_type
+    type = content_attributes[:remote_media_type].to_s
+    %w[image video audio file].include?(type) ? type : 'image'
   end
 
   def attachment_file_type(uploaded_attachment)

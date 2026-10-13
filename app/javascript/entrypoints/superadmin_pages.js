@@ -4,12 +4,14 @@ import VueDOMPurifyHTML from 'vue-dompurify-html';
 
 import PlaygroundIndex from '../superadmin_pages/views/playground/Index.vue';
 import DashboardIndex from '../superadmin_pages/views/dashboard/Index.vue';
+import DefaultTemplatesIndex from '../superadmin_pages/views/default_templates/Index.vue';
 import DealerMetricsShow from '../superadmin_pages/views/dealer_metrics/Show.vue';
 
 const ComponentMapping = {
   PlaygroundIndex: PlaygroundIndex,
   DashboardIndex: DashboardIndex,
   DealerMetricsShow: DealerMetricsShow,
+  DefaultTemplatesIndex: DefaultTemplatesIndex,
 };
 
 const renderComponent = (componentName, props) => {

@@ -258,4 +258,7 @@
   display_name: Payment Calculator
   enabled: false
   webhook_managed: true
+- name: facebook_leads
+  display_name: Facebook Leads
+  enabled: false
 # CUSTOM END
