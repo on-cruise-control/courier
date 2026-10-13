@@ -46,14 +46,19 @@ class Dealership::BookingStatsService
     url = "#{@base_uri}/api/v1/dealerships/#{@dealership_id}/stats"
 
     query_params = { period: @period }
-    query_params[:since] = @since if @since
-    query_params[:until] = @until_time if @until_time
+    query_params[:from_date] = format_date(@since) if @since
+    query_params[:to_date] = format_date(@until_time) if @until_time
 
     headers = { 'Content-Type' => 'application/json', 'Accept' => 'application/json' }
     headers['Authorization'] = "Bearer #{@api_key}" if @api_key.present?
 
     response = self.class.get(url, query: query_params, headers: headers, timeout: 30)
     handle_response(response)
+  end
+
+  def format_date(value)
+    time = value.is_a?(Time) || value.is_a?(Date) ? value : Time.zone.at(value.to_i)
+    time.to_date.iso8601
   end
 
   def handle_response(response)
