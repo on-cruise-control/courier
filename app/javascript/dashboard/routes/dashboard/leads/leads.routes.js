@@ -9,6 +9,9 @@ const meta = {
 };
 
 const redirectIfNoFacebookInbox = async (to, from, next) => {
+  if (!store.getters['accounts/getAccount'](to.params.accountId).id) {
+    await store.dispatch('accounts/get');
+  }
   if (!store.getters['inboxes/getInboxes'].length) {
     await store.dispatch('inboxes/get');
   }
