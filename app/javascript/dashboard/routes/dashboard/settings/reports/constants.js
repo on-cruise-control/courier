@@ -155,7 +155,17 @@ export const TIME_CHART_CONFIG = createChartConfig((value, index, values) => {
   return '';
 });
 
+export const BOOKING_STATS_METRICS = [
+  'booking_links_sent',
+  'booking_forms_completed',
+  'handoff_links_sent',
+  'handoff_forms_completed',
+];
+
 export const METRIC_CHART = {
+  ...Object.fromEntries(
+    BOOKING_STATS_METRICS.map(metric => [metric, DEFAULT_CHART])
+  ),
   conversations_count: DEFAULT_CHART,
   incoming_messages_count: DEFAULT_CHART,
   outgoing_messages_count: DEFAULT_CHART,
@@ -165,11 +175,9 @@ export const METRIC_CHART = {
   resolutions_count: DEFAULT_CHART,
   bot_resolutions_count: DEFAULT_CHART,
   bot_handoffs_count: DEFAULT_CHART,
-  booking_links_sent: DEFAULT_CHART,
-  booking_forms_completed: DEFAULT_CHART,
-  handoff_links_sent: DEFAULT_CHART,
-  handoff_forms_completed: DEFAULT_CHART,
 };
+
+export const getMetricChart = metric => METRIC_CHART[metric] || DEFAULT_CHART;
 
 export const OVERVIEW_METRICS = {
   open: 'OPEN',

@@ -1,4 +1,5 @@
 <script>
+import BookingPlatformReports from 'dashboard/routes/dashboard/settings/reports/components/BookingPlatformReports.vue';
 import { useAlert, useTrack } from 'dashboard/composables';
 import ReportFilters from 'dashboard/routes/dashboard/settings/reports/components/ReportFilters.vue';
 import { GROUP_BY_FILTER } from 'dashboard/routes/dashboard/settings/reports/constants';
@@ -14,6 +15,7 @@ const REPORTS_KEYS = {
 export default {
   name: 'CustomHandoffReports',
   components: {
+    BookingPlatformReports,
     ReportHeader,
     ReportFilters,
     CustomReportContainer,
@@ -89,14 +91,30 @@ export default {
       show-group-by
       @filter-change="onFilterChange"
     />
-    <CustomReportContainer
+    <section>
+      <h3 class="mb-2 text-sm font-semibold text-n-slate-12">
+        {{ $t('BOOKING_PLATFORM_REPORTS.ALL_PLATFORMS') }}
+      </h3>
+      <CustomReportContainer
+        :group-by="groupBy"
+        :report-keys="{
+          LINKS_SENT: 'handoff_links_sent',
+          FORMS_COMPLETED: 'handoff_forms_completed',
+        }"
+        :subtitles="{
+          LINKS_SENT: $t('HANDOFF_REPORTS.INFO.LINKS_SENT'),
+          FORMS_COMPLETED: $t('HANDOFF_REPORTS.INFO.FORMS_COMPLETED'),
+        }"
+        account-summary-key="getHandoffSummary"
+        summary-fetching-key="getHandoffSummaryFetchingStatus"
+      />
+    </section>
+    <BookingPlatformReports
+      type="handoff"
       :group-by="groupBy"
-      :report-keys="{
-        LINKS_SENT: 'handoff_links_sent',
-        FORMS_COMPLETED: 'handoff_forms_completed',
-      }"
       account-summary-key="getHandoffSummary"
       summary-fetching-key="getHandoffSummaryFetchingStatus"
+      is-custom-ui
     />
   </div>
 </template>

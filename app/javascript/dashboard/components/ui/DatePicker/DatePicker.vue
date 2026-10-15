@@ -37,7 +37,7 @@ import CalendarFooter from './components/CalendarFooter.vue';
 const props = defineProps({
   disableFutureDates: {
     type: Boolean,
-    default: false,
+    default: true,
   },
 });
 
@@ -287,7 +287,14 @@ const openCalendar = (index, calendarType, period = MONTH) => {
   setViewMode(calendarType, period === MONTH ? WEEK : MONTH);
 };
 
+const isFutureDate = date =>
+  props.disableFutureDates && date > endOfDay(currentDate.value);
+
 const updateManualInput = (newDate, calendarType) => {
+  if (isFutureDate(newDate)) {
+    useAlert('Future dates cannot be selected.');
+    return;
+  }
   if (calendarType === START_CALENDAR) {
     selectedStartDate.value = newDate;
     startCurrentDate.value = startOfMonth(newDate);
@@ -325,6 +332,11 @@ const resetDatePicker = () => {
 const emitDateRange = () => {
   if (!isValid(selectedStartDate.value) || !isValid(selectedEndDate.value)) {
     useAlert('Please select a valid time range');
+  } else if (
+    isFutureDate(selectedStartDate.value) ||
+    isFutureDate(selectedEndDate.value)
+  ) {
+    useAlert('Future dates cannot be selected.');
   } else {
     showDatePicker.value = false;
     emit('dateRangeChanged', [
@@ -402,6 +414,7 @@ const closeDatePicker = () => {
               :compare-date="
                 calendar === START_CALENDAR ? manualEndDate : manualStartDate
               "
+              :max-date="disableFutureDates ? endOfDay(currentDate) : undefined"
               :is-disabled="selectedRange !== CUSTOM_RANGE"
               @update="
                 calendar === START_CALENDAR
