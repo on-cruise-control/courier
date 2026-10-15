@@ -661,17 +661,18 @@
   "ATTRIBUTION_REPORTS": {
     "HEADER": "Origin Attribution",
     "FILTERS": {
-      "LABEL": "Filters",
+      "LABEL": "Advanced Filters",
       "TITLE": "Filter Attribution Report",
       "CLEAR": "Clear filters",
       "APPLY": "Apply filters",
       "ADD_FILTER": "Add filter",
-      "EQUAL_TO": "Equal to",
-      "DATE_RANGE": "Date Range"
+      "EQUAL_TO": "Equal to"
     },
     "TOTALS": {
       "CUSTOMERS": "Total Customers",
-      "BOOKINGS": "Total Bookings"
+      "BOOKINGS": "Total Bookings",
+      "BOOKED_CUSTOMERS": "Booked Customers",
+      "BOOKING_RATE": "Booking Rate"
     },
     "DIMENSIONS": {
       "UTM_SOURCE": "Came From (Source)",
@@ -682,19 +683,21 @@
       "AD_TITLE": "Ad Title"
     },
     "OVERVIEW": {
-      "VALUE_COUNT": "{n} value | {n} values",
-      "CUSTOMERS": "customers",
-      "BOOKINGS": "bookings"
+      "VALUE_COUNT": "{n} value | {n} values"
     },
     "DETAIL": {
       "BACK": "Back to Attribution Parameters",
       "CUSTOMERS": "Customers:",
       "BOOKINGS": "Bookings:",
+      "BOOKED_CUSTOMERS": "Booked Customers:",
+      "BOOKING_RATE": "Booking Rate:",
       "TABLE": {
         "CUSTOMERS": "Customers",
         "CUSTOMER_PCT": "Customer %",
         "BOOKINGS": "Bookings",
-        "BOOKING_PCT": "Booking %"
+        "BOOKING_PCT": "Booking %",
+        "BOOKED_CUSTOMERS": "Booked Customers",
+        "BOOKING_RATE": "Booking Rate"
       }
     },
     "EMPTY": "No attribution data for the selected filters",

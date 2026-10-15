@@ -34,6 +34,13 @@ import CalendarMonth from './components/CalendarMonth.vue';
 import CalendarWeek from './components/CalendarWeek.vue';
 import CalendarFooter from './components/CalendarFooter.vue';
 
+const props = defineProps({
+  disableFutureDates: {
+    type: Boolean,
+    default: false,
+  },
+});
+
 const emit = defineEmits(['dateRangeChanged']);
 const { t } = useI18n();
 
@@ -245,6 +252,7 @@ const moveCalendar = (calendar, direction, period = MONTH) => {
 };
 
 const selectDate = day => {
+  if (props.disableFutureDates && day > endOfDay(new Date())) return;
   selectedRange.value = CUSTOM_RANGE;
   monthOffset.value = 0;
   if (!selectingEndDate.value || day < selectedStartDate.value) {
@@ -438,6 +446,7 @@ const closeDatePicker = () => {
                   :selected-end-date="selectedEndDate"
                   :selecting-end-date="selectingEndDate"
                   :hovered-end-date="hoveredEndDate"
+                  :disable-future-dates="disableFutureDates"
                   @update-hovered-end-date="hoveredEndDate = $event"
                   @select-date="selectDate"
                   @set-view="setViewMode"

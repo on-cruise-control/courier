@@ -74,7 +74,7 @@ onMounted(() => {
         {{ $t('ATTRIBUTION_REPORTS.DETAIL.BACK') }}
       </router-link>
 
-      <div class="flex items-center gap-6">
+      <div class="flex items-center gap-x-6 gap-y-2 flex-wrap">
         <span class="flex items-center gap-1.5 text-sm text-n-slate-11">
           <Icon icon="i-lucide-users" class="text-sm text-n-slate-9" />
           {{ $t('ATTRIBUTION_REPORTS.DETAIL.CUSTOMERS') }}
@@ -90,11 +90,27 @@ onMounted(() => {
             {{ totals.bookings || 0 }}
           </span>
         </span>
+
+        <span class="flex items-center gap-1.5 text-sm text-n-slate-11">
+          <Icon icon="i-lucide-user-check" class="text-sm text-n-slate-9" />
+          {{ $t('ATTRIBUTION_REPORTS.DETAIL.BOOKED_CUSTOMERS') }}
+          <span class="font-semibold text-n-slate-12 tabular-nums">
+            {{ totals.booked_customers || 0 }}
+          </span>
+        </span>
+
+        <span class="flex items-center gap-1.5 text-sm text-n-slate-11">
+          <Icon icon="i-lucide-percent" class="text-sm text-n-slate-9" />
+          {{ $t('ATTRIBUTION_REPORTS.DETAIL.BOOKING_RATE') }}
+          <span class="font-semibold text-n-slate-12 tabular-nums">
+            {{ `${totals.booking_rate || 0}%` }}
+          </span>
+        </span>
       </div>
     </div>
 
-    <main class="flex-1 overflow-y-auto">
-      <div class="flex flex-col gap-5 pb-6">
+    <main class="flex-1 min-h-0">
+      <div class="flex flex-col gap-5 pb-6 h-full">
         <div
           v-if="isFetchingReport"
           class="flex items-center justify-center p-16"
@@ -105,32 +121,54 @@ onMounted(() => {
         <template v-else>
           <div
             v-if="rows.length"
-            class="rounded-xl border border-n-weak shadow-sm bg-n-solid-1 dark:bg-n-solid-2 overflow-hidden"
+            class="flex flex-col min-h-0 rounded-xl border border-n-weak shadow-sm bg-n-solid-1 dark:bg-n-solid-2 overflow-hidden"
           >
-            <div class="overflow-x-auto">
-              <table class="w-full min-w-[560px] text-sm">
+            <div class="overflow-auto min-h-0">
+              <table class="w-full min-w-[760px] text-sm">
                 <thead>
                   <tr
                     class="text-left text-xs text-n-slate-10 border-b border-n-weak dark:border-n-strong"
                   >
-                    <th class="py-2.5 px-4 font-medium">
+                    <th
+                      class="sticky top-0 z-10 bg-n-solid-1 dark:bg-n-solid-2 py-2.5 px-4 font-medium"
+                    >
                       {{
                         $t(
                           `ATTRIBUTION_REPORTS.DIMENSIONS.${dimension.i18nKey}`
                         )
                       }}
                     </th>
-                    <th class="py-2.5 px-4 font-medium text-right">
+                    <th
+                      class="sticky top-0 z-10 bg-n-solid-1 dark:bg-n-solid-2 py-2.5 px-4 font-medium text-right"
+                    >
                       {{ $t('ATTRIBUTION_REPORTS.DETAIL.TABLE.CUSTOMERS') }}
                     </th>
-                    <th class="py-2.5 px-4 font-medium text-right">
+                    <th
+                      class="sticky top-0 z-10 bg-n-solid-1 dark:bg-n-solid-2 py-2.5 px-4 font-medium text-right"
+                    >
                       {{ $t('ATTRIBUTION_REPORTS.DETAIL.TABLE.CUSTOMER_PCT') }}
                     </th>
-                    <th class="py-2.5 px-4 font-medium text-right">
+                    <th
+                      class="sticky top-0 z-10 bg-n-solid-1 dark:bg-n-solid-2 py-2.5 px-4 font-medium text-right"
+                    >
                       {{ $t('ATTRIBUTION_REPORTS.DETAIL.TABLE.BOOKINGS') }}
                     </th>
-                    <th class="py-2.5 px-4 font-medium text-right">
+                    <th
+                      class="sticky top-0 z-10 bg-n-solid-1 dark:bg-n-solid-2 py-2.5 px-4 font-medium text-right"
+                    >
                       {{ $t('ATTRIBUTION_REPORTS.DETAIL.TABLE.BOOKING_PCT') }}
+                    </th>
+                    <th
+                      class="sticky top-0 z-10 bg-n-solid-1 dark:bg-n-solid-2 py-2.5 px-4 font-medium text-right"
+                    >
+                      {{
+                        $t('ATTRIBUTION_REPORTS.DETAIL.TABLE.BOOKED_CUSTOMERS')
+                      }}
+                    </th>
+                    <th
+                      class="sticky top-0 z-10 bg-n-solid-1 dark:bg-n-solid-2 py-2.5 px-4 font-medium text-right"
+                    >
+                      {{ $t('ATTRIBUTION_REPORTS.DETAIL.TABLE.BOOKING_RATE') }}
                     </th>
                   </tr>
                 </thead>
@@ -161,7 +199,7 @@ onMounted(() => {
                     <td
                       class="py-3 px-4 text-right tabular-nums text-n-slate-10"
                     >
-                      {{ row.customers_pct }}%
+                      {{ `${row.customers_pct}%` }}
                     </td>
 
                     <td
@@ -173,7 +211,19 @@ onMounted(() => {
                     <td
                       class="py-3 px-4 text-right tabular-nums text-n-slate-10"
                     >
-                      {{ row.bookings_pct }}%
+                      {{ `${row.bookings_pct}%` }}
+                    </td>
+
+                    <td
+                      class="py-3 px-4 text-right tabular-nums text-n-slate-12"
+                    >
+                      {{ row.booked_customers }}
+                    </td>
+
+                    <td
+                      class="py-3 px-4 text-right tabular-nums text-n-slate-10"
+                    >
+                      {{ `${row.booking_rate}%` }}
                     </td>
                   </tr>
                 </tbody>

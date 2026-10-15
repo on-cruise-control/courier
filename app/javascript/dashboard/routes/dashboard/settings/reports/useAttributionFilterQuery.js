@@ -3,6 +3,7 @@ import { useRoute, useRouter } from 'vue-router';
 import format from 'date-fns/format';
 import parseISO from 'date-fns/parseISO';
 import subDays from 'date-fns/subDays';
+import { DATE_RANGE_TYPES } from 'dashboard/components/ui/DatePicker/helpers/DatePickerHelper';
 import { ATTRIBUTION_DIMENSIONS as DIMENSIONS } from './attributionDimensions';
 
 const QUERY_DATE_FORMAT = 'yyyy-MM-dd';
@@ -28,6 +29,14 @@ export function useAttributionFilterQuery() {
     return DEFAULT_DATE_RANGE();
   });
 
+  const rangeType = computed(() => {
+    const { range, from, to } = route.query;
+    if (range) return range;
+    return from && to
+      ? DATE_RANGE_TYPES.CUSTOM_RANGE
+      : DATE_RANGE_TYPES.LAST_30_DAYS;
+  });
+
   const selectedFilters = computed(() => {
     const filters = DEFAULT_FILTERS();
     DIMENSIONS.forEach(dimension => {
@@ -47,10 +56,11 @@ export function useAttributionFilterQuery() {
     utmContent: selectedFilters.value.utmContent,
   });
 
-  const setFiltersQuery = (nextDateRange, nextFilters) => {
+  const setFiltersQuery = (nextDateRange, nextFilters, nextRangeType) => {
     const query = {
       from: format(nextDateRange[0], QUERY_DATE_FORMAT),
       to: format(nextDateRange[1], QUERY_DATE_FORMAT),
+      range: nextRangeType,
     };
     DIMENSIONS.forEach(dimension => {
       const value = nextFilters[dimension.filterKey];
@@ -61,6 +71,7 @@ export function useAttributionFilterQuery() {
 
   return {
     dateRange,
+    rangeType,
     selectedFilters,
     buildFilterPayload,
     setFiltersQuery,

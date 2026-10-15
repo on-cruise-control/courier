@@ -1,4 +1,5 @@
 <script setup>
+import endOfDay from 'date-fns/endOfDay';
 import {
   monthName,
   yearName,
@@ -28,6 +29,7 @@ const props = defineProps({
   selectingEndDate: Boolean,
   selectedEndDate: Date,
   hoveredEndDate: Date,
+  disableFutureDates: Boolean,
 });
 
 const emit = defineEmits([
@@ -106,7 +108,11 @@ const isNextDayInRange = day => {
   );
 };
 
+const isDisabledDay = day =>
+  props.disableFutureDates && day > endOfDay(new Date());
+
 const dayClasses = day => ({
+  'opacity-40 pointer-events-none': isDisabledDay(day),
   'text-n-slate-10 pointer-events-none': !isInCurrentMonth(day),
   'text-n-slate-12 hover:text-n-slate-12 hover:bg-n-blue-6 dark:hover:bg-n-blue-7':
     isInCurrentMonth(day),
