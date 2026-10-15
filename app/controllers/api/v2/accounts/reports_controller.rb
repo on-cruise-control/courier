@@ -2,6 +2,9 @@ class Api::V2::Accounts::ReportsController < Api::V1::Accounts::BaseController
   include Api::V2::Accounts::ReportsHelper
   include Api::V2::Accounts::HeatmapHelper
 
+  BOOKING_PLATFORMS = %w[website facebook whatsapp sms email instagram].freeze
+  BOOKING_METRIC_FIELDS = %w[links_sent forms_completed].freeze
+
   before_action :check_authorization
 
   def index
@@ -169,7 +172,7 @@ class Api::V2::Accounts::ReportsController < Api::V1::Accounts::BaseController
       Date.parse(item['date']) if item['date']
     when 'weekly'
       parts = item['week']&.split('-')
-      Date.parse("#{parts[0]}-#{parts[1]}-#{Time.current.year}") if parts&.size >= 2
+      Date.parse("#{parts[0]}-#{parts[1]}-#{Time.current.year}") if parts&.size&.>= 2
     when 'monthly'
       Date.parse("#{item['month']}-01") if item['month']
     end
@@ -190,17 +193,20 @@ class Api::V2::Accounts::ReportsController < Api::V1::Accounts::BaseController
 
     data_array.map do |item|
       breakdown = item['booking_type_breakdown'] || {}
-      booking_data = breakdown['booking'] || {}
-      handoff_data = breakdown['handoff'] || {}
 
-      {
-        timestamp: parse_timestamp(item, period),
-        booking_links_sent: booking_data['links_sent'] || 0,
-        booking_forms_completed: booking_data['forms_completed'] || 0,
-        handoff_links_sent: handoff_data['links_sent'] || 0,
-        handoff_forms_completed: handoff_data['forms_completed'] || 0
-      }
+      { timestamp: parse_timestamp(item, period) }.merge(
+        booking_metrics(breakdown, 'booking'),
+        booking_metrics(breakdown, 'handoff')
+      )
     end
+  end
+
+  def booking_metrics(breakdown, metric_type)
+    [nil, *BOOKING_PLATFORMS].flat_map do |platform|
+      BOOKING_METRIC_FIELDS.map do |field|
+        [[metric_type, platform, field].compact.join('_').to_sym, sum_metric(breakdown, metric_type, field, platform)]
+      end
+    end.to_h
   end
 
   def parse_timestamp(item, period)
@@ -472,28 +478,21 @@ class Api::V2::Accounts::ReportsController < Api::V1::Accounts::BaseController
     previous_data = previous_service.fetch_stats
     previous_filtered = filter_by_date_range(previous_data, range[:previous][:since], range[:previous][:until])
 
-    current_links = sum_metric(current_filtered, metric_type, 'links_sent')
-    current_forms = sum_metric(current_filtered, metric_type, 'forms_completed')
-    previous_links = sum_metric(previous_filtered, metric_type, 'links_sent')
-    previous_forms = sum_metric(previous_filtered, metric_type, 'forms_completed')
-
-    {
-      "#{metric_type}_links_sent".to_sym => current_links,
-      "#{metric_type}_forms_completed".to_sym => current_forms,
-      previous: {
-        "#{metric_type}_links_sent".to_sym => previous_links,
-        "#{metric_type}_forms_completed".to_sym => previous_forms
-      }
-    }
+    booking_metrics_for(current_filtered, metric_type).merge(previous: booking_metrics_for(previous_filtered, metric_type))
   end
 
-  def sum_metric(booking_data, metric_type, metric_field)
+  def booking_metrics_for(booking_data, metric_type)
     data_array = booking_data[:data] || booking_data['data'] || []
-    data_array.sum do |item|
-      breakdown = item['booking_type_breakdown'] || {}
-      type_data = breakdown[metric_type] || {}
-      type_data[metric_field] || 0
+    totals = data_array.map { |item| booking_metrics(item['booking_type_breakdown'] || {}, metric_type) }
+    totals.each_with_object(booking_metrics({}, metric_type)) do |metrics, sum|
+      metrics.each { |key, value| sum[key] += value }
     end
+  end
+
+  def sum_metric(breakdown, metric_type, field, platform = nil)
+    type_data = breakdown[metric_type] || {}
+    source = platform ? (type_data.dig('platform_breakdown', platform) || {}) : type_data
+    source[field] || 0
   end
 
   def inbox_label_matrix_params

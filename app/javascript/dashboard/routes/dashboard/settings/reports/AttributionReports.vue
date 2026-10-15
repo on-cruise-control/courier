@@ -190,7 +190,6 @@ onMounted(() => {
     <!-- Filters -->
     <div class="flex items-center gap-2 flex-wrap">
       <WootDatePicker
-        disable-future-dates
         :date-range="dateRange"
         :range-type="rangeType"
         @date-range-changed="onDateRangeChange"

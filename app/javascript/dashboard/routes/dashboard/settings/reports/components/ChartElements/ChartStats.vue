@@ -1,8 +1,11 @@
 <script setup>
 import { useReportMetrics } from 'dashboard/composables/useReportMetrics';
+import Icon from 'dashboard/components-next/icon/Icon.vue';
 import Spinner from 'dashboard/components-next/spinner/Spinner.vue';
 import { STATUS } from 'dashboard/store/constants';
+import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { vOnClickOutside } from '@vueuse/components';
 
 const props = defineProps({
   metric: {
@@ -21,6 +24,8 @@ const props = defineProps({
 
 const { t } = useI18n();
 
+const isInfoOpen = ref(false);
+
 const { calculateTrend, displayMetric, isAverageMetricType, fetchingStatus } =
   useReportMetrics(props.accountSummaryKey, props.summaryFetchingKey);
 
@@ -38,9 +43,33 @@ const trendColor = (value, key) => {
 
 <template>
   <div class="text-n-slate-11">
-    <span class="text-sm">
-      {{ metric.NAME }}
-    </span>
+    <div class="flex items-center">
+      <span class="text-sm">
+        {{ metric.NAME }}
+      </span>
+      <div
+        v-if="metric.SUBTITLE"
+        v-on-click-outside="() => (isInfoOpen = false)"
+        class="relative flex items-center"
+        @mouseenter="isInfoOpen = true"
+        @mouseleave="isInfoOpen = false"
+      >
+        <button
+          type="button"
+          class="flex items-center text-n-slate-10 hover:text-n-slate-12"
+          :aria-label="metric.SUBTITLE"
+          @click="isInfoOpen = true"
+        >
+          <Icon icon="i-lucide-info" class="size-3.5" />
+        </button>
+        <p
+          v-if="isInfoOpen"
+          class="absolute top-full left-0 z-20 w-56 p-2 mt-1 text-xs rounded-lg shadow-lg outline outline-1 outline-n-container bg-n-solid-3 text-n-slate-12"
+        >
+          {{ metric.SUBTITLE }}
+        </p>
+      </div>
+    </div>
     <div class="flex items-end text-n-slate-12">
       <div v-if="fetchingStatus === STATUS.FETCHING">
         <Spinner />

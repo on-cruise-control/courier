@@ -1,7 +1,10 @@
 <script>
 import { mapGetters } from 'vuex';
 import { useReportMetrics } from 'dashboard/composables/useReportMetrics';
-import { GROUP_BY_FILTER, METRIC_CHART } from 'dashboard/routes/dashboard/settings/reports/constants';
+import {
+  GROUP_BY_FILTER,
+  getMetricChart,
+} from 'dashboard/routes/dashboard/settings/reports/constants';
 import fromUnixTime from 'date-fns/fromUnixTime';
 import format from 'date-fns/format';
 import { formatTime } from '@chatwoot/utils';
@@ -11,6 +14,10 @@ import LineChart from 'shared/components/charts/CustomLineChart.vue';
 export default {
   components: { ChartStats, LineChart },
   props: {
+    subtitles: {
+      type: Object,
+      default: () => ({}),
+    },
     groupBy: {
       type: Object,
       default: () => ({}),
@@ -48,16 +55,16 @@ export default {
     };
   },
   mounted() {
-    this._darkObserver = new MutationObserver(() => {
+    this.darkObserver = new MutationObserver(() => {
       this.isDarkMode = document.documentElement.classList.contains('dark');
     });
-    this._darkObserver.observe(document.documentElement, {
+    this.darkObserver.observe(document.documentElement, {
       attributes: true,
       attributeFilter: ['class'],
     });
   },
   beforeUnmount() {
-    this._darkObserver?.disconnect();
+    this.darkObserver?.disconnect();
   },
   computed: {
     ...mapGetters({
@@ -67,7 +74,9 @@ export default {
       return this.isDarkMode ? 'rgb(56, 200, 232)' : 'rgb(24, 41, 51)';
     },
     chartFillColor() {
-      return this.isDarkMode ? 'rgba(56, 200, 232, 0.15)' : 'rgba(24, 41, 51, 0.1)';
+      return this.isDarkMode
+        ? 'rgba(56, 200, 232, 0.15)'
+        : 'rgba(24, 41, 51, 0.1)';
     },
     metrics() {
       const reportKeys = Object.keys(this.reportKeys);
@@ -77,14 +86,21 @@ export default {
         ),
         RESOLUTION_TIME: this.$t(`REPORT.METRICS.RESOLUTION_TIME.INFO_TEXT`),
       };
-      return reportKeys.map(key => ({
-        NAME: this.$t(`REPORT.METRICS.${key}.NAME`),
-        KEY: this.reportKeys[key],
-        DESC: this.$t(`REPORT.METRICS.${key}.DESC`),
-        INFO_TEXT: infoText[key],
-        TOOLTIP_TEXT: `REPORT.METRICS.${key}.TOOLTIP_TEXT`,
-        trend: this.calculateTrend(this.reportKeys[key]),
-      }));
+      return reportKeys.map(key => {
+        return {
+          NAME: this.$t(`REPORT.METRICS.${key}.NAME`),
+          KEY: this.reportKeys[key],
+          DESC: this.$t(`REPORT.METRICS.${key}.DESC`),
+          SUBTITLE:
+            this.subtitles[key] ||
+            (this.$te(`REPORT.METRICS.${key}.SUBTITLE`)
+              ? this.$t(`REPORT.METRICS.${key}.SUBTITLE`)
+              : ''),
+          INFO_TEXT: infoText[key],
+          TOOLTIP_TEXT: `REPORT.METRICS.${key}.TOOLTIP_TEXT`,
+          trend: this.calculateTrend(this.reportKeys[key]),
+        };
+      });
     },
   },
   methods: {
@@ -115,7 +131,7 @@ export default {
       });
 
       // Convert all datasets to line type
-      const datasets = METRIC_CHART[metric.KEY].datasets.map(dataset => {
+      const datasets = getMetricChart(metric.KEY).datasets.map(dataset => {
         return {
           type: 'line',
           fill: true,
@@ -139,7 +155,7 @@ export default {
       };
     },
     getChartOptions(metric) {
-      const baseScales = METRIC_CHART[metric.KEY].scales;
+      const baseScales = getMetricChart(metric.KEY).scales;
       const options = {
         scales: {
           ...baseScales,
@@ -199,7 +215,7 @@ export default {
         />
         <div v-else class="flex items-center justify-center h-72">
           <LineChart
-            v-if="accountReport.data[metric.KEY].length"
+            v-if="accountReport.data[metric.KEY]?.length"
             :collection="getCollection(metric)"
             :chart-options="getChartOptions(metric)"
           />
