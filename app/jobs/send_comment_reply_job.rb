@@ -18,6 +18,11 @@ class SendCommentReplyJob < ApplicationJob
 
     return if conversation.nil?
 
+    unless contact_inbox.inbox.comment_auto_reply_enabled?
+      Rails.logger.info "⏸️ Comment auto reply disabled for inbox #{contact_inbox.inbox_id}"
+      return
+    end
+
     comment_id = conversation&.additional_attributes&.[]('comment_id')
     if comment_id.blank?
       Rails.logger.error "❌ Missing comment_id for conversation: #{conversation.id}"

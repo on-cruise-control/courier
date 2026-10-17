@@ -100,6 +100,10 @@ class Conversation < ApplicationRecord
   scope :blacklisted, -> { where(is_blacklisted: true) }
 
   scope :unassigned, -> { where(assignee_id: nil) }
+  scope :without_comments, lambda {
+    where("conversations.additional_attributes->>'type' IS NULL OR conversations.additional_attributes->>'type' NOT IN (?)",
+          %w[instagram_comments feed_comments facebook_comments])
+  }
   scope :assigned, -> { where.not(assignee_id: nil) }
   scope :assigned_to, ->(agent) { where(assignee_id: agent.id) }
   scope :sort_on_unread, lambda { |_direction|
