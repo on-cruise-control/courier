@@ -307,7 +307,7 @@ class Inbox < ApplicationRecord
   end
 
   def ensure_instagram_profile_url
-    return unless instagram?
+    return unless instagram_direct?
     return if channel.instagram_profile_url.present?
 
     channel.update_column(:instagram_profile_url, "https://www.instagram.com/#{name}")
