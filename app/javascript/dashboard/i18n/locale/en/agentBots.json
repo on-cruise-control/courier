@@ -24,6 +24,15 @@
       "DISCONNECTED_ERROR_MESSAGE": "Could not disconnect the agent bot. Please try again.",
       "SELECT_PLACEHOLDER": "Select bot"
     },
+    "COMMENT_AUTO_REPLY": {
+      "TITLE": "Comment auto replies",
+      "ENABLED": "Enabled",
+      "DISABLED": "Disabled",
+      "SUBMIT": "Update",
+      "DESC": "Ai Automatically reply to comments on this inbox and send the follow-up DM. Turn off to stop both for this inbox only.",
+      "SUCCESS_MESSAGE": "Comment auto reply setting updated.",
+      "ERROR_MESSAGE": "Could not update the comment auto reply setting. Please try again."
+    },
     "ADD": {
       "TITLE": "Add Bot",
       "CANCEL_BUTTON_TEXT": "Cancel",
