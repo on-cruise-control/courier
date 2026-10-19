@@ -69,7 +69,7 @@ class Messages::Instagram::BaseMessageBuilder < Messages::Messenger::MessageBuil
   end
 
   def find_conversation_scope
-    Conversation.where(conversation_params)
+    Conversation.where(conversation_params).without_comments
   end
 
   def find_or_build_for_multiple_conversations

@@ -24,6 +24,11 @@ class SendTemplateDmJob < ApplicationJob
       return
     end
 
+    unless contact_inbox.inbox.comment_auto_reply_enabled?
+      Rails.logger.info "⏸️ Comment auto reply disabled for inbox #{contact_inbox.inbox_id}, skipping template DM"
+      return
+    end
+
     contact = conversation.contact
     inbox = contact_inbox.inbox
     recipient_id = contact.get_source_id(inbox.id) if contact && inbox

@@ -9,6 +9,7 @@
 #  auto_assignment_config        :jsonb
 #  business_name                 :string
 #  channel_type                  :string
+#  comment_auto_reply_enabled    :boolean          default(TRUE), not null
 #  csat_config                   :jsonb            not null
 #  csat_survey_enabled           :boolean          default(FALSE)
 #  email_address                 :string
@@ -306,7 +307,7 @@ class Inbox < ApplicationRecord
   end
 
   def ensure_instagram_profile_url
-    return unless instagram?
+    return unless instagram_direct?
     return if channel.instagram_profile_url.present?
 
     channel.update_column(:instagram_profile_url, "https://www.instagram.com/#{name}")

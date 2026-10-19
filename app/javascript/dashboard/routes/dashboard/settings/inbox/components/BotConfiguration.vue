@@ -5,6 +5,7 @@ import SettingsFieldSection from 'dashboard/components-next/Settings/SettingsFie
 import LoadingState from 'dashboard/components/widgets/LoadingState.vue';
 import NextButton from 'dashboard/components-next/button/Button.vue';
 import SelectInput from 'dashboard/components-next/select/Select.vue';
+import { INBOX_TYPES } from 'dashboard/helper/inbox';
 
 export default {
   components: {
@@ -22,6 +23,11 @@ export default {
   data() {
     return {
       selectedAgentBotId: null,
+      commentAutoReply:
+        this.inbox.comment_auto_reply_enabled === false
+          ? 'disabled'
+          : 'enabled',
+      isUpdatingCommentAutoReply: false,
     };
   },
   computed: {
@@ -36,6 +42,23 @@ export default {
       return this.$store.getters['agentBots/getActiveAgentBot'](
         this.currentInboxId
       );
+    },
+    supportsCommentAutoReply() {
+      return [INBOX_TYPES.FB, INBOX_TYPES.INSTAGRAM].includes(
+        this.inbox.channel_type
+      );
+    },
+    commentAutoReplyOptions() {
+      return [
+        {
+          value: 'enabled',
+          label: this.$t('AGENT_BOTS.COMMENT_AUTO_REPLY.ENABLED'),
+        },
+        {
+          value: 'disabled',
+          label: this.$t('AGENT_BOTS.COMMENT_AUTO_REPLY.DISABLED'),
+        },
+      ];
     },
   },
   watch: {
@@ -62,6 +85,21 @@ export default {
         useAlert(this.$t('AGENT_BOTS.BOT_CONFIGURATION.SUCCESS_MESSAGE'));
       } catch (error) {
         useAlert(this.$t('AGENT_BOTS.BOT_CONFIGURATION.ERROR_MESSAGE'));
+      }
+    },
+    async updateCommentAutoReply() {
+      this.isUpdatingCommentAutoReply = true;
+      try {
+        await this.$store.dispatch('inboxes/updateInbox', {
+          id: this.inbox.id,
+          formData: false,
+          comment_auto_reply_enabled: this.commentAutoReply === 'enabled',
+        });
+        useAlert(this.$t('AGENT_BOTS.COMMENT_AUTO_REPLY.SUCCESS_MESSAGE'));
+      } catch (error) {
+        useAlert(this.$t('AGENT_BOTS.COMMENT_AUTO_REPLY.ERROR_MESSAGE'));
+      } finally {
+        this.isUpdatingCommentAutoReply = false;
       }
     },
     async disconnectBot() {
@@ -116,6 +154,34 @@ export default {
               >
                 {{ $t('AGENT_BOTS.BOT_CONFIGURATION.DISCONNECT') }}
               </NextButton>
+            </div>
+          </div>
+        </template>
+      </SettingsFieldSection>
+    </form>
+    <form
+      v-if="supportsCommentAutoReply"
+      class="mt-6"
+      @submit.prevent="updateCommentAutoReply"
+    >
+      <SettingsFieldSection
+        :label="$t('AGENT_BOTS.COMMENT_AUTO_REPLY.TITLE')"
+        :help-text="$t('AGENT_BOTS.COMMENT_AUTO_REPLY.DESC')"
+        class="[&>div]:!items-start"
+      >
+        <SelectInput
+          v-model="commentAutoReply"
+          :options="commentAutoReplyOptions"
+        />
+        <template #extra>
+          <div class="grid grid-cols-1 lg:grid-cols-8 mt-3">
+            <div class="col-span-1 lg:col-span-2 invisible" />
+            <div class="col-span-1 lg:col-span-6 flex gap-2 mx-1">
+              <NextButton
+                type="submit"
+                :label="$t('AGENT_BOTS.COMMENT_AUTO_REPLY.SUBMIT')"
+                :is-loading="isUpdatingCommentAutoReply"
+              />
             </div>
           </div>
         </template>
