@@ -69,7 +69,7 @@
         "DESC": ""
       },
       "LINKS_SENT": {
-        "NAME": "Links Sent",
+        "NAME": "Forms Initiated",
         "DESC": "( Total )"
       },
       "FORMS_COMPLETED": {
@@ -675,20 +675,20 @@
   "BOOKINGS_REPORTS": {
     "HEADER": "Bookings",
     "INFO": {
-      "LINKS_SENT": "Number of booking links sent to customers in conversations during the selected period.",
+      "LINKS_SENT": "Number of booking forms initiated for customers during conversations in the selected period.",
       "FORMS_COMPLETED": "Number of customers who completed the booking form after receiving a link."    },
     "PLATFORM_INFO": {
-      "LINKS_SENT": "Number of booking links sent to customers on {platform} conversations during the selected period.",
+      "LINKS_SENT": "Number of booking forms initiated for customers on {platform} conversations during the selected period.",
       "FORMS_COMPLETED": "Number of customers who completed the booking form after receiving a link on {platform} conversations."
     }
   },
   "HANDOFF_REPORTS": {
     "HEADER": "Handoff",
     "INFO": {
-      "LINKS_SENT": "Number of handoff links sent to customers in conversations during the selected period.",
+      "LINKS_SENT": "Number of handoff forms initiated for customers during conversations in the selected period.",
       "FORMS_COMPLETED": "Number of customers who completed the handoff form after receiving a link."    },
     "PLATFORM_INFO": {
-      "LINKS_SENT": "Number of handoff links sent to customers on {platform} conversations during the selected period.",
+      "LINKS_SENT": "Number of handoff forms initiated for customers on {platform} conversations during the selected period.",
       "FORMS_COMPLETED": "Number of customers who completed the handoff form after receiving a link on {platform} conversations."
     }
   },
