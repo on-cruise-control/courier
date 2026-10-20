@@ -6,8 +6,7 @@ import { vOnClickOutside } from '@vueuse/components';
 import { useStore, useMapGetter } from 'dashboard/composables/store.js';
 import { useAlert } from 'dashboard/composables';
 import { useAccount } from 'dashboard/composables/useAccount';
-import format from 'date-fns/format';
-import WootDateRangePicker from 'dashboard/components/ui/DateRangePicker.vue';
+import WootDatePicker from 'dashboard/components/ui/DatePicker/DatePicker.vue';
 import Spinner from 'dashboard/components-next/spinner/Spinner.vue';
 import Icon from 'dashboard/components-next/icon/Icon.vue';
 import Select from 'dashboard/components-next/select/Select.vue';
@@ -31,16 +30,15 @@ const { accountScopedRoute } = useAccount();
 // Applied filters live in the URL query string, so they survive both a
 const {
   dateRange,
+  rangeType,
   selectedFilters,
   buildFilterPayload,
   setFiltersQuery,
-  DEFAULT_DATE_RANGE,
   DEFAULT_FILTERS,
 } = useAttributionFilterQuery();
 
 // Pending state (edited inside the panel, only applied on submit).
 const isFilterPanelOpen = ref(false);
-const pendingDateRange = ref(DEFAULT_DATE_RANGE());
 // Each condition: { id, attributeKey, value }
 const pendingConditions = ref([]);
 
@@ -129,7 +127,6 @@ const defaultCondition = () => {
 };
 
 const openFilterPanel = () => {
-  pendingDateRange.value = [...dateRange.value];
   const conditions = conditionsFromSelectedFilters();
   pendingConditions.value = conditions.length
     ? conditions
@@ -149,8 +146,9 @@ const closeFilterPanel = () => {
   isFilterPanelOpen.value = false;
 };
 
-const onPendingDateRangeChange = value => {
-  pendingDateRange.value = value;
+const onDateRangeChange = async ([start, end, type]) => {
+  await setFiltersQuery([start, end], selectedFilters.value, type);
+  fetchReport();
 };
 
 const applyFilters = async () => {
@@ -162,16 +160,15 @@ const applyFilters = async () => {
     }
   });
 
-  await setFiltersQuery(pendingDateRange.value, nextFilters);
+  await setFiltersQuery(dateRange.value, nextFilters, rangeType.value);
   isFilterPanelOpen.value = false;
   fetchReport();
 };
 
 const clearFilters = async () => {
-  pendingDateRange.value = DEFAULT_DATE_RANGE();
   pendingConditions.value = [];
 
-  await setFiltersQuery(DEFAULT_DATE_RANGE(), DEFAULT_FILTERS());
+  await setFiltersQuery(dateRange.value, DEFAULT_FILTERS(), rangeType.value);
   isFilterPanelOpen.value = false;
   fetchReport();
 };
@@ -192,6 +189,11 @@ onMounted(() => {
   <div class="flex flex-col gap-5 pb-10">
     <!-- Filters -->
     <div class="flex items-center gap-2 flex-wrap">
+      <WootDatePicker
+        :date-range="dateRange"
+        :range-type="rangeType"
+        @date-range-changed="onDateRangeChange"
+      />
       <div class="relative">
         <Button
           id="toggleAttributionFilterButton"
@@ -215,7 +217,7 @@ onMounted(() => {
           v-on-click-outside="[
             closeFilterPanel,
             {
-              ignore: ['#toggleAttributionFilterButton', '.mx-datepicker-main'],
+              ignore: ['#toggleAttributionFilterButton'],
             },
           ]"
           class="absolute z-40 mt-2 w-[calc(100vw-2rem)] sm:w-[480px] overflow-visible border border-n-gray-4 bg-n-solid-1 dark:bg-n-solid-2 shadow-lg rounded-xl p-4 grid gap-4 max-[484px]:fixed max-[484px]:inset-x-6 max-[484px]:top-24 max-[484px]:mt-0 max-[484px]:w-auto max-[484px]:max-h-[calc(100vh-7rem)] max-[484px]:overflow-y-auto"
@@ -223,24 +225,6 @@ onMounted(() => {
           <h3 class="text-sm font-medium leading-6 text-n-slate-12">
             {{ $t('ATTRIBUTION_REPORTS.FILTERS.TITLE') }}
           </h3>
-
-          <div
-            class="flex items-center gap-3 max-[484px]:flex-col max-[484px]:items-stretch max-[484px]:gap-1.5"
-          >
-            <span
-              class="w-20 flex-shrink-0 text-sm text-n-slate-11 max-[484px]:w-auto"
-            >
-              {{ $t('ATTRIBUTION_REPORTS.FILTERS.DATE_RANGE') }}
-            </span>
-            <WootDateRangePicker
-              show-range
-              class="no-margin auto-width flex-1 min-w-0"
-              :value="pendingDateRange"
-              :confirm-text="$t('REPORT.CUSTOM_DATE_RANGE.CONFIRM')"
-              :placeholder="$t('REPORT.CUSTOM_DATE_RANGE.PLACEHOLDER')"
-              @change="onPendingDateRangeChange"
-            />
-          </div>
 
           <div
             v-if="pendingConditions.length"
@@ -303,15 +287,10 @@ onMounted(() => {
           </div>
         </div>
       </div>
-
-      <span class="text-xs text-n-slate-10">
-        {{ format(dateRange[0], 'MMM d, yyyy') }} –
-        {{ format(dateRange[1], 'MMM d, yyyy') }}
-      </span>
     </div>
 
     <!-- Totals -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
       <div
         class="flex items-center gap-4 p-4 rounded-xl border border-n-weak shadow-sm bg-n-solid-1 dark:bg-n-solid-2"
       >
@@ -352,13 +331,56 @@ onMounted(() => {
           </span>
         </div>
       </div>
+      <div
+        class="flex items-center gap-4 p-4 rounded-xl border border-n-weak shadow-sm bg-n-solid-1 dark:bg-n-solid-2"
+      >
+        <span
+          class="flex-shrink-0 flex items-center justify-center w-11 h-11 rounded-xl bg-n-amber-9 text-white shadow-sm"
+        >
+          <Icon icon="i-lucide-user-check" class="text-xl" />
+        </span>
+        <div class="flex flex-col">
+          <span
+            class="text-xs font-semibold uppercase tracking-wider text-n-slate-10"
+          >
+            {{ $t('ATTRIBUTION_REPORTS.TOTALS.BOOKED_CUSTOMERS') }}
+          </span>
+          <Spinner v-if="isFetchingReport" class="mt-1" />
+          <span v-else class="text-2xl font-bold tabular-nums text-n-slate-12">
+            {{ totals.booked_customers || 0 }}
+          </span>
+        </div>
+      </div>
+      <div
+        class="flex items-center gap-4 p-4 rounded-xl border border-n-weak shadow-sm bg-n-solid-1 dark:bg-n-solid-2"
+      >
+        <span
+          class="flex-shrink-0 flex items-center justify-center w-11 h-11 rounded-xl bg-n-ruby-9 text-white shadow-sm"
+        >
+          <Icon icon="i-lucide-percent" class="text-xl" />
+        </span>
+        <div class="flex flex-col">
+          <span
+            class="text-xs font-semibold uppercase tracking-wider text-n-slate-10"
+          >
+            {{ $t('ATTRIBUTION_REPORTS.TOTALS.BOOKING_RATE') }}
+          </span>
+          <Spinner v-if="isFetchingReport" class="mt-1" />
+          <span v-else class="text-2xl font-bold tabular-nums text-n-slate-12">
+            {{ `${totals.booking_rate || 0}%` }}
+          </span>
+        </div>
+      </div>
     </div>
 
     <!-- Attribution parameters -->
     <div v-if="isFetchingReport" class="flex items-center justify-center p-16">
       <Spinner />
     </div>
-    <div v-else class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+    <div
+      v-else
+      class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mt-2"
+    >
       <router-link
         v-for="dimension in DIMENSIONS"
         :key="dimension.key"
@@ -369,7 +391,7 @@ onMounted(() => {
             route.query
           )
         "
-        class="flex flex-col gap-3 p-4 rounded-xl border border-n-weak shadow-sm bg-n-solid-1 dark:bg-n-solid-2 hover:border-n-brand hover:shadow-md transition-all"
+        class="flex flex-col gap-3 p-4 mt-3 rounded-xl border border-n-weak shadow-sm bg-n-solid-1 dark:bg-n-solid-2 hover:border-n-brand hover:shadow-md transition-all"
       >
         <span
           class="flex items-center gap-2 text-sm font-semibold text-n-slate-12"
@@ -384,25 +406,6 @@ onMounted(() => {
             })
           }}
         </span>
-        <div class="flex items-center gap-4 pt-2 border-t border-n-weak">
-          <span class="flex items-center gap-1.5 text-xs text-n-slate-11">
-            <Icon icon="i-lucide-users" class="text-sm text-n-slate-9" />
-            <span class="font-medium tabular-nums">{{
-              totals.customers || 0
-            }}</span>
-            {{ $t('ATTRIBUTION_REPORTS.OVERVIEW.CUSTOMERS') }}
-          </span>
-          <span class="flex items-center gap-1.5 text-xs text-n-slate-11">
-            <Icon
-              icon="i-lucide-calendar-check"
-              class="text-sm text-n-slate-9"
-            />
-            <span class="font-medium tabular-nums">{{
-              totals.bookings || 0
-            }}</span>
-            {{ $t('ATTRIBUTION_REPORTS.OVERVIEW.BOOKINGS') }}
-          </span>
-        </div>
       </router-link>
     </div>
   </div>

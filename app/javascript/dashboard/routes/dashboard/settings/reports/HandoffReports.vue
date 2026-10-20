@@ -1,6 +1,7 @@
 <script>
+import BookingPlatformReports from './components/BookingPlatformReports.vue';
 import { useAlert, useTrack } from 'dashboard/composables';
-import ReportFilterSelector from './components/FilterSelector.vue';
+import ReportFilters from './components/ReportFilters.vue';
 import { GROUP_BY_FILTER } from './constants';
 import { REPORTS_EVENTS } from '../../../../helper/AnalyticsHelper/events';
 import ReportContainer from './ReportContainer.vue';
@@ -14,8 +15,9 @@ const REPORTS_KEYS = {
 export default {
   name: 'HandoffReports',
   components: {
+    BookingPlatformReports,
     ReportHeader,
-    ReportFilterSelector,
+    ReportFilters,
     ReportContainer,
   },
   data() {
@@ -40,12 +42,18 @@ export default {
     },
     async fetchChartData() {
       const payload = this.getRequestPayload();
-      
+
       try {
         // Fetch both metrics - the store will make only 1 API call for both
         await Promise.all([
-          this.$store.dispatch('fetchAccountReport', { metric: REPORTS_KEYS.LINKS_SENT, ...payload }),
-          this.$store.dispatch('fetchAccountReport', { metric: REPORTS_KEYS.FORMS_COMPLETED, ...payload }),
+          this.$store.dispatch('fetchAccountReport', {
+            metric: REPORTS_KEYS.LINKS_SENT,
+            ...payload,
+          }),
+          this.$store.dispatch('fetchAccountReport', {
+            metric: REPORTS_KEYS.FORMS_COMPLETED,
+            ...payload,
+          }),
         ]);
       } catch {
         useAlert(this.$t('REPORT.DATA_FETCHING_FAILED'));
@@ -78,18 +86,35 @@ export default {
 <template>
   <ReportHeader :header-title="$t('HANDOFF_REPORTS.HEADER')" />
   <div class="flex flex-col gap-3">
-    <ReportFilterSelector
-      :show-agents-filter="false"
-      :show-business-hours-switch="false"
-      show-group-by-filter
+    <ReportFilters
+      :show-entity-filter="false"
+      :show-business-hours="false"
+      show-group-by
       @filter-change="onFilterChange"
     />
-    <ReportContainer 
-      :group-by="groupBy" 
-      :report-keys="{ LINKS_SENT: 'handoff_links_sent', FORMS_COMPLETED: 'handoff_forms_completed' }" 
+    <section>
+      <h3 class="mb-2 text-sm font-semibold text-n-slate-12">
+        {{ $t('BOOKING_PLATFORM_REPORTS.ALL_PLATFORMS') }}
+      </h3>
+      <ReportContainer
+        :group-by="groupBy"
+        :report-keys="{
+          LINKS_SENT: 'handoff_links_sent',
+          FORMS_COMPLETED: 'handoff_forms_completed',
+        }"
+        :subtitles="{
+          LINKS_SENT: $t('HANDOFF_REPORTS.INFO.LINKS_SENT'),
+          FORMS_COMPLETED: $t('HANDOFF_REPORTS.INFO.FORMS_COMPLETED'),
+        }"
+        account-summary-key="getHandoffSummary"
+        summary-fetching-key="getHandoffSummaryFetchingStatus"
+      />
+    </section>
+    <BookingPlatformReports
+      type="handoff"
+      :group-by="groupBy"
       account-summary-key="getHandoffSummary"
       summary-fetching-key="getHandoffSummaryFetchingStatus"
     />
   </div>
 </template>
-

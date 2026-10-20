@@ -1,4 +1,17 @@
 {
+  "BOOKING_PLATFORM_REPORTS": {
+    "ALL_PLATFORMS": "All Platforms",
+    "NO_INBOX": "Connect an inbox to start receiving reports.",
+    "CONNECT_INBOX": "Connect inbox",
+    "PLATFORMS": {
+      "WEBSITE": "Website",
+      "FACEBOOK": "Facebook",
+      "WHATSAPP": "WhatsApp",
+      "SMS": "SMS",
+      "EMAIL": "Email",
+      "INSTAGRAM": "Instagram"
+    }
+  },
   "REPORT": {
     "HEADER": "Conversations",
     "LOADING_CHART": "Loading chart data...",
@@ -8,30 +21,36 @@
     "SUMMARY_FETCHING_FAILED": "Failed to fetch summary, please try again later.",
     "METRICS": {
       "CONVERSATIONS": {
+        "SUBTITLE": "Number of new conversations started in the selected period.",
         "NAME": "Conversations",
         "DESC": "( Total )"
       },
       "INCOMING_MESSAGES": {
+        "SUBTITLE": "Total messages received from customers, across all conversations active in this period.",
         "NAME": "Messages received",
         "DESC": "( Total )"
       },
       "OUTGOING_MESSAGES": {
+        "SUBTITLE": "Messages sent by your agents and bots to customers.",
         "NAME": "Messages sent",
         "DESC": "( Total )"
       },
       "FIRST_RESPONSE_TIME": {
+        "SUBTITLE": "Average time taken for human agent to send the first reply to the customer.",
         "NAME": "First Response Time",
         "DESC": "( Avg )",
         "INFO_TEXT": "Total number of conversations used for computation:",
         "TOOLTIP_TEXT": "First Response Time is {metricValue} (based on {conversationCount} conversations)"
       },
       "RESOLUTION_TIME": {
+        "SUBTITLE": "Average time from when a conversation starts until it is marked as resolved.",
         "NAME": "Resolution Time",
         "DESC": "( Avg )",
         "INFO_TEXT": "Total number of conversations used for computation:",
         "TOOLTIP_TEXT": "Resolution Time is {metricValue} (based on {conversationCount} conversations)"
       },
       "RESOLUTION_COUNT": {
+        "SUBTITLE": "Number of conversations resolved in the selected period.",
         "NAME": "Resolution Count",
         "DESC": "( Total )"
       },
@@ -44,6 +63,7 @@
         "DESC": "( Total )"
       },
       "REPLY_TIME": {
+        "SUBTITLE": "Average time a customer waits for a reply after sending a message.",
         "NAME": "Customer waiting time",
         "TOOLTIP_TEXT": "Waiting time is {metricValue} (based on {conversationCount} replies)",
         "DESC": ""
@@ -653,25 +673,40 @@
     }
   },
   "BOOKINGS_REPORTS": {
-    "HEADER": "Bookings"
+    "HEADER": "Bookings",
+    "INFO": {
+      "LINKS_SENT": "Number of booking links sent to customers in conversations during the selected period.",
+      "FORMS_COMPLETED": "Number of customers who completed the booking form after receiving a link."    },
+    "PLATFORM_INFO": {
+      "LINKS_SENT": "Number of booking links sent to customers on {platform} conversations during the selected period.",
+      "FORMS_COMPLETED": "Number of customers who completed the booking form after receiving a link on {platform} conversations."
+    }
   },
   "HANDOFF_REPORTS": {
-    "HEADER": "Handoff"
+    "HEADER": "Handoff",
+    "INFO": {
+      "LINKS_SENT": "Number of handoff links sent to customers in conversations during the selected period.",
+      "FORMS_COMPLETED": "Number of customers who completed the handoff form after receiving a link."    },
+    "PLATFORM_INFO": {
+      "LINKS_SENT": "Number of handoff links sent to customers on {platform} conversations during the selected period.",
+      "FORMS_COMPLETED": "Number of customers who completed the handoff form after receiving a link on {platform} conversations."
+    }
   },
   "ATTRIBUTION_REPORTS": {
     "HEADER": "Origin Attribution",
     "FILTERS": {
-      "LABEL": "Filters",
+      "LABEL": "Advanced Filters",
       "TITLE": "Filter Attribution Report",
       "CLEAR": "Clear filters",
       "APPLY": "Apply filters",
       "ADD_FILTER": "Add filter",
-      "EQUAL_TO": "Equal to",
-      "DATE_RANGE": "Date Range"
+      "EQUAL_TO": "Equal to"
     },
     "TOTALS": {
       "CUSTOMERS": "Total Customers",
-      "BOOKINGS": "Total Bookings"
+      "BOOKINGS": "Total Bookings",
+      "BOOKED_CUSTOMERS": "Booked Customers",
+      "BOOKING_RATE": "Booking Rate"
     },
     "DIMENSIONS": {
       "UTM_SOURCE": "Came From (Source)",
@@ -682,19 +717,21 @@
       "AD_TITLE": "Ad Title"
     },
     "OVERVIEW": {
-      "VALUE_COUNT": "{n} value | {n} values",
-      "CUSTOMERS": "customers",
-      "BOOKINGS": "bookings"
+      "VALUE_COUNT": "{n} value | {n} values"
     },
     "DETAIL": {
       "BACK": "Back to Attribution Parameters",
       "CUSTOMERS": "Customers:",
       "BOOKINGS": "Bookings:",
+      "BOOKED_CUSTOMERS": "Booked Customers:",
+      "BOOKING_RATE": "Booking Rate:",
       "TABLE": {
         "CUSTOMERS": "Customers",
         "CUSTOMER_PCT": "Customer %",
         "BOOKINGS": "Bookings",
-        "BOOKING_PCT": "Booking %"
+        "BOOKING_PCT": "Booking %",
+        "BOOKED_CUSTOMERS": "Booked Customers",
+        "BOOKING_RATE": "Booking Rate"
       }
     },
     "EMPTY": "No attribution data for the selected filters",

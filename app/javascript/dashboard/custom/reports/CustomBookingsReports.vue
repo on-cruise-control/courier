@@ -1,4 +1,5 @@
 <script>
+import BookingPlatformReports from 'dashboard/routes/dashboard/settings/reports/components/BookingPlatformReports.vue';
 import { useAlert, useTrack } from 'dashboard/composables';
 import ReportFilters from 'dashboard/routes/dashboard/settings/reports/components/ReportFilters.vue';
 import { GROUP_BY_FILTER } from 'dashboard/routes/dashboard/settings/reports/constants';
@@ -16,6 +17,7 @@ const REPORTS_KEYS = {
 export default {
   name: 'CustomBookingsReports',
   components: {
+    BookingPlatformReports,
     ReportHeader,
     ReportFilters,
     CustomReportContainer,
@@ -130,15 +132,24 @@ export default {
     />
 
     <!-- LINE CHART GRAPHS -->
-    <CustomReportContainer
-      :group-by="groupBy"
-      :report-keys="{
-        LINKS_SENT: 'booking_links_sent',
-        FORMS_COMPLETED: 'booking_forms_completed',
-      }"
-      account-summary-key="getBookingSummary"
-      summary-fetching-key="getBookingSummaryFetchingStatus"
-    />
+    <section>
+      <h3 class="mb-2 text-sm font-semibold text-n-slate-12">
+        {{ $t('BOOKING_PLATFORM_REPORTS.ALL_PLATFORMS') }}
+      </h3>
+      <CustomReportContainer
+        :group-by="groupBy"
+        :report-keys="{
+          LINKS_SENT: 'booking_links_sent',
+          FORMS_COMPLETED: 'booking_forms_completed',
+        }"
+        :subtitles="{
+          LINKS_SENT: $t('BOOKINGS_REPORTS.INFO.LINKS_SENT'),
+          FORMS_COMPLETED: $t('BOOKINGS_REPORTS.INFO.FORMS_COMPLETED'),
+        }"
+        account-summary-key="getBookingSummary"
+        summary-fetching-key="getBookingSummaryFetchingStatus"
+      />
+    </section>
     <div
       class="grid grid-cols-2 gap-4 p-4 rounded-xl border border-n-container shadow-md mt-2 dark:bg-n-solid-2"
     >
@@ -149,13 +160,15 @@ export default {
         <span class="text-sm opacity-70">{{
           $t('REPORT.METRICS.CONVERSION_RATE.NAME')
         }}</span>
-        <div v-if="isLoading" class="min-h-[2.25rem] flex items-center text-n-slate-12">
+        <div
+          v-if="isLoading"
+          class="min-h-[2.25rem] flex items-center text-n-slate-12"
+        >
           <Spinner />
         </div>
-        <span v-else class="text-3xl font-bold"
-          >{{ conversionRate
-          }}{{ $t('REPORT.METRICS.CONVERSION_RATE.DESC') }}</span
-        >
+        <span v-else class="text-3xl font-bold">
+          {{ conversionRate }}{{ $t('REPORT.METRICS.CONVERSION_RATE.DESC') }}
+        </span>
       </div>
 
       <!-- GENERATED VALUE -->
@@ -165,14 +178,23 @@ export default {
         <span class="text-sm opacity-70">{{
           $t('REPORT.METRICS.GENERATED_VALUE.NAME')
         }}</span>
-        <div v-if="isLoading" class="min-h-[2.25rem] flex items-center text-n-slate-12">
+        <div
+          v-if="isLoading"
+          class="min-h-[2.25rem] flex items-center text-n-slate-12"
+        >
           <Spinner />
         </div>
-        <span v-else class="text-3xl font-bold text-green-400"
-          >{{ $t('REPORT.METRICS.GENERATED_VALUE.DESC')
-          }}{{ generatedValue }}</span
-        >
+        <span v-else class="text-3xl font-bold text-green-400">
+          {{ $t('REPORT.METRICS.GENERATED_VALUE.DESC') }}{{ generatedValue }}
+        </span>
       </div>
     </div>
+    <BookingPlatformReports
+      type="booking"
+      :group-by="groupBy"
+      account-summary-key="getBookingSummary"
+      summary-fetching-key="getBookingSummaryFetchingStatus"
+      is-custom-ui
+    />
   </div>
 </template>

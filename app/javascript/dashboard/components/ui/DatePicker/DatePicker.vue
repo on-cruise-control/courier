@@ -34,6 +34,13 @@ import CalendarMonth from './components/CalendarMonth.vue';
 import CalendarWeek from './components/CalendarWeek.vue';
 import CalendarFooter from './components/CalendarFooter.vue';
 
+const props = defineProps({
+  disableFutureDates: {
+    type: Boolean,
+    default: true,
+  },
+});
+
 const emit = defineEmits(['dateRangeChanged']);
 const { t } = useI18n();
 
@@ -245,6 +252,7 @@ const moveCalendar = (calendar, direction, period = MONTH) => {
 };
 
 const selectDate = day => {
+  if (props.disableFutureDates && day > endOfDay(new Date())) return;
   selectedRange.value = CUSTOM_RANGE;
   monthOffset.value = 0;
   if (!selectingEndDate.value || day < selectedStartDate.value) {
@@ -279,7 +287,14 @@ const openCalendar = (index, calendarType, period = MONTH) => {
   setViewMode(calendarType, period === MONTH ? WEEK : MONTH);
 };
 
+const isFutureDate = date =>
+  props.disableFutureDates && date > endOfDay(currentDate.value);
+
 const updateManualInput = (newDate, calendarType) => {
+  if (isFutureDate(newDate)) {
+    useAlert('Future dates cannot be selected.');
+    return;
+  }
   if (calendarType === START_CALENDAR) {
     selectedStartDate.value = newDate;
     startCurrentDate.value = startOfMonth(newDate);
@@ -317,6 +332,11 @@ const resetDatePicker = () => {
 const emitDateRange = () => {
   if (!isValid(selectedStartDate.value) || !isValid(selectedEndDate.value)) {
     useAlert('Please select a valid time range');
+  } else if (
+    isFutureDate(selectedStartDate.value) ||
+    isFutureDate(selectedEndDate.value)
+  ) {
+    useAlert('Future dates cannot be selected.');
   } else {
     showDatePicker.value = false;
     emit('dateRangeChanged', [
@@ -394,6 +414,7 @@ const closeDatePicker = () => {
               :compare-date="
                 calendar === START_CALENDAR ? manualEndDate : manualStartDate
               "
+              :max-date="disableFutureDates ? endOfDay(currentDate) : undefined"
               :is-disabled="selectedRange !== CUSTOM_RANGE"
               @update="
                 calendar === START_CALENDAR
@@ -438,6 +459,7 @@ const closeDatePicker = () => {
                   :selected-end-date="selectedEndDate"
                   :selecting-end-date="selectingEndDate"
                   :hovered-end-date="hoveredEndDate"
+                  :disable-future-dates="disableFutureDates"
                   @update-hovered-end-date="hoveredEndDate = $event"
                   @select-date="selectDate"
                   @set-view="setViewMode"

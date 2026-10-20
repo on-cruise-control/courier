@@ -1,7 +1,7 @@
 <script>
 import { mapGetters } from 'vuex';
 import { useReportMetrics } from 'dashboard/composables/useReportMetrics';
-import { GROUP_BY_FILTER, METRIC_CHART } from './constants';
+import { GROUP_BY_FILTER, getMetricChart } from './constants';
 import fromUnixTime from 'date-fns/fromUnixTime';
 import format from 'date-fns/format';
 import { formatTime } from '@chatwoot/utils';
@@ -11,6 +11,10 @@ import BarChart from 'shared/components/charts/BarChart.vue';
 export default {
   components: { ChartStats, BarChart },
   props: {
+    subtitles: {
+      type: Object,
+      default: () => ({}),
+    },
     groupBy: {
       type: Object,
       default: () => ({}),
@@ -54,14 +58,21 @@ export default {
         ),
         RESOLUTION_TIME: this.$t(`REPORT.METRICS.RESOLUTION_TIME.INFO_TEXT`),
       };
-      return reportKeys.map(key => ({
-        NAME: this.$t(`REPORT.METRICS.${key}.NAME`),
-        KEY: this.reportKeys[key],
-        DESC: this.$t(`REPORT.METRICS.${key}.DESC`),
-        INFO_TEXT: infoText[key],
-        TOOLTIP_TEXT: `REPORT.METRICS.${key}.TOOLTIP_TEXT`,
-        trend: this.calculateTrend(this.reportKeys[key]),
-      }));
+      return reportKeys.map(key => {
+        return {
+          NAME: this.$t(`REPORT.METRICS.${key}.NAME`),
+          KEY: this.reportKeys[key],
+          DESC: this.$t(`REPORT.METRICS.${key}.DESC`),
+          SUBTITLE:
+            this.subtitles[key] ||
+            (this.$te(`REPORT.METRICS.${key}.SUBTITLE`)
+              ? this.$t(`REPORT.METRICS.${key}.SUBTITLE`)
+              : ''),
+          INFO_TEXT: infoText[key],
+          TOOLTIP_TEXT: `REPORT.METRICS.${key}.TOOLTIP_TEXT`,
+          trend: this.calculateTrend(this.reportKeys[key]),
+        };
+      });
     },
   },
   methods: {
@@ -90,7 +101,7 @@ export default {
         }
         return format(fromUnixTime(element.timestamp), 'dd-MMM');
       });
-      const datasets = METRIC_CHART[metric.KEY].datasets.map(dataset => {
+      const datasets = getMetricChart(metric.KEY).datasets.map(dataset => {
         switch (dataset.type) {
           case 'bar':
             return {
@@ -117,7 +128,7 @@ export default {
     },
     getChartOptions(metric) {
       const options = {
-        scales: METRIC_CHART[metric.KEY].scales,
+        scales: getMetricChart(metric.KEY).scales,
       };
 
       // Only add tooltip configuration for time-based metrics
@@ -165,7 +176,7 @@ export default {
         />
         <div v-else class="flex items-center justify-center h-72">
           <BarChart
-            v-if="accountReport.data[metric.KEY].length"
+            v-if="accountReport.data[metric.KEY]?.length"
             :collection="getCollection(metric)"
             :chart-options="getChartOptions(metric)"
           />

@@ -13,6 +13,7 @@ const props = defineProps({
   },
   dateValue: Date,
   compareDate: Date,
+  maxDate: Date,
   isDisabled: Boolean,
 });
 
@@ -39,11 +40,17 @@ const validateDate = () => {
     return;
   }
 
-  const { calendarType, compareDate, dateValue } = props;
+  const { calendarType, compareDate, dateValue, maxDate } = props;
   const isStartCalendar = calendarType === START_CALENDAR;
   const isEndCalendar = calendarType === END_CALENDAR;
 
-  if (compareDate && isStartCalendar && isAfter(dateValue, compareDate)) {
+  if (maxDate && isAfter(dateValue, maxDate)) {
+    emit('error', 'Future dates cannot be selected.');
+  } else if (
+    compareDate &&
+    isStartCalendar &&
+    isAfter(dateValue, compareDate)
+  ) {
     emit('error', 'Start date must be before the end date.');
   } else if (compareDate && isEndCalendar && isBefore(dateValue, compareDate)) {
     emit('error', 'End date must be after the start date.');

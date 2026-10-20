@@ -7,6 +7,7 @@ import AnalyticsHelper from '../../helper/AnalyticsHelper';
 import { REPORTS_EVENTS } from '../../helper/AnalyticsHelper/events';
 import { clampDataBetweenTimeline } from 'shared/helpers/ReportsDataHelper';
 import liveReports from '../../api/liveReports';
+import { BOOKING_STATS_METRICS } from 'dashboard/routes/dashboard/settings/reports/constants';
 
 const state = {
   fetchingStatus: false,
@@ -23,10 +24,9 @@ const state = {
       bot_resolutions_count: false,
       bot_handoffs_count: false,
       reply_time: false,
-      booking_links_sent: false,
-      booking_forms_completed: false,
-      handoff_links_sent: false,
-      handoff_forms_completed: false,
+      ...Object.fromEntries(
+        BOOKING_STATS_METRICS.map(metric => [metric, false])
+      ),
     },
     data: {
       conversations_count: [],
@@ -38,10 +38,7 @@ const state = {
       bot_resolutions_count: [],
       bot_handoffs_count: [],
       reply_time: [],
-      booking_links_sent: [],
-      booking_forms_completed: [],
-      handoff_links_sent: [],
-      handoff_forms_completed: [],
+      ...Object.fromEntries(BOOKING_STATS_METRICS.map(metric => [metric, []])),
     },
   },
   // Cache for booking stats to avoid duplicate API calls
@@ -184,6 +181,28 @@ const getters = {
   },
 };
 
+// Every key except timestamp is a metric, including dynamic platform ones like booking_sms_links_sent
+const populateBookingStats = (commit, rows) => {
+  const metricKeys = new Set(BOOKING_STATS_METRICS);
+  rows.forEach(row => Object.keys(row).forEach(key => metricKeys.add(key)));
+  metricKeys.delete('timestamp');
+
+  metricKeys.forEach(metricKey => {
+    commit(types.default.SET_ACCOUNT_REPORTS, {
+      metric: metricKey,
+      data: rows.map(row => ({
+        timestamp: row.timestamp,
+        value: row[metricKey] || 0,
+        count: 0,
+      })),
+    });
+    commit(types.default.TOGGLE_ACCOUNT_REPORT_LOADING, {
+      metric: metricKey,
+      value: false,
+    });
+  });
+};
+
 export const actions = {
   fetchAccountReport({ commit, state: currentState }, reportObj) {
     const { metric } = reportObj;
@@ -192,34 +211,8 @@ export const actions = {
       value: true,
     });
 
-    // Map metric to its type and field
-    const metricConfig = {
-      booking_links_sent: {
-        type: 'booking',
-        field: 'links_sent',
-        group: 'booking',
-      },
-      booking_forms_completed: {
-        type: 'booking',
-        field: 'forms_completed',
-        group: 'booking',
-      },
-      handoff_links_sent: {
-        type: 'handoff',
-        field: 'links_sent',
-        group: 'handoff',
-      },
-      handoff_forms_completed: {
-        type: 'handoff',
-        field: 'forms_completed',
-        group: 'handoff',
-      },
-    };
-
-    const config = metricConfig[metric];
-
     // Use booking stats endpoint for new metrics
-    if (config) {
+    if (BOOKING_STATS_METRICS.includes(metric)) {
       // Check if data already exists (already fetched for any metric)
       const cacheKey = JSON.stringify({
         from: reportObj.from,
@@ -231,26 +224,14 @@ export const actions = {
         cachedKey === cacheKey && currentState.bookingStatsCache.data !== null;
 
       if (isCached) {
-        // Extract the specific field for this metric from cached breakdown data
-        const rawBreakdownData = currentState.bookingStatsCache.data;
-        const metricData = rawBreakdownData.map(item => ({
-          timestamp: item.timestamp,
-          value: item[metric] || 0,
-          count: 0,
-        }));
-
-        commit(types.default.SET_ACCOUNT_REPORTS, { metric, data: metricData });
-        commit(types.default.TOGGLE_ACCOUNT_REPORT_LOADING, {
-          metric,
-          value: false,
-        });
+        populateBookingStats(commit, currentState.bookingStatsCache.data);
         return;
       }
 
-      // Make single API call that returns ALL fields in breakdown
+      // Make single API call that returns ALL fields (overall and per platform)
       Report.getBookingStats(reportObj)
         .then(response => {
-          const rawBreakdownData = response.data; // Contains all 4 fields per data point
+          const rawBreakdownData = response.data;
 
           // Cache the full breakdown data
           commit(types.default.SET_BOOKING_STATS_CACHE, {
@@ -259,27 +240,11 @@ export const actions = {
             timestamp: Date.now(),
           });
 
-          // Populate ALL 4 metrics from the single response
-          Object.keys(metricConfig).forEach(metricKey => {
-            const metricData = rawBreakdownData.map(item => ({
-              timestamp: item.timestamp,
-              value: item[metricKey] || 0,
-              count: 0,
-            }));
-
-            commit(types.default.SET_ACCOUNT_REPORTS, {
-              metric: metricKey,
-              data: metricData,
-            });
-            commit(types.default.TOGGLE_ACCOUNT_REPORT_LOADING, {
-              metric: metricKey,
-              value: false,
-            });
-          });
+          populateBookingStats(commit, rawBreakdownData);
         })
         .catch(() => {
           // Turn off loading for all metrics
-          Object.keys(metricConfig).forEach(metricKey => {
+          BOOKING_STATS_METRICS.forEach(metricKey => {
             commit(types.default.TOGGLE_ACCOUNT_REPORT_LOADING, {
               metric: metricKey,
               value: false,

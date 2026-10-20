@@ -31,6 +31,7 @@ export default {
       range
       confirm
       :clearable="false"
+      :disabled-date="date => date > new Date()"
       :editable="false"
       :confirm-text="confirmText"
       :placeholder="placeholder"

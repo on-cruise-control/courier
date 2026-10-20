@@ -1,6 +1,7 @@
 <script setup>
 import { computed } from 'vue';
 import ChannelSelector from '../ChannelSelector.vue';
+import { isChannelActive } from 'dashboard/routes/dashboard/settings/inbox/helpers/channelAvailability';
 
 const props = defineProps({
   channel: {
@@ -15,68 +16,9 @@ const props = defineProps({
 
 const emit = defineEmits(['channelItemClick']);
 
-const hasFbConfigured = computed(() => {
-  return window.chatwootConfig?.fbAppId;
-});
-
-const hasInstagramConfigured = computed(() => {
-  return window.chatwootConfig?.instagramAppId;
-});
-
-const hasTiktokConfigured = computed(() => {
-  return window.chatwootConfig?.tiktokAppId;
-});
-
-const isActive = computed(() => {
-  const { key } = props.channel;
-  if (Object.keys(props.enabledFeatures).length === 0) {
-    return false;
-  }
-  if (key === 'website') {
-    return props.enabledFeatures.channel_website;
-  }
-  if (key === 'facebook') {
-    return props.enabledFeatures.channel_facebook && hasFbConfigured.value;
-  }
-  if (key === 'email') {
-    return props.enabledFeatures.channel_email;
-  }
-
-  if (key === 'instagram') {
-    return (
-      props.enabledFeatures.channel_instagram && hasInstagramConfigured.value
-    );
-  }
-
-  if (key === 'tiktok') {
-    return props.enabledFeatures.channel_tiktok && hasTiktokConfigured.value;
-  }
-
-  if (key === 'voice') {
-    return props.enabledFeatures.channel_voice;
-  }
-
-  if (key === 'whatsapp_call') {
-    return (
-      props.enabledFeatures.channel_voice &&
-      !!window.chatwootConfig?.whatsappAppId &&
-      window.chatwootConfig.whatsappAppId !== 'none'
-    );
-  }
-
-  return [
-    'website',
-    'twilio',
-    'api',
-    'whatsapp',
-    'sms',
-    'telegram',
-    'line',
-    'instagram',
-    'tiktok',
-    'voice',
-  ].includes(key);
-});
+const isActive = computed(() =>
+  isChannelActive(props.channel.key, props.enabledFeatures)
+);
 
 const isComingSoon = computed(() => {
   const { key } = props.channel;
