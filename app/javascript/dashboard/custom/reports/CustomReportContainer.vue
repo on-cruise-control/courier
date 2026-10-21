@@ -51,14 +51,14 @@ export default {
   },
   data() {
     return {
-      isDarkMode: document.documentElement.classList.contains('dark'),
+      isDarkMode: document.body.classList.contains('dark'),
     };
   },
   mounted() {
     this.darkObserver = new MutationObserver(() => {
-      this.isDarkMode = document.documentElement.classList.contains('dark');
+      this.isDarkMode = document.body.classList.contains('dark');
     });
-    this.darkObserver.observe(document.documentElement, {
+    this.darkObserver.observe(document.body, {
       attributes: true,
       attributeFilter: ['class'],
     });
@@ -71,7 +71,7 @@ export default {
       accountReport: 'getAccountReports',
     }),
     chartLineColor() {
-      return this.isDarkMode ? 'rgb(56, 200, 232)' : 'rgb(24, 41, 51)';
+      return this.isDarkMode ? 'rgb(69, 118, 147)' : 'rgb(24, 41, 51)';
     },
     chartFillColor() {
       return this.isDarkMode
