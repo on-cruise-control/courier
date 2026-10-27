@@ -3,6 +3,7 @@ import { useStore, useStoreGetters } from 'dashboard/composables/store';
 
 export const DEFAULT_CONVERSATION_SIDEBAR_ITEMS_ORDER = Object.freeze([
   { name: 'conversation_actions' },
+  { name: 'facebook_lead' },
   { name: 'macros' },
   { name: 'conversation_info' },
   { name: 'contact_attributes' },
@@ -45,10 +46,18 @@ const useConversationSidebarItemsOrder = uiSettings => {
     // Create a copy of itemsOrder to avoid mutating the original store object.
     const itemsOrderCopy = [...itemsOrder];
     // If the sidebar order doesn't have the new elements, then add them to the list.
-    DEFAULT_CONVERSATION_SIDEBAR_ITEMS_ORDER.forEach(item => {
-      if (!itemsOrderCopy.find(i => i.name === item.name)) {
-        itemsOrderCopy.push(item);
-      }
+    DEFAULT_CONVERSATION_SIDEBAR_ITEMS_ORDER.forEach((item, index) => {
+      if (itemsOrderCopy.find(i => i.name === item.name)) return;
+      const previousName =
+        DEFAULT_CONVERSATION_SIDEBAR_ITEMS_ORDER[index - 1]?.name;
+      const previousIndex = itemsOrderCopy.findIndex(
+        i => i.name === previousName
+      );
+      itemsOrderCopy.splice(
+        previousIndex + 1 || itemsOrderCopy.length,
+        0,
+        item
+      );
     });
     return itemsOrderCopy;
   });

@@ -9,23 +9,29 @@ const meta = {
 };
 
 const redirectIfNoFacebookInbox = async (to, from, next) => {
-  if (!store.getters['accounts/getAccount'](to.params.accountId).id) {
+  const { accountId } = to.params;
+  if (!store.getters['accounts/getAccount'](accountId).id) {
     await store.dispatch('accounts/get');
   }
   if (!store.getters['inboxes/getInboxes'].length) {
     await store.dispatch('inboxes/get');
   }
-  const hasFacebookInbox = store.getters['inboxes/getInboxes'].some(
+  const inboxes = store.getters['inboxes/getInboxes'];
+  if (!store.getters['accounts/getAccount'](accountId).id || !inboxes.length) {
+    next();
+    return;
+  }
+  const hasFacebookInbox = inboxes.some(
     inbox => inbox.channel_type === 'Channel::FacebookPage'
   );
   const isLeadsEnabled = store.getters['accounts/isFeatureEnabledonAccount'](
-    to.params.accountId,
+    accountId,
     FEATURE_FLAGS.FACEBOOK_LEADS
   );
   next(
     hasFacebookInbox && isLeadsEnabled
       ? undefined
-      : frontendURL(`accounts/${to.params.accountId}/dashboard`)
+      : frontendURL(`accounts/${accountId}/dashboard`)
   );
 };
 

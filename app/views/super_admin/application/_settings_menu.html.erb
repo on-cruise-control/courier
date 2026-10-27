@@ -26,6 +26,13 @@
               <span class="ml-2 text-sm">Default Templates</span>
             <% end %>
           </li>
+          <li class="px-4 mb-1">
+            <% lead_message_url = super_admin_lead_message_url %>
+            <% text_class = current_page?(lead_message_url) ? 'text-woot-500 bg-slate-25' : 'text-slate-800' %>
+            <%= link_to lead_message_url, class: text_class + ' -ml-1 flex items-center px-2 py-1.5 hover:text-woot-500 hover:bg-slate-25 rounded-lg' do %>
+              <span class="ml-2 text-sm">Lead Message</span>
+            <% end %>
+          </li>
         <% end %>
       <% end %>
     </ul>

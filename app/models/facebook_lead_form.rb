@@ -43,6 +43,7 @@ class FacebookLeadForm < ApplicationRecord
   def save_lead_from_graph!(data)
     lead = leads.find_or_initialize_by(lead_id: data['id'])
     lead.update!(FacebookLead.attributes_from_graph(data).merge(account_id: account_id))
+    Facebook::LeadAds::OutreachJob.perform_later(lead) if lead.previously_new_record?
     lead
   end
 end

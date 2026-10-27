@@ -234,6 +234,29 @@ export default {
       }),
     },
     {
+      path: frontendURL('accounts/:accountId/leads/conversations'),
+      name: 'conversation_leads',
+      meta: {
+        permissions: CONVERSATION_PERMISSIONS,
+      },
+      component: ConversationView,
+      props: () => ({ conversationType: 'leads' }),
+    },
+    {
+      path: frontendURL(
+        'accounts/:accountId/leads/conversations/:conversationId'
+      ),
+      name: 'conversation_through_leads',
+      meta: {
+        permissions: CONVERSATION_PERMISSIONS,
+      },
+      component: ConversationView,
+      props: route => ({
+        conversationId: route.params.conversationId,
+        conversationType: 'leads',
+      }),
+    },
+    {
       path: frontendURL('accounts/:accountId/spam/conversations'),
       name: 'conversation_spam',
       meta: {

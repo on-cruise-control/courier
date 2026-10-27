@@ -274,6 +274,13 @@ const menuItems = computed(() => {
         },
         {
           type: 'link',
+          label: t('SIDEBAR.LEAD_CONVERSATIONS'),
+          icon: 'i-lucide-user-round-search',
+          to: accountScopedRoute('conversation_leads'),
+          activeOn: ['conversation_through_leads'],
+        },
+        {
+          type: 'link',
           label: t('SIDEBAR.UNATTENDED_CONVERSATIONS'),
           icon: 'i-lucide-clock',
           to: accountScopedRoute('conversation_unattended'),

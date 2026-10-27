@@ -114,6 +114,10 @@ const isCommentConversation = computed(() => {
   );
 });
 
+const isLeadConversation = computed(
+  () => !!props.chat.additional_attributes?.facebook_lead
+);
+
 const isSpamConversation = computed(() => {
   return props.chat.is_spam && props.conversationType !== 'spam';
 });
@@ -122,6 +126,7 @@ const showMetaSection = computed(() => {
   return (
     showInboxName.value ||
     isCommentConversation.value ||
+    isLeadConversation.value ||
     isSpamConversation.value ||
     (props.showAssignee && assignee.value.name) ||
     props.chat.priority
@@ -350,6 +355,12 @@ const deleteConversation = () => {
           class="ml-auto self-start inline-flex items-center px-3 py-0.5 text-[10px] font-semibold tracking-wide rounded-xl bg-n-blue-3 text-n-slate-11 dark:bg-n-blue-3"
         >
           {{ $t('CHAT_LIST.COMMENT_TAG') }}
+        </span>
+        <span
+          v-if="isLeadConversation"
+          class="ml-auto self-start inline-flex items-center px-3 py-0.5 text-[10px] font-semibold tracking-wide rounded-xl bg-n-teal-3 text-n-teal-11"
+        >
+          {{ $t('CHAT_LIST.LEAD_TAG') }}
         </span>
         <span
           v-if="isSpamConversation"

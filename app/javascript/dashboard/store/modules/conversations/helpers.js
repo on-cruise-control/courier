@@ -47,6 +47,9 @@ export const filterBySpam = (shouldFilter, conversationType, isSpam) => {
   return !isSpam && shouldFilter;
 };
 
+export const filterByLeads = (shouldFilter, conversationType, isLead) =>
+  conversationType === 'leads' ? isLead && shouldFilter : shouldFilter;
+
 export const filterByBlacklist = (
   shouldFilter,
   conversationType,
@@ -69,6 +72,7 @@ export const applyPageFilters = (conversation, filters) => {
     waiting_since: waitingSince,
     is_spam: isSpam,
     is_blacklisted: isBlacklisted,
+    additional_attributes: additionalAttributes,
   } = conversation;
   const team = meta.team || {};
   const { id: chatTeamId } = team;
@@ -85,6 +89,11 @@ export const applyPageFilters = (conversation, filters) => {
     waitingSince
   );
   shouldFilter = filterBySpam(shouldFilter, conversationType, isSpam);
+  shouldFilter = filterByLeads(
+    shouldFilter,
+    conversationType,
+    !!additionalAttributes?.facebook_lead
+  );
   shouldFilter = filterByBlacklist(
     shouldFilter,
     conversationType,

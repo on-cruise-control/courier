@@ -149,12 +149,9 @@ const lastSynced = computed(() =>
                   <span class="text-sm text-n-slate-12">
                     {{ question.label || question.key }}
                   </span>
-                  <span class="flex items-center gap-2 text-xs text-n-slate-11">
-                    <code class="px-1.5 py-0.5 rounded bg-n-alpha-2">
-                      {{ question.key }}
-                    </code>
-                    <span>{{ question.type }}</span>
-                  </span>
+                  <span class="text-xs text-n-slate-11">{{
+                    question.type
+                  }}</span>
                 </li>
               </ul>
             </div>

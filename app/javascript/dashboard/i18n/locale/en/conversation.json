@@ -429,7 +429,8 @@
       "LINEAR_ISSUES": "Linked Linear Issues",
       "SHOPIFY_ORDERS": "Shopify Orders",
       "SHARED_FILES": "Attachments",
-      "LEAD_ATTRIBUTION": "Contact Origin Attributes"
+      "LEAD_ATTRIBUTION": "Contact Origin Attributes",
+      "FACEBOOK_LEAD": "Lead"
     },
     "SHARED_FILES": {
       "EMPTY": "No attachments yet",

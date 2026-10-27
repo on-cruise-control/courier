@@ -28,6 +28,7 @@
 
 class Channel::TwilioSms < ApplicationRecord
   include Channelable
+  include LeadMessageRetry
   include Rails.application.routes.url_helpers
 
   self.table_name = 'channel_twilio_sms'

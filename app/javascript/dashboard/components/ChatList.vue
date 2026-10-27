@@ -326,6 +326,9 @@ const pageTitle = computed(() => {
   if (props.conversationType === wootConstants.CONVERSATION_TYPE.UNATTENDED) {
     return t('CHAT_LIST.UNATTENDED_HEADING');
   }
+  if (props.conversationType === 'leads') {
+    return t('CHAT_LIST.LEADS_HEADING');
+  }
   if (props.conversationType === 'spam') {
     return t('CHAT_LIST.SPAM_HEADING');
   }

@@ -33,6 +33,15 @@ en:
   hello: 'Hello world'
   comment_reply: 'Thanks for dropping us a comment 💬. We replied via DM, take a look when you have a sec.'
   dm_template: 'Hi! 👋 Thanks for engaging!'
+  facebook_leads:
+    outreach:
+      default_message: "Thanks for contacting us! Let us know what you are looking for and we will get back to you shortly."
+      no_inbox: "No active %{channel} inbox found."
+      whatsapp_pending: "The lead message is still being reviewed by WhatsApp. Conversations will start on WhatsApp once it is approved."
+      whatsapp_rejected: "WhatsApp rejected the lead message template. Change the message in Super Admin to submit a new one."
+      whatsapp_missing: "The lead message could not be submitted to WhatsApp for review. %{error}"
+      no_email: "The lead has no email address."
+      no_phone: "The lead has no phone number."
   inbox:
     reauthorization:
       success: 'Channel reauthorized successfully'
@@ -291,6 +300,7 @@ en:
     summary:
       rate_limit_alert: 'Summary refresh is rate-limited. Please try again in %{time}.'
     messages:
+      email_invalid_sender: 'The email could not be sent because the sender address is invalid.'
       instagram_story_content: '%{story_sender} mentioned you in the story: '
       instagram_story_reply_content: 'You mentioned %{username} in your story:'
       instagram_story_unknown_sender: 'Someone'
@@ -307,6 +317,9 @@ en:
         whatsapp: 'WhatsApp Call'
       delivery_status:
         error_code: 'Error code: %{error_code}'
+        known_errors:
+          code_63024: 'This number is not a valid WhatsApp number, so the message could not be delivered.'
+          code_63016: 'WhatsApp only allows approved templates outside the 24-hour reply window.'
     activity:
       captain:
         resolved: 'Conversation was marked resolved by %{user_name} due to inactivity'
