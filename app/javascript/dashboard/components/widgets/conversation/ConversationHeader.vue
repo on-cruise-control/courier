@@ -1,6 +1,6 @@
 <script setup>
 import { computed, ref } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { useStore } from 'vuex';
 import { useElementSize } from '@vueuse/core';
 import BackButton from '../BackButton.vue';
@@ -10,7 +10,12 @@ import Avatar from 'next/avatar/Avatar.vue';
 import SLACardLabel from './components/SLACardLabel.vue';
 import ConversationCallButton from './ConversationCallButton.vue';
 import wootConstants from 'dashboard/constants/globals';
-import { conversationListPageURL } from 'dashboard/helper/URLHelper';
+import Button from 'next/button/Button.vue';
+import ButtonGroup from 'dashboard/components-next/buttonGroup/ButtonGroup.vue';
+import {
+  conversationListPageURL,
+  frontendURL,
+} from 'dashboard/helper/URLHelper';
 import { snoozedReopenTime } from 'dashboard/helper/snoozeHelpers';
 import { useInbox } from 'dashboard/composables/useInbox';
 import { useAlert } from 'dashboard/composables';
@@ -31,12 +36,19 @@ const props = defineProps({
 const { t } = useI18n();
 const store = useStore();
 const route = useRoute();
+const router = useRouter();
 const conversationHeader = ref(null);
 const { width } = useElementSize(conversationHeader);
 const { isAWebWidgetInbox } = useInbox();
 
 const currentChat = computed(() => store.getters.getSelectedChat);
 const accountId = computed(() => store.getters.getCurrentAccountId);
+
+const lead = computed(() => props.chat.additional_attributes?.facebook_lead);
+const viewLead = () =>
+  router.push(
+    `${frontendURL(`accounts/${accountId.value}/leads/forms/${lead.value.form_id}`)}#${lead.value.id}`
+  );
 
 const chatMetadata = computed(() => props.chat.meta);
 
@@ -172,6 +184,19 @@ const copyConversationId = async () => {
         :parent-width="width"
         class="hidden md:flex"
       />
+      <ButtonGroup
+        v-if="lead"
+        class="flex-shrink-0 rounded-lg shadow outline-1 outline outline-n-container"
+      >
+        <Button
+          :label="t('FACEBOOK_LEADS.VIEW_LEAD')"
+          size="sm"
+          color="slate"
+          no-animation
+          class="!outline-0"
+          @click="viewLead"
+        />
+      </ButtonGroup>
       <ConversationCallButton :inbox="inbox" :chat="currentChat" />
       <MoreActions :conversation-id="currentChat.id" />
     </div>

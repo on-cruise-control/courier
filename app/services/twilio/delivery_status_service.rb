@@ -32,7 +32,10 @@ class Twilio::DeliveryStatusService
     error_message = params[:ErrorMessage].presence
     error_code = params[:ErrorCode]
 
-    if error_message.present?
+    known_error = I18n.t("conversations.messages.delivery_status.known_errors.code_#{error_code}", default: nil)
+    if known_error.present?
+      known_error
+    elsif error_message.present?
       "#{error_code} - #{error_message}"
     elsif error_code.present?
       I18n.t('conversations.messages.delivery_status.error_code', error_code: error_code)

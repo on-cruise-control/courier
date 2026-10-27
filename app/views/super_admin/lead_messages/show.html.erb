@@ -1,0 +1,21 @@
+<% content_for(:title) do %>
+  Lead Message
+<% end %>
+<header class="flex px-8 py-4 items-center border-b border-n-weak" role="banner">
+  <div class="flex flex-col h-14 justify-center">
+    <h1 class="text-base font-medium leading-6 text-n-slate-12" id="page-title">
+      <%= content_for(:title) %>
+    </h1>
+    <p class="text-sm font-normal leading-5 text-slate-500 m-0">The first message sent to every new Facebook lead, over email, SMS or WhatsApp</p>
+  </div>
+</header>
+<section class="main-content__body px-8">
+  <%= form_with url: super_admin_lead_message_path, method: :put, class: 'flex flex-col gap-3 py-6 max-w-2xl' do |form| %>
+    <%= form.label :message, 'Message', class: 'text-sm font-medium text-n-slate-12' %>
+    <%= form.text_area :message, value: @message, rows: 6, class: 'w-full p-2 border border-n-weak rounded-lg' %>
+    <p class="text-sm text-n-slate-11 m-0">Saving also sends this message to WhatsApp for review on every WhatsApp inbox.</p>
+    <div>
+      <%= form.submit 'Save', class: 'h-9 px-4 bg-violet-500 hover:bg-violet-600 text-white rounded font-medium cursor-pointer' %>
+    </div>
+  <% end %>
+</section>

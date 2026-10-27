@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, ref } from 'vue';
+import { computed, nextTick, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useDebounceFn } from '@vueuse/core';
@@ -14,12 +14,14 @@ import Spinner from 'dashboard/components-next/spinner/Spinner.vue';
 import PaginationFooter from 'dashboard/components-next/pagination/PaginationFooter.vue';
 import LeadCard from '../components/LeadCard.vue';
 import LeadsLayout from '../components/LeadsLayout.vue';
+import { useLeadsAccess } from '../useLeadsAccess';
 
 const LEADS_PER_PAGE = 15;
 
 const { t } = useI18n();
 const route = useRoute();
 const router = useRouter();
+useLeadsAccess();
 
 const page = ref(null);
 const form = ref(null);
@@ -27,9 +29,48 @@ const leads = ref([]);
 const totalLeads = ref(0);
 const currentPage = ref(1);
 const searchQuery = ref('');
-const expandedLeadId = ref(null);
+const startingLeadId = ref(null);
+const expandedLeadId = computed(() => Number(route.hash.slice(1)) || null);
 const isFetching = ref(false);
 const isSyncing = ref(false);
+
+const goToForms = () => router.push({ name: 'facebook_lead_forms_index' });
+
+const redirectToForms = () => {
+  useAlert(t('FACEBOOK_LEADS.LEAD_NOT_FOUND'));
+  goToForms();
+};
+
+let hasScrolledToLead = false;
+
+// A linked lead may sit on another page, so it is fetched by id and pinned on top
+const showLinkedLead = async () => {
+  const id = expandedLeadId.value;
+  if (!id) return;
+  if (!leads.value.some(lead => lead.id === id)) {
+    try {
+      const { data } = await FacebookLeadsAPI.getLead(id);
+      if (String(data.form_id) !== route.params.formId) {
+        router.replace({
+          name: 'facebook_form_leads_index',
+          params: { formId: data.form_id },
+          hash: route.hash,
+        });
+        return;
+      }
+      leads.value = [data, ...leads.value];
+    } catch (error) {
+      redirectToForms();
+      return;
+    }
+  }
+  if (hasScrolledToLead) return;
+  hasScrolledToLead = true;
+  await nextTick();
+  document
+    .getElementById(`lead-${id}`)
+    ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+};
 
 const fetchLeads = async (pageNumber = 1) => {
   isFetching.value = true;
@@ -42,6 +83,7 @@ const fetchLeads = async (pageNumber = 1) => {
     leads.value = data.payload;
     totalLeads.value = data.meta.count;
     currentPage.value = pageNumber;
+    await showLinkedLead();
   } catch (error) {
     useAlert(t('FACEBOOK_LEADS.FETCH_ERROR'));
   } finally {
@@ -60,12 +102,11 @@ const fetchForm = async () => {
         form.value = match;
       }
     });
+    if (!form.value) redirectToForms();
   } catch (error) {
     useAlert(t('FACEBOOK_LEADS.FETCH_ERROR'));
   }
 };
-
-const goToForms = () => router.push({ name: 'facebook_lead_forms_index' });
 
 const debouncedSearch = useDebounceFn(() => fetchLeads(1), 300);
 const onSearch = value => {
@@ -74,7 +115,24 @@ const onSearch = value => {
 };
 
 const toggleExpanded = id => {
-  expandedLeadId.value = expandedLeadId.value === id ? null : id;
+  router.replace({ hash: expandedLeadId.value === id ? '' : `#${id}` });
+};
+
+const startOutreach = async lead => {
+  startingLeadId.value = lead.id;
+  try {
+    const { data } = await FacebookLeadsAPI.startOutreach(lead.id);
+    leads.value = leads.value.map(item => (item.id === data.id ? data : item));
+    useAlert(
+      data.outreach_status === 'sent'
+        ? t('FACEBOOK_LEADS.OUTREACH.STARTED')
+        : t('FACEBOOK_LEADS.OUTREACH.START_FAILED')
+    );
+  } catch (error) {
+    useAlert(t('FACEBOOK_LEADS.OUTREACH.START_ERROR'));
+  } finally {
+    startingLeadId.value = null;
+  }
 };
 
 const syncLeads = async () => {
@@ -188,11 +246,14 @@ onMounted(() => {
     <div v-else class="flex flex-col gap-4">
       <LeadCard
         v-for="lead in leads"
+        :id="`lead-${lead.id}`"
         :key="lead.id"
         :lead="lead"
         :questions="form?.questions || []"
         :is-expanded="expandedLeadId === lead.id"
+        :is-starting="startingLeadId === lead.id"
         @toggle="toggleExpanded(lead.id)"
+        @start="startOutreach(lead)"
       />
     </div>
 

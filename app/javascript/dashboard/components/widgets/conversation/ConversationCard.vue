@@ -53,6 +53,7 @@ const voiceCallData = computed(() => {
 const showMetaSection = computed(() => {
   return (
     props.showInboxName ||
+    props.chat.additional_attributes?.facebook_lead ||
     (props.showAssignee && props.assignee.name) ||
     props.chat.priority
   );
@@ -71,6 +72,10 @@ const isCommentConversation = computed(() => {
     conversationType === 'feed_comments'
   );
 });
+
+const isLeadConversation = computed(
+  () => !!props.chat.additional_attributes?.facebook_lead
+);
 
 const isSpamConversation = computed(() => {
   return props.chat.is_spam && props.conversationType !== 'spam';
@@ -187,6 +192,12 @@ watch(
           {{ $t('CHAT_LIST.COMMENT_TAG') }}
         </span>
         <span
+          v-if="isLeadConversation"
+          class="ml-auto self-start inline-flex items-center px-3 py-0.5 text-[10px] font-semibold tracking-wide rounded-xl bg-n-teal-3 text-n-teal-11"
+        >
+          {{ $t('CHAT_LIST.LEAD_TAG') }}
+        </span>
+        <span
           v-if="isSpamConversation"
           class="ml-auto self-start inline-flex items-center px-3 py-0.5 text-[10px] font-semibold tracking-wide rounded-xl bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-200"
         >
@@ -255,6 +266,5 @@ watch(
         </template>
       </CardLabels>
     </div>
-
   </div>
 </template>

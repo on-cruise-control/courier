@@ -1,6 +1,6 @@
 module SuperAdmin::NavigationHelper
   def settings_open?
-    params[:controller].in? %w[super_admin/settings super_admin/app_configs super_admin/default_templates]
+    params[:controller].in? %w[super_admin/settings super_admin/app_configs super_admin/default_templates super_admin/lead_messages]
   end
 
   def dealer_metrics_open?

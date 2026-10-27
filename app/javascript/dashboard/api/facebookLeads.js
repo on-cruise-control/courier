@@ -14,6 +14,14 @@ class FacebookLeadsAPI extends ApiClient {
     return axios.post(`${this.url}/sync`, { inbox_id: inboxId });
   }
 
+  getLead(id) {
+    return axios.get(`${this.url}/${id}`);
+  }
+
+  startOutreach(id) {
+    return axios.post(`${this.url}/${id}/outreach`);
+  }
+
   getLeads({ inboxId, formId, page, q }) {
     return axios.get(this.url, {
       params: { inbox_id: inboxId, form_id: formId, page, q },

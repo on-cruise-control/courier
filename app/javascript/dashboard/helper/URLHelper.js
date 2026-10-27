@@ -27,6 +27,8 @@ export const conversationUrl = ({
     url = `accounts/${accountId}/participating/conversations/${id}`;
   } else if (conversationType === 'unattended') {
     url = `accounts/${accountId}/unattended/conversations/${id}`;
+  } else if (conversationType === 'leads') {
+    url = `accounts/${accountId}/leads/conversations/${id}`;
   } else if (conversationType === 'spam') {
     url = `accounts/${accountId}/spam/conversations/${id}`;
   } else if (conversationType === 'blacklist') {
@@ -57,6 +59,7 @@ export const conversationListPageURL = ({
       mention: 'mentions/conversations',
       participating: 'participating/conversations',
       unattended: 'unattended/conversations',
+      leads: 'leads/conversations',
       spam: 'spam/conversations',
       blacklist: 'blacklist/conversations',
     };

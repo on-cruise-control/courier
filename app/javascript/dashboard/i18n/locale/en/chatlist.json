@@ -12,6 +12,7 @@
     "UNATTENDED_HEADING": "Unattended",
     "SPAM_HEADING": "Spam",
     "BLACKLIST_HEADING": "Blocked",
+    "LEADS_HEADING": "Lead Forms",
     "SEARCH": {
       "INPUT": "Search for People, Chats, Saved Replies ..",
       "LABEL": "Search"
@@ -164,6 +165,7 @@
     "MESSAGE_READ": "Read",
     "SENDING": "Sending",
     "COMMENT_TAG": "Comment",
+    "LEAD_TAG": "Lead",
     "HUMAN": "H",
     "SPAM_TAG": "Spam",
     "NEGATIVE_TAG": "Negative Comment",
