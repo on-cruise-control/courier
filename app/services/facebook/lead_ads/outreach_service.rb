@@ -130,13 +130,17 @@ class Facebook::LeadAds::OutreachService
     @contact ||= find_contact || create_contact
   end
 
+  def contact_phone
+    normalized_phone || whatsapp_phone
+  end
+
   def find_contact
     (lead.email.present? && account.contacts.from_email(lead.email)) ||
-      (normalized_phone && account.contacts.find_by(phone_number: normalized_phone))
+      (contact_phone && account.contacts.find_by(phone_number: contact_phone))
   end
 
   def create_contact
-    account.contacts.create!(name: lead.name.presence || lead.email || normalized_phone, email: lead.email.presence, phone_number: normalized_phone,
+    account.contacts.create!(name: lead.name.presence || lead.email || contact_phone, email: lead.email.presence, phone_number: contact_phone,
                              contact_type: :lead)
   end
 
