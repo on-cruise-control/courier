@@ -98,6 +98,7 @@ class Conversation < ApplicationRecord
 
   scope :not_blacklisted, -> { where(is_blacklisted: [false, nil]) }
   scope :blacklisted, -> { where(is_blacklisted: true) }
+  scope :from_leads, -> { where("conversations.additional_attributes ? 'facebook_lead'") }
 
   scope :unassigned, -> { where(assignee_id: nil) }
   scope :without_comments, lambda {

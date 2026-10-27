@@ -260,5 +260,5 @@
   webhook_managed: true
 - name: facebook_leads
   display_name: Facebook Leads
-  enabled: false
+  enabled: true
 # CUSTOM END

@@ -1,6 +1,7 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
+import { useStorage } from '@vueuse/core';
 import { useI18n } from 'vue-i18n';
 import { useAlert } from 'dashboard/composables';
 import { useEmitter } from 'dashboard/composables/emitter';
@@ -11,6 +12,7 @@ import Spinner from 'dashboard/components-next/spinner/Spinner.vue';
 import SelectMenu from 'dashboard/components-next/selectmenu/SelectMenu.vue';
 import PaginationFooter from 'dashboard/components-next/pagination/PaginationFooter.vue';
 import LeadsLayout from '../components/LeadsLayout.vue';
+import { useLeadsAccess } from '../useLeadsAccess';
 import LeadFormCard from '../components/LeadFormCard.vue';
 
 const FORMS_PER_PAGE = 10;
@@ -22,10 +24,15 @@ const DEFAULT_DATE_RANGE = '30';
 
 const { t } = useI18n();
 const router = useRouter();
+useLeadsAccess();
 
 const pages = ref([]);
-const selectedInboxId = ref(ALL);
-const selectedDateRange = ref(DEFAULT_DATE_RANGE);
+const selectedInboxId = useStorage('leadForms.inboxId', ALL, sessionStorage);
+const selectedDateRange = useStorage(
+  'leadForms.dateRange',
+  DEFAULT_DATE_RANGE,
+  sessionStorage
+);
 const expandedFormId = ref(null);
 const currentPage = ref(1);
 const isFetching = ref(false);

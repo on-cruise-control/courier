@@ -157,6 +157,8 @@ class ConversationFinder
       @conversations = @conversations.spam
     when 'blacklist'
       @conversations = @conversations.blacklisted
+    when 'leads'
+      @conversations = @conversations.from_leads
     end
     @conversations
   end

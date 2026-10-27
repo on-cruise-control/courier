@@ -349,6 +349,13 @@ const menuItems = computed(() => {
           to: accountScopedRoute('conversation_participating'),
         },
         {
+          name: 'Leads',
+          label: t('SIDEBAR.LEAD_CONVERSATIONS'),
+          icon: 'i-lucide-user-round-search',
+          activeOn: ['conversation_through_leads'],
+          to: accountScopedRoute('conversation_leads'),
+        },
+        {
           name: 'Unattended',
           activeOn: ['conversation_through_unattended'],
           label: t('SIDEBAR.UNATTENDED_CONVERSATIONS'),

@@ -28,7 +28,8 @@
       "ORGANIC": "Organic lead",
       "AD": "Ad",
       "CAMPAIGN": "Campaign",
-      "ADSET": "Ad set"
+      "ADSET": "Ad set",
+      "PLATFORM": "Platform"
     },
     "PAGINATION_FOOTER": {
       "SHOWING": "Showing {startItem} - {endItem} of {totalItems} lead | Showing {startItem} - {endItem} of {totalItems} leads",
@@ -48,6 +49,39 @@
       "EMPTY_TITLE": "No lead forms yet",
       "EMPTY_DESCRIPTION": "Click \"Sync leads\" to fetch the Lead Ads forms of your connected Facebook Pages.",
       "EMPTY_IN_RANGE": "No lead forms were created in this period. Choose a longer date range to see older forms."
+    },
+    "LEAD_NOT_FOUND": "This lead or form is no longer available.",
+    "VIEW_LEAD": "View lead",
+    "OUTREACH": {
+      "STATUS": {
+        "pending": "Not started",
+        "sent": "Conversations started",
+        "partial": "Partially started",
+        "failed": "Failed",
+        "needs_config": "Needs setup",
+        "skipped": "No contact details"
+      },
+      "START": "Start conversation",
+      "RETRY": "Retry",
+      "VIEW_CONVERSATION": "View conversation",
+      "STARTED": "Conversation started.",
+      "START_FAILED": "Could not start the conversation. See the lead for details.",
+      "START_ERROR": "Something went wrong. Please try again.",
+      "CHANNELS": {
+        "email": "Email",
+        "sms": "SMS",
+        "whatsapp": "WhatsApp"
+      },
+      "CONVERSATION_STARTED": "Conversation started",
+      "CONVERSATION_DELETED": "Conversation no longer available"
+    },
+    "SIDEBAR": {
+      "TITLE": "Lead",
+      "FORM": "Form",
+      "CAMPAIGN": "Campaign",
+      "ADSET": "Ad set",
+      "AD": "Ad",
+      "VIEW": "View lead"
     }
   }
 }

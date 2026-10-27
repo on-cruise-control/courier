@@ -137,11 +137,12 @@ Rails.application.routes.draw do
           end
           resources :bookings, only: [:index, :show]
           resources :offers, only: [:index, :create, :update, :destroy]
-          resources :facebook_leads, only: [:index] do
+          resources :facebook_leads, only: [:index, :show] do
             collection do
               get :pages
               post :sync
             end
+            post :outreach, on: :member
           end
           resources :sla_policies, only: [:index, :create, :show, :update, :destroy]
           resources :custom_roles, only: [:index, :create, :show, :update, :destroy]
@@ -768,6 +769,7 @@ Rails.application.routes.draw do
         put :settings, on: :collection, action: :update_settings
         post :upload, on: :collection
       end
+      resource :lead_message, only: [:show, :update]
       resource :instance_status, only: [:show]
       resources :email_templates do
         collection do

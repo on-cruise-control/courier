@@ -11,6 +11,8 @@
 #  is_organic            :boolean          default(FALSE), not null
 #  lead_created_at       :datetime
 #  name                  :string
+#  outreach              :jsonb            not null
+#  outreach_status       :string           default("pending"), not null
 #  phone                 :string
 #  platform              :string
 #  created_at            :datetime         not null
@@ -19,19 +21,26 @@
 #  ad_id                 :string
 #  adset_id              :string
 #  campaign_id           :string
+#  contact_id            :bigint
 #  facebook_lead_form_id :bigint           not null
 #  lead_id               :string           not null
 #
 # Indexes
 #
 #  index_facebook_leads_on_account_id                         (account_id)
+#  index_facebook_leads_on_contact_id                         (contact_id)
 #  index_facebook_leads_on_facebook_lead_form_id_and_lead_id  (facebook_lead_form_id,lead_id) UNIQUE
 #
 class FacebookLead < ApplicationRecord
   belongs_to :account
   belongs_to :facebook_lead_form, counter_cache: :leads_count
+  belongs_to :contact, optional: true
 
   validates :lead_id, presence: true, uniqueness: { scope: :facebook_lead_form_id }
+
+  def whatsapp_number
+    field_data.find { |field| field['name'] == 'whatsapp_number' }&.dig('values')&.first.presence
+  end
 
   def self.attributes_from_graph(data)
     answers = (data['field_data'] || []).to_h { |field| [field['name'], Array(field['values']).join(', ')] }

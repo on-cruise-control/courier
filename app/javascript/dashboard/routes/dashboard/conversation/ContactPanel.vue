@@ -27,6 +27,7 @@ import SharedFiles from './SharedFiles.vue';
 import Draggable from 'vuedraggable';
 import MacrosList from './Macros/List.vue';
 import ShopifyOrdersList from 'dashboard/components/widgets/conversation/ShopifyOrdersList.vue';
+import LeadInfo from 'dashboard/components/widgets/conversation/LeadInfo.vue';
 import LeadAttribution from 'dashboard/components/widgets/conversation/LeadAttribution.vue';
 import LinearIssuesList from 'dashboard/components/widgets/conversation/linear/IssuesList.vue';
 import LinearSetupCTA from 'dashboard/components/widgets/conversation/linear/LinearSetupCTA.vue';
@@ -60,6 +61,7 @@ const ACCORDION_KEYS = [
   'is_contact_notes_open',
   'is_shared_files_open',
   'is_lead_attribution_open',
+  'is_facebook_lead_open',
 ];
 
 const toggleAccordionItem = key => {
@@ -129,6 +131,10 @@ const currentConversationMetaData = computed(() =>
 );
 const conversationAdditionalAttributes = computed(
   () => currentConversationMetaData.value.additional_attributes || {}
+);
+
+const isLeadConversation = computed(
+  () => !!currentChat.value.additional_attributes?.facebook_lead
 );
 
 const channelType = computed(() => currentChat.value.meta?.channel);
@@ -242,6 +248,19 @@ onMounted(() => {
                 :conversation-id="conversationId"
                 :inbox-id="inboxId"
               />
+            </component>
+          </div>
+          <div
+            v-else-if="element.name === 'facebook_lead' && isLeadConversation"
+          >
+            <component
+              :is="AccordionComponent"
+              :title="$t('CONVERSATION_SIDEBAR.ACCORDION.FACEBOOK_LEAD')"
+              :is-open="isContactSidebarItemOpen('is_facebook_lead_open')"
+              compact
+              @toggle="() => toggleAccordionItem('is_facebook_lead_open')"
+            >
+              <LeadInfo />
             </component>
           </div>
           <div

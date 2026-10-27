@@ -14,6 +14,12 @@ class Email::SendOnEmailService < Base::SendOnChannelService
     message.update(source_id: reply_mail.message_id)
   rescue StandardError => e
     ChatwootExceptionTracker.new(e, account: message.account).capture_exception
-    Messages::StatusUpdateService.new(message, 'failed', e.message).perform
+    Messages::StatusUpdateService.new(message, 'failed', friendly_error(e)).perform
+  end
+
+  def friendly_error(error)
+    return I18n.t('conversations.messages.email_invalid_sender') if error.message.include?("Invalid 'From' address")
+
+    error.message
   end
 end
