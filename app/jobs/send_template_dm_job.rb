@@ -1,7 +1,7 @@
 class SendTemplateDmJob < ApplicationJob
   queue_as :default
 
-  TEMPLATE_MESSAGE = 'Hey, thanks for your comment! We're here to help if you have any questions.'
+  TEMPLATE_MESSAGE = "Hey, thanks for your comment! We're here to help if you have any questions."
 
   def perform(contact_inbox_id, conversation, comment_id)
     Rails.logger.info "=================== SendTemplateDmJob START =======comment_id #{comment_id}============"
