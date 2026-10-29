@@ -28,6 +28,8 @@
       "TITLE": "Comment auto replies",
       "ENABLED": "Enabled",
       "DISABLED": "Disabled",
+      "COMMENT_REPLY": "Enable Replies",
+      "COMMENT_REPLY_AND_LIKE": "Enable Replies & Likes",
       "SUBMIT": "Update",
       "DESC": "Ai Automatically reply to comments on this inbox and send the follow-up DM. Turn off to stop both for this inbox only.",
       "SUCCESS_MESSAGE": "Comment auto reply setting updated.",
