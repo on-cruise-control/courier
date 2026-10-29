@@ -35,7 +35,9 @@ class SendCommentReplyJob < ApplicationJob
     # Try to get AI generated reply from Stark
     stark_reply = Stark::CommentAnalysisService.new.analyze(comment_text, account.dealership_id, post_url, conversation)
 
-    unless stark_reply && stark_reply[:status] == 'success' && stark_reply[:reply].present?
+    like_requested = stark_reply && stark_reply[:like_comment] && contact_inbox.inbox.comment_like_enabled?
+
+    unless stark_reply && stark_reply[:status] == 'success' && (stark_reply[:reply].present? || like_requested)
       Rails.logger.warn "⚠️ Stark API failed or no reply for #{conversation.additional_attributes['type']}"
       return
     end
@@ -70,9 +72,10 @@ class SendCommentReplyJob < ApplicationJob
     # Check type of comment (Instagram or Facebook)
     case conversation.additional_attributes['type']
     when 'instagram_comments'
-      send_to_instagram_page(contact_inbox, conversation, message_content, stark_comment_id, stark_message_id)
+      send_to_instagram_page(contact_inbox, conversation, message_content, stark_comment_id, stark_message_id) if message_content.present?
     when 'facebook_comments', 'feed_comments'
-      send_to_facebook_page(contact_inbox, conversation, message_content, stark_comment_id, stark_message_id)
+      send_to_facebook_page(contact_inbox, conversation, message_content, stark_comment_id, stark_message_id) if message_content.present?
+      like_facebook_comment(contact_inbox, conversation) if like_requested
     else
       Rails.logger.warn "⚠️ Unsupported comment type: #{conversation.additional_attributes['type']}"
     end
@@ -153,6 +156,23 @@ class SendCommentReplyJob < ApplicationJob
     )
 
     Rails.logger.info "✅ Facebook reply sent successfully for comment_id #{comment_id}"
+  end
+
+  def like_facebook_comment(contact_inbox, conversation)
+    return unless contact_inbox.inbox.facebook?
+
+    access_token = contact_inbox.inbox.channel.page_access_token
+    query = { access_token: access_token, appsecret_proof: calculate_app_secret_proof(GlobalConfigService.load('FB_APP_SECRET', ''), access_token) }
+    response = HTTParty.post("https://graph.facebook.com/v23.0/#{conversation.additional_attributes['comment_id']}/likes", query: query)
+    Rails.logger.info "👍 Facebook like response: #{response.inspect}"
+    return unless response['success'] == true
+
+    conversation.messages.create!(
+      account: contact_inbox.inbox.account,
+      inbox: contact_inbox.inbox,
+      message_type: :activity,
+      content: 'Comment Liked on Facebook'
+    )
   end
 
   def build_facebook_url(comment_id)

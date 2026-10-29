@@ -23,10 +23,7 @@ export default {
   data() {
     return {
       selectedAgentBotId: null,
-      commentAutoReply:
-        this.inbox.comment_auto_reply_enabled === false
-          ? 'disabled'
-          : 'enabled',
+      commentAutoReply: this.initialCommentAutoReply(),
       isUpdatingCommentAutoReply: false,
     };
   },
@@ -48,7 +45,28 @@ export default {
         this.inbox.channel_type
       );
     },
+    isFacebookInbox() {
+      return this.inbox.channel_type === INBOX_TYPES.FB;
+    },
     commentAutoReplyOptions() {
+      if (this.isFacebookInbox) {
+        return [
+          {
+            value: 'disabled',
+            label: this.$t('AGENT_BOTS.COMMENT_AUTO_REPLY.DISABLED'),
+          },
+          {
+            value: 'reply',
+            label: this.$t('AGENT_BOTS.COMMENT_AUTO_REPLY.COMMENT_REPLY'),
+          },
+          {
+            value: 'reply_and_like',
+            label: this.$t(
+              'AGENT_BOTS.COMMENT_AUTO_REPLY.COMMENT_REPLY_AND_LIKE'
+            ),
+          },
+        ];
+      }
       return [
         {
           value: 'enabled',
@@ -71,6 +89,11 @@ export default {
   },
 
   methods: {
+    initialCommentAutoReply() {
+      if (this.inbox.comment_auto_reply_enabled === false) return 'disabled';
+      if (this.inbox.channel_type !== INBOX_TYPES.FB) return 'enabled';
+      return this.inbox.comment_like_enabled ? 'reply_and_like' : 'reply';
+    },
     fetchBotData() {
       this.$store.dispatch('agentBots/get');
       this.$store.dispatch('agentBots/fetchAgentBotInbox', this.currentInboxId);
@@ -93,7 +116,8 @@ export default {
         await this.$store.dispatch('inboxes/updateInbox', {
           id: this.inbox.id,
           formData: false,
-          comment_auto_reply_enabled: this.commentAutoReply === 'enabled',
+          comment_auto_reply_enabled: this.commentAutoReply !== 'disabled',
+          comment_like_enabled: this.commentAutoReply === 'reply_and_like',
         });
         useAlert(this.$t('AGENT_BOTS.COMMENT_AUTO_REPLY.SUCCESS_MESSAGE'));
       } catch (error) {

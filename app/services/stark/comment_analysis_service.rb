@@ -21,6 +21,7 @@ module Stark
             reply: Array(response.dig('body', 'data', 'answer')).join("\n\n"),
             stark_comment_id: response.dig('body', 'data', 'comment_id'),
             stark_message_id: response.dig('body', 'data', 'metadata', 'stark_message_id'),
+            like_comment: response.dig('body', 'data', 'like_comment') == true,
             human_redirect: response.dig('body', 'data', 'human_redirect'),
             handoff_reason: response.dig('body', 'data', 'handoff_reason'),
             customer_data: refined_customer_data(response.dig('body', 'data', 'customer'), conversation),
@@ -61,6 +62,7 @@ module Stark
         agent_name: conversation.account&.bot_display_name,
         customer_name: extract_customer_name(conversation.contact, conversation.inbox.platform_name)
       }
+      payload[:like_comment] = conversation.inbox.facebook? && conversation.inbox.comment_like_enabled?
       payload[:post_url] = post_url if post_url.present?
 
       response = HTTParty.post(
