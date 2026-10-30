@@ -18,9 +18,7 @@ class Dealership::BookingCreateService
   def perform
     return unless enabled?
 
-    unless @force || whatsapp_or_sms?
-      return
-    end
+    return unless @force
 
     url = "#{@base_url}/api/v1/bookings"
     headers = {
@@ -32,7 +30,7 @@ class Dealership::BookingCreateService
     return if payload_data.blank?
 
     response = self.class.post(url, body: payload_data.to_json, headers: headers)
- 
+
     if response.success?
       handle_success(response)
     else
@@ -52,12 +50,6 @@ class Dealership::BookingCreateService
 
   def enabled?
     @base_url.present? && @api_key.present? && @account.dealership_id.present?
-  end
-
-  def whatsapp_or_sms?
-    return false if @inbox.nil?
-
-    @inbox.whatsapp? || @inbox.sms? || @inbox.twilio?
   end
 
   def payload
