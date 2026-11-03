@@ -26,10 +26,10 @@
     },
     "COMMENT_AUTO_REPLY": {
       "TITLE": "Comment auto replies",
-      "ENABLED": "Enabled",
-      "DISABLED": "Disabled",
+      "REPLY": "Reply",
+      "LIKE": "Like",
       "SUBMIT": "Update",
-      "DESC": "Ai Automatically reply to comments on this inbox and send the follow-up DM. Turn off to stop both for this inbox only.",
+      "DESC": "Choose what the AI does when someone comments. Leave both unchecked to turn comment automation off for this inbox.",
       "SUCCESS_MESSAGE": "Comment auto reply setting updated.",
       "ERROR_MESSAGE": "Could not update the comment auto reply setting. Please try again."
     },

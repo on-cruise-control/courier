@@ -10,6 +10,7 @@
 #  business_name                 :string
 #  channel_type                  :string
 #  comment_auto_reply_enabled    :boolean          default(TRUE), not null
+#  comment_like_enabled          :boolean          default(FALSE), not null
 #  csat_config                   :jsonb            not null
 #  csat_survey_enabled           :boolean          default(FALSE)
 #  email_address                 :string

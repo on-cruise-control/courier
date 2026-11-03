@@ -5,6 +5,7 @@ import SettingsFieldSection from 'dashboard/components-next/Settings/SettingsFie
 import LoadingState from 'dashboard/components/widgets/LoadingState.vue';
 import NextButton from 'dashboard/components-next/button/Button.vue';
 import SelectInput from 'dashboard/components-next/select/Select.vue';
+import Checkbox from 'dashboard/components-next/checkbox/Checkbox.vue';
 import { INBOX_TYPES } from 'dashboard/helper/inbox';
 
 export default {
@@ -13,6 +14,7 @@ export default {
     SettingsFieldSection,
     NextButton,
     SelectInput,
+    Checkbox,
   },
   props: {
     inbox: {
@@ -23,10 +25,8 @@ export default {
   data() {
     return {
       selectedAgentBotId: null,
-      commentAutoReply:
-        this.inbox.comment_auto_reply_enabled === false
-          ? 'disabled'
-          : 'enabled',
+      commentReplyEnabled: this.inbox.comment_auto_reply_enabled !== false,
+      commentLikeEnabled: this.inbox.comment_like_enabled === true,
       isUpdatingCommentAutoReply: false,
     };
   },
@@ -48,17 +48,8 @@ export default {
         this.inbox.channel_type
       );
     },
-    commentAutoReplyOptions() {
-      return [
-        {
-          value: 'enabled',
-          label: this.$t('AGENT_BOTS.COMMENT_AUTO_REPLY.ENABLED'),
-        },
-        {
-          value: 'disabled',
-          label: this.$t('AGENT_BOTS.COMMENT_AUTO_REPLY.DISABLED'),
-        },
-      ];
+    isFacebookInbox() {
+      return this.inbox.channel_type === INBOX_TYPES.FB;
     },
   },
   watch: {
@@ -93,7 +84,8 @@ export default {
         await this.$store.dispatch('inboxes/updateInbox', {
           id: this.inbox.id,
           formData: false,
-          comment_auto_reply_enabled: this.commentAutoReply === 'enabled',
+          comment_auto_reply_enabled: this.commentReplyEnabled,
+          comment_like_enabled: this.isFacebookInbox && this.commentLikeEnabled,
         });
         useAlert(this.$t('AGENT_BOTS.COMMENT_AUTO_REPLY.SUCCESS_MESSAGE'));
       } catch (error) {
@@ -169,10 +161,35 @@ export default {
         :help-text="$t('AGENT_BOTS.COMMENT_AUTO_REPLY.DESC')"
         class="[&>div]:!items-start"
       >
-        <SelectInput
-          v-model="commentAutoReply"
-          :options="commentAutoReplyOptions"
-        />
+        <div class="flex flex-col sm:flex-row gap-3 mx-1">
+          <label
+            class="flex items-center gap-3 sm:w-40 px-4 py-3 rounded-xl border cursor-pointer transition-colors"
+            :class="
+              commentReplyEnabled
+                ? 'border-n-brand bg-n-brand/5'
+                : 'border-n-weak hover:border-n-slate-7'
+            "
+          >
+            <Checkbox v-model="commentReplyEnabled" />
+            <span class="text-sm font-medium text-n-slate-12">
+              {{ $t('AGENT_BOTS.COMMENT_AUTO_REPLY.REPLY') }}
+            </span>
+          </label>
+          <label
+            v-if="isFacebookInbox"
+            class="flex items-center gap-3 sm:w-40 px-4 py-3 rounded-xl border cursor-pointer transition-colors"
+            :class="
+              commentLikeEnabled
+                ? 'border-n-brand bg-n-brand/5'
+                : 'border-n-weak hover:border-n-slate-7'
+            "
+          >
+            <Checkbox v-model="commentLikeEnabled" />
+            <span class="text-sm font-medium text-n-slate-12">
+              {{ $t('AGENT_BOTS.COMMENT_AUTO_REPLY.LIKE') }}
+            </span>
+          </label>
+        </div>
         <template #extra>
           <div class="grid grid-cols-1 lg:grid-cols-8 mt-3">
             <div class="col-span-1 lg:col-span-2 invisible" />
