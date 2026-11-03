@@ -62,7 +62,7 @@ module Stark
         agent_name: conversation.account&.bot_display_name,
         customer_name: extract_customer_name(conversation.contact, conversation.inbox.platform_name)
       }
-      payload[:like_comment] = conversation.inbox.facebook? && conversation.inbox.comment_like_enabled?
+      payload.merge!(comment_action_flags(conversation.inbox))
       payload[:post_url] = post_url if post_url.present?
 
       response = HTTParty.post(
@@ -73,6 +73,13 @@ module Stark
       )
 
       parse_response_body(response)
+    end
+
+    def comment_action_flags(inbox)
+      {
+        like_comment: inbox.facebook? && inbox.comment_like_enabled?,
+        draft_reply: inbox.comment_auto_reply_enabled?
+      }
     end
 
     def build_request_headers
