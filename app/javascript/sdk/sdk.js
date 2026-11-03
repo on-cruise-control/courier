@@ -315,6 +315,13 @@ export const SDK_CSS = `
  }
 }
 
+@media only screen and (max-width: 450px) {
+  .woot-greeting-preview,
+  .woot-greeting-input-box {
+    display: none !important;
+  }
+}
+
 .woot-hidden {
   display: none !important;
 }
