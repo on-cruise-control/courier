@@ -18,8 +18,10 @@ class SendCommentReplyJob < ApplicationJob
 
     return if conversation.nil?
 
-    unless contact_inbox.inbox.comment_auto_reply_enabled?
-      Rails.logger.info "⏸️ Comment auto reply disabled for inbox #{contact_inbox.inbox_id}"
+    reply_enabled = contact_inbox.inbox.comment_auto_reply_enabled?
+    like_enabled = contact_inbox.inbox.facebook? && contact_inbox.inbox.comment_like_enabled?
+    unless reply_enabled || like_enabled
+      Rails.logger.info "⏸️ Comment auto reply and like disabled for inbox #{contact_inbox.inbox_id}"
       return
     end
 
@@ -35,14 +37,14 @@ class SendCommentReplyJob < ApplicationJob
     # Try to get AI generated reply from Stark
     stark_reply = Stark::CommentAnalysisService.new.analyze(comment_text, account.dealership_id, post_url, conversation)
 
-    like_requested = stark_reply && stark_reply[:like_comment] && contact_inbox.inbox.comment_like_enabled?
+    like_requested = stark_reply && stark_reply[:like_comment] && like_enabled
+    message_content = stark_reply[:reply] if stark_reply && reply_enabled
 
-    unless stark_reply && stark_reply[:status] == 'success' && (stark_reply[:reply].present? || like_requested)
+    unless stark_reply && stark_reply[:status] == 'success' && (message_content.present? || like_requested)
       Rails.logger.warn "⚠️ Stark API failed or no reply for #{conversation.additional_attributes['type']}"
       return
     end
 
-    message_content = stark_reply[:reply]
     Rails.logger.info "🤖 AI Generated Reply from Stark (#{conversation.additional_attributes['type']}): #{message_content}"
     needs_escalation = stark_reply[:human_redirect]
 
