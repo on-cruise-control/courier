@@ -142,6 +142,12 @@ class ReportsAPI extends ApiClient {
     return axios.get(`${this.url}/wallet_balance`);
   }
 
+  getLinkClicks({ fromDate, toDate, period } = {}) {
+    return axios.get(`${this.url}/link_clicks`, {
+      params: { from_date: fromDate, to_date: toDate, period },
+    });
+  }
+
   getAttributionValues() {
     return axios.get(`${this.url}/attribution_values`);
   }

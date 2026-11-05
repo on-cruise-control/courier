@@ -430,6 +430,12 @@ const menuItems = computed(() => {
           icon: 'i-lucide-target',
           to: accountScopedRoute('attribution_reports'),
         },
+        {
+          type: 'link',
+          label: t('SIDEBAR.REPORTS_LINK_CLICKS'),
+          icon: 'i-lucide-mouse-pointer-click',
+          to: accountScopedRoute('link_click_reports'),
+        },
         ...(hasTwilioSmsOrWhatsappInbox.value
           ? [
               {

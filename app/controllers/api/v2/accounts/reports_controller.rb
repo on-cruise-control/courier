@@ -108,6 +108,10 @@ class Api::V2::Accounts::ReportsController < Api::V1::Accounts::BaseController
     render json: Dealership::AttributionReportService.new(Current.account.dealership_id, attribution_report_params).fetch_report
   end
 
+  def link_clicks
+    render json: Dealership::VehicleOpenCountService.new(Current.account.dealership_id, params.permit(:from_date, :to_date, :period)).fetch_count
+  end
+
   def wallet_balance
     balance_data = Dealership::WalletBalanceService.new(
       Current.account.dealership_id,
