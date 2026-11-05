@@ -166,7 +166,8 @@ class Facebook::SendOnFacebookService < Base::SendOnChannelService
     return unless title
 
     element = { title: title.truncate(80) }
-    element[:image_url] = item['media_url'] if item['media_url'].present?
+    image_url = card_image_url(item)
+    element[:image_url] = image_url if image_url.present?
     element[:subtitle] = item['description'].truncate(80) if item['description'].present?
 
     buttons = item['actions'].to_a.first(3).filter_map { |action| fb_template_button(action) }

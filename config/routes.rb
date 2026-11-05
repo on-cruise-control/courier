@@ -553,6 +553,7 @@ Rails.application.routes.draw do
               get :wallet_balance
               get :attribution_values
               get :attribution_report
+              get :link_clicks
               get :inbox_label_matrix
               get :first_response_time_distribution
               get :outgoing_messages_count
