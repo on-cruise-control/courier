@@ -28,6 +28,14 @@ class Base::SendOnChannelService
     raise 'Overwrite this method in child class'
   end
 
+  def card_image_url(item)
+    blob = ActiveStorage::Blob.find_by(id: item['media_blob_id']) if item['media_blob_id'].present?
+    return item['media_url'] unless blob
+
+    ActiveStorage::Current.url_options = Rails.application.routes.default_url_options if ActiveStorage::Current.url_options.blank?
+    blob.url
+  end
+
   def perform_reply
     raise 'Overwrite this method in child class'
   end
