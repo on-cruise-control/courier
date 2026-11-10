@@ -32,8 +32,8 @@ class Base::SendOnChannelService
     blob = ActiveStorage::Blob.find_by(id: item['media_blob_id']) if item['media_blob_id'].present?
     return item['media_url'] unless blob
 
-    ActiveStorage::Current.url_options = Rails.application.routes.default_url_options if ActiveStorage::Current.url_options.blank?
-    blob.url
+    # Meta re-fetches card images whenever the card is displayed, so a short-lived signed URL would go blank.
+    Rails.application.routes.url_helpers.rails_storage_proxy_url(blob, **Rails.application.routes.default_url_options)
   end
 
   def perform_reply
