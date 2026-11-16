@@ -1,0 +1,64 @@
+# Paths OpenWiki must never read or describe. gitignore syntax; .gitignore is NOT consulted.
+
+# Secrets / env
+.env
+.env.*
+*.pem
+*.key
+config/master.key
+config/credentials*
+
+# Dependencies, build output, caches
+node_modules/
+vendor/
+tmp/
+log/
+public/
+coverage/
+graphify-out/
+.pnpm-store/
+.histoire/
+openwiki/.run.json
+
+# Generated or lock files
+swagger/swagger.json
+swagger/tag_groups/*.json
+pnpm-lock.yaml
+Gemfile.lock
+
+# Non-English locales (community translations; en is the source of truth)
+config/locales/*
+!config/locales/en.yml
+!config/locales/devise.en.yml
+app/javascript/dashboard/i18n/locale/*
+!app/javascript/dashboard/i18n/locale/en/
+app/javascript/widget/i18n/locale/*
+!app/javascript/widget/i18n/locale/en.json
+app/javascript/survey/i18n/locale/*
+!app/javascript/survey/i18n/locale/en.json
+
+# Binary / non-text assets
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.svg
+*.ico
+*.webp
+*.pdf
+*.woff
+*.woff2
+*.ttf
+*.eot
+*.mp3
+*.wav
+*.mp4
+
+# Tooling
+.git/
+.claude/
+.windsurf/
+.vscode/
+.cursor/
+.husky/
+.DS_Store
