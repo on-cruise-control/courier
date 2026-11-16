@@ -89,6 +89,30 @@ Publish help articles, FAQs, and guides through the built-in Help Center Portal.
 
 Detailed documentation is available at [chatwoot.com/help-center](https://www.chatwoot.com/help-center).
 
+### OpenWiki
+
+Generated codebase documentation lives in [`openwiki/`](openwiki/). It is written by
+[OpenWiki](https://www.npmjs.com/package/openwiki) from the code and the brief in
+[`openwiki/INSTRUCTIONS.md`](openwiki/INSTRUCTIONS.md). Paths it must skip are listed in
+[`.openwikiignore`](.openwikiignore).
+
+- Do not hand-edit generated pages. Change the code or the brief, and let CI regenerate the wiki.
+- When a GitHub Release is published, the `Update OpenWiki` workflow regenerates the wiki from
+  `master` and pushes a `docs: update OpenWiki for <tag> [ci skip]` commit to `master`.
+- CI and local runs use the free `openrouter/free` model, so a run costs $0. The OpenRouter
+  account must allow endpoints that may log or train on prompts, or free models return
+  "no endpoints found".
+- To regenerate locally (Node >= 22, `npm install -g openwiki@0.5.2`, an OpenRouter key in
+  `OPENROUTER_API_KEY`):
+
+```bash
+OPENWIKI_PROVIDER=openrouter OPENWIKI_MODEL_ID="openrouter/free" \
+OPENWIKI_MAX_OUTPUT_TOKENS=32000 OPENWIKI_TELEMETRY_DISABLED=1 \
+  openwiki code --update --print
+rm -f openwiki/.run.json
+git checkout -- AGENTS.md
+```
+
 ## Translation process
 
 The translation process for Cruise Control web and mobile app is managed at [https://getcruisecontrol.com](https://getcruisecontrol.com/) using Crowdin. Please read the [translation guide](https://getcruisecontrol.com//docs/contributing/translating-chatwoot-to-your-language) for contributing to Cruise Control.

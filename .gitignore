@@ -101,3 +101,6 @@ CLAUDE.local.md
 .histoire
 .pnpm-store/*
 local/
+
+# OpenWiki transient run state
+openwiki/.run.json

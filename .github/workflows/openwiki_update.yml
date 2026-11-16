@@ -1,0 +1,70 @@
+# Regenerates the OpenWiki wiki (openwiki/) when a GitHub Release is published and pushes it
+# to master. Port of the update_docs CircleCI job in stark-back-end and pressroom.
+# The push uses GITHUB_TOKEN, so it does not start other workflows; [ci skip] keeps CircleCI quiet.
+name: Update OpenWiki
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: openwiki-update
+  cancel-in-progress: false
+
+jobs:
+  update-openwiki:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Check out master with full history
+        uses: actions/checkout@v4
+        with:
+          # Docs describe master HEAD; --update diffs against the last documented commit.
+          ref: master
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install OpenWiki
+        run: npm install -g openwiki@0.5.2
+
+      - name: Update OpenWiki
+        env:
+          # Free OpenRouter auto-router, same as pressroom: $0 per run, never a paid fallback.
+          OPENWIKI_PROVIDER: openrouter
+          OPENWIKI_MODEL_ID: openrouter/free
+          # Output cap stops OpenRouter's credit pre-check from rejecting requests with 402.
+          OPENWIKI_MAX_OUTPUT_TOKENS: '32000'
+          OPENWIKI_TELEMETRY_DISABLED: '1'
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+        run: |
+          : "${OPENROUTER_API_KEY:?OPENROUTER_API_KEY secret is missing}"
+          openwiki code --update --print
+          rm -f openwiki/.run.json
+          # Only the wiki is committed; drop OpenWiki's managed block in AGENTS.md (CLAUDE.md links to it).
+          git checkout -- AGENTS.md
+
+      - name: Commit and push docs to master
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A -- openwiki
+          if git diff --cached --quiet; then
+            echo "OpenWiki is already up to date."
+            exit 0
+          fi
+          git commit -m "docs: update OpenWiki for ${RELEASE_TAG} [ci skip]"
+          for attempt in 1 2 3; do
+            git push origin HEAD:master && exit 0
+            echo "Push rejected (attempt $attempt); rebasing onto latest master"
+            git fetch origin master
+            git rebase origin/master
+          done
+          exit 1
