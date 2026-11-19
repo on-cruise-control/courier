@@ -105,6 +105,10 @@ Rails.application.routes.draw do
           end
           resource :saml_settings, only: [:show, :create, :update, :destroy]
           resource :twilio_configuration, only: [:show, :create, :update, :destroy]
+          resource :goto_configuration, only: [:show, :update, :destroy] do
+            post :authorization
+            get :lines
+          end
           resources :agent_bots, only: [:index, :create, :show, :update, :destroy] do
             delete :avatar, on: :member
             post :reset_access_token, on: :member
@@ -156,6 +160,10 @@ Rails.application.routes.draw do
           resources :dashboard_apps, only: [:index, :show, :create, :update, :destroy]
           namespace :channels do
             resource :twilio_channel, only: [:create]
+            resources :goto_channels, only: [:update] do
+              post :authorization, on: :collection
+              get :lines, on: :member
+            end
           end
           resources :conversations, only: [:index, :create, :show, :update, :destroy] do
             collection do
@@ -705,6 +713,12 @@ Rails.application.routes.draw do
 
   namespace :shopify do
     resource :callback, only: [:show]
+  end
+
+  namespace :goto do
+    resource :callback, only: [:show]
+    post 'webhooks/:token', to: 'webhooks#create'
+    match 'webhooks/:token', to: 'webhooks#verify', via: :options
   end
 
   namespace :twilio do

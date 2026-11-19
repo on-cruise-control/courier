@@ -96,6 +96,12 @@ instagram:
   enabled: true
   icon: 'icon-instagram'
   config_key: 'instagram'
+goto:
+  name: 'GoTo SMS'
+  description: 'Stay connected with your customers over SMS using GoTo Connect'
+  enabled: true
+  icon: 'icon-sms-line'
+  config_key: 'goto'
 tiktok:
   name: 'TikTok'
   description: 'Stay connected with your customers on TikTok'

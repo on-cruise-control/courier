@@ -2,17 +2,35 @@
 import PageHeader from '../../SettingsSubPageHeader.vue';
 import BandwidthSms from './BandwidthSms.vue';
 import Twilio from './Twilio.vue';
+import GotoSms from './GotoSms.vue';
 
 export default {
   components: {
     PageHeader,
     Twilio,
     BandwidthSms,
+    GotoSms,
   },
   data() {
+    const { hash, query } = this.$route;
+    const fromUrl = hash.slice(1);
     return {
-      provider: 'twilio',
+      provider:
+        ['twilio', 'bandwidth', 'goto'].find(name => name === fromUrl) ||
+        (query.goto_channel || query.goto_error ? 'goto' : 'twilio'),
     };
+  },
+  watch: {
+    // Keeps the selected provider in the URL (new/sms#goto) so a refresh stays on it.
+    provider: {
+      immediate: true,
+      handler(provider) {
+        this.$router.replace({
+          query: this.$route.query,
+          hash: `#${provider}`,
+        });
+      },
+    },
   },
 };
 </script>
@@ -30,13 +48,17 @@ export default {
           <option value="twilio">
             {{ $t('INBOX_MGMT.ADD.SMS.PROVIDERS.TWILIO') }}
           </option>
-          <option value="360dialog">
+          <option value="bandwidth">
             {{ $t('INBOX_MGMT.ADD.SMS.PROVIDERS.BANDWIDTH') }}
+          </option>
+          <option value="goto">
+            {{ $t('INBOX_MGMT.ADD.SMS.PROVIDERS.GOTO') }}
           </option>
         </select>
       </label>
     </div>
     <Twilio v-if="provider === 'twilio'" type="sms" />
+    <GotoSms v-else-if="provider === 'goto'" />
     <BandwidthSms v-else />
   </div>
 </template>

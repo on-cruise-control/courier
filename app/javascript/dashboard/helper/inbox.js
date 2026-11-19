@@ -9,6 +9,7 @@ export const INBOX_TYPES = {
   TELEGRAM: 'Channel::Telegram',
   LINE: 'Channel::Line',
   SMS: 'Channel::Sms',
+  GOTO_SMS: 'Channel::GotoSms',
   INSTAGRAM: 'Channel::Instagram',
   TIKTOK: 'Channel::Tiktok',
   VOICE: 'Channel::Voice',
@@ -37,7 +38,6 @@ export const getVoiceCallProvider = inbox => {
 };
 
 export const isVoiceCallEnabled = inbox => getVoiceCallProvider(inbox) !== null;
-
 
 export const TWILIO_CHANNEL_MEDIUM = {
   WHATSAPP: 'whatsapp',
@@ -169,7 +169,6 @@ export const getInboxClassByType = (type, phoneNumber) => {
 
     case INBOX_TYPES.VOICE:
       return 'phone';
-
 
     default:
       return 'chat';

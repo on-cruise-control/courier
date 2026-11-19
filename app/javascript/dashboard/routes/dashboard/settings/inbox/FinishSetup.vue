@@ -38,6 +38,10 @@ const {
   isATwilioWhatsAppChannel,
 } = useInbox(route.params.inbox_id);
 
+const isAGotoSmsInbox = computed(
+  () => currentInbox.value.channel_type === INBOX_TYPES.GOTO_SMS
+);
+
 const hasDuplicateInstagramInbox = computed(() => {
   const instagramId = currentInbox.value.instagram_id;
   const facebookInbox =
@@ -67,6 +71,10 @@ const message = computed(() => {
     return `${t('INBOX_MGMT.FINISH.MESSAGE')}. ${t(
       'INBOX_MGMT.ADD.TWILIO.API_CALLBACK.SUBTITLE'
     )}`;
+  }
+
+  if (isAGotoSmsInbox.value) {
+    return t('INBOX_MGMT.FINISH.GOTO_SUCCESS');
   }
 
   if (isASmsInbox.value) {
@@ -219,7 +227,7 @@ onMounted(() => {
         </div>
         <div class="w-[50%] max-w-[50%] ml-[25%]">
           <woot-code
-            v-if="isASmsInbox"
+            v-if="isASmsInbox && !isAGotoSmsInbox"
             lang="html"
             :script="currentInbox.callback_webhook_url"
           />

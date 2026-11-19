@@ -39,7 +39,6 @@ const filteredInboxesList = computed(() => {
   return picoSearch(inboxesList.value, query, ['name', 'channel_type']);
 });
 
-
 const uiFlags = computed(() => getters['inboxes/getUIFlags'].value);
 
 const deleteConfirmText = computed(
@@ -93,7 +92,7 @@ const getInboxDetails = inbox => {
     }
   }
 
-  if (type === INBOX_TYPES.WHATSAPP) {
+  if (type === INBOX_TYPES.WHATSAPP || type === INBOX_TYPES.GOTO_SMS) {
     return phoneNumber;
   }
 
@@ -116,7 +115,6 @@ const getInboxDetails = inbox => {
 onMounted(() => {
   store.dispatch('inboxes/get');
 });
-
 </script>
 
 <template>

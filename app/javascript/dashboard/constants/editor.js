@@ -71,6 +71,11 @@ export const FORMATTING = {
     nodes: [],
     menu: [],
   },
+  'Channel::GotoSms': {
+    marks: [],
+    nodes: [],
+    menu: [],
+  },
   'Channel::Whatsapp': {
     marks: ['strong', 'em', 'code', 'strike'],
     nodes: ['bulletList', 'orderedList', 'codeBlock'],
