@@ -50,7 +50,7 @@ class Sms::BookingNotificationService
     conversation_url = Rails.application.routes.url_helpers.app_account_conversation_url(
       account_id: @account.id,
       id: @conversation.display_id,
-      host: ENV.fetch('FRONTEND_URL', 'http://localhost:3000')
+      host: ENV.fetch('FRONTEND_URL', 'https://courier.getcruisecontrol.com')
     )
     inbox = @conversation.inbox
     platform_name = inbox&.platform_name
@@ -100,14 +100,8 @@ class Sms::BookingNotificationService
   end
 
   def send_sms_to_recipients(recipients, message_body)
-    twilio_client = Twilio::REST::Client.new(twilio_account_sid, twilio_auth_token)
-
     recipients.each do |recipient|
-      twilio_client.messages.create(
-        from: organization_phone_number,
-        to: recipient.phone_number,
-        body: message_body
-      )
+      send_sms(recipient.phone_number, message_body)
     rescue Twilio::REST::TwilioError => e
       Rails.logger.error("Failed to send booking SMS to #{recipient.name} (#{recipient.phone_number}): #{e.message}")
     rescue StandardError => e

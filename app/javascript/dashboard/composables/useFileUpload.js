@@ -10,6 +10,8 @@ import {
 } from 'shared/helpers/FileHelper';
 import { INBOX_TYPES } from 'dashboard/helper/inbox';
 
+const GOTO_SMS_MAXIMUM_FILE_UPLOAD_SIZE = 2; // in MB, GoTo's total attachment limit
+
 /**
  * Composable for handling file uploads in conversations
  * @param {Object} options
@@ -40,6 +42,10 @@ export const useFileUpload = ({ inbox, attachFile, isPrivateNote = false }) => {
 
     if (!channelType || channelType === INBOX_TYPES.WEB) {
       return installationLimit;
+    }
+
+    if (channelType === INBOX_TYPES.GOTO_SMS) {
+      return Math.min(GOTO_SMS_MAXIMUM_FILE_UPLOAD_SIZE, installationLimit);
     }
 
     const channelLimit = getMaxUploadSizeByChannel({

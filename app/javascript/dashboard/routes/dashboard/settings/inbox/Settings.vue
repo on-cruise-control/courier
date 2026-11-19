@@ -321,7 +321,10 @@ export default {
           this.inbox.messaging_service_sid || this.inbox.phone_number
         })`;
       }
-      if (this.isAWhatsAppChannel) {
+      if (
+        this.isAWhatsAppChannel ||
+        this.inbox.channel_type === 'Channel::GotoSms'
+      ) {
         return `${this.inbox.name} (${this.inbox.phone_number})`;
       }
       if (this.isAnEmailChannel) {

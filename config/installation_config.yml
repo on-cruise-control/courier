@@ -474,6 +474,17 @@
   value: 'v22.0'
   locked: true
 # ------- End of Instagram Channel Related Config ------- #
+# ------- GoTo SMS Channel Related Config ------- #
+- name: GOTO_CLIENT_ID
+  display_title: 'GoTo OAuth Client ID'
+  description: 'Client ID of the GoTo developer OAuth client used to connect GoTo SMS inboxes'
+  locked: false
+- name: GOTO_CLIENT_SECRET
+  display_title: 'GoTo OAuth Client Secret'
+  description: 'Client secret of the GoTo developer OAuth client'
+  locked: false
+  type: secret
+# ------- End of GoTo SMS Channel Related Config ------- #
 # ------- Follow Up Job Config ------- #
 - name: FOLLOW_UP_FIRST_DELAY_HOURS
   display_title: 'Follow Up First Delay Hours'

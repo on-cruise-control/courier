@@ -28,13 +28,13 @@ const i18nMap = {
   'Channel::TwilioSms': 'TWILIO_SMS',
   'Channel::Whatsapp': 'WHATSAPP',
   'Channel::Sms': 'SMS',
+  'Channel::GotoSms': 'GOTO_SMS',
   'Channel::Email': 'EMAIL',
   'Channel::Telegram': 'TELEGRAM',
   'Channel::Line': 'LINE',
   'Channel::Api': 'API',
   'Channel::Instagram': 'INSTAGRAM',
   'Channel::Tiktok': 'TIKTOK',
-
 };
 
 const twilioChannelName = () => {

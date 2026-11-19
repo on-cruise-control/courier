@@ -7,6 +7,7 @@ class SendReplyJob < ApplicationJob
     'Channel::Line' => ::Line::SendOnLineService,
     'Channel::Telegram' => ::Telegram::SendOnTelegramService,
     'Channel::Whatsapp' => ::Whatsapp::SendOnWhatsappService,
+    'Channel::GotoSms' => ::Goto::SendOnGotoService,
     'Channel::Sms' => ::Sms::SendOnSmsService,
     'Channel::Instagram' => ::Instagram::SendOnInstagramService,
     'Channel::Tiktok' => ::Tiktok::SendOnTiktokService,
@@ -17,7 +18,7 @@ class SendReplyJob < ApplicationJob
 
   def perform(message_id)
     message = Message.find(message_id)
-    
+
     # Block email sending if account is suspended
     return if message.account.suspended?
 

@@ -121,7 +121,7 @@ class Inbox < ApplicationRecord
   end
 
   def sms?
-    channel_type == 'Channel::Sms'
+    %w[Channel::Sms Channel::GotoSms].include?(channel_type)
   end
 
   def dm_channel?
@@ -158,6 +158,10 @@ class Inbox < ApplicationRecord
 
   def twilio?
     channel_type == 'Channel::TwilioSms'
+  end
+
+  def goto_sms?
+    channel_type == 'Channel::GotoSms'
   end
 
   def twitter?
@@ -218,7 +222,7 @@ class Inbox < ApplicationRecord
     when 'Channel::WebWidget' then 'Website'
     when 'Channel::Instagram' then 'Instagram'
     when 'Channel::FacebookPage' then 'Facebook'
-    when 'Channel::TwilioSms' then 'SMS'
+    when 'Channel::TwilioSms', 'Channel::GotoSms' then 'SMS'
     when 'Channel::Sms' then 'Sms'
     when 'Channel::Email' then 'Email'
     when 'Channel::Whatsapp' then 'Whatsapp'

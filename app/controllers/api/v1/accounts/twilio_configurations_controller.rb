@@ -14,6 +14,7 @@ class Api::V1::Accounts::TwilioConfigurationsController < Api::V1::Accounts::Bas
 
   def update
     if @twilio_configuration.update(twilio_configuration_params)
+      Current.account.goto_configuration&.destroy!
       render :show
     else
       render json: { errors: @twilio_configuration.errors.full_messages }, status: :unprocessable_entity

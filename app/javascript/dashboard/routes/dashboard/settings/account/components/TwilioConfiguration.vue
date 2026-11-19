@@ -6,7 +6,6 @@ import { required } from '@vuelidate/validators';
 import { useAlert } from 'dashboard/composables';
 import twilioConfigurationAPI from 'dashboard/api/twilioConfiguration';
 
-import SectionLayout from './SectionLayout.vue';
 import WithLabel from 'v3/components/Form/WithLabel.vue';
 import NextInput from 'dashboard/components-next/input/Input.vue';
 import NextButton from 'dashboard/components-next/button/Button.vue';
@@ -145,10 +144,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <SectionLayout
-    :title="t('GENERAL_SETTINGS.FORM.TWILIO_CONFIGURATION.TITLE')"
-    :description="t('GENERAL_SETTINGS.FORM.TWILIO_CONFIGURATION.NOTE')"
-  >
+  <div>
     <form v-if="!isLoading" class="grid gap-4" @submit.prevent="handleSubmit">
       <WithLabel
         name="twilio-account-sid"
@@ -241,7 +237,7 @@ onMounted(() => {
     </form>
 
     <woot-loading-state v-else />
-  </SectionLayout>
+  </div>
 
   <ConfirmationModal
     ref="confirmDialogRef"

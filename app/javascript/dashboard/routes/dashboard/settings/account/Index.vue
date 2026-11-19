@@ -17,7 +17,7 @@ import BuildInfo from './components/BuildInfo.vue';
 import AccountDelete from './components/AccountDelete.vue';
 import AudioTranscription from './components/AudioTranscription.vue';
 import SectionLayout from './components/SectionLayout.vue';
-import TwilioConfiguration from './components/TwilioConfiguration.vue';
+import SmsNotificationSettings from './components/SmsNotificationSettings.vue';
 import GoogleAnalyticsSettings from './components/GoogleAnalyticsSettings.vue';
 
 export default {
@@ -32,7 +32,7 @@ export default {
     WithLabel,
     NextInput,
     Avatar,
-    TwilioConfiguration,
+    SmsNotificationSettings,
     GoogleAnalyticsSettings,
   },
   setup() {
@@ -327,7 +327,7 @@ export default {
       <woot-loading-state v-if="uiFlags.isFetchingItem" />
     </div>
     <AudioTranscription v-if="showAudioTranscriptionConfig" />
-    <TwilioConfiguration />
+    <SmsNotificationSettings />
     <GoogleAnalyticsSettings />
     <AccountId />
     <div v-if="!uiFlags.isFetchingItem && isOnChatwootCloud">
