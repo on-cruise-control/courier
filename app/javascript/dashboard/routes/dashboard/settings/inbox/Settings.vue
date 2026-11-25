@@ -19,6 +19,7 @@ import WhatsappReauthorize from './channels/whatsapp/Reauthorize.vue';
 import InboxHealthAPI from 'dashboard/api/inboxHealth';
 import PreChatFormSettings from './PreChatForm/Settings.vue';
 import WeeklyAvailability from './components/WeeklyAvailability.vue';
+import ServiceHours from './components/ServiceHours.vue';
 import GreetingsEditor from 'shared/components/GreetingsEditor.vue';
 import ConfigurationPage from './settingsPage/ConfigurationPage.vue';
 import VoiceConfigurationPage from './settingsPage/VoiceConfigurationPage.vue';
@@ -59,6 +60,7 @@ export default {
     SettingsFieldSection,
     SettingsAccordion,
     WeeklyAvailability,
+    ServiceHours,
     SenderNameExamplePreview,
     LockToSingleConversationPreview,
     MicrosoftReauthorize,
@@ -185,6 +187,14 @@ export default {
           key: 'business-hours',
           name: this.$t('INBOX_MGMT.TABS.BUSINESS_HOURS'),
         },
+        ...(this.inbox.channel_type === 'Channel::GotoSms'
+          ? [
+              {
+                key: 'service-hours',
+                name: this.$t('INBOX_MGMT.TABS.SERVICE_HOURS'),
+              },
+            ]
+          : []),
         {
           key: 'csat',
           name: this.$t('INBOX_MGMT.TABS.CSAT'),
@@ -1399,6 +1409,9 @@ export default {
         </div>
         <div v-if="selectedTabKey === 'business-hours'">
           <WeeklyAvailability :inbox="inbox" />
+        </div>
+        <div v-if="selectedTabKey === 'service-hours'">
+          <ServiceHours :inbox="inbox" />
         </div>
         <div v-if="selectedTabKey === 'bot-configuration'">
           <BotConfiguration :inbox="inbox" />

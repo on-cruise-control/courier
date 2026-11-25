@@ -95,6 +95,15 @@ class Api::V1::Accounts::InboxesController < Api::V1::Accounts::BaseController
     render status: :internal_server_error, json: { error: e.message }
   end
 
+  def sync_service_hours
+    return render status: :unprocessable_entity, json: { error: 'Not a GoTo inbox' } unless @inbox.channel.is_a?(Channel::GotoSms)
+
+    @inbox.channel.update!(service_hours: Dealership::ServiceHoursService.new(Current.account).perform.deep_stringify_keys)
+    render :update
+  rescue StandardError => e
+    render status: :unprocessable_entity, json: { error: e.message }
+  end
+
   def health
     health_data = Whatsapp::HealthService.new(@inbox.channel).fetch_health_status
     render json: health_data

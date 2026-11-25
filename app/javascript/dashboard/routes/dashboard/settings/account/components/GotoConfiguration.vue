@@ -134,7 +134,11 @@ onMounted(loadStatus);
             {{ t('GENERAL_SETTINGS.FORM.GOTO_CONFIGURATION.LOADING_NUMBERS') }}
           </option>
           <option v-for="line in lines" :key="line.number" :value="line.number">
-            {{ line.number }}
+            {{
+              line.name === line.number
+                ? line.number
+                : `${line.name} (${line.number})`
+            }}
           </option>
         </select>
       </label>

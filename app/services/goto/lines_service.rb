@@ -5,7 +5,7 @@ class Goto::LinesService
   # filtered to the ones that are active and have texting enabled.
   def perform
     get!('/users/v1/me')['items'].flat_map do |item|
-      sms_enabled_numbers(item['accountKey']).map { |number| { number: number, account_key: item['accountKey'] } }
+      sms_enabled_numbers(item['accountKey']).map { |phone| { number: phone['number'], name: phone['name'], account_key: item['accountKey'] } }
     end
   end
 
@@ -14,7 +14,7 @@ class Goto::LinesService
   def sms_enabled_numbers(account_key)
     get!("/voice-admin/v1/phone-numbers?accountKey=#{account_key}")['items'].filter_map do |item|
       phone = get!("/voice-admin/v1/phone-numbers/#{item['id']}")
-      phone['number'] if phone['smsEnabled'] && phone['status'] == 'ACTIVE'
+      phone if phone['smsEnabled'] && phone['status'] == 'ACTIVE'
     end
   end
 

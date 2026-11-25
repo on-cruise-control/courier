@@ -11,7 +11,7 @@ class Api::V1::Accounts::Channels::GotoChannelsController < Api::V1::Accounts::B
   end
 
   def lines
-    render json: { lines: Goto::LinesService.new(channel: @channel).perform.map { |line| line.slice(:number) } }
+    render json: { lines: Goto::LinesService.new(channel: @channel).perform.map { |line| line.slice(:number, :name) } }
   rescue StandardError => e
     render_goto_error(e)
   end

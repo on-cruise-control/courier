@@ -15,7 +15,7 @@ class Api::V1::Accounts::GotoConfigurationsController < Api::V1::Accounts::BaseC
   end
 
   def lines
-    render json: { lines: Goto::LinesService.new(channel: configuration).perform.map { |line| line.slice(:number) } }
+    render json: { lines: Goto::LinesService.new(channel: configuration).perform.map { |line| line.slice(:number, :name) } }
   rescue StandardError => e
     render_could_not_create_error(e.message)
   end

@@ -87,10 +87,12 @@ module Stark
                              .not_template
       messages = messages.where.not(id: exclude_message.id) if exclude_message&.id.present?
 
-      messages.reorder(created_at: :desc)
-              .limit(10)
-              .map do |message|
-        message_data = {
+      context_start = service_hours_context_start(conversation, exclude_message)
+      messages = messages.reorder(created_at: :desc)
+      messages = context_start ? messages.where('created_at >= ?', context_start) : messages.limit(10)
+
+      messages.map do |message|
+        {
           conversation_id: message.conversation_id,
           display_id: message.conversation.display_id,
           message_type: message.message_type,
@@ -102,9 +104,12 @@ module Stark
           is_story_mentioned: is_story_mentioned?(message),
           metadata: message.metadata
         }
-
-        message_data
       end
+    end
+
+    # Overridden by the Stark processor to send a longer context window for GoTo inboxes; nil keeps the default limited window.
+    def service_hours_context_start(_conversation, _message)
+      nil
     end
 
     def message_has_image?(message)
