@@ -20,7 +20,7 @@ class Goto::WebhookSetupService
       ownerEntity: channel.account_key,
       ownerEntityType: 'ORGANIZATION',
       channelId: channel.notification_channel_id,
-      eventTypes: %w[INBOUND_MESSAGE DELIVERY_STATUS]
+      eventTypes: %w[INBOUND_MESSAGE OUTBOUND_MESSAGE DELIVERY_STATUS]
     }
     request("#{Channel::GotoSms::API_URL}/messaging/v2/subscriptions", body)
   end

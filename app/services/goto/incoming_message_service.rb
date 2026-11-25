@@ -10,14 +10,9 @@ class Goto::IncomingMessageService
 
       set_contact
       set_conversation
-      @message = @conversation.messages.build(
-        content: payload[:body],
-        account_id: inbox.account_id,
-        inbox_id: inbox.id,
-        message_type: :incoming,
-        sender: @contact,
-        source_id: payload[:messageId]
-      )
+      next if outgoing? && claim_courier_message
+
+      @message = @conversation.messages.build(message_params)
       attach_files
       @message.save!
     end
@@ -29,8 +24,32 @@ class Goto::IncomingMessageService
     @inbox ||= channel.inbox
   end
 
+  def outgoing?
+    payload[:direction] == 'OUTBOUND'
+  end
+
   def phone_number
-    payload[:authorTouchpoint]
+    outgoing? ? Array(payload[:contactTouchpoints]).first : payload[:authorTouchpoint]
+  end
+
+  def message_params
+    params = {
+      content: payload[:body],
+      account_id: inbox.account_id,
+      inbox_id: inbox.id,
+      message_type: outgoing? ? :outgoing : :incoming,
+      sender: outgoing? ? nil : @contact,
+      source_id: payload[:messageId]
+    }
+    return params unless outgoing?
+
+    params.merge(status: :delivered, content_attributes: { external_echo: true })
+  end
+
+  def claim_courier_message
+    message = @conversation.messages.outgoing.where(source_id: nil).where('created_at > ?', 2.minutes.ago)
+                           .find_by("COALESCE(content, '') = ?", payload[:body].to_s)
+    message&.update!(source_id: payload[:messageId])
   end
 
   def set_contact
