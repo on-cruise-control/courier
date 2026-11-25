@@ -27,6 +27,7 @@ import BookingsReports from 'dashboard/custom/reports/CustomBookingsReportsWrapp
 import HandoffReports from 'dashboard/custom/reports/CustomHandoffReportsWrapper.vue';
 import AttributionReports from './AttributionReports.vue';
 import AttributionReportDetail from './AttributionReportDetail.vue';
+import LinkClickReports from './LinkClickReports.vue';
 import TwilioUsageReports from './TwilioUsage.vue';
 
 const meta = {
@@ -196,6 +197,12 @@ export default {
           name: 'attribution_report_detail',
           meta,
           component: AttributionReportDetail,
+        },
+        {
+          path: 'link-clicks',
+          name: 'link_click_reports',
+          meta,
+          component: LinkClickReports,
         },
         {
           path: 'twilio',

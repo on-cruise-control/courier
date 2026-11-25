@@ -288,6 +288,37 @@
           "ERROR": "Failed to update parts comment escalation emails"
         }
       },
+      "SMS_NOTIFICATION_PROVIDER": {
+        "TITLE": "SMS Notification Settings",
+        "NOTE": "Configure the provider used to send SMS notifications (booking, escalation, handoff alerts).",
+        "CHOOSE": "Choose your SMS provider:",
+        "CONFIRM_TITLE": "Replace current SMS provider?",
+        "CONFIRM": "SMS notifications use one provider at a time. Setting up the other provider will replace your current configuration, which is removed once you save the new one.",
+        "CONTINUE": "Continue"
+      },
+      "GOTO_CONFIGURATION": {
+        "TITLE": "GoTo SMS Notification Settings",
+        "NOTE": "Connect your GoTo account and choose the number that sends SMS notifications (booking, escalation, handoff alerts).",
+        "CONNECTED_NUMBER": "Goto Phone Number:",
+        "SELECT_NUMBER": "GoTo phone number",
+        "SELECT_PLACEHOLDER": "Select a number",
+        "LOADING_NUMBERS": "Loading numbers",
+        "SUBMIT_BUTTON": "Save GoTo Settings",
+        "DELETE": {
+          "BUTTON": "Remove",
+          "CANCEL": "Cancel",
+          "CONFIRM_TITLE": "Remove GoTo Configuration",
+          "CONFIRM": "Are you sure you want to remove the GoTo configuration? SMS notifications will stop sending until you add a new provider.",
+          "SUCCESS": "GoTo configuration removed successfully",
+          "ERROR": "Failed to remove GoTo configuration"
+        },
+        "API": {
+          "SUCCESS": "GoTo settings updated successfully",
+          "ERROR": "We couldn't finish the GoTo setup. Make sure you connected with a GoTo Super Admin account and try again.",
+          "LINES_ERROR": "We couldn't load your GoTo phone numbers. Please connect GoTo again.",
+          "ERROR_LOADING": "Failed to load GoTo settings"
+        }
+      },
       "TWILIO_CONFIGURATION": {
         "TITLE": "SMS Notification Settings",
         "NOTE": "Configure your Twilio credentials to send SMS notifications (booking, escalation, handoff alerts) from your own Twilio number.",

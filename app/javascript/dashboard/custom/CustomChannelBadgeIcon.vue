@@ -44,6 +44,7 @@ const badgeImageSrc = computed(() => {
       return '/integrations/channels/badges/line.png';
     case 'Channel::TwitterProfile':
       return '/integrations/channels/badges/twitter-dm.png';
+    case 'Channel::GotoSms':
     case 'Channel::Sms':
       return '/integrations/channels/badges/sms.png';
     case 'Channel::Tiktok':

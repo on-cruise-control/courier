@@ -636,6 +636,11 @@ const menuItems = computed(() => {
           label: t('SIDEBAR.REPORTS_ATTRIBUTION'),
           to: accountScopedRoute('attribution_reports'),
         },
+        {
+          name: 'Reports Link Clicks',
+          label: t('SIDEBAR.REPORTS_LINK_CLICKS'),
+          to: accountScopedRoute('link_click_reports'),
+        },
         ...(hasTwilioInbox.value
           ? [
               {

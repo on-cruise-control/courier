@@ -191,7 +191,8 @@
         "PROVIDERS": {
           "LABEL": "API Provider",
           "TWILIO": "Twilio",
-          "BANDWIDTH": "Bandwidth"
+          "BANDWIDTH": "Bandwidth",
+          "GOTO": "GoTo"
         },
         "API": {
           "ERROR_MESSAGE": "We were not able to save the SMS channel"
@@ -234,6 +235,26 @@
           "API_CALLBACK": {
             "TITLE": "Callback URL",
             "SUBTITLE": "You have to configure the message callback URL in Bandwidth with the URL mentioned here."
+          }
+        },
+        "GOTO": {
+          "HELP": "Please sign in with your GoTo account to continue.",
+          "CONNECT_BUTTON": "Continue with GoTo",
+          "SELECT_NUMBER": "GoTo phone number",
+          "SELECT_NUMBER_PLACEHOLDER": "Select a number",
+          "LOADING_NUMBERS": "Loading numbers",
+          "NO_NUMBERS": "No phone numbers were found on this GoTo account.",
+          "INBOX_NAME": {
+            "LABEL": "Inbox name",
+            "PLACEHOLDER": "Please enter an inbox name"
+          },
+          "SUBMIT_BUTTON": "Create inbox",
+          "API": {
+            "ERROR": "We were not able to connect GoTo",
+            "NUMBER_TAKEN": "An inbox already exists for this phone number. Please choose a different number.",
+            "NAME_TAKEN": "An inbox with this name already exists. Please choose a different name.",
+            "LINES_ERROR": "We couldn't load your GoTo phone numbers. Please connect GoTo again.",
+            "CREATE_ERROR": "We couldn't finish setting up this number. Make sure you connected with a GoTo Super Admin account and approved all the requested permissions, then try again."
           }
         }
       },
@@ -561,6 +582,7 @@
     "FINISH": {
       "TITLE": "Your Inbox is ready!",
       "MESSAGE": "You can now engage with your customers through your new Channel. Happy supporting",
+      "GOTO_SUCCESS": "Your GoTo SMS inbox was created successfully. Customers can now text this number and you can reply from here.",
       "BUTTON_TEXT": "Take me there",
       "MORE_SETTINGS": "More settings",
       "WEBSITE_SUCCESS": "You have successfully finished creating a website channel. Copy the code shown below and paste it on your website. Next time a customer use the live chat, the conversation will automatically appear on your inbox.",
@@ -645,6 +667,7 @@
       "CAMPAIGN": "Campaigns",
       "PRE_CHAT_FORM": "Pre Chat Form",
       "BUSINESS_HOURS": "Business Hours",
+      "SERVICE_HOURS": "Service Hours",
       "WIDGET_BUILDER": "Widget Builder",
       "BOT_CONFIGURATION": "Bot Configuration",
       "ACCOUNT_HEALTH": "Account Health",
@@ -660,6 +683,7 @@
       "WEB_WIDGET": "Website",
       "TWITTER_PROFILE": "Twitter",
       "TWILIO_SMS": "Twilio SMS",
+      "GOTO_SMS": "GoTo SMS",
       "WHATSAPP": "WhatsApp",
       "SMS": "SMS",
       "EMAIL": "Email",
@@ -1041,6 +1065,14 @@
         "CHOOSE": "Choose"
       },
       "ALL_DAY": "All-Day"
+    },
+    "SERVICE_HOURS": {
+      "NOT_SYNCED": "Timezone not available. Sync your timezone and service hours from the dealership.",
+      "DESCRIPTION": "Service hours and timezone are managed by the dealership. This view is read-only.",
+      "TIMEZONE_LABEL": "Timezone",
+      "SYNC": "Sync service hours",
+      "SYNC_SUCCESS": "Service hours synced successfully",
+      "SYNC_ERROR": "Could not sync service hours. Please try again later."
     },
     "IMAP": {
       "TITLE": "IMAP",

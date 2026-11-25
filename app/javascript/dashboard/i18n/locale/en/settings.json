@@ -395,6 +395,7 @@
     "REPORTS_BOOKINGS": "Bookings Requests",
     "REPORTS_HANDOFF": "Handoff Requests",
     "REPORTS_ATTRIBUTION": "Origin Attribution",
+    "REPORTS_LINK_CLICKS": "Vehicle Page Visits",
     "TWILIO_USAGES": "SMS/Whatsapp Usage",
     "REPORTS_AGENT": "Agents",
     "REPORTS_LABEL": "Labels",

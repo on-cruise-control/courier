@@ -45,12 +45,40 @@ class Integrations::Stark::ProcessorService < Integrations::BotProcessorService
     return true if last_relevant.sender == agent_bot
 
     if (last_relevant.sent? || last_relevant.delivered? || last_relevant.read?) && last_relevant.created_at >= 24.hours.ago
-      return true if unassigned_after?(last_relevant)
+      return true if unassigned_after?(last_relevant) || agent_reply_before_latest_close?(last_relevant, current_message)
 
       return false
     end
 
     true
+  end
+
+  def agent_reply_before_latest_close?(agent_message, current_message)
+    return false unless after_hours_takeover?
+
+    latest_close = goto_channel.last_service_close(current_message.created_at)
+    latest_close.present? && agent_message.created_at <= latest_close
+  end
+
+  # GoTo inboxes with synced service hours: send everything since the latest service window opened (the agent's conversation),
+  def service_hours_context_start(conversation, message)
+    return if goto_channel&.service_hours.blank?
+
+    latest_open = goto_channel.last_service_open(message&.created_at || Time.current)
+    return if latest_open.blank? || stark_replied_since?(conversation, latest_open)
+    return latest_open if stark_replied_before?(conversation, latest_open)
+
+    goto_channel.last_service_open(latest_open - 1.second) || latest_open
+  end
+
+  def stark_replied_since?(conversation, time)
+    conversation.messages.where(sender: agent_bot).exists?(['created_at >= ?', time])
+  end
+
+  def stark_replied_before?(conversation, time)
+    last_message = conversation.messages.not_activity.not_template.where(private: false)
+                               .where('created_at < ?', time).reorder(created_at: :desc).first
+    last_message.nil? || last_message.sender == agent_bot
   end
 
   def unassigned_after?(message)

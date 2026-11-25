@@ -62,16 +62,17 @@ class Facebook::LeadAds::OutreachService
     normalize_phone(lead.whatsapp_number) || normalized_phone
   end
 
-  # An inbox that is disconnected and waiting to be reauthorized is not active
+  # An inbox that is disconnected and waiting to be reauthorized is not active. GoTo SMS is only used when there is no other SMS inbox.
   def candidate_inboxes(channel)
-    account.inboxes.order(:id).select { |inbox| inbox_channel(inbox) == channel && !inbox.channel.try(:reauthorization_required?) }
+    inboxes = account.inboxes.order(:id).select { |inbox| inbox_channel(inbox) == channel && !inbox.channel.try(:reauthorization_required?) }
+    inboxes.partition { |inbox| !inbox.goto_sms? }.flatten
   end
 
   # Twilio inboxes carry either SMS or WhatsApp, depending on their medium
   def inbox_channel(inbox)
     case inbox.channel_type
     when 'Channel::Email' then 'email'
-    when 'Channel::Sms' then 'sms'
+    when 'Channel::Sms', 'Channel::GotoSms' then 'sms'
     when 'Channel::Whatsapp' then 'whatsapp'
     when 'Channel::TwilioSms' then inbox.channel.medium
     end
@@ -117,10 +118,10 @@ class Facebook::LeadAds::OutreachService
     end
   end
 
-  # Sent as the system (no sender) so it does not show up as an agent reply
+  # Sent as the inbox's bot so the bot, not an agent, owns the conversation and answers the customer's reply
   def send_message(conversation)
     conversation.messages.create!(
-      account_id: account.id, inbox_id: conversation.inbox_id, message_type: :outgoing,
+      account_id: account.id, inbox_id: conversation.inbox_id, message_type: :outgoing, sender: conversation.inbox.agent_bot,
       content: Facebook::LeadAds::Message.template,
       additional_attributes: @template_params ? { 'template_params' => @template_params } : {}
     )

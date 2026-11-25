@@ -692,6 +692,11 @@
       "FORMS_COMPLETED": "Number of customers who completed the handoff form after receiving a link on {platform} conversations."
     }
   },
+  "LINK_CLICK_REPORTS": {
+    "HEADER": "Vehicle Detail Page Visits",
+    "METRIC_NAME": "Vehicle Detail Page Visits",
+    "FETCHING_FAILED": "Could not fetch link click data. Please try again."
+  },
   "ATTRIBUTION_REPORTS": {
     "HEADER": "Origin Attribution",
     "FILTERS": {

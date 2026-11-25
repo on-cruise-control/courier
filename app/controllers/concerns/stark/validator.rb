@@ -9,7 +9,22 @@ module Stark
     end
 
     def can_process_message?
-      valid_event_name? && valid_bot_url? && incoming_message? && unassigned_conversation?
+      valid_event_name? && valid_bot_url? && incoming_message? && !service_hours_active? && unassigned_conversation?
+    end
+
+    # GoTo inboxes with synced service hours: agents handle the conversation while the service department is open.
+    def service_hours_active?
+      goto_channel&.service_hours_active? || false
+    end
+
+    # Outside the service windows (GoTo inboxes with synced hours); used to ignore agent replies sent during service hours.
+    def after_hours_takeover?
+      goto_channel&.service_hours.present? && !service_hours_active?
+    end
+
+    def goto_channel
+      channel = event_data[:message].conversation.inbox.channel
+      channel if channel.is_a?(Channel::GotoSms)
     end
 
     def valid_event_name?

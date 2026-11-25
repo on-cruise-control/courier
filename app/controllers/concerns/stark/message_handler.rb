@@ -5,6 +5,9 @@ module Stark
     extend ActiveSupport::Concern
 
     AI_LOOP_LABEL = 'ai_loop_detected'.freeze
+    VIEW_VEHICLE_TEXT = 'View Vehicle'.freeze
+    COMMENT_CONVERSATION_TYPES = %w[instagram_comments feed_comments facebook_comments].freeze
+    MAX_TEMPLATE_ELEMENTS = 10
 
     def handle_response(response)
       if response.is_a?(Hash) && response['session_status'] == AI_LOOP_LABEL
@@ -53,8 +56,11 @@ module Stark
           )
         end
 
-        # 2. For each attachment: image then title
-        attachments.each do |attachment|
+        # 2. Vehicles with a vehicle_url go out as a template (image + title + View Vehicle button),
+        # the rest as image then title
+        template_attachments, plain_attachments = attachments.partition { |attachment| vehicle_template_attachment?(conversation, attachment) }
+
+        plain_attachments.each do |attachment|
           url = attachment.is_a?(Hash) ? (attachment['url'] || attachment[:url]) : attachment
           title = attachment.is_a?(Hash) ? (attachment['content'] || attachment[:content]) : nil
           next if url.blank?
@@ -97,6 +103,8 @@ module Stark
             additional_attributes: is_deferred_spam_reply ? { deferred_spam_reply: true } : {}
           )
         end
+
+        create_vehicle_template_messages(conversation, template_attachments, metadata, is_deferred_spam_reply)
 
       elsif widget_channel?(conversation) && attachments.is_a?(Array) && attachments.any?
         contents.each do |content|
@@ -176,10 +184,11 @@ module Stark
         url        = attachment.is_a?(Hash) ? (attachment['url']        || attachment[:url])        : attachment
         title      = attachment.is_a?(Hash) ? (attachment['content']    || attachment[:content])    : nil
         vehicle_id = attachment.is_a?(Hash) ? (attachment['vehicle_id'] || attachment[:vehicle_id]) : nil
+        vehicle_url    = attachment_vehicle_url(attachment)
         action_type    = vehicle_id.present? ? 'view_vehicle' : 'postback'
         action_payload = vehicle_id.presence || title
-        { title: title, description: '', media_url: url, vehicle_id: vehicle_id,
-          actions: [{ text: 'View Details', type: action_type, payload: action_payload }] }
+        action = vehicle_url ? { type: 'link', uri: vehicle_url } : { type: action_type, payload: action_payload }
+        { title: title, description: '', media_url: url, vehicle_id: vehicle_id, actions: [{ text: 'View Details', **action }] }
       end
 
       return if duplicate_outgoing?(conversation, cards_items: items)
@@ -195,6 +204,53 @@ module Stark
         private: is_deferred_spam_reply,
         additional_attributes: is_deferred_spam_reply ? { deferred_spam_reply: true } : {}
       )
+    end
+
+    def attachment_vehicle_url(attachment)
+      return unless attachment.is_a?(Hash)
+
+      vehicle_url = (attachment['vehicle_url'] || attachment[:vehicle_url]).to_s.strip
+      vehicle_url if vehicle_url.match?(URI::DEFAULT_PARSER.make_regexp(%w[http https]))
+    end
+
+    # Comment threads only accept plain text replies, so templates are limited to DMs/Messenger
+    def vehicle_template_attachment?(conversation, attachment)
+      attachment_vehicle_url(attachment).present? &&
+        COMMENT_CONVERSATION_TYPES.exclude?(conversation.additional_attributes&.dig('type'))
+    end
+
+    def download_image_blob(url)
+      return if url.blank?
+
+      file = URI.open(url)
+      ActiveStorage::Blob.create_and_upload!(io: file, filename: File.basename(URI.parse(url).path), content_type: file.content_type)
+    rescue StandardError => e
+      Rails.logger.warn "Failed to download vehicle image from #{url}: #{e.message}"
+      nil
+    end
+
+    def create_vehicle_template_messages(conversation, attachments, metadata = {}, is_deferred_spam_reply = false)
+      attachments.each_slice(MAX_TEMPLATE_ELEMENTS) do |batch|
+        items = batch.map do |attachment|
+          title = attachment['content'] || attachment[:content]
+          { title: title.presence || VIEW_VEHICLE_TEXT, description: '', media_url: attachment['url'] || attachment[:url],
+            vehicle_id: attachment['vehicle_id'] || attachment[:vehicle_id],
+            media_blob_id: download_image_blob(attachment['url'] || attachment[:url])&.id,
+            actions: [{ text: VIEW_VEHICLE_TEXT, type: 'web_url', uri: attachment_vehicle_url(attachment) }] }
+        end
+
+        conversation.messages.create!(
+          content_type: :cards,
+          content_attributes: { items: items },
+          message_type: :outgoing,
+          account_id: conversation.account_id,
+          inbox_id: conversation.inbox_id,
+          sender: agent_bot,
+          metadata: metadata,
+          private: is_deferred_spam_reply,
+          additional_attributes: is_deferred_spam_reply ? { deferred_spam_reply: true } : {}
+        )
+      end
     end
 
     def create_attachment_messages(conversation, attachments, metadata = {}, is_deferred_spam_reply = false)

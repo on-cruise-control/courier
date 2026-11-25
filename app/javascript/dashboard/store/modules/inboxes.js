@@ -351,6 +351,10 @@ export const actions = {
       throw new Error(error);
     }
   },
+  syncServiceHours: async ({ commit }, inboxId) => {
+    const response = await InboxesAPI.syncServiceHours(inboxId);
+    commit(types.default.EDIT_INBOXES, response.data);
+  },
   createCSATTemplate: async (_, { inboxId, template }) => {
     const response = await InboxesAPI.createCSATTemplate(inboxId, template);
     return response.data;
