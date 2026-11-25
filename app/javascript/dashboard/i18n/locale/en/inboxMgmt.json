@@ -667,6 +667,7 @@
       "CAMPAIGN": "Campaigns",
       "PRE_CHAT_FORM": "Pre Chat Form",
       "BUSINESS_HOURS": "Business Hours",
+      "SERVICE_HOURS": "Service Hours",
       "WIDGET_BUILDER": "Widget Builder",
       "BOT_CONFIGURATION": "Bot Configuration",
       "ACCOUNT_HEALTH": "Account Health",
@@ -1064,6 +1065,14 @@
         "CHOOSE": "Choose"
       },
       "ALL_DAY": "All-Day"
+    },
+    "SERVICE_HOURS": {
+      "NOT_SYNCED": "Timezone not available. Sync your timezone and service hours from the dealership.",
+      "DESCRIPTION": "Service hours and timezone are managed by the dealership. This view is read-only.",
+      "TIMEZONE_LABEL": "Timezone",
+      "SYNC": "Sync service hours",
+      "SYNC_SUCCESS": "Service hours synced successfully",
+      "SYNC_ERROR": "Could not sync service hours. Please try again later."
     },
     "IMAP": {
       "TITLE": "IMAP",

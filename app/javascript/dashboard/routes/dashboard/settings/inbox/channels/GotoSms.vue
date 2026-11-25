@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';
 import { useAlert } from 'dashboard/composables';
 import GotoChannel from 'dashboard/api/channel/gotoChannel';
+import InboxesAPI from 'dashboard/api/inboxes';
 import NextButton from 'dashboard/components-next/button/Button.vue';
 import GotoConnectButton from 'dashboard/components-next/goto/GotoConnectButton.vue';
 
@@ -63,6 +64,9 @@ const createInbox = async () => {
       name: inboxName.value.trim(),
       phone_number: selectedNumber.value,
     });
+    InboxesAPI.syncServiceHours(data.id)
+      .then(() => useAlert(t('INBOX_MGMT.SERVICE_HOURS.SYNC_SUCCESS')))
+      .catch(() => useAlert(t('INBOX_MGMT.SERVICE_HOURS.SYNC_ERROR')));
     router.replace({
       name: 'settings_inboxes_add_agents',
       params: { page: 'new', inbox_id: data.id },
@@ -138,7 +142,11 @@ onMounted(async () => {
             {{ t('INBOX_MGMT.ADD.SMS.GOTO.NO_NUMBERS') }}
           </option>
           <option v-for="line in lines" :key="line.number" :value="line.number">
-            {{ line.number }}
+            {{
+              line.name === line.number
+                ? line.number
+                : `${line.name} (${line.number})`
+            }}
           </option>
         </select>
       </label>
