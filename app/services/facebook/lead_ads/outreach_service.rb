@@ -32,7 +32,13 @@ class Facebook::LeadAds::OutreachService
     inbox = candidate_inboxes(channel).first
     return result(channel, 'skipped', error: I18n.t('facebook_leads.outreach.no_inbox', channel: channel)) unless inbox
 
+    return result(channel, 'skipped', inbox: inbox, error: I18n.t('facebook_leads.outreach.service_hours_open')) if service_hours_open?(inbox)
+
     start_conversation(channel, inbox)
+  end
+
+  def service_hours_open?(inbox)
+    inbox.goto_sms? && inbox.channel.service_hours_active?
   end
 
   def missing_address_error(channel)
