@@ -8,8 +8,7 @@ class Goto::IncomingMessageService
     channel.with_lock do
       next if inbox.messages.exists?(source_id: payload[:messageId])
 
-      set_contact
-      set_conversation
+      @contact, @conversation = Goto::ConversationResolver.new(inbox: inbox, phone_number: phone_number).perform
       next if outgoing? && claim_courier_message
 
       @message = @conversation.messages.build(message_params)
@@ -50,27 +49,6 @@ class Goto::IncomingMessageService
     message = @conversation.messages.outgoing.where(source_id: nil).where('created_at > ?', 2.minutes.ago)
                            .find_by("COALESCE(content, '') = ?", payload[:body].to_s)
     message&.update!(source_id: payload[:messageId])
-  end
-
-  def set_contact
-    @contact_inbox = ::ContactInboxWithContactBuilder.new(
-      source_id: phone_number,
-      inbox: inbox,
-      contact_attributes: { name: TelephoneNumber.parse(phone_number).international_number, phone_number: phone_number }
-    ).perform
-    @contact = @contact_inbox.contact
-  end
-
-  def set_conversation
-    @conversation = if inbox.lock_to_single_conversation
-                      @contact_inbox.conversations.last
-                    else
-                      @contact_inbox.conversations.where.not(status: :resolved).last
-                    end
-    return if @conversation
-
-    @conversation = ::Conversation.create!(account_id: inbox.account_id, inbox_id: inbox.id, contact_id: @contact.id,
-                                           contact_inbox_id: @contact_inbox.id)
   end
 
   def attach_files

@@ -30,6 +30,7 @@
     "CLICK_HERE": "Click here",
     "LOADING_INBOXES": "Loading inboxes",
     "LOADING_CONVERSATIONS": "Loading Conversations",
+    "AI_PAUSED_SERVICE_HOURS": "AI is disabled due to service hours and will be enabled at {time}",
     "CANNOT_REPLY": "You cannot reply due to",
     "24_HOURS_WINDOW": "24 hour message window restriction",
     "48_HOURS_WINDOW": "48 hour message window restriction",
@@ -103,7 +104,12 @@
       "CALL_ENDED": "Call ended",
       "NOT_ANSWERED_YET": "Not answered yet",
       "THEY_ANSWERED": "They answered",
-      "YOU_ANSWERED": "You answered"
+      "YOU_ANSWERED": "You answered",
+      "RINGING": "Ringing",
+      "BUSY": "Busy",
+      "VOICEMAIL": "Voicemail",
+      "RECORDING": "Call recording",
+      "NOT_ANSWERED": "Not answered"
     },
     "LABELS": {
       "ADD_DIALOG": {

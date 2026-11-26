@@ -1,6 +1,6 @@
 <script>
 import { ref, provide, useTemplateRef } from 'vue';
-import { useElementSize } from '@vueuse/core';
+import { useElementSize, useIntervalFn } from '@vueuse/core';
 // composable
 import { useLabelSuggestions } from 'dashboard/composables/useLabelSuggestions';
 import { useSnakeCase } from 'dashboard/composables/useTransformKeys';
@@ -10,6 +10,7 @@ import ReplyBox from './ReplyBox.vue';
 import MessageList from 'next/message/MessageList.vue';
 import ConversationLabelSuggestion from './conversation/LabelSuggestion.vue';
 import Banner from 'dashboard/components/ui/Banner.vue';
+import { getServiceWindowClose } from 'dashboard/helper/serviceHours';
 import Spinner from 'dashboard/components-next/spinner/Spinner.vue';
 import ResizableEditorWrapper from './ResizableEditorWrapper.vue';
 
@@ -63,6 +64,11 @@ export default {
 
     provide('contextMenuElementTarget', conversationPanelRef);
 
+    const now = ref(new Date());
+    useIntervalFn(() => {
+      now.value = new Date();
+    }, 60000);
+
     return {
       captainTasksEnabled,
       getLabelSuggestions,
@@ -73,6 +79,7 @@ export default {
       topBannerRef,
       containerHeight,
       topBannerHeight,
+      now,
     };
   },
   data() {
@@ -110,6 +117,13 @@ export default {
     },
     inbox() {
       return this.$store.getters['inboxes/getInbox'](this.inboxId);
+    },
+    // GoTo inboxes: the AI stays quiet while the service department is open unless it was enabled for service hours.
+    serviceHoursClose() {
+      const { channel_type: channelType, ai_in_service_hours: aiEnabled } =
+        this.inbox || {};
+      if (channelType !== 'Channel::GotoSms' || aiEnabled) return null;
+      return getServiceWindowClose(this.inbox.service_hours, this.now);
     },
     typingUsersList() {
       const userList = this.$store.getters[
@@ -468,6 +482,16 @@ export default {
         color-scheme="alert"
         class="mx-2 mt-2 overflow-hidden rounded-lg"
         :banner-message="$t('CONVERSATION.OLD_INSTAGRAM_INBOX_REPLY_BANNER')"
+      />
+      <Banner
+        v-else-if="serviceHoursClose"
+        color-scheme="warning"
+        class="mx-2 mt-2 overflow-hidden rounded-lg !bg-[rgba(249,115,22,0.18)]"
+        :banner-message="
+          $t('CONVERSATION.AI_PAUSED_SERVICE_HOURS', {
+            time: serviceHoursClose,
+          })
+        "
       />
     </div>
     <MessageList

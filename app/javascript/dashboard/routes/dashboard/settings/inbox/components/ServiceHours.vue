@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n';
 import { useStore } from 'vuex';
 import { useAlert } from 'dashboard/composables';
 import NextButton from 'dashboard/components-next/button/Button.vue';
+import SettingsToggleSection from 'dashboard/components-next/Settings/SettingsToggleSection.vue';
 import { getTime } from '../helpers/businessHour';
 
 const props = defineProps({
@@ -39,6 +40,21 @@ const totalHours = ({ open, close }) => {
 };
 
 const serviceHours = computed(() => props.inbox.service_hours);
+
+const isAiEnabled = computed({
+  get: () => !!props.inbox.ai_in_service_hours,
+  set: async value => {
+    try {
+      await store.dispatch('inboxes/updateInbox', {
+        id: props.inbox.id,
+        formData: false,
+        channel: { ai_in_service_hours: value },
+      });
+    } catch (error) {
+      useAlert(t('INBOX_MGMT.SERVICE_HOURS.AI_UPDATE_ERROR'));
+    }
+  },
+});
 
 const days = computed(() =>
   DAY_NAMES.map((name, index) => {
@@ -76,6 +92,13 @@ const syncServiceHours = async () => {
       {{ t('INBOX_MGMT.SERVICE_HOURS.NOT_SYNCED') }}
     </p>
 
+    <SettingsToggleSection
+      v-model="isAiEnabled"
+      class="mb-4"
+      :header="t('INBOX_MGMT.SERVICE_HOURS.AI_TOGGLE_HEADER')"
+      :description="t('INBOX_MGMT.SERVICE_HOURS.AI_TOGGLE_DESCRIPTION')"
+    />
+
     <div class="flex items-center justify-between gap-4 mb-4">
       <p class="mb-0 min-w-0 flex-1 text-body-main text-n-slate-11">
         {{ t('INBOX_MGMT.SERVICE_HOURS.DESCRIPTION') }}
@@ -88,13 +111,16 @@ const syncServiceHours = async () => {
       />
     </div>
 
-    <div v-if="serviceHours" class="flex items-center gap-4 mb-4">
-      <span class="text-body-main font-medium text-n-slate-12">
+    <div
+      v-if="serviceHours"
+      class="flex items-center gap-4 px-4 py-3 mb-4 rounded-xl bg-n-alpha-black2"
+    >
+      <span class="text-heading-3 text-n-slate-12">
         {{ t('INBOX_MGMT.SERVICE_HOURS.TIMEZONE_LABEL') }}
       </span>
-      <span class="text-body-main text-n-slate-11">
-        {{ serviceHours.timezone }}
-      </span>
+      <span class="text-body-main text-n-slate-11">{{
+        serviceHours.timezone
+      }}</span>
     </div>
 
     <table

@@ -880,6 +880,25 @@ $active-item-bg: rgba(255, 255, 255, 0.2);
                     color: white !important;
                 }
 
+                // Call recording/voicemail player: light box with dark controls in light mode, unchanged in dark mode
+                .goto-audio-player {
+
+                    &,
+                    button,
+                    span {
+                        color: #1c2024 !important;
+                    }
+
+                    body.dark & {
+
+                        &,
+                        button,
+                        span {
+                            color: white !important;
+                        }
+                    }
+                }
+
                 a,
                 .prose a {
                     color: #2781F6 !important;

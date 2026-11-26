@@ -62,7 +62,7 @@ class Integrations::Stark::ProcessorService < Integrations::BotProcessorService
 
   # GoTo inboxes with synced service hours: send everything since the latest service window opened (the agent's conversation),
   def service_hours_context_start(conversation, message)
-    return if goto_channel&.service_hours.blank?
+    return unless service_hours_managed?
 
     latest_open = goto_channel.last_service_open(message&.created_at || Time.current)
     return if latest_open.blank? || stark_replied_since?(conversation, latest_open)

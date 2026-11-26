@@ -1072,7 +1072,10 @@
       "TIMEZONE_LABEL": "Timezone",
       "SYNC": "Sync service hours",
       "SYNC_SUCCESS": "Service hours synced successfully",
-      "SYNC_ERROR": "Could not sync service hours. Please try again later."
+      "SYNC_ERROR": "Could not sync service hours. Please try again later.",
+      "AI_TOGGLE_HEADER": "Enable AI during service hours",
+      "AI_TOGGLE_DESCRIPTION": "By default the AI does not reply while the service department is open. Turn this on to let the AI keep replying during service hours.",
+      "AI_UPDATE_ERROR": "Could not update the setting. Please try again later."
     },
     "IMAP": {
       "TITLE": "IMAP",
