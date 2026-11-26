@@ -316,6 +316,7 @@ en:
       voice_call:
         twilio: 'Voice Call'
         whatsapp: 'WhatsApp Call'
+        goto: 'GoTo Call'
       delivery_status:
         error_code: 'Error code: %{error_code}'
         known_errors:

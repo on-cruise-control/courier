@@ -84,7 +84,10 @@ end
 json.reauthorization_required resource.channel.try(:reauthorization_required?) if resource.tiktok?
 
 ## GoTo Attributes
-json.service_hours resource.channel.service_hours if resource.channel.is_a?(Channel::GotoSms)
+if resource.channel.is_a?(Channel::GotoSms)
+  json.service_hours resource.channel.service_hours
+  json.ai_in_service_hours resource.channel.ai_in_service_hours
+end
 
 ## Twilio Attributes
 json.messaging_service_sid resource.channel.try(:messaging_service_sid)

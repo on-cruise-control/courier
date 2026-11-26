@@ -41,6 +41,7 @@ import LocationBubble from './bubbles/Location.vue';
 import CSATBubble from './bubbles/CSAT.vue';
 import FormBubble from './bubbles/Form.vue';
 import VoiceCallBubble from './bubbles/VoiceCall.vue';
+import GotoCallBubble from './bubbles/GotoCall.vue';
 import CardsBubble from './bubbles/Cards.vue';
 import CallToActionBubble from './bubbles/CallToAction.vue';
 import QuickReplyBubble from './bubbles/QuickReply.vue';
@@ -319,7 +320,9 @@ const componentToRender = computed(() => {
   }
 
   if (props.contentType === CONTENT_TYPES.VOICE_CALL) {
-    return VoiceCallBubble;
+    return props.contentAttributes?.data?.callSource === 'goto'
+      ? GotoCallBubble
+      : VoiceCallBubble;
   }
 
   if (props.contentType === CONTENT_TYPES.INCOMING_EMAIL) {
