@@ -10,6 +10,10 @@ class GotoChannel extends ApiClient {
     return axios.post(`${this.url}/authorization`);
   }
 
+  reauthorization(channelId) {
+    return axios.post(`${this.url}/${channelId}/reauthorization`);
+  }
+
   lines(channelId) {
     return axios.get(`${this.url}/${channelId}/lines`);
   }

@@ -14,12 +14,16 @@ module Stark
 
     # GoTo inboxes with synced service hours: agents handle the conversation while the service department is open.
     def service_hours_active?
-      goto_channel&.service_hours_active? || false
+      service_hours_managed? && goto_channel.service_hours_active?
+    end
+
+    def service_hours_managed?
+      goto_channel&.service_hours.present? && !goto_channel.ai_in_service_hours
     end
 
     # Outside the service windows (GoTo inboxes with synced hours); used to ignore agent replies sent during service hours.
     def after_hours_takeover?
-      goto_channel&.service_hours.present? && !service_hours_active?
+      service_hours_managed? && !service_hours_active?
     end
 
     def goto_channel

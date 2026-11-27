@@ -162,6 +162,7 @@ Rails.application.routes.draw do
             resource :twilio_channel, only: [:create]
             resources :goto_channels, only: [:update] do
               post :authorization, on: :collection
+              post :reauthorization, on: :member
               get :lines, on: :member
             end
           end

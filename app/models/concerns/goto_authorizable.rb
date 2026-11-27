@@ -28,6 +28,7 @@ module GotoAuthorizable
 
   def authorize!(code, redirect_uri)
     store_tokens(request_token(grant_type: 'authorization_code', code: code, redirect_uri: redirect_uri))
+    reauthorized! if respond_to?(:reauthorized!)
   end
 
   def access_token!
@@ -61,9 +62,16 @@ module GotoAuthorizable
   def request_token(params)
     credentials = Base64.strict_encode64("#{client_id}:#{client_secret}")
     response = Faraday.post(TOKEN_URL, params) { |req| req.headers['Authorization'] = "Basic #{credentials}" }
-    raise "GoTo token request failed: #{response.body}" unless response.success?
+    unless response.success?
+      prompt_reauthorization! if refresh_token_rejected?(params, response) && respond_to?(:prompt_reauthorization!)
+      raise "GoTo token request failed: #{response.body}"
+    end
 
     JSON.parse(response.body)
+  end
+
+  def refresh_token_rejected?(params, response)
+    params[:grant_type] == 'refresh_token' && [400, 401].include?(response.status)
   end
 
   def store_tokens(data)

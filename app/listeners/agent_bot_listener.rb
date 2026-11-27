@@ -80,12 +80,18 @@ class AgentBotListener < BaseListener
       end
 
       return unless message.incoming?
+      # GoTo call records are not customer messages; Stark only sees their transcript through the conversation history.
+      return if message.voice_call? && inbox_is_goto?(message)
 
       process_stark_bot_event(event.name, agent_bot, message, conversation)
     when 'webhook'
       payload = message.webhook_data.merge(event: method_name)
       process_webhook_bot_event(agent_bot, payload)
     end
+  end
+
+  def inbox_is_goto?(message)
+    message.inbox.goto_sms?
   end
 
   def active_inbox_agent_bot(inbox)

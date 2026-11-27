@@ -8,6 +8,8 @@
     "NO_RESULTS": "No inboxes found matching your search",
     "RECONNECTION_REQUIRED": "Your inbox is disconnected. You won't receive new messages until you reauthorize it.",
     "CLICK_TO_RECONNECT": "Click here to reconnect.",
+    "REAUTHORIZE_SUCCESS": "Inbox reconnected successfully.",
+    "REAUTHORIZE_ERROR": "Could not start the reconnection. Please try again.",
     "WHATSAPP_REGISTRATION_INCOMPLETE": "Your WhatsApp Business registration isn’t complete. Please check your display name status in Meta Business Manager before reconnecting.",
     "COMPLETE_REGISTRATION": "Complete Registration",
     "LIST": {
@@ -1072,7 +1074,10 @@
       "TIMEZONE_LABEL": "Timezone",
       "SYNC": "Sync service hours",
       "SYNC_SUCCESS": "Service hours synced successfully",
-      "SYNC_ERROR": "Could not sync service hours. Please try again later."
+      "SYNC_ERROR": "Could not sync service hours. Please try again later.",
+      "AI_TOGGLE_HEADER": "Enable AI during service hours",
+      "AI_TOGGLE_DESCRIPTION": "By default the AI does not reply while the service department is open. Turn this on to let the AI keep replying during service hours.",
+      "AI_UPDATE_ERROR": "Could not update the setting. Please try again later."
     },
     "IMAP": {
       "TITLE": "IMAP",

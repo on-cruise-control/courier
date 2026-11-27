@@ -4,9 +4,18 @@ class Goto::WebhookSetupService
   def perform
     channel.update!(notification_channel_id: create_notification_channel)
     subscribe
+    subscribe_calls
   end
 
   private
+
+  def subscribe_calls
+    %i[subscribe_call_events subscribe_call_reports].each do |step|
+      send(step)
+    rescue StandardError => e
+      Rails.logger.error "[GOTO] #{step} failed: #{e.message}"
+    end
+  end
 
   def create_notification_channel
     body = { channelType: 'Webhook', webhookChannelData: { webhook: { url: channel.webhook_url } } }
@@ -23,6 +32,16 @@ class Goto::WebhookSetupService
       eventTypes: %w[INBOUND_MESSAGE OUTBOUND_MESSAGE DELIVERY_STATUS]
     }
     request("#{Channel::GotoSms::API_URL}/messaging/v2/subscriptions", body)
+  end
+
+  def subscribe_call_events
+    body = { channelId: channel.notification_channel_id, accountKeys: [{ id: channel.account_key, events: %w[STARTING ACTIVE ENDING] }] }
+    request("#{Channel::GotoSms::API_URL}/call-events/v1/subscriptions", body)
+  end
+
+  def subscribe_call_reports
+    body = { channelId: channel.notification_channel_id, eventTypes: %w[REPORT_SUMMARY], accountKeys: [channel.account_key] }
+    request("#{Channel::GotoSms::API_URL}/call-events-report/v1/subscriptions", body)
   end
 
   def request(url, body)

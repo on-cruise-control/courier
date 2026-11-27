@@ -6,6 +6,7 @@
 #  access_token            :text
 #  access_token_expires_at :datetime
 #  account_key             :string
+#  ai_in_service_hours     :boolean          default(FALSE), not null
 #  phone_number            :string
 #  refresh_token           :text
 #  service_hours           :jsonb
@@ -24,10 +25,11 @@
 class Channel::GotoSms < ApplicationRecord
   include Channelable
   include GotoAuthorizable
+  include Reauthorizable
 
   self.table_name = 'channel_goto_sms'
 
-  EDITABLE_ATTRS = [].freeze
+  EDITABLE_ATTRS = [:ai_in_service_hours].freeze
 
   has_secure_token :webhook_token
 
