@@ -5,9 +5,11 @@ class Api::V1::Accounts::Channels::GotoChannelsController < Api::V1::Accounts::B
   def authorization
     return render json: { error: 'GoTo is not configured' }, status: :unprocessable_entity if GlobalConfigService.load('GOTO_CLIENT_ID', nil).blank?
 
-    channel = Current.account.goto_sms.where.missing(:inbox).first_or_create!
-    state = Goto::CallbacksController.verifier.generate(['channel', channel.id], expires_in: 1.hour)
-    render json: { url: channel.authorization_url(state, Goto::CallbacksController.redirect_uri) }
+    render_authorization_url(Current.account.goto_sms.where.missing(:inbox).first_or_create!)
+  end
+
+  def reauthorization
+    render_authorization_url(Current.account.goto_sms.find(params[:id]))
   end
 
   def lines
@@ -32,6 +34,11 @@ class Api::V1::Accounts::Channels::GotoChannelsController < Api::V1::Accounts::B
   end
 
   private
+
+  def render_authorization_url(channel)
+    state = Goto::CallbacksController.verifier.generate(['channel', channel.id], expires_in: 1.hour)
+    render json: { url: channel.authorization_url(state, Goto::CallbacksController.redirect_uri) }
+  end
 
   def name_taken?
     Current.account.inboxes.exists?(['lower(name) = ?', params[:name].to_s.strip.downcase])

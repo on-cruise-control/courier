@@ -25,6 +25,8 @@ class Goto::CallbacksController < ApplicationController
   end
 
   def inbox_setup_path(channel)
+    return "/app/accounts/#{channel.account_id}/settings/inboxes/#{channel.inbox.id}?goto_reauthorized=1" if channel.inbox
+
     "/app/accounts/#{channel.account_id}/settings/inboxes/new/sms?goto_channel=#{channel.id}"
   end
 end

@@ -87,6 +87,7 @@ json.reauthorization_required resource.channel.try(:reauthorization_required?) i
 if resource.channel.is_a?(Channel::GotoSms)
   json.service_hours resource.channel.service_hours
   json.ai_in_service_hours resource.channel.ai_in_service_hours
+  json.reauthorization_required resource.channel.reauthorization_required?
 end
 
 ## Twilio Attributes
