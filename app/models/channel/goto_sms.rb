@@ -25,6 +25,7 @@
 class Channel::GotoSms < ApplicationRecord
   include Channelable
   include GotoAuthorizable
+  include Reauthorizable
 
   self.table_name = 'channel_goto_sms'
 

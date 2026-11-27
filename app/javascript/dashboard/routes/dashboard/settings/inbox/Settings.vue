@@ -12,6 +12,7 @@ import inboxMixin from 'shared/mixins/inboxMixin';
 import FacebookReauthorize from './facebook/Reauthorize.vue';
 import InstagramReauthorize from './channels/instagram/Reauthorize.vue';
 import TiktokReauthorize from './channels/tiktok/Reauthorize.vue';
+import GotoReauthorize from './channels/goto/Reauthorize.vue';
 import DuplicateInboxBanner from './channels/instagram/DuplicateInboxBanner.vue';
 import MicrosoftReauthorize from './channels/microsoft/Reauthorize.vue';
 import GoogleReauthorize from './channels/google/Reauthorize.vue';
@@ -69,6 +70,7 @@ export default {
     SpinnerLoader,
     InstagramReauthorize,
     TiktokReauthorize,
+    GotoReauthorize,
     WhatsappReauthorize,
     DuplicateInboxBanner,
     Editor,
@@ -384,6 +386,12 @@ export default {
     instagramUnauthorized() {
       return this.isAnInstagramChannel && this.inbox.reauthorization_required;
     },
+    gotoUnauthorized() {
+      return (
+        this.inbox.channel_type === INBOX_TYPES.GOTO_SMS &&
+        this.inbox.reauthorization_required
+      );
+    },
     tiktokUnauthorized() {
       return this.isATiktokChannel && this.inbox.reauthorization_required;
     },
@@ -468,6 +476,9 @@ export default {
   },
   mounted() {
     this.fetchSharedData();
+    if (this.$route.query.goto_reauthorized) {
+      useAlert(this.$t('INBOX_MGMT.REAUTHORIZE_SUCCESS'));
+    }
   },
   methods: {
     async copyWebhookSecret(value) {
@@ -759,6 +770,12 @@ export default {
         />
         <InstagramReauthorize
           v-if="instagramUnauthorized"
+          :inbox="inbox"
+          class="mb-4"
+          :class="bannerMaxWidth"
+        />
+        <GotoReauthorize
+          v-if="gotoUnauthorized"
           :inbox="inbox"
           class="mb-4"
           :class="bannerMaxWidth"

@@ -92,6 +92,7 @@ module Reauthorizable
       'Channel::Instagram' => ->(obj) { obj.send_channel_reauthorization_email(:instagram_disconnect) },
       'Channel::Tiktok' => ->(obj) { obj.send_channel_reauthorization_email(:tiktok_disconnect) },
       'Channel::Whatsapp' => ->(obj) { obj.send_channel_reauthorization_email(:whatsapp_disconnect) },
+      'Channel::GotoSms' => ->(obj) { obj.send_channel_reauthorization_email(:goto_disconnect) },
       'Channel::Email' => ->(obj) { obj.send_channel_reauthorization_email(:email_disconnect) },
       'AutomationRule' => ->(obj) { obj.handle_automation_rule_reauthorization }
     }
@@ -118,8 +119,8 @@ module Reauthorizable
     case disconnect_type
     when :email_disconnect
       "Email: #{inbox.channel.email}\n"
-    when :whatsapp_disconnect
-      "Whatsapp: #{inbox.channel.phone_number}\n"
+    when :whatsapp_disconnect, :goto_disconnect
+      "#{inbox.channel.name}: #{inbox.channel.phone_number}\n"
     when :facebook_disconnect
       page_url = inbox.channel.facebook_page_url.presence || "Page ID: #{inbox.channel.page_id}"
       "Facebook Page: #{page_url}\n"
